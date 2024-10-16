@@ -1,0 +1,4 @@
+dist/
+equimagelab.egg-info/
+__pycache__/
+*.lnk
