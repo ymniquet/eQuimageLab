@@ -16,7 +16,7 @@ in this same terminal. You can also create a link to eQuimageLab from your deskt
 
 ### Usage
 
-To be written...
+**UNDER DEVELOPMENT: NOT READY FOR USE !!**
 
 ### Known bugs
 

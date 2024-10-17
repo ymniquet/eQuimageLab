@@ -6,7 +6,11 @@
 
 """eQuimage lab."""
 
+__version__ = "1.0.0"
+
 # Import everything.
 
 from .equimage import *
 from .jupyter import *
+
+print(f"Welcome to eQuimageLab version {__version__}...")

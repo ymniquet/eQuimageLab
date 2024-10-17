@@ -16,8 +16,8 @@ from . import image_colors
 from . import image_stretch
 from . import image_skimage
 
-class Image(np.ndarray, 
-            image_colorspaces.Mixin, image_utils.Mixin, image_geometry.Mixin, 
+class Image(np.ndarray,
+            image_colorspaces.Mixin, image_utils.Mixin, image_geometry.Mixin,
             image_colors.Mixin, image_stretch.Mixin, image_skimage.Mixin):
   """Image class.
      The images are stored as arrays with shape (3, height, width) and type params.IMGTYPE = np.float32 or np.float64.

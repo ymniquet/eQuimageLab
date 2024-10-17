@@ -10,7 +10,6 @@ import numpy as np
 from PIL import Image as PILImage
 
 from . import params
-from . import symbols as smb
 
 #####################################
 # For inclusion in the Image class. #
@@ -54,29 +53,53 @@ class Mixin:
   ##################
 
   # TESTED.
-  def resample(self, width, height, resample = smb.LANCZOS):
-    """Resize image to width 'width' and height 'height' using resampling method 'resample'
-       (either NEAREST, BILINEAR, BICUBIC, LANCZOS, BOX or HAMMING)."""
+  def resample(self, width, height, method = "lanczos"):
+    """Resize image to width 'width' and height 'height' using resampling method 'method',
+       which can be:
+         - "nearest": Nearest neighbor interpolation.
+         - "bilinear": Linear interpolation.
+         - "bicubic": Cubic spline interpolation.
+         - "lanczos": Lanczos (truncated sinc) filter.
+         - "box": Box average (equivalent to "nearest" for upscaling).
+         - "hamming": Hamming (cosine bell) filter."""
     if width < 1 or width > 32768: raise ValueError("Error, width must be >= 1 and <= 32768 pixels.")
     if height < 1 or height > 32768: raise ValueError("Error, height must be >= 1 and <= 32768 pixels.")
     if width*height > 2**26: raise ValueError("Error, can not resize to > 64 Mpixels.")
-    if resample not in [smb.NEAREST, smb.BILINEAR, smb.BICUBIC, smb.LANCZOS, smb.BOX, smb.HAMMING]:
-      raise ValueError("Error, unknown resampling method.")
+    if method == "nearest":
+      method = PILImage.Resampling.NEAREST
+    elif method == "bilinear":
+      method = PILImage.Resampling.BILINEAR
+    elif method == "bicubic":
+      method = PILImage.Resampling.BICUBIC
+    elif method == "lanczos":
+      method = PILImage.Resampling.LANCZOS
+    elif method == "box":
+      method = PILImage.Resampling.BOX
+    elif method == "hamming":
+      method = PILImage.Resampling.HAMMING
+    else:
+      raise ValueError(f"Error, unknown resampling method '{method}'.")
     image = self.view()
     resized = np.empty((3, height, width), dtype = params.IMGTYPE)
     for ic in range(3): # Resize each channel using PIL.
-      PILchannel = PILImage.fromarray(np.float32(image[ic]), "F").resize((width, height), resample) # Convert to np.float32 while resizing.
+      PILchannel = PILImage.fromarray(np.float32(image[ic]), "F").resize((width, height), method) # Convert to np.float32 while resizing.
       resized[ic] = np.asarray(PILchannel, dtype = params.IMGTYPE)
     return self.newImage_like(self, resized)
 
   # TESTED.
-  def rescale(self, scale, resample = smb.LANCZOS):
-    """Rescale image by a factor 'scale' using resampling method 'resample' (either NEAREST,
-       BILINEAR, BICUBIC, LANCZOS, BOX or HAMMING)."""
+  def rescale(self, scale, method = "lanczos"):
+    """Rescale image by a factor 'scale' using resampling method 'method',
+       which can be:
+         - "nearest": Nearest neighbor interpolation.
+         - "bilinear": Linear interpolation.
+         - "bicubic": Cubic spline interpolation.
+         - "lanczos": Lanczos (truncated sinc) filter.
+         - "box": Box average (equivalent to "nearest" for upscaling).
+         - "hamming": Hamming (cosine bell) filter."""
     if scale <= 0. or scale > 16.: raise ValueError("Error, scale must be > 0 and <= 16.")
     width, height = self.width_height()
     newwidth, newheight = int(round(scale*width)), int(round(scale*height))
-    return self.resample(newwidth, newheight, resample)
+    return self.resample(newwidth, newheight, method)
 
   # TESTED.
   def crop(self, xmin, xmax, ymin, ymax):

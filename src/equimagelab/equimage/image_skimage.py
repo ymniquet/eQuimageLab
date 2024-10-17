@@ -19,7 +19,7 @@ class Mixin:
   ############
   # Filters. #
   ############
-  
+
   # TESTED.
   def gaussian(self, sigma, mode = "reflect"):
     """Convolve the image with a gaussian of standard deviation sigma (pixels).
@@ -27,9 +27,9 @@ class Mixin:
          - Reflect: the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
          - Mirror: the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
          - Nearest: the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
-         - Zero: the image is padded with zeros (abcd -> 0000|abcd|0000)."""    
+         - Zero: the image is padded with zeros (abcd -> 0000|abcd|0000)."""
     if mode == "zero": # Translate modes.
-      mode = "constant" 
+      mode = "constant"
     image = self.image(cls = np.ndarray)
     filtered = skim.filters.gaussian(image, channel_axis = 0, sigma = sigma, mode = mode, cval = 0.)
     return self.newImage_like(self, filtered)

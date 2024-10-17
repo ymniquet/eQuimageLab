@@ -8,7 +8,7 @@ version = "1.0.0"
 authors = [
   { name = "Yann-Michel Niquet", email = "contact@ymniquet.fr" },
 ]
-description = "eQuimageLab is a tool to postprocess astronomical images with JupyterLab notebooks."
+description = "eQuimageLab is a tool to postprocess astronomical images with JupyterLab notebooks"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -36,11 +36,11 @@ homepage = "https://astro.ymniquet.fr/"
 repository = "https://github.com/ymniquet/eQuimage"
 
 [project.gui-scripts]
-eQuimageLab = "eQuimageLab.launcher:run"
+eQuimageLab = "equimagelab.launcher:run"
 
 [tool.setuptools.packages.find]
 namespaces = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"eQuimagelab.icons" = ["icon.png", "icon.ico"]
+"equimagelab.icons" = ["icon.png", "icon.ico"]
