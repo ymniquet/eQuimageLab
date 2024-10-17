@@ -45,7 +45,19 @@ class Mixin:
     """Return True if the image is out-of-range (data < 0 or > 1 in any channel), False otherwise."""
     image = self.image(cls = np.ndarray)
     return np.any(image < -params.IMGTOL) or np.any(image > 1.+params.IMGTOL)
-
+  
+  ##############
+  # Templates. #
+  ##############
+  
+  def empty(self):
+    """Return an empty image with the same size."""
+    return np.empty_like(self)
+  
+  def black(self):
+    """Return a black image with the same size."""
+    return np.zeros_like(self)    
+  
   ##############################
   # Clipping & scaling pixels. #
   ##############################

@@ -112,4 +112,4 @@ class Mixin:
     ymin = max(int(np.floor(ymin))  , 0)
     ymax = min(int(np.ceil (ymax))+1, height)
     image = self.view()
-    return self.newImage_like(self, image[:, ymin:ymax, xmin:xmax])
+    return image[:, ymin:ymax, xmin:xmax].copy()

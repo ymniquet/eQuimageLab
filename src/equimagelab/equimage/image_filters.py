@@ -4,16 +4,26 @@
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
 
-"""Image processing symbols."""
+"""Image filters."""
 
-from PIL import Image as PILImage
+import numpy as np
+from scipy.signal import convolve2d
 
-# Image resampling methods, imported from PIL.
+from . import params
 
-NEAREST  = PILImage.Resampling.NEAREST
-BILINEAR = PILImage.Resampling.BILINEAR
-BICUBIC  = PILImage.Resampling.BICUBIC
-LANCZOS  = PILImage.Resampling.LANCZOS
-BOX      = PILImage.Resampling.BOX
-HAMMING  = PILImage.Resampling.HAMMING
+#####################################
+# For inclusion in the Image class. #
+#####################################
 
+class Mixin:
+  """To be included in the Image class."""
+
+  # TESTED.
+  def sharpen(self):
+    """Apply a sharpening (Laplacian) convolution filter to the image."""
+    image = self.image()
+    filtered = self.empty()
+    kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = params.IMGTYPE)
+    for ic in range(3):
+      filtered[ic] = convolve2d(image[ic], kernel, mode = "same", boundary = "fill", fillvalue = 0.)
+    return filtered

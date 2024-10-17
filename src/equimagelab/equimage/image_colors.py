@@ -8,6 +8,7 @@
 
 import numpy as np
 
+from . import params
 from . import image_colorspaces as colorspaces
 
 #####################################
