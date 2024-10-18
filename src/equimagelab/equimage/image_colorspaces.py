@@ -30,7 +30,7 @@ def lRGB_to_sRGB(image):
 #########
 
 def get_RGB_luma():
-  """Return the weights of the RGB components of the luma as a tuple (red, green, blue)."""
+  """Return the weights of the RGB components of the luma (red, green, blue)."""
   return params.rgbluma
 
 def set_RGB_luma(rgb):
@@ -52,7 +52,7 @@ def set_RGB_luma(rgb):
     if any(w < 0.): raise ValueError("Error, the input rgb weights must be >= 0.")
     s = np.sum(w)
     if s == 0.: raise ValueError("Error, the sum of the input rgb weights must be > 0.")
-    params.rgbluma = tuple(w/s)
+    params.rgbluma = w/s
     print(f"Luma RGB weights = ({params.rgbluma[0]:.3f}, {params.rgbluma[1]:.3f}, {params.rgbluma[2]:.3f}).")
 
 def luma(image):
@@ -150,7 +150,7 @@ class Mixin:
     if self.colorspace == "lRGB":
       return self.copy()
     elif self.colorspace == "sRGB":
-      image = self.image()
+      image = self.image(cls = np.ndarray)
       return self.newImage_like(self, sRGB_to_lRGB(image), colorspace = "lRGB")
     else:
       self.color_space_error()
@@ -159,7 +159,7 @@ class Mixin:
     """Convert the image to the sRGB color space."""
     self.check_color_model("RGB")
     if self.colorspace == "lRGB":
-      image = self.image()
+      image = self.image(cls = np.ndarray)
       return self.newImage_like(self, lRGB_to_sRGB(image), colorspace = "sRGB")
     elif self.colorspace == "sRGB":
       return self.copy()

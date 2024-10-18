@@ -27,7 +27,7 @@ def is_valid_image(image):
 ##########################
 
 def clip(image, vmin = 0., vmax = 1.):
-  """Clip the image in the range [vmin, vmax]."""
+  """Clip the input image in the range [vmin, vmax]."""
   return np.clip(image, vmin, vmax)
 
 #####################################
@@ -45,19 +45,19 @@ class Mixin:
     """Return True if the image is out-of-range (data < 0 or > 1 in any channel), False otherwise."""
     image = self.image(cls = np.ndarray)
     return np.any(image < -params.IMGTOL) or np.any(image > 1.+params.IMGTOL)
-  
+
   ##############
   # Templates. #
   ##############
-  
+
   def empty(self):
     """Return an empty image with the same size."""
     return np.empty_like(self)
-  
+
   def black(self):
     """Return a black image with the same size."""
-    return np.zeros_like(self)    
-  
+    return np.zeros_like(self)
+
   ##############################
   # Clipping & scaling pixels. #
   ##############################

@@ -21,9 +21,8 @@ class Mixin:
   # TESTED.
   def sharpen(self):
     """Apply a sharpening (Laplacian) convolution filter to the image."""
-    image = self.image()
-    filtered = self.empty()
+    output = self.empty()
     kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = params.IMGTYPE)
     for ic in range(3):
-      filtered[ic] = convolve2d(image[ic], kernel, mode = "same", boundary = "fill", fillvalue = 0.)
-    return filtered
+      output[ic] = convolve2d(self[ic], kernel, mode = "same", boundary = "fill", fillvalue = 0.)
+    return output

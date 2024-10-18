@@ -53,12 +53,12 @@ class Mixin:
   def negative(self):
     """Return the negative of a RGB image."""
     self.check_color_model("RGB")
-    return 1.-self.image()
+    return 1.-self
 
   # TESTED.
   def gray_scale(self, channel = "Y"):
     """Convert the selected channel of a RGB image into a gray scale image.
-       channel can be "V" (value), "L" (luma) or "Y" (luminance)."""
+       'channel' can be "V" (value), "L" (luma) or "Y" (luminance)."""
     self.check_color_model("RGB")
     if channel == "V":
       grayscale = self.value()

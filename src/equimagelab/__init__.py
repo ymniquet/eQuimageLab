@@ -13,4 +13,9 @@ __version__ = "1.0.0"
 from .equimage import *
 from .jupyter import *
 
-print(f"Welcome to eQuimageLab version {__version__}...")
+ruler = "######################################"+len(__version__)*"#"
+print(ruler)
+print(f"# Welcome to eQuimageLab version {__version__}... #")
+print(ruler)
+print("The module numpy is loaded as np.")
+set_RGB_luma("human")

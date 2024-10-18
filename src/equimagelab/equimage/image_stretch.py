@@ -18,7 +18,7 @@ class Mixin:
   ### TODO : Add Value & Saturation for HSV images.
 
   def midtone_correction(self, midtone = .5, channels = "L"):
-    """Apply midtone correction to selected channels of the input RGB image.
+    """Apply a midtone correction to selected channels of a RGB image.
        channels can be "V" (value), "L" (luma) or any combination of "R" (red) "G" (green), and "B" (blue)."""
     self.check_color_model("RGB")
     if midtone <= 0.: raise ValueError("Error, midtone must be >= 0.")
