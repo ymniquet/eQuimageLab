@@ -8,22 +8,13 @@
 
 import numpy as np
 
-def midtone_stretch_function(x, params):
-  """Return the midtone stretch function f(x) for input parameters (shadow, midtone, highlight, low, high)."""
-  shadow, midtone, highlight, low, high = params
-  midtone = (midtone-shadow)/(highlight-shadow)
-  x = np.clip(x, shadow, highlight)
-  x = np.interp(x, (shadow, highlight), (0., 1.))
-  y = (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
-  return np.interp(y, (low, high), (0., 1.))
-
-def blackpoint_stretch_function(x, params):
+def black_point_stretch_function(x, params):
   """Return the linear black point stretch function f(x) for input parameters (shadow, )."""
   shadow, = params
   x = np.clip(x, shadow, 1.)
   return np.interp(x, (shadow, 1.), (0., 1.))
 
-def arcsinh_stretch_function(x, params):
+def asinh_stretch_function(x, params):
   """Return the arcsinh stretch function f(x) for input parameters (shadow, stretch)."""
   shadow, stretch = params
   x = np.clip(x, shadow, 1.)
@@ -201,3 +192,12 @@ def ghyperbolic_stretch_function(x, params):
         mask = (x >= HPT)
         y[mask] = (x[mask]-a4)/b4
     return y
+
+def midtone_stretch_function(x, params):
+  """Return the midtone stretch function f(x) for input parameters (shadow, midtone, highlight, low, high)."""
+  shadow, midtone, highlight, low, high = params
+  midtone = (midtone-shadow)/(highlight-shadow)
+  x = np.clip(x, shadow, highlight)
+  x = np.interp(x, (shadow, highlight), (0., 1.))
+  y = (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
+  return np.interp(y, (low, high), (0., 1.))

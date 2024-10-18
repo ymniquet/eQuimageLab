@@ -72,22 +72,3 @@ class Mixin:
       raise ValueError(f"Error, invalid channel '{channel}' (must be 'V', 'L' or 'Y').")
     return self.newImage_like(self, np.repeat(grayscale[np.newaxis, :, :,], 3, axis = 0))
 
-  ##########################
-  # Highlights protection. #
-  ##########################
-
-  def protect_highlights(self, luma = None):
-    """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant luma.
-       'luma' is the luma of the image, if available (if None, the luma is recomputed on the fly).
-       Warning: This method aims at protecting the highlights from overflowing when stretching the luma.
-       It assumes that the luma remains <= 1 even though some pixels have HSV value > 1."""
-    self.check_color_model("RGB")
-    if luma is None: luma = self.luma() # Original luma.
-    newimage = self.copy()
-    newimage /= np.maximum(image.max(axis = 0), 1.) # Rescale maximum HSV value to 1.
-    newluma = newimage.luma() # Updated luma.
-    # Scale the saturation.
-    # Note: The following implementation is failsafe when newluma -> 1 (in which case luma is also 1 in principle),
-    # at the cost of a small error.
-    fs = ((1.-luma)+params.IMGTOL)/((1.-newluma)+params.IMGTOL)
-    return 1.-fs*(1.-newimage)

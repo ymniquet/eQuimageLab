@@ -150,8 +150,7 @@ class Mixin:
     if self.colorspace == "lRGB":
       return self.copy()
     elif self.colorspace == "sRGB":
-      image = self.image(cls = np.ndarray)
-      return self.newImage_like(self, sRGB_to_lRGB(image), colorspace = "lRGB")
+      return self.newImage_like(self, sRGB_to_lRGB(self), colorspace = "lRGB")
     else:
       self.color_space_error()
 
@@ -159,8 +158,7 @@ class Mixin:
     """Convert the image to the sRGB color space."""
     self.check_color_model("RGB")
     if self.colorspace == "lRGB":
-      image = self.image(cls = np.ndarray)
-      return self.newImage_like(self, lRGB_to_sRGB(image), colorspace = "sRGB")
+      return self.newImage_like(self, lRGB_to_sRGB(self), colorspace = "sRGB")
     elif self.colorspace == "sRGB":
       return self.copy()
     else:
@@ -175,16 +173,14 @@ class Mixin:
     if self.colormodel == "RGB":
       return self.copy()
     elif self.colormodel == "HSV":
-      image = self.image()
-      return self.newImage_like(self, HSV_to_RGB(image), colormodel = "RGB")
+      return self.newImage_like(self, HSV_to_RGB(self), colormodel = "RGB")
     else:
       self.color_model_error()
 
   def HSV(self):
     """Convert the image to the HSV color model."""
     if self.colormodel == "RGB":
-      image = self.image()
-      return self.newImage_like(self, RGB_to_HSV(image), colormodel = "HSV")
+      return self.newImage_like(self, RGB_to_HSV(self), colormodel = "HSV")
     elif self.colormodel == "HSV":
       return self.copy()
     else:
@@ -197,47 +193,128 @@ class Mixin:
   def luminance(self):
     """Return the luminance."""
     self.check_color_model("RGB")
-    image = self.image(cls = np.ndarray)
     if self.colorspace == "lRGB":
-      return lRGB_luminance(image)
+      return lRGB_luminance(self)
     elif self.colorspace == "sRGB":
-      return sRGB_luminance(image)
+      return sRGB_luminance(self)
     else:
       self.color_space_error()
 
   def lightness(self):
     """Return the lightness."""
     self.check_color_model("RGB")
-    image = self.image(cls = np.ndarray)
     if self.colorspace == "lRGB":
-      return lRGB_lightness(image)
+      return lRGB_lightness(self)
     elif self.colorspace == "sRGB":
-      return sRGB_lightness(image)
+      return sRGB_lightness(self)
     else:
       raise self.color_space_error()
 
   def luma(self):
     """Return the luma."""
     self.check_color_model("RGB")
-    image = self.image(cls = np.ndarray)
-    return luma(image)
+    return luma(self)
 
   def value(self):
     """Return the HSV value = max(RGB)."""
-    image = self.image(cls = np.ndarray)
     if self.colormodel == "RGB":
-      return value(image)
+      return value(self)
     elif self.colormodel == "HSV":
-      return image[2]
+      return self[2]
     else:
       self.color_model_error()
 
   def saturation(self):
     """Return the HSV saturation = 1-min(RGB)/max(RGB)."""
-    image = self.image(cls = np.ndarray)
     if self.colormodel == "RGB":
-      return saturation(image)
+      return saturation(self)
     elif self.colormodel == "HSV":
-      return image[1]
+      return self[1]
     else:
       self.color_model_error()
+
+  #################################
+  # Channel-selective operations. #
+  #################################
+
+  def apply_channels(self, f, channels):
+    """Apply the operation f(array) to the selected 'channels' of the image.
+       The 'channels' can be:
+         - An empty string: Apply the operation to all channels (RGB and HSV images).
+         - "L": Apply the operation to the luma (RGB images).
+         - "Lp": Apply the operation to the luma, with highlights protection.
+                (after the operation, the out-of-range pixels are desaturated at constant luma).
+         - "V": Apply the operation to the HSV value (RGB and HSV images).
+         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
+    if channels == "":
+      return self.newImage_like(self, f(self))
+    elif channels == "L" or channels == "Lp":
+      if self.colormodel == "RGB":
+        luma = self.luma()
+        output = self.scale_pixels(luma, f(luma))
+        return output.protect_highlights() if channels == "Lp" else output
+      else:
+        self.color_model_error()
+    elif channels == "V":
+      if self.colormodel == "RGB":
+        value = self.value()
+        return self.scale_pixels(value, f(value))
+      elif self.colormodel == "HSV":
+        hsv_image = self.copy()
+        hsv_image[2] = f(self[2])
+        return hsv_image
+      else:
+        self.color_model_error()
+    elif channels == "S":
+      if self.colormodel == "RGB":
+        hsv_image = RGB_to_HSV(self)
+        hsv_image[1] = f(hsv_image[1])
+        return self.newImage_like(self, HSV_to_RGB(hsv_image))
+      elif self.colormodel == "HSV":
+        hsv_image = self.copy()
+        hsv_image[1] = f(self[1])
+        return hsv_image
+      else:
+        self.color_model_error()
+    else:
+      selected = [False, False, False]
+      for c in channels:
+        if c == "R":
+          ic = 0
+        elif c == "G":
+          ic = 1
+        elif c == "B":
+          ic = 2
+        else:
+          raise ValueError(f"Error, unknown or incompatible channel '{c}'.")
+        if selected[ic]:
+          print(f"Warning, channel '{c}' selected twice or more...")
+        selected[ic] = True
+      self.check_color_model("RGB")
+      if all(selected):
+        return self.newImage_like(self, f(self))
+      else:
+        output = self.copy()
+        for ic in range(3):
+          if selected[ic]:
+            output[ic] = f(self[ic])
+        return self.newImage_like(self, output)
+
+  def protect_highlights(self):
+    """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant luma.
+       Warning: This method aims at protecting the highlights from overflowing when stretching the luma.
+       It assumes that the luma remains <= 1 even though some pixels have HSV value > 1."""
+    self.check_color_model("RGB")
+    luma = self.luma() # Original luma.
+    newimage = self.copy()
+    newimage /= np.maximum(self.max(axis = 0), 1.) # Rescale maximum HSV value to 1.
+    newluma = newimage.luma() # Updated luma.
+    if np.any(luma > 1.+params.IMGTOL/2) or np.any(newluma > 1.+params.IMGTOL/2):
+      print("Warning, can not protect highlights if the luma itself is out-of-range. Returning original image...")
+      return self.copy()
+    # Scale the saturation.
+    # Note: The following implementation is failsafe when newluma -> 1 (in which case luma is also 1 in principle),
+    # at the cost of a small error.
+    fs = ((1.-luma)+params.IMGTOL)/((1.-newluma)+params.IMGTOL)
+    return 1.-(1.-newimage)*fs

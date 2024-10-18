@@ -30,6 +30,11 @@ def clip(image, vmin = 0., vmax = 1.):
   """Clip the input image in the range [vmin, vmax]."""
   return np.clip(image, vmin, vmax)
 
+def blend(image1, image2, mixing):
+  """Blend image1 with image2.
+     Return image1*(1-mixing)+image2*mixing."""
+  return image1*(1.-mixing)+image2*mixing
+
 #####################################
 # For inclusion in the Image class. #
 #####################################
@@ -70,3 +75,17 @@ class Mixin:
     """Scale all pixels by the ratio target/source.
        Wherever abs(source) < cutoff, set all channels to target"""
     return self.newImage_like(self, helpers.scale_pixels(self, source, target, cutoff))
+
+  #############
+  # Blending. #
+  #############
+
+  def blend(self, image, mixing):
+    """Blend images.
+       Return self*(1-mixing)+image*mixing.
+       'mixing' can either be a scalar or an array (for pixel-dependent blending)."""
+    if self.colorspace != image.colorspace:
+      print("Warning: you are blending images with different color spaces !..")
+    if self.colormodel != image.colormodel:
+      print("Warning: you are blending images with different color models !..")
+    return self.newImage_like(self, blend(self, image, mixing))
