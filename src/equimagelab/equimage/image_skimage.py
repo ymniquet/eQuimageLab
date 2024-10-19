@@ -16,13 +16,13 @@ import skimage as skim
 class Mixin:
   """To be included in the Image class."""
 
-  ############
-  # Filters. #
-  ############
+  ###########
+  # Filter. #
+  ###########
 
   # TESTED.
   def gaussian_filter(self, sigma, mode = "reflect", channels = ""):
-    """Convolve the selected 'channels' of the image with a gaussian of standard deviation 'sigma' (pixels).
+    """Convolve selected 'channels' of the image with a gaussian of standard deviation 'sigma' (pixels).
        The image is extended across its boundaries according to the boundary 'mode':
          - Reflect: the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
          - Mirror: the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
@@ -43,10 +43,10 @@ class Mixin:
   # TESTED.
   def bilateral_filter(self, sigma_space, sigma_color = .1, mode = "reflect", channels = ""):
     """Bilateral filter.
-       Convolve the selected 'channels' of the image with a gaussian gs of standard deviation 'sigma_space'
+       Convolve selected 'channels' of the image with a gaussian gs of standard deviation 'sigma_space'
        weighted by a gaussian gc in color space (with standard deviation 'sigma_color'):
 
-         OUT(r) = Sum_{r'} IMG(r') x gs(|r-r'|) x gc(|IMG(r)-IMG(r')|)
+         OUT(r) = Sum_{r'} IMG(r') * gs(|r-r'|) * gc(|IMG(r)-IMG(r')|)
 
        The image is extended across its boundaries according to the boundary 'mode':
          - Reflect: the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
@@ -72,7 +72,7 @@ class Mixin:
 
   # TESTED.
   def butterworth_filter(self, cutoff, order = 2, padding = 0, channels = ""):
-    """Apply a Butterworth low-pass filter to the selected 'channels' of the image.
+    """Apply a Butterworth low-pass filter to selected 'channels' of the image.
        This filter reads in the frequency domain:
 
          H(f) = 1/(1+(f/fc^(2n))
@@ -92,13 +92,13 @@ class Mixin:
     return self.apply_channels(lambda channel: skim.filters.butterworth(channel, channel_axis = 0, cutoff_frequency_ratio = (1.-cutoff)/2.,
                                                order = order, npad = padding, squared_butterworth = True), channels)
 
-  ##############
-  # Denoising. #
-  ##############
+  ############
+  # Denoise. #
+  ############
 
   # TESTED.
   def estimate_noise(self, channels = ""):
-    """Estimate the rms noise of the selected 'channels' of the image.
+    """Estimate the rms noise of selected 'channels' of the image.
        The 'channels' can be:
          - An empty string: Apply the operation to all channels (RGB and HSV images).
          - "L": Apply the operation to the luma (RGB images).
@@ -111,9 +111,9 @@ class Mixin:
 
   # TESTED.
   def non_local_means(self, size = 7, dist = 11, h = .01, sigma = 0., fast = True, channels = ""):
-    """Non-local means filter for denoising the selected 'channels' of the image:
+    """Non-local means filter for denoising selected 'channels' of the image:
 
-         OUT(r) ~ Sum_{r'} f(r, r') x IMG(r')
+         OUT(r) ~ Sum_{r'} f(r, r') * IMG(r')
 
        where:
 
@@ -140,7 +140,7 @@ class Mixin:
 
   # TESTED.
   def total_variation(self, weight = .1, algorithm = "Chambolle", channels = ""):
-    """Total variation denoising of the selected 'channels' of the image.
+    """Total variation denoising of selected 'channels' of the image.
        Given a noisy image f, find an image u with less total variation than f under the constraint that u
        remains similar to f. This can be expressed as the Rudin–Osher–Fatemi (ROF) minimization problem:
 
@@ -165,3 +165,42 @@ class Mixin:
       return self.apply_channels(lambda channel: skim.restoration.denoise_tv_bregman(channel, channel_axis = 0, weight = 1./(2.*weight)), channels)
     else:
       raise ValueError(f"Error, unknown algorithm {algorithm} (must be 'Chambolle' or 'Bregman').")
+  
+  ############
+  # Sharpen. #
+  ############
+  
+  def unsharp_mask(sigma, strength, channels = ""):
+    """Apply an unsharp mask with radius 'sigma' and strength 'strength' to selected 'channels' of 
+       the image:
+         
+         OUT = IMG + strength * (IMG - BLURRED)
+         
+       where BLURRED is the convolution of IMG with a gaussian of standard deviation 'sigma' (pixels).
+       This acts as a high-pass filter that sharpens the image.
+       The 'channels' can be:
+         - An empty string: Apply the operation to all channels (RGB and HSV images).
+         - "L": Apply the operation to the luma (RGB images).
+         - "Lp": Apply the operation to the luma, with highlights protection.
+                (after the operation, the out-of-range pixels are desaturated at constant luma).
+         - "V": Apply the operation to the HSV value (RGB and HSV images).
+         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
+    return self.apply_channels(lambda channel: skim.filters.unsharp_mask(channel, channel_axis = 0, radius = radius, amount = strength), channels)
+
+  #############
+  # Contrast. #
+  #############
+  
+    def CLAHE(self, size, clip, channels = ""):
+      """Contrast Limited Adaptive Histogram Equalization of selected 'channels' of the image.
+         
+         The 'channels' can be:
+         - An empty string: Apply the operation to all channels (RGB and HSV images).
+         - "L": Apply the operation to the luma (RGB images).
+         - "Lp": Apply the operation to the luma, with highlights protection.
+                (after the operation, the out-of-range pixels are desaturated at constant luma).
+         - "V": Apply the operation to the HSV value (RGB and HSV images).
+         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
+   

@@ -10,6 +10,7 @@ import numpy as np
 import skimage.color as skcolor
 
 from . import params
+from . import image_utils as utils
 
 #############################
 # sRGB <-> lRGB conversion. #
@@ -17,7 +18,7 @@ from . import params
 
 def sRGB_to_lRGB(image):
   """Convert the input sRGB image into a linear RGB image."""
-  srgb = np.clip(image, 0., 1.)
+  srgb = np.clip(image, 0.)
   return np.where(srgb > .04045, ((srgb+0.055)/1.055)**2.4, srgb/12.92)
 
 def lRGB_to_sRGB(image):
@@ -237,8 +238,8 @@ class Mixin:
   # Channel-selective operations. #
   #################################
 
-  def apply_channels(self, f, channels):
-    """Apply the operation f(array) to the selected 'channels' of the image.
+  def apply_channels(self, f, channels, whole = True):
+    """Apply the operation f(channel) to selected 'channels' of the image.
        The 'channels' can be:
          - An empty string: Apply the operation to all channels (RGB and HSV images).
          - "L": Apply the operation to the luma (RGB images).
@@ -246,9 +247,17 @@ class Mixin:
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
          - "V": Apply the operation to the HSV value (RGB and HSV images).
          - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
+         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+       If 'whole' is True, the operation can be applied to the whole image at once; if False, the
+       operation must be applied one channel at a time."""
     if channels == "":
-      return self.newImage_like(self, f(self))
+      if whole:
+        return self.newImage_like(self, f(self))
+      else:
+        output = self.copy()
+        for ic in range(3):
+          output[ic] = f(self[ic])
+        return output
     elif channels == "L" or channels == "Lp":
       if self.colormodel == "RGB":
         luma = self.luma()
@@ -268,9 +277,9 @@ class Mixin:
         self.color_model_error()
     elif channels == "S":
       if self.colormodel == "RGB":
-        hsv_image = RGB_to_HSV(self)
+        hsv_image = self.HSV()
         hsv_image[1] = f(hsv_image[1])
-        return self.newImage_like(self, HSV_to_RGB(hsv_image))
+        return hsv_image.RGB()
       elif self.colormodel == "HSV":
         hsv_image = self.copy()
         hsv_image[1] = f(self[1])
@@ -292,14 +301,63 @@ class Mixin:
           print(f"Warning, channel '{c}' selected twice or more...")
         selected[ic] = True
       self.check_color_model("RGB")
-      if all(selected):
+      if all(selected) and whole:
         return self.newImage_like(self, f(self))
       else:
         output = self.copy()
         for ic in range(3):
           if selected[ic]:
             output[ic] = f(self[ic])
-        return self.newImage_like(self, output)
+        return output
+
+  def clip_channels(self, f, channels):
+    """Clip selected 'channels' of the image in the [0, 1] range.
+       The 'channels' can be:
+         - An empty string, "L", "Lp": Clip all channels.
+         - "V": Clip all channels (RGB images) or the value (HSV images).
+         - "S": Clip all channels (RGB images) or the saturation (HSV images).
+         - A combination of "R", "G", "B": Clip the R/G/B channels (RGB images)."""
+    if channels in ["", "L", "Lp"]:
+      return self.clip()
+    elif channels == "V":
+      if self.colormodel == "RGB":
+        return self.clip()
+      elif self.colormodel == "HSV":
+        hsv_image = self.copy()
+        hsv_image[2] = utils.clip(self[2])
+        return hsv_image
+      else:
+        self.color_model_error()
+    elif channels == "S":
+      if self.colormodel == "RGB":
+        return self.clip()
+      elif self.colormodel == "HSV":
+        hsv_image = self.copy()
+        hsv_image[1] = utils.clip(self[1])
+        return hsv_image
+      else:
+        self.color_model_error()
+    else:
+      selected = [False, False, False]
+      for c in channels:
+        if c == "R":
+          ic = 0
+        elif c == "G":
+          ic = 1
+        elif c == "B":
+          ic = 2
+        else:
+          raise ValueError(f"Error, unknown or incompatible channel '{c}'.")
+        selected[ic] = True
+      self.check_color_model("RGB")
+      if all(selected):
+        return self.clip()
+      else:
+        output = self.copy()
+        for ic in range(3):
+          if selected[ic]:
+            output[ic] = utils.clip(self[ic])
+        return output
 
   def protect_highlights(self):
     """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant luma.

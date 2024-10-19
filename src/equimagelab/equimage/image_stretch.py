@@ -32,7 +32,7 @@ class Mixin:
   """To be included in the Image class."""
 
   def black_point(self, shadow, channels = ""):
-    """Set black level 'shadow' in the selected 'channels' of the image.
+    """Set black level 'shadow' in selected 'channels' of the image.
        The 'channels' can be:
          - An empty string: Apply the operation to all channels (RGB and HSV images).
          - "L": Apply the operation to the luma (RGB images).
@@ -50,7 +50,7 @@ class Mixin:
     return self.apply_channels(lambda channel: stf.black_point_stretch_function(channel, (shadow, )), channels)
 
   def asinh_stretch(self, stretch, shadow = 0., channels = ""):
-    """Apply an arcsinh stretch to the selected 'channels' of the image,
+    """Apply an arcsinh stretch to selected 'channels' of the image,
        with strength 'stretch' and black level 'shadow'.
        The 'channels' can be:
          - An empty string: Apply the operation to all channels (RGB and HSV images).
@@ -70,7 +70,7 @@ class Mixin:
     return self.apply_channels(lambda channel: stf.asinh_stretch_function(channel, (shadow, stretch)), channels)
 
   def ghyperbolic_stretch(self, lnD1, b, SYP, SPP = 0., HPP = 1., channels = "", inverse = False):
-    """Apply a generalized hyperbolic stretch to the selected 'channels' of the image,
+    """Apply a generalized hyperbolic stretch to selected 'channels' of the image,
        with global strength 'lnD1' = ln(D+1), local strength 'b', symmetry point 'SYP',
        shadow protection point 'SPP', and highlight protection point 'HPP'.
        Inverse the transformation if 'inverse' is True.
@@ -99,7 +99,7 @@ class Mixin:
     return self.apply_channels(lambda channel: stf.ghyperbolic_stretch_function(channel, (lnD1, b, SYP, SPP, HPP, inverse)), channels)
 
   def midtone_stretch(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = ""):
-    """Apply a midtone stretch to the selected 'channels' of the image,
+    """Apply a midtone stretch to selected 'channels' of the image,
        with midtone 'midtone', black point 'shadow', highlight point 'highlight',
        low range 'low' and high range 'high'.
        The 'channels' can be:
