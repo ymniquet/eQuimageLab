@@ -33,7 +33,7 @@ class Mixin:
   ##########################
 
   # TESTED.
-  def RGB_balance(self, red = 1., green = 1., blue = 1.,):
+  def RGB_balance(self, red = 1., green = 1., blue = 1.):
     """Multiply the red channel of a RGB image by 'red', the green channel by 'green', and the blue channel by 'blue'."""
     self.check_color_model("RGB")
     if red < 0.: raise ValueError("Error, red must be >= 0.")
@@ -71,4 +71,3 @@ class Mixin:
     else:
       raise ValueError(f"Error, invalid channel '{channel}' (must be 'V', 'L' or 'Y').")
     return self.newImage_like(self, np.repeat(grayscale[np.newaxis, :, :,], 3, axis = 0))
-

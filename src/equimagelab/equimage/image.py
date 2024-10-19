@@ -75,7 +75,7 @@ class Image(np.ndarray,
     return obj
 
   def copy_meta(self, source):
-    """Copy image meta-data (color space and model, ...) from image 'source'."""
+    """Copy meta-data (color space and model, ...) from image 'source'."""
     self.colorspace = getattr(source, "colorspace", None)
     self.colormodel = getattr(source, "colormodel", None)
 

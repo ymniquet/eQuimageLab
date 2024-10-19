@@ -43,7 +43,7 @@ class Mixin:
   # TESTED.
   def bilateral_filter(self, sigma_space, sigma_color = .1, mode = "reflect", channels = ""):
     """Bilateral filter.
-       Convolve the selected 'channels' of the image IMG with a gaussian gs of standard deviation 'sigma_space'
+       Convolve the selected 'channels' of the image with a gaussian gs of standard deviation 'sigma_space'
        weighted by a gaussian gc in color space (with standard deviation 'sigma_color'):
 
          OUT(r) = Sum_{r'} IMG(r') x gs(|r-r'|) x gc(|IMG(r)-IMG(r')|)

@@ -40,12 +40,12 @@ class Mixin:
 
   # TESTED.
   def flip_height(self):
-    """Flip the input image along its height."""
+    """Flip the image along its height."""
     return np.flip(self, axis = 1)
 
   # TESTED.
   def flip_width(self):
-    """Flip the input image along its width."""
+    """Flip the image along its width."""
     return np.flip(self, axis = 2)
 
   ##################
