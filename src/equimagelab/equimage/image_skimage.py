@@ -7,7 +7,7 @@
 """Interface with scikit-image."""
 
 import numpy as np
-import skimage as skim
+import skimage as si
 
 #####################################
 # For inclusion in the Image class. #
@@ -38,7 +38,7 @@ class Mixin:
          - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
     if mode == "zero": # Translate modes.
       mode = "constant"
-    return self.apply_channels(lambda channel: skim.filters.gaussian(channel, channel_axis = 0, sigma = sigma, mode = mode, cval = 0.), channels)
+    return self.apply_channels(lambda channel: si.filters.gaussian(channel, channel_axis = 0, sigma = sigma, mode = mode, cval = 0.), channels)
 
   # TESTED.
   def bilateral_filter(self, sigma_space, sigma_color = .1, mode = "reflect", channels = ""):
@@ -67,7 +67,7 @@ class Mixin:
       mode = "edge"
     elif mode == "zero":
       mode = "constant"
-    return self.apply_channels(lambda channel: skim.restoration.denoise_bilateral(channel, channel_axis = 0, sigma_spatial = sigma_space,
+    return self.apply_channels(lambda channel: si.restoration.denoise_bilateral(channel, channel_axis = 0, sigma_spatial = sigma_space,
                                                sigma_color = sigma_color, mode = mode, cval = 0.), channels)
 
   # TESTED.
@@ -89,7 +89,7 @@ class Mixin:
          - "V": Apply the operation to the HSV value (RGB and HSV images).
          - "S": Apply the operation to the HSV saturation (RGB and HSV images).
          - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    return self.apply_channels(lambda channel: skim.filters.butterworth(channel, channel_axis = 0, cutoff_frequency_ratio = (1.-cutoff)/2.,
+    return self.apply_channels(lambda channel: si.filters.butterworth(channel, channel_axis = 0, cutoff_frequency_ratio = (1.-cutoff)/2.,
                                                order = order, npad = padding, squared_butterworth = True), channels)
 
   ############
@@ -107,7 +107,7 @@ class Mixin:
          - "V": Apply the operation to the HSV value (RGB and HSV images).
          - "S": Apply the operation to the HSV saturation (RGB and HSV images).
          - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    return self.apply_channels(lambda channel: skim.restoration.estimate_sigma(channel, channel_axis = 0, average_sigmas = True), channels)
+    return self.apply_channels(lambda channel: si.restoration.estimate_sigma(channel, channel_axis = 0, average_sigmas = True), channels)
 
   # TESTED.
   def non_local_means(self, size = 7, dist = 11, h = .01, sigma = 0., fast = True, channels = ""):
@@ -135,7 +135,7 @@ class Mixin:
          - "V": Apply the operation to the HSV value (RGB and HSV images).
          - "S": Apply the operation to the HSV saturation (RGB and HSV images).
          - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    return self.apply_channels(lambda channel: skim.restoration.denoise_nl_means(channel, channel_axis = 0, patch_size = size, patch_distance = dist,
+    return self.apply_channels(lambda channel: si.restoration.denoise_nl_means(channel, channel_axis = 0, patch_size = size, patch_distance = dist,
                                                h = h, sigma = sigma, fast_mode = fast), channels)
 
   # TESTED.
@@ -160,9 +160,9 @@ class Mixin:
          - "S": Apply the operation to the HSV saturation (RGB and HSV images).
          - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
     if algorithm == "Chambolle":
-      return self.apply_channels(lambda channel: skim.restoration.denoise_tv_chambolle(channel, channel_axis = 0, weight = weight), channels)
+      return self.apply_channels(lambda channel: si.restoration.denoise_tv_chambolle(channel, channel_axis = 0, weight = weight), channels)
     elif algorithm == "Bregman":
-      return self.apply_channels(lambda channel: skim.restoration.denoise_tv_bregman(channel, channel_axis = 0, weight = 1./(2.*weight)), channels)
+      return self.apply_channels(lambda channel: si.restoration.denoise_tv_bregman(channel, channel_axis = 0, weight = 1./(2.*weight)), channels)
     else:
       raise ValueError(f"Error, unknown algorithm {algorithm} (must be 'Chambolle' or 'Bregman').")
   
@@ -186,15 +186,20 @@ class Mixin:
          - "V": Apply the operation to the HSV value (RGB and HSV images).
          - "S": Apply the operation to the HSV saturation (RGB and HSV images).
          - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    return self.apply_channels(lambda channel: skim.filters.unsharp_mask(channel, channel_axis = 0, radius = radius, amount = strength), channels)
+    return self.apply_channels(lambda channel: si.filters.unsharp_mask(channel, channel_axis = 0, radius = radius, amount = strength), channels)
 
   #############
   # Contrast. #
   #############
   
-    def CLAHE(self, size, clip, channels = ""):
+    def CLAHE(self, size = None, clip = .01, nbins = 256, channels = "V"):
       """Contrast Limited Adaptive Histogram Equalization of selected 'channels' of the image.
-         
+         See https://en.wikipedia.org/wiki/Adaptive_histogram_equalization.
+         'size' is the size of the tiles (in pixels) used to sample local histograms, and 
+         'clip' the clip limit used to control contrast enhancement. 'size' can be a single
+         integer, a pair of integers (width, height of the tiles), or None (in which case 
+         the tile size defaults to 1/8 of the image width and height).
+         'nbins' is the number of bins in the local histograms.
          The 'channels' can be:
          - An empty string: Apply the operation to all channels (RGB and HSV images).
          - "L": Apply the operation to the luma (RGB images).
@@ -202,5 +207,8 @@ class Mixin:
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
          - "V": Apply the operation to the HSV value (RGB and HSV images).
          - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-   
+         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+         However, CLAHE is only used, in principle, for the "V" (default) and "L(p)" channels."""
+      clipped = self.clip_channels(channels) # Clip relevant channels before CLAHE to avoid artifacts.
+      return clipped.apply_channels(lambda channel: si.exposure.equalize_adapthist(channel, kernel_size = size, clip_limit = clip, nbins = nbins), channels, multi = False)
+      

@@ -10,7 +10,6 @@ import numpy as np
 import skimage.color as skcolor
 
 from . import params
-from . import image_utils as utils
 
 #############################
 # sRGB <-> lRGB conversion. #
@@ -23,8 +22,28 @@ def sRGB_to_lRGB(image):
 
 def lRGB_to_sRGB(image):
   """Convert the input linear RGB image into a sRGB image."""
-  lrgb = np.clip(image, 0., 1.)
+  lrgb = np.clip(image, 0.)
   return np.where(lrgb > .0031308, 1.055*lrgb**(1./2.4)-0.055, 12.92*lrgb)
+  
+###########################
+# RGB <-> HSV conversion. #
+###########################
+
+def RGB_to_HSV(image):
+  """Convert the input RGB image into a HSV image."""
+  return skcolor.rgb2hsv(image, channel_axis = 0)
+
+def HSV_to_RGB(image):
+  """Convert the input HSV image into a RGB image."""
+  return skcolor.hsv2rgb(image, channel_axis = 0)
+
+def value(image):
+  """Return the HSV value = max(RGB) of the input RGB image."""
+  return image.max(axis = 0)
+
+def saturation(image):
+  """Return the HSV saturation = 1-min(RGB)/max(RGB) of the input RGB image."""
+  return 1.-image.min(axis = 0)/image.max(axis = 0, initial = params.IMGTOL) # Safe evaluation.
 
 #########
 # Luma. #
@@ -84,26 +103,6 @@ def sRGB_lightness(image):
   """Return the CIE lightness L* of the input sRGB image.
      Warning: L* is defined within [0, 100] instead of [0, 1]."""
   return lRGB_lightness(sRGB_to_lRGB(image))
-
-###########################
-# RGB <-> HSV conversion. #
-###########################
-
-def value(image):
-  """Return the HSV value = max(RGB) of the input RGB image."""
-  return image.max(axis = 0)
-
-def saturation(image):
-  """Return the HSV saturation = 1-min(RGB)/max(RGB) of the input RGB image."""
-  return 1.-image.min(axis = 0)/image.max(axis = 0, initial = params.IMGTOL) # Safe evaluation.
-
-def RGB_to_HSV(image):
-  """Convert the input RGB image into a HSV image."""
-  return skcolor.rgb2hsv(image, channel_axis = 0)
-
-def HSV_to_RGB(image):
-  """Convert the input HSV image into a RGB image."""
-  return skcolor.hsv2rgb(image, channel_axis = 0)
 
 #####################################
 # For inclusion in the Image class. #
@@ -190,6 +189,29 @@ class Mixin:
   #######################
   # Composite channels. #
   #######################
+  
+  def value(self):
+    """Return the HSV value = max(RGB)."""
+    if self.colormodel == "RGB":
+      return value(self)
+    elif self.colormodel == "HSV":
+      return self[2]
+    else:
+      self.color_model_error()
+
+  def saturation(self):
+    """Return the HSV saturation = 1-min(RGB)/max(RGB)."""
+    if self.colormodel == "RGB":
+      return saturation(self)
+    elif self.colormodel == "HSV":
+      return self[1]
+    else:
+      self.color_model_error()
+
+  def luma(self):
+    """Return the luma."""
+    self.check_color_model("RGB")
+    return luma(self)
 
   def luminance(self):
     """Return the luminance."""
@@ -211,34 +233,11 @@ class Mixin:
     else:
       raise self.color_space_error()
 
-  def luma(self):
-    """Return the luma."""
-    self.check_color_model("RGB")
-    return luma(self)
-
-  def value(self):
-    """Return the HSV value = max(RGB)."""
-    if self.colormodel == "RGB":
-      return value(self)
-    elif self.colormodel == "HSV":
-      return self[2]
-    else:
-      self.color_model_error()
-
-  def saturation(self):
-    """Return the HSV saturation = 1-min(RGB)/max(RGB)."""
-    if self.colormodel == "RGB":
-      return saturation(self)
-    elif self.colormodel == "HSV":
-      return self[1]
-    else:
-      self.color_model_error()
-
   #################################
   # Channel-selective operations. #
   #################################
 
-  def apply_channels(self, f, channels, whole = True):
+  def apply_channels(self, f, channels, multi = True):
     """Apply the operation f(channel) to selected 'channels' of the image.
        The 'channels' can be:
          - An empty string: Apply the operation to all channels (RGB and HSV images).
@@ -248,13 +247,13 @@ class Mixin:
          - "V": Apply the operation to the HSV value (RGB and HSV images).
          - "S": Apply the operation to the HSV saturation (RGB and HSV images).
          - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
-       If 'whole' is True, the operation can be applied to the whole image at once; if False, the
+       If 'multi' is True, the operation can be applied to the whole image at once; if False, the
        operation must be applied one channel at a time."""
     if channels == "":
-      if whole:
+      if multi:
         return self.newImage_like(self, f(self))
       else:
-        output = self.copy()
+        output = self.empty()
         for ic in range(3):
           output[ic] = f(self[ic])
         return output
@@ -301,63 +300,26 @@ class Mixin:
           print(f"Warning, channel '{c}' selected twice or more...")
         selected[ic] = True
       self.check_color_model("RGB")
-      if all(selected) and whole:
+      if all(selected) and multi:
         return self.newImage_like(self, f(self))
       else:
-        output = self.copy()
+        output = self.empty()
         for ic in range(3):
           if selected[ic]:
             output[ic] = f(self[ic])
+          else:
+            output[ic] =   self[ic]          
         return output
-
-  def clip_channels(self, f, channels):
+        
+  def clip_channels(self, channels):
     """Clip selected 'channels' of the image in the [0, 1] range.
        The 'channels' can be:
-         - An empty string, "L", "Lp": Clip all channels.
-         - "V": Clip all channels (RGB images) or the value (HSV images).
-         - "S": Clip all channels (RGB images) or the saturation (HSV images).
-         - A combination of "R", "G", "B": Clip the R/G/B channels (RGB images)."""
-    if channels in ["", "L", "Lp"]:
-      return self.clip()
-    elif channels == "V":
-      if self.colormodel == "RGB":
-        return self.clip()
-      elif self.colormodel == "HSV":
-        hsv_image = self.copy()
-        hsv_image[2] = utils.clip(self[2])
-        return hsv_image
-      else:
-        self.color_model_error()
-    elif channels == "S":
-      if self.colormodel == "RGB":
-        return self.clip()
-      elif self.colormodel == "HSV":
-        hsv_image = self.copy()
-        hsv_image[1] = utils.clip(self[1])
-        return hsv_image
-      else:
-        self.color_model_error()
-    else:
-      selected = [False, False, False]
-      for c in channels:
-        if c == "R":
-          ic = 0
-        elif c == "G":
-          ic = 1
-        elif c == "B":
-          ic = 2
-        else:
-          raise ValueError(f"Error, unknown or incompatible channel '{c}'.")
-        selected[ic] = True
-      self.check_color_model("RGB")
-      if all(selected):
-        return self.clip()
-      else:
-        output = self.copy()
-        for ic in range(3):
-          if selected[ic]:
-            output[ic] = utils.clip(self[ic])
-        return output
+         - An empty string: Apply the operation to all channels (RGB and HSV images).
+         - "L", "Lp": Apply the operation to the luma (RGB images).
+         - "V": Apply the operation to the HSV value (RGB and HSV images).
+         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
+    return self.apply_channels(lambda channel: np.clip(channel, 0., 1.), channels)
 
   def protect_highlights(self):
     """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant luma.

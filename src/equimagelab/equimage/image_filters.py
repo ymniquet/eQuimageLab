@@ -7,7 +7,7 @@
 """Image filters."""
 
 import numpy as np
-from scipy.signal import convolve2d
+import scipy as sp
 
 from . import params
 
@@ -19,10 +19,35 @@ class Mixin:
   """To be included in the Image class."""
 
   # TESTED.
-  def sharpen(self):
-    """Apply a sharpening (Laplacian) convolution filter to the image."""
-    output = self.empty()
+  def sharpen(self, channels = ""):
+    """Apply a sharpening (Laplacian) convolution filter to selected 'channels' of the image."""
+    # Set-up Laplacian kernel.
     kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = params.IMGTYPE)
-    for ic in range(3):
-      output[ic] = convolve2d(self[ic], kernel, mode = "same", boundary = "fill", fillvalue = 0.)
-    return output
+    # Convolve selected channels with the kernel.
+    return self.apply_channels(lambda channel: sp.signal.convolve2d(channel, kernel, mode = "same", boundary = "fill", 
+                                                fillvalue = 0.), channels, multi = False)
+
+  def remove_hot_pixels(self, ratio, channels = ""):
+    """Remove hot pixels in selected 'channels' of the image. 
+       All pixels of a channel greater than 'ratio' times the eight nearest-neighbors average are replaced
+       by this average.
+       The 'channels' can be:
+         - An empty string: Apply the operation to all channels (RGB and HSV images).
+         - "L": Apply the operation to the luma (RGB images).
+         - "Lp": Apply the operation to the luma, with highlights protection.
+                (after the operation, the out-of-range pixels are desaturated at constant luma).
+         - "V": Apply the operation to the HSV value (RGB and HSV images).
+         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
+       
+    def remove_hot_pixels_channel(channel):
+      """Remove hot pixels from the input channel data."""
+      avg = sp.signal.convolve2d(channel, kernel, mode = "same", boundary = "fill", fillvalue = 0.)/nnn
+      return np.where(channel > ratio*avg, avg, channel)
+      
+    if ratio <= 0.: raise ValueError("Error, ratio must be > 0.")
+    # Set-up the (unnormalized) kernel for nearest-neighbors average.
+    kernel = np.array([[1., 1., 1.], [1., 0., 1.], [1., 1., 1.]], dtype = params.IMGTYPE)
+    # Normalize with respect to the number of nearest neighbors.
+    nnn = sp.signal.convolve2d(np.ones(self.height(), self.width()), kernel, mode = "same", boundary = "fill", fillvalue = 0.)
+    return self.apply_channels(remove_hot_pixels_channel, channels, multi = False)
