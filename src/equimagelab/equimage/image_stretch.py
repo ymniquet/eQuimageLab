@@ -127,3 +127,17 @@ class Mixin:
       print("Warning, changed high = 1.")
       high = 1.
     return self.apply_channels(lambda channel: stf.midtone_stretch_function(channel, (shadow, midtone, highlight, low, high)), channels)
+
+  def gamma(self, gamma):
+    """Apply power stretch with exponent 'gamma' to selected 'channels' of the image.
+       The 'channels' can be:
+         - An empty string: Apply the operation to all channels (RGB and HSV images).
+         - "L": Apply the operation to the luma (RGB images).
+         - "Lp": Apply the operation to the luma, with highlights protection.
+                (after the operation, the out-of-range pixels are desaturated at constant luma).
+         - "V": Apply the operation to the HSV value (RGB and HSV images).
+         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
+    if gamma < 0.:
+      raise ValueError("Error, gamma must be >= 0.")
+    return self.apply_channels(lambda channel: stf.gamma_stretch_function(channel, (gamma, )), channels)

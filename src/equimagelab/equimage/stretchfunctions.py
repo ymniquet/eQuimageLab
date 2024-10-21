@@ -6,6 +6,8 @@
 
 """Histogram stretch functions."""
 
+#TODO: Don't clip if not necessary.
+
 import numpy as np
 
 def black_point_stretch_function(x, params):
@@ -201,3 +203,9 @@ def midtone_stretch_function(x, params):
   x = np.interp(x, (shadow, highlight), (0., 1.))
   y = (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
   return np.interp(y, (low, high), (0., 1.))
+
+def gamma_stretch_function(x, params):
+  """Return the gamma stretch function f(x) for input parameters (gamma, )."""
+  gamma, = params
+  x = np.clip(x, 0., 1.)
+  return x**gamma
