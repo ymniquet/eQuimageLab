@@ -7,6 +7,7 @@
 """Color management."""
 
 import numpy as np
+import scipy.interpolate as spint
 
 from . import params
 from . import image_colorspaces as colorspaces
@@ -27,23 +28,6 @@ class Mixin:
     self.check_color_model("RGB")
     image = self.image(cls = np.ndarray)
     return np.all(abs(image[1]-image[0]) < params.IMGTOL) and np.all(abs(image[2]-image[0]) < params.IMGTOL)
-
-  ##########################
-  # Color transformations. #
-  ##########################
-
-  # TESTED.
-  def RGB_balance(self, red = 1., green = 1., blue = 1.):
-    """Multiply the red channel of a RGB image by 'red', the green channel by 'green', and the blue channel by 'blue'."""
-    self.check_color_model("RGB")
-    if red < 0.: raise ValueError("Error, red must be >= 0.")
-    if green < 0.: raise ValueError("Error, green must be >= 0.")
-    if blue < 0.: raise ValueError("Error, blue must be >= 0.")
-    image = self.copy()
-    if red   != 1.: image[0] *= red
-    if green != 1.: image[1] *= green
-    if blue  != 1.: image[2] *= blue
-    return image
 
   ############################
   # Gray scales & negatives. #
@@ -71,6 +55,75 @@ class Mixin:
     else:
       raise ValueError(f"Error, invalid channel '{channel}' (must be 'V', 'L' or 'Y').")
     return self.newImage_like(self, np.repeat(grayscale[np.newaxis, :, :,], 3, axis = 0))
+    
+  ##########################
+  # Color transformations. #
+  ##########################
+
+  # TESTED.
+  def color_balance(self, red = 1., green = 1., blue = 1.):
+    """Multiply the red channel of a RGB image by 'red', the green channel by 'green', and the blue channel by 'blue'."""
+    self.check_color_model("RGB")
+    if red < 0.: raise ValueError("Error, red must be >= 0.")
+    if green < 0.: raise ValueError("Error, green must be >= 0.")
+    if blue < 0.: raise ValueError("Error, blue must be >= 0.")
+    image = self.copy()
+    if red   != 1.: image[0] *= red
+    if green != 1.: image[1] *= green
+    if blue  != 1.: image[2] *= blue
+    return image
+    
+    def color_saturation(self, all = 0., R = None, Y = None, G = None, C = None, B = None, M = None, model = "midsat", interpolation = "cubic"):
+      """Adjust color saturation.
+         The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model':
+           - "deltasat": S <- S+delta.
+           - "midsat": Apply a midtone stretch function S <- (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
+         delta = 'all' is first set for all hues (default 0), then is updated for the red ('R'), yellow ('Y'),
+         green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues, if not None. delta is interpolated for arbitrary
+         hues using nearest neighbor ('interpolation' = "nearest"), linear ('interpolation' = "linear") or cubic spline
+         ('interpolation' = "cubic") interpolation. The image is converted back to its original color model ("RGB" or
+         "HSV" after the operation."""
+    
+    def interpolate(self, hue, psat, interpolation):
+      """Interpolate the saturation parameter psat[RYGCBM] for arbitrary hues."""
+      if np.all(psat == psat[0]):
+        return np.full_like(hue, psat[0]) # Short-cut if the saturation parameter is the same for RYGCBM.
+      hsat = np.linspace(0., 1., 7)
+      psat = np.append(psat, psat[0]) # Enforce periodic boundary conditions.
+      if interpolation == "nearest":
+        fsat = spint.interp1d(hsat, psat, kind = "nearest")
+      elif interpolation == "linear" or interpolation == "cubic":
+        k = 3 if interpolation == "cubic" else 1
+        tck = spint.splrep(hsat, psat, k = k, per = True) # Enforce periodic boundary conditions.
+        def fsat(x): return np.clip(spint.splev(x, tck), -1., 1.)
+      else:
+        raise ValueError(f"Error, unknown interpolation method '{interpolation}'.")
+      return fsat(hue)
+    
+    psat = np.empty(6)
+    psat[0] = R if R is not None else all
+    psat[1] = Y if Y is not None else all
+    psat[2] = G if G is not None else all
+    psat[3] = C if C is not None else all
+    psat[4] = B if B is not None else all
+    psat[5] = M if M is not None else all
+    hsv = self.HSV()
+    hue = hsv[0]
+    sat = hsv[1]
+    delta = interpolate(hue, psat, interpolation)
+    if model == "deltasat":
+      sat += delta
+    elif model == "midsat":
+      midsat = np.clip(.5*(1.-delta), .005, .995)
+      sat = (midsat-1.)*sat/((2.*midsat-1.)*sat-midsat)
+    else:
+      raise ValueError(f"Error, unknown saturation model '{model}.")
+    hsv[1] = np.clip(sat, 0., 1.)
+    return hsv if self.colormodel == "HSV" else hsv.RGB()
+
+  ##########################
+  # Color noise reduction. #
+  ##########################
 
   def SCNR(self, hue = "green", protection "avgneutral", mixing = 1., lightness = True):
     """Selective color noise reduction of a given 'hue' of a RGB image. 'hue' can be "red" alias "R", 
@@ -121,4 +174,4 @@ class Mixin:
       difflight = image.lightness()-self.lightness()
       print(f"Maximum lightness difference = {abs(difflight).max()}.")
     return image
-    
+   

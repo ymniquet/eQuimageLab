@@ -269,20 +269,20 @@ class Mixin:
         value = self.value()
         return self.scale_pixels(value, f(value))
       elif self.colormodel == "HSV":
-        hsv_image = self.copy()
-        hsv_image[2] = f(self[2])
-        return hsv_image
+        hsv = self.copy()
+        hsv[2] = f(self[2])
+        return hsv
       else:
         self.color_model_error()
     elif channels == "S":
       if self.colormodel == "RGB":
-        hsv_image = self.HSV()
-        hsv_image[1] = f(hsv_image[1])
-        return hsv_image.RGB()
+        hsv = self.HSV()
+        hsv[1] = f(hsv[1])
+        return hsv.RGB()
       elif self.colormodel == "HSV":
-        hsv_image = self.copy()
-        hsv_image[1] = f(self[1])
-        return hsv_image
+        hsv = self.copy()
+        hsv[1] = f(self[1])
+        return hsv
       else:
         self.color_model_error()
     else:

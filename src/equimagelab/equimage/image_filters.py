@@ -7,7 +7,7 @@
 """Image filters."""
 
 import numpy as np
-import scipy as sp
+import scipy.signal as spsig
 
 from . import params
 
@@ -24,7 +24,7 @@ class Mixin:
     # Set-up Laplacian kernel.
     kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = params.IMGTYPE)
     # Convolve selected channels with the kernel.
-    return self.apply_channels(lambda channel: sp.signal.convolve2d(channel, kernel, mode = "same", boundary = "fill", 
+    return self.apply_channels(lambda channel: spsig.convolve2d(channel, kernel, mode = "same", boundary = "fill", 
                                                 fillvalue = 0.), channels, multi = False)
 
   def remove_hot_pixels(self, ratio, channels = ""):
@@ -42,7 +42,7 @@ class Mixin:
        
     def remove_hot_pixels_channel(channel):
       """Remove hot pixels from the input channel data."""
-      avg = sp.signal.convolve2d(channel, kernel, mode = "same", boundary = "fill", fillvalue = 0.)/nnn
+      avg = spsig.convolve2d(channel, kernel, mode = "same", boundary = "fill", fillvalue = 0.)/nnn
       return np.where(channel > ratio*avg, avg, channel)
       
     if ratio <= 0.: raise ValueError("Error, ratio must be > 0.")
