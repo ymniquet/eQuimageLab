@@ -13,14 +13,14 @@ import numpy as np
 def black_point_stretch_function(x, params):
   """Return the linear black point stretch function f(x) for input parameters (shadow, )."""
   shadow, = params
-  x = np.clip(x, shadow, 1.)
-  return np.interp(x, (shadow, 1.), (0., 1.))
+  x = np.clip(x, shadow)
+  return (x-shadow)/(1.-shadow)
 
 def asinh_stretch_function(x, params):
   """Return the arcsinh stretch function f(x) for input parameters (shadow, stretch)."""
   shadow, stretch = params
   x = np.clip(x, shadow, 1.)
-  x = np.interp(x, (shadow, 1.), (0., 1.))
+  x = (x-shadow)/(1.-shadow)
   if abs(stretch) < 1.e-6: # Identity.
     return x
   else:
@@ -207,5 +207,5 @@ def midtone_stretch_function(x, params):
 def gamma_stretch_function(x, params):
   """Return the gamma stretch function f(x) for input parameters (gamma, )."""
   gamma, = params
-  x = np.clip(x, 0., 1.)
+  x = np.clip(x, 0.)
   return x**gamma

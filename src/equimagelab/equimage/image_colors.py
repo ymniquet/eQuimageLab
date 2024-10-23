@@ -24,7 +24,7 @@ class Mixin:
   ##################
 
   def is_gray_scale(self):
-    """Return True if a RGB image is a gray scale (same RGB channels), False otherwise."""
+    """Return True if a RGB image is a grayscale (same RGB channels), False otherwise."""
     self.check_color_model("RGB")
     image = self.image(cls = np.ndarray)
     return np.all(abs(image[1]-image[0]) < params.IMGTOL) and np.all(abs(image[2]-image[0]) < params.IMGTOL)
@@ -41,7 +41,7 @@ class Mixin:
 
   # TESTED.
   def gray_scale(self, channel = "Y"):
-    """Convert the selected channel of a RGB image into a gray scale image.
+    """Convert the selected channel of a RGB image into a grayscale image.
        'channel' can be "V" (value), "L" (luma) or "Y" (luminance)."""
     self.check_color_model("RGB")
     if channel == "V":
@@ -76,13 +76,15 @@ class Mixin:
     def color_saturation(self, all = 0., R = None, Y = None, G = None, C = None, B = None, M = None, model = "midsat", interpolation = "cubic"):
       """Adjust color saturation.
          The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model':
-           - "deltasat": S <- S+delta.
-           - "midsat": Apply a midtone stretch function S <- (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
-         delta = 'all' is first set for all hues (default 0), then is updated for the red ('R'), yellow ('Y'),
-         green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues, if not None. delta is interpolated for arbitrary
-         hues using nearest neighbor ('interpolation' = "nearest"), linear ('interpolation' = "linear") or cubic spline
-         ('interpolation' = "cubic") interpolation. The image is converted back to its original color model ("RGB" or
-         "HSV" after the operation."""
+           - "deltasat": Shift the saturation S <- S+delta.
+           - "midsat": Apply a midtone stretch function S <- f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
+                       This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1.
+         delta is expected in the [-1, 1] range, with delta = 0 leaving the image unchanged. delta > 0 saturates the
+         colors, while delta < 0 turn the image into a a grayscale. delta = 'all' is first set for all hues (default 0),
+         then is updated for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues,
+         if these kwargs are not None. delta is interpolated for arbitrary HSV hues using nearest neighbor interpolation
+         ('interpolation' = "nearest"), linear ('interpolation' = "linear") or cubic ('interpolation' = "cubic") spline.
+         The image is converted back to its original color model ("RGB" or "HSV") after the operation."""
     
     def interpolate(self, hue, psat, interpolation):
       """Interpolate the saturation parameter psat[RYGCBM] for arbitrary hues."""
@@ -100,6 +102,7 @@ class Mixin:
         raise ValueError(f"Error, unknown interpolation method '{interpolation}'.")
       return fsat(hue)
     
+    self.check_color_model("RGB", "HSV")
     psat = np.empty(6)
     psat[0] = R if R is not None else all
     psat[1] = Y if Y is not None else all
@@ -129,10 +132,10 @@ class Mixin:
     """Selective color noise reduction of a given 'hue' of a RGB image. 'hue' can be "red" alias "R", 
        "yellow" alias "Y", "green" alias "G", "cyan" alias "C", "blue" alias "B", or "magenta" alias "M".
        The selected hue is reduced according to the 'protection' mode. For the green hue for example,
-         - G <- min(G, c) with c = (R+B)/2 for average neutral protection ('protection' = "avgneutral").
-         - G <- min(G, c) with c = max(R, B) for maximum neutral protection ('protection' = "maxneutral").
-         - G <- G[(1-m)+c*m] with c = (R+B)/2 and m = 'mixing' for additive mask protection ('protection' = "addmask").
-         - G <- G[(1-m)+c*m] with c = max(R, B) and m = 'mixing' for maximum mask protection ('protection' = "maxmask").
+         - G <- min(G, C) with C = (R+B)/2 for average neutral protection ('protection' = "avgneutral").
+         - G <- min(G, C) with C = max(R, B) for maximum neutral protection ('protection' = "maxneutral").
+         - G <- G[(1-m)+C*m] with C = (R+B)/2 and m = 'mixing' for additive mask protection ('protection' = "addmask").
+         - G <- G[(1-m)+C*m] with C = max(R, B) and m = 'mixing' for maximum mask protection ('protection' = "maxmask").
        The RGB components of each pixel are then rescaled to preserve the CIE lightness L* if 'lightness' is True."""
     self.check_color_model("RGB")
     if hue == "red" or hue == "R":

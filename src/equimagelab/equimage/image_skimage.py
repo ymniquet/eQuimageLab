@@ -93,7 +93,7 @@ class Mixin:
                                 order = order, npad = padding, squared_butterworth = True), channels)
 
     def wavelets_filter(self, sigma, wavelet = "coif4", mode = "soft", method = "Bayeshrink", shifts = 0, channels = "L")
-      """ """
+      """Apply a wavelets filter to selected 'channels' of the image."""
       kwargs = dict(channel_axis = -1, sigma = sigma, wavelet = wavelet, wavelet_levels = None, mode = mode, 
                      method = method, convert2ycbcr = False, rescale_sigma = True)
       return self.apply_channels(lambda channel: skim.restoration.cycle_spin(channel, channel_axis = 0, max_shifts = shifts,
