@@ -10,21 +10,27 @@
 
 import numpy as np
 
-def black_point_stretch_function(x, params):
-  """Return the linear black point stretch function f(x) for input parameters (shadow, )."""
+def shadow_stretch_function(x, params):
+  """Return the linear shsdow stretch function f(x) for input parameters (shadow,)."""
   shadow, = params
   x = np.clip(x, shadow)
   return (x-shadow)/(1.-shadow)
+  
+def shadow_highlight_stretch_function(x, params):
+  """Return the linear shadow/highlight stretch function f(x) for input parameters (shadow, highlight)."""
+  shadow, highlight = params
+  x = np.clip(x, shadow, highlight)
+  return (x-shadow)/(highlight-shadow)
+  
+def dynamic_range_stretch_function(x, params):
+  """Return the linear dynamic range stretch function f(x) for input parameters (fr, to)."""
+  fr, to = params
+  return np.interp(x, fr, to)
 
 def asinh_stretch_function(x, params):
-  """Return the arcsinh stretch function f(x) for input parameters (shadow, stretch)."""
-  shadow, stretch = params
-  x = np.clip(x, shadow, 1.)
-  x = (x-shadow)/(1.-shadow)
-  if abs(stretch) < 1.e-6: # Identity.
-    return x
-  else:
-    return np.arcsinh(stretch*x)/np.arcsinh(stretch)
+  """Return the arcsinh stretch function f(x) for input parameters (stretch,)."""
+  stretch, = params
+  return np.arcsinh(stretch*x)/np.arcsinh(stretch) if abs(stretch) > 1.e-6 else x
 
 def ghyperbolic_stretch_function(x, params):
   """Return the generalized hyperbolic stretch function f(x) for input parameters (log(D+1), B, SYP, SPP, HPP, inverse).
@@ -196,16 +202,22 @@ def ghyperbolic_stretch_function(x, params):
     return y
 
 def midtone_stretch_function(x, params):
+  """Return the midtone stretch function f(x) for input parameters (midtone,)."""
+  midtone, = params
+  return (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
+
+def gamma_stretch_function(x, params):
+  """Return the gamma stretch function f(x) for input parameters (gamma,)."""
+  gamma, = params
+  x = np.clip(x, 0.)
+  return x**gamma
+
+def adjust_midtone_function(x, params):
   """Return the midtone stretch function f(x) for input parameters (shadow, midtone, highlight, low, high)."""
   shadow, midtone, highlight, low, high = params
   midtone = (midtone-shadow)/(highlight-shadow)
   x = np.clip(x, shadow, highlight)
-  x = np.interp(x, (shadow, highlight), (0., 1.))
+  x = (x-shadow)/(highlight-shadow)
   y = (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
   return np.interp(y, (low, high), (0., 1.))
-
-def gamma_stretch_function(x, params):
-  """Return the gamma stretch function f(x) for input parameters (gamma, )."""
-  gamma, = params
-  x = np.clip(x, 0.)
-  return x**gamma
+  
