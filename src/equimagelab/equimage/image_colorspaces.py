@@ -258,12 +258,9 @@ class Mixin:
           output[ic] = f(self[ic])
         return output
     elif channels == "L" or channels == "Lp":
-      if self.colormodel == "RGB":
-        luma = self.luma()
-        output = self.scale_pixels(luma, f(luma))
-        return output.protect_highlights() if channels == "Lp" else output
-      else:
-        self.color_model_error()
+      luma = self.luma()
+      output = self.scale_pixels(luma, f(luma))
+      return output.protect_highlights() if channels == "Lp" else output
     elif channels == "V":
       if self.colormodel == "RGB":
         value = self.value()
