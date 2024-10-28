@@ -72,7 +72,7 @@ class Mixin:
       highlight = shadow+.01
       print(f"Warning, changed highlight = {highlight:.3f} !")
     return self.apply_channels(lambda channel: stf.shadow_highlight_stretch_function(channel, (shadow, highlight)), channels)
-    
+
   def set_dynamic_range(self, fr, to, channels = ""):
     """Map (fr[0], fr[1]) to (to[0], to[1]) in selected 'channels' of the image,
        and clip the output in the [to[0], to[1]] range.
@@ -158,7 +158,7 @@ class Mixin:
     if gamma < 0.:
       raise ValueError("Error, gamma must be >= 0.")
     return self.apply_channels(lambda channel: stf.gamma_stretch_function(channel, (gamma,)), channels)
-    
+
   def adjust_midtone(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = ""):
     """Apply a midtone stretch to selected 'channels' of the image,
        with midtone 'midtone', black point 'shadow', highlight point 'highlight',
@@ -191,4 +191,3 @@ class Mixin:
       high = 1.
       print("Warning, changed high = 1.")
     return self.apply_channels(lambda channel: stf.adjust_midtone_function(channel, (shadow, midtone, highlight, low, high)), channels)
-    

@@ -92,29 +92,22 @@ class Mixin:
     return self.apply_channels(lambda channel: skim.filters.butterworth(channel, channel_axis = 0, cutoff_frequency_ratio = (1.-cutoff)/2.,
                                 order = order, npad = padding, squared_butterworth = True), channels)
 
-    def wavelets_filter(self, sigma, wavelet = "coif4", mode = "soft", method = "Bayeshrink", shifts = 0, channels = "L")
+    def wavelets_filter(self, sigma, wavelet = "coif4", mode = "soft", method = "Bayeshrink", shifts = 0, channels = "L"):
       """Apply a wavelets filter to selected 'channels' of the image."""
-      kwargs = dict(channel_axis = -1, sigma = sigma, wavelet = wavelet, wavelet_levels = None, mode = mode, 
+      kwargs = dict(channel_axis = -1, sigma = sigma, wavelet = wavelet, wavelet_levels = None, mode = mode,
                      method = method, convert2ycbcr = False, rescale_sigma = True)
       return self.apply_channels(lambda channel: skim.restoration.cycle_spin(channel, channel_axis = 0, max_shifts = shifts,
                                  func = skim.restoration.denoise_wavelet, func_kw = kwargs, num_workers = None), channels)
- 
+
   ############
   # Denoise. #
   ############
 
   # TESTED.
-  def estimate_noise(self, channels = ""):
-    """Estimate the rms noise of selected 'channels' of the image.
-       The 'channels' can be:
-         - An empty string: Apply the operation to all channels (RGB and HSV images).
-         - "L": Apply the operation to the luma (RGB images).
-         - "Lp": Apply the operation to the luma, with highlights protection.
-                (after the operation, the out-of-range pixels are desaturated at constant luma).
-         - "V": Apply the operation to the HSV value (RGB and HSV images).
-         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    return self.apply_channels(lambda channel: skim.restoration.estimate_sigma(channel, channel_axis = 0, average_sigmas = True), channels)
+  def estimate_noise(self):
+    """Estimate the rms noise of the image. averaged over the channels.
+       TODO: Noise in each channel."""
+    return skim.restoration.estimate_sigma(self, channel_axis = 0, average_sigmas = True)
 
   # TESTED.
   def non_local_means(self, size = 7, dist = 11, h = .01, sigma = 0., fast = True, channels = ""):
@@ -172,17 +165,17 @@ class Mixin:
       return self.apply_channels(lambda channel: skim.restoration.denoise_tv_bregman(channel, channel_axis = 0, weight = 1./(2.*weight)), channels)
     else:
       raise ValueError(f"Error, unknown algorithm {algorithm} (must be 'Chambolle' or 'Bregman').")
-  
+
   ############
   # Sharpen. #
   ############
-  
+
   def unsharp_mask(sigma, strength, channels = ""):
-    """Apply an unsharp mask with radius 'sigma' and strength 'strength' to selected 'channels' of 
+    """Apply an unsharp mask with radius 'sigma' and strength 'strength' to selected 'channels' of
        the image:
-         
+
          OUT = IMG + strength * (IMG - BLURRED)
-         
+
        where BLURRED is the convolution of IMG with a gaussian of standard deviation 'sigma' (pixels).
        This acts as a high-pass filter that sharpens the image.
        The 'channels' can be:
@@ -198,13 +191,13 @@ class Mixin:
   #############
   # Contrast. #
   #############
-  
+
     def CLAHE(self, size = None, clip = .01, nbins = 256, channels = "L"):
       """Contrast Limited Adaptive Histogram Equalization of selected 'channels' of the image.
          See https://en.wikipedia.org/wiki/Adaptive_histogram_equalization.
-         'size' is the size of the tiles (in pixels) used to sample local histograms, and 
+         'size' is the size of the tiles (in pixels) used to sample local histograms, and
          'clip' the clip limit used to control contrast enhancement. 'size' can be a single
-         integer, a pair of integers (width, height of the tiles), or None (in which case 
+         integer, a pair of integers (width, height of the tiles), or None (in which case
          the tile size defaults to 1/8 of the image width and height).
          'nbins' is the number of bins in the local histograms.
          The 'channels' can be:
@@ -218,4 +211,4 @@ class Mixin:
          However, CLAHE is only used, in principle, for the "V" (default) and "L(p)" channels."""
       clipped = self.clip_channels(channels) # Clip relevant channels before CLAHE to avoid artifacts.
       return clipped.apply_channels(lambda channel: skim.exposure.equalize_adapthist(channel, kernel_size = size, clip_limit = clip, nbins = nbins), channels, multi = False)
-      
+

@@ -55,7 +55,7 @@ class Mixin:
     else:
       raise ValueError(f"Error, invalid channel '{channel}' (must be 'V', 'L' or 'Y').")
     return self.newImage_like(self, np.repeat(grayscale[np.newaxis, :, :,], 3, axis = 0))
-    
+
   ##########################
   # Color transformations. #
   ##########################
@@ -72,7 +72,7 @@ class Mixin:
     if green != 1.: image[1] *= green
     if blue  != 1.: image[2] *= blue
     return image
-    
+
     def color_saturation(self, all = 0., R = None, Y = None, G = None, C = None, B = None, M = None, model = "midsat", interpolation = "cubic"):
       """Adjust color saturation.
          The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model':
@@ -85,7 +85,7 @@ class Mixin:
          if these kwargs are not None. delta is interpolated for arbitrary HSV hues using nearest neighbor interpolation
          ('interpolation' = "nearest"), linear ('interpolation' = "linear") or cubic ('interpolation' = "cubic") spline.
          The image is converted back to its original color model ("RGB" or "HSV") after the operation."""
-    
+
     def interpolate(self, hue, psat, interpolation):
       """Interpolate the saturation parameter psat[RYGCBM] for arbitrary hues."""
       if np.all(psat == psat[0]):
@@ -101,7 +101,7 @@ class Mixin:
       else:
         raise ValueError(f"Error, unknown interpolation method '{interpolation}'.")
       return fsat(hue)
-    
+
     self.check_color_model("RGB", "HSV")
     psat = np.empty(6)
     psat[0] = R if R is not None else all
@@ -128,8 +128,8 @@ class Mixin:
   # Color noise reduction. #
   ##########################
 
-  def SCNR(self, hue = "green", protection "avgneutral", mixing = 1., lightness = True):
-    """Selective color noise reduction of a given 'hue' of a RGB image. 'hue' can be "red" alias "R", 
+  def SCNR(self, hue = "green", protection = "avgneutral", mixing = 1., lightness = True):
+    """Selective color noise reduction of a given 'hue' of a RGB image. 'hue' can be "red" alias "R",
        "yellow" alias "Y", "green" alias "G", "cyan" alias "C", "blue" alias "B", or "magenta" alias "M".
        The selected hue is reduced according to the 'protection' mode. For the green hue for example,
          - G <- min(G, C) with C = (R+B)/2 for average neutral protection ('protection' = "avgneutral").
@@ -177,4 +177,4 @@ class Mixin:
       difflight = image.lightness()-self.lightness()
       print(f"Maximum lightness difference = {abs(difflight).max()}.")
     return image
-   
+

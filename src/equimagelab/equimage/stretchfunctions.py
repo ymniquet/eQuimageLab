@@ -13,15 +13,15 @@ import numpy as np
 def shadow_stretch_function(x, params):
   """Return the linear shsdow stretch function f(x) for input parameters (shadow,)."""
   shadow, = params
-  x = np.clip(x, shadow)
+  x = np.clip(x, shadow, None)
   return (x-shadow)/(1.-shadow)
-  
+
 def shadow_highlight_stretch_function(x, params):
   """Return the linear shadow/highlight stretch function f(x) for input parameters (shadow, highlight)."""
   shadow, highlight = params
   x = np.clip(x, shadow, highlight)
   return (x-shadow)/(highlight-shadow)
-  
+
 def dynamic_range_stretch_function(x, params):
   """Return the linear dynamic range stretch function f(x) for input parameters (fr, to)."""
   fr, to = params
@@ -209,7 +209,7 @@ def midtone_stretch_function(x, params):
 def gamma_stretch_function(x, params):
   """Return the gamma stretch function f(x) for input parameters (gamma,)."""
   gamma, = params
-  x = np.clip(x, 0.)
+  x = np.clip(x, 0., None)
   return x**gamma
 
 def adjust_midtone_function(x, params):
@@ -220,4 +220,3 @@ def adjust_midtone_function(x, params):
   x = (x-shadow)/(highlight-shadow)
   y = (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
   return np.interp(y, (low, high), (0., 1.))
-  

@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# DOC+MCI.
 
 """Image processing helpers."""
 
@@ -11,19 +12,46 @@ import numpy as np
 from . import params
 
 def failsafe_divide(A, B):
-  """Return A/B, ignoring errors (division by zero, ...)."""
+  """Return A/B, ignoring errors (division by zero, ...).
+
+  Args:
+    A (np.array): The numerator array.
+    B (np.array): The denominator array.
+
+  Returns:
+    np.array: The element-wise division A/B.
+  """
   status = np.seterr(all = "ignore")
   C = np.divide(A, B)
-  np.seterr(divide = status["divide"], over = status["over"], under = status["under"], invalid = status["invalid"])
+  np.seterr(**status)
   return C
 
 def scale_pixels(image, source, target, cutoff = params.IMGTOL):
-  """Scale all pixels of the image by the ratio target/source.
-     Wherever abs(source) < cutoff, set all channels to target."""
+  """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff, set all channels to target.
+
+  Args:
+    image (np.array): The input image.
+    source (np.array): The source values for scaling.
+    target (np.array): The target values for scaling.
+    cutoff (float, optional): Threshold for scaling. Defaults to `params.IMGTOL`.
+
+  Returns:
+    np.array: The scaled image.
+  """
   return np.where(abs(source) > cutoff, failsafe_divide(image*target, source), target)
 
 def lookup(x, xlut, ylut, slut, nlut):
-  """Return y = f(x) by linearly interpolating the values ylut = f(xlut) of an evenly spaced look-up table with nlut elements.
-     slut = (ylut[1:]-ylut[:-1])/(xlut[1:]-xlut[:-1]) are the slopes used for linear interpolation between successive elements."""
-  i = np.clip(np.int32(np.floor((x-xlut[0])*(nlut-1)/(xlut[-1]-xlut[0]))), 0, nlut-2)
+  """Interpolate y = f(x) using values ylut = f(xlut) from an evenly spaced look-up table.
+
+  Args:
+    x (float): The input value for interpolation.
+    xlut (np.array): The x values of the look-up table (must be evenly spaced).
+    ylut (np.array): The y values of the look-up table ylut = f(xlut).
+    slut (np.array): The slopes (ylut[1:]-ylut[:-1])/(xlut[1:]-xlut[:-1]) used for linear interpolation between the elements of ylut.
+    nlut (int): The number of elements in the look-up table.
+
+  Returns:
+    float: The interpolated value y = f(x).
+  """
+  i = np.clip(np.int32(np.floor((nlut-1)*(x-xlut[0])/(xlut[-1]-xlut[0]))), 0, nlut-2)
   return slut[i]*(x-xlut[i])+ylut[i]

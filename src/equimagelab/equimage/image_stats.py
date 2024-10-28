@@ -35,7 +35,7 @@ class Mixin:
          - stats[key].oorcount = number of pixels  > 1 (out-of-range) in channel key.
         The statistics are also embedded in the object as self.stats."""
     class Container: pass # An empty container class.
-    width, height = self.width_height()
+    width, height = self.get_width_height()
     npixels = width*height
     stats = {}
     for key in channels:
@@ -47,7 +47,7 @@ class Mixin:
         name = "Red"
         channel = self[0]
       elif key == "G":
-        self.check_color_model("RGB")     
+        self.check_color_model("RGB")
         name = "Green"
         channel = self[1]
       elif key == "B":
@@ -57,10 +57,10 @@ class Mixin:
       elif key == "V":
         name = "Value"
         channel = self.value()
-       elif key == "S":
+      elif key == "S":
         name = "Saturation"
         channel = self.saturation()
-      elif key == "L"
+      elif key == "L":
         name = "Luma"
         channel = self.luma()
       else:
@@ -91,13 +91,13 @@ class Mixin:
        can be computed. 'nbins' is the number of bins in the [0, 1] range (automatically adjusted if None).
        Return hists[key] for key in channels, with:
          - hists[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
-         - hists[key].color = suggested line color for plots. 
+         - hists[key].color = suggested line color for plots.
          - hists[key].edges = histogram bins edges.
          - hists[key].counts = histogram bins counts.
         The histograms are also embedded in the object as self.hists."""
     class Container: pass # An empty container class.
     hists = {}
-    for key in channels: 
+    for key in channels:
       if hists.get(key, None) is not None: # Already computed.
         print(f"Warning, channel '{key}' selected twice or more...")
         continue
@@ -107,7 +107,7 @@ class Mixin:
         color = "red"
         channel = self[0]
       elif key == "G":
-        self.check_color_model("RGB")     
+        self.check_color_model("RGB")
         name = "Green"
         color = "green"
         channel = self[1]
@@ -120,11 +120,11 @@ class Mixin:
         name = "Value"
         color = "black"
         channel = self.value()
-       elif key == "S":
+      elif key == "S":
         name = "Saturation"
         color = "orange"
         channel = self.saturation()
-      elif key == "L"
+      elif key == "L":
         name = "Luma"
         color = "gray"
         channel = self.luma()
@@ -149,4 +149,4 @@ class Mixin:
       hists[key].counts, hists[key].edges = np.histogram(channel, bins = nbinsc, range = (minimum, maximum), density = False)
     self.hists = hists
     return hists
-    
+

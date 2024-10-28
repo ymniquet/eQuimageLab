@@ -17,14 +17,14 @@ from . import params
 
 def sRGB_to_lRGB(image):
   """Convert the input sRGB image into a linear RGB image."""
-  srgb = np.clip(image, 0.)
+  srgb = np.clip(image, 0., None)
   return np.where(srgb > .04045, ((srgb+0.055)/1.055)**2.4, srgb/12.92)
 
 def lRGB_to_sRGB(image):
   """Convert the input linear RGB image into a sRGB image."""
-  lrgb = np.clip(image, 0.)
+  lrgb = np.clip(image, 0., None)
   return np.where(lrgb > .0031308, 1.055*lrgb**(1./2.4)-0.055, 12.92*lrgb)
-  
+
 ###########################
 # RGB <-> HSV conversion. #
 ###########################
@@ -73,7 +73,7 @@ def set_RGB_luma(rgb):
     s = np.sum(w)
     if s == 0.: raise ValueError("Error, the sum of the input rgb weights must be > 0.")
     params.rgbluma = w/s
-    print(f"Luma RGB weights = ({params.rgbluma[0]:.3f}, {params.rgbluma[1]:.3f}, {params.rgbluma[2]:.3f}).")
+    print(f"Luma = {params.rgbluma[0]:.3f}R+{params.rgbluma[1]:.3f}G+{params.rgbluma[2]:.3f}B.")
 
 def luma(image):
   """Return the luma of the input RGB image,
@@ -189,7 +189,7 @@ class Mixin:
   #######################
   # Composite channels. #
   #######################
-  
+
   def value(self):
     """Return the HSV value = max(RGB)."""
     if self.colormodel == "RGB":
@@ -305,9 +305,9 @@ class Mixin:
           if selected[ic]:
             output[ic] = f(self[ic])
           else:
-            output[ic] =   self[ic]          
+            output[ic] =   self[ic]
         return output
-        
+
   def clip_channels(self, channels):
     """Clip selected 'channels' of the image in the [0, 1] range.
        The 'channels' can be:

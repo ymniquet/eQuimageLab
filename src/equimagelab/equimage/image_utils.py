@@ -69,7 +69,7 @@ class Mixin:
 
   def clip(self, vmin = 0., vmax = 1.):
     """Clip the image in the range [vmin, vmax]."""
-    return clip(self, vmin, vmax
+    return clip(self, vmin, vmax)
 
   def scale_pixels(self, source, target, cutoff = params.IMGTOL):
     """Scale all pixels by the ratio target/source.
