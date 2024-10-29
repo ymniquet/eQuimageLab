@@ -58,12 +58,12 @@ def set_RGB_luma(rgb):
      The input RGB components can be:
        - a tuple, list or array of the (red, green, blue) weights. They will be normalized so that their sum is 1.
        - the string "uniform": the weights are set to (1/3, 1/3, 1/3).
-       - the string "human": the weights are set to (.3, .6, .1), which mimics (approximately) human vision."""
+       - the string "human": the weights are set to (.299, .587, .114), which mimics (approximately) human vision."""
   if isinstance(rgb, str):
     if rgb == "uniform":
       set_RGB_luma((1./3., 1./3., 1./3.))
     elif rgb == "human":
-      set_RGB_luma((.3, .6, .1))
+      set_RGB_luma((.299, .587, .114))
     else:
       raise ValueError("Error, the input rgb weights must be an array with three scalar elements, the string 'uniform' or the string 'human'.")
   else:

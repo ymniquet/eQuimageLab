@@ -3,47 +3,109 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# DOC+MCI.
 
 """Histogram stretch functions."""
 
-#TODO: Don't clip if not necessary.
-
 import numpy as np
 
-def shadow_stretch_function(x, params):
-  """Return the linear shsdow stretch function f(x) for input parameters (shadow,)."""
-  shadow, = params
+def shadow_stretch_function(x, shadow):
+  """Return the linear shadow stretch function f(x).
+  
+  The input data x is clipped below shadow and linearly stretched 
+  to map [shadow, 1] onto [0, 1].  
+  The output, stretched data therefore fit in the [0, infty[ range.
+  
+  Args:
+    x (np.array): The input data.
+    shadow (float): The shadow level (expected < 1).
+    
+  Returns:
+    np.array: The stretched data.
+  """
   x = np.clip(x, shadow, None)
   return (x-shadow)/(1.-shadow)
 
-def shadow_highlight_stretch_function(x, params):
-  """Return the linear shadow/highlight stretch function f(x) for input parameters (shadow, highlight)."""
-  shadow, highlight = params
+def shadow_highlight_stretch_function(x, shadow, highlight):
+  """Return the linear shadow/highlight stretch function f(x).
+  
+  The input data x is clipped below shadow and above highlight and linearly stretched 
+  to map [shadow, highlight] onto [0, 1].
+  The output, stretched data therefore fit in the [0, 1] range.
+
+  Args:
+    x (np.array): The input data.
+    shadow (float): The shadow level (expected < 1).
+    highlight (float): The highlight level (expected > shadow).
+    
+  Returns:
+    np.array: The stretched data.
+  """
   x = np.clip(x, shadow, highlight)
   return (x-shadow)/(highlight-shadow)
 
-def dynamic_range_stretch_function(x, params):
-  """Return the linear dynamic range stretch function f(x) for input parameters (fr, to)."""
-  fr, to = params
+def dynamic_range_stretch_function(x, fr, to):
+  """Return the linear dynamic range stretch function f(x).
+  
+  The input data x is linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]], 
+  and clipped in the [to[0], to[1]] range.
+  
+  Args:
+    x (np.array): The input data.
+    fr: The input range (a tuple or list of two floats).
+    to: The output range (a tuple or list of two floats).
+    
+  Returns:
+    np.array: The stretched data.
+  """
   return np.interp(x, fr, to)
 
-def asinh_stretch_function(x, params):
-  """Return the arcsinh stretch function f(x) for input parameters (stretch,)."""
-  stretch, = params
+def asinh_stretch_function(x, stretch):
+  """Return the arcsinh stretch function f(x).
+  
+  The arcsinh stretch function is defined as:
+    f(x) = arcsinh(stretch*x)/arcsinh(stretch)
+  
+  Args:
+    x (np.array): The input data.
+    stretch (float): The stretch factor (expected >= 0).
+    
+  Returns:
+    np.array: The stretched data.
+  """
   return np.arcsinh(stretch*x)/np.arcsinh(stretch) if abs(stretch) > 1.e-6 else x
 
-def ghyperbolic_stretch_function(x, params):
-  """Return the generalized hyperbolic stretch function f(x) for input parameters (log(D+1), B, SYP, SPP, HPP, inverse).
-     See: https://ghsastro.co.uk/.
-     Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js."""
-  logD1, B, SYP, SPP, HPP, inverse = params
+def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
+  """Return the generalized hyperbolic stretch function f(x).
+     
+  For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
+  This function clips the input data x in the [0, 1] range before stretching.
+  
+  Notes:
+  Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js.
+  
+  Todo:
+  Do not clip the input data and extend the transformation outside [0, 1] !
+  
+  Args:
+    x (np.array): The input data.  
+    logD1 (float): The global stretch factor ln(D+1) (expected >= 0).
+    b (float): The local stretch factor.
+    SYP (float): The symmetry point (expected in [0, 1]).
+    SPP (float): The shadow protection point (expected in [0, SYP]).
+    HPP (float): The highlight protection point (expected in [SYP, 1]).
+    inverse (bool): Return the inverse stretch function if True.
+    
+  Returns:
+    np.array: The stretched data.     
+  """
   D = np.exp(logD1)-1.
   x = np.clip(x, 0., 1.)
   if abs(D) < 1.e-6: # Identity.
     return x
   else:
     y = np.empty_like(x)
-    if abs(B) < 1.e-6:
+    if abs(b) < 1.e-6:
       qs = np.exp(-D*(SYP-SPP))
       q0 = qs-D*SPP*np.exp(-D*(SYP-SPP))
       qh = 2.-np.exp(-D*(HPP-SYP))
@@ -86,7 +148,7 @@ def ghyperbolic_stretch_function(x, params):
         y[mask] = (np.log((x[mask]-a3)/b3)-c3)/d3
         mask = (x >= HPT)
         y[mask] = (x[mask]-a4)/b4
-    elif abs(B+1.) < 1.e-6:
+    elif abs(b+1.) < 1.e-6:
       qs = -np.log(1.+D*(SYP-SPP))
       q0 = qs-D*SPP/(1.+D*(SYP-SPP))
       qh = np.log(1.+D*(HPP-SYP))
@@ -130,53 +192,53 @@ def ghyperbolic_stretch_function(x, params):
         mask = (x >= HPT)
         y[mask] = (x[mask]-a4)/b4
     else:
-      if B < 0.:
-        B  = -B
-        qs = (1.-(1.+D*B*(SYP-SPP))**((B-1.)/B))/(B-1.)
-        q0 = qs-D*SPP*(1.+D*B*(SYP-SPP))**(-1./B)
-        qh = ((1.+D*B*(HPP-SYP))**((B-1.)/B)-1.)/(B-1.)
-        q1 = qh+D*(1.-HPP)*(1.+D*B*(HPP-SYP))**(-1./B)
+      if b < 0.:
+        b  = -b
+        qs = (1.-(1.+D*b*(SYP-SPP))**((b-1.)/b))/(b-1.)
+        q0 = qs-D*SPP*(1.+D*b*(SYP-SPP))**(-1./b)
+        qh = ((1.+D*b*(HPP-SYP))**((b-1.)/b)-1.)/(b-1.)
+        q1 = qh+D*(1.-HPP)*(1.+D*b*(HPP-SYP))**(-1./b)
         q  = 1./(q1-q0)
         # Coefficient for x < SPP.
-        b1 = D*(1.+D*B*(SYP-SPP))**(-1./B)*q
+        b1 = D*(1.+D*b*(SYP-SPP))**(-1./b)*q
         # Coefficients for SPP <= x < SYP.
-        a2 = (1./(B-1.)-q0)*q
-        b2 = -q/(B-1.)
-        c2 = 1.+D*B*SYP
-        d2 = -D*B
-        e2 = (B-1.)/B
+        a2 = (1./(b-1.)-q0)*q
+        b2 = -q/(b-1.)
+        c2 = 1.+D*b*SYP
+        d2 = -D*b
+        e2 = (b-1.)/b
         # Coefficients for SYP <= x < HPP.
-        a3 = (-1./(B-1.)-q0)*q
-        b3 = q/(B-1.)
-        c3 = 1.-D*B*SYP
-        d3 = D*B
-        e3 = (B-1.)/B
+        a3 = (-1./(b-1.)-q0)*q
+        b3 = q/(b-1.)
+        c3 = 1.-D*b*SYP
+        d3 = D*b
+        e3 = (b-1.)/b
         # Coefficients for x >= HPP.
-        a4 = (qh-q0-D*HPP*(1.+D*B*(HPP-SYP))**(-1./B))*q
-        b4 = D*(1.+D*B*(HPP-SYP))**(-1./B)*q
+        a4 = (qh-q0-D*HPP*(1.+D*b*(HPP-SYP))**(-1./b))*q
+        b4 = D*(1.+D*b*(HPP-SYP))**(-1./b)*q
       else:
-        qs = (1.+D*B*(SYP-SPP))**(-1./B)
-        q0 = qs-D*SPP*(1.+D*B*(SYP-SPP))**(-(1.+B)/B)
-        qh = 2.-(1.+D*B*(HPP-SYP))**(-1./B)
-        q1 = qh+D*(1.-HPP)*(1.+D*B*(HPP-SYP))**(-(1.+B)/B)
+        qs = (1.+D*b*(SYP-SPP))**(-1./b)
+        q0 = qs-D*SPP*(1.+D*b*(SYP-SPP))**(-(1.+b)/b)
+        qh = 2.-(1.+D*b*(HPP-SYP))**(-1./b)
+        q1 = qh+D*(1.-HPP)*(1.+D*b*(HPP-SYP))**(-(1.+b)/b)
         q  = 1./(q1-q0)
         # Coefficient for x < SPP.
-        b1 = D*(1.+D*B*(SYP-SPP))**(-(1.+B)/B)*q
+        b1 = D*(1.+D*b*(SYP-SPP))**(-(1.+b)/b)*q
         # Coefficients for SPP <= x < SYP.
         a2 = -q0*q
         b2 = q
-        c2 = 1.+D*B*SYP
-        d2 = -D*B
-        e2 = -1./B
+        c2 = 1.+D*b*SYP
+        d2 = -D*b
+        e2 = -1./b
         # Coefficients for SYP <= x < HPP.
         a3 = (2.-q0)*q
         b3 = -q
-        c3 = 1.-D*B*SYP
-        d3 = D*B
-        e3 = -1./B
+        c3 = 1.-D*b*SYP
+        d3 = D*b
+        e3 = -1./b
         # Coefficients for x >= HPP.
-        a4 = (qh-q0-D*HPP*(1.+D*B*(HPP-SYP))**(-(B+1.)/B))*q
-        b4 = D*(1.+D*B*(HPP-SYP))**(-(B+1.)/B)*q
+        a4 = (qh-q0-D*HPP*(1.+D*b*(HPP-SYP))**(-(b+1.)/b))*q
+        b4 = D*(1.+D*b*(HPP-SYP))**(-(b+1.)/b)*q
       # GHS transformation.
       if not inverse:
         mask = (x <  SPP)
@@ -201,20 +263,58 @@ def ghyperbolic_stretch_function(x, params):
         y[mask] = (x[mask]-a4)/b4
     return y
 
-def midtone_stretch_function(x, params):
-  """Return the midtone stretch function f(x) for input parameters (midtone,)."""
-  midtone, = params
+def midtone_stretch_function(x, midtone):
+  """Return the midtone stretch function f(x).
+  
+  The midtone stretch function is defined as:
+    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
+  In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
+  
+  Args:
+    x (np.array): The input data.
+    midtone (float): The midtone level (expected in [0, 1]).
+    
+  Returns:
+    np.array: The stretched data.
+  """
   return (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
 
-def gamma_stretch_function(x, params):
-  """Return the gamma stretch function f(x) for input parameters (gamma,)."""
-  gamma, = params
+def gamma_stretch_function(x, gamma):
+  """Return the gamma stretch function f(x).
+  
+  The gamma stretch function is defined as:
+    f(x) = x**gamma
+  This function clips the input data x below 0 before stretching.
+  
+  Args:
+    x (np.array): The input data.
+    gamma (float): The stretch exponent (expected > 0).
+    
+  Returns:
+    np.array: The stretched data.
+  """  
   x = np.clip(x, 0., None)
   return x**gamma
 
-def adjust_midtone_function(x, params):
-  """Return the midtone stretch function f(x) for input parameters (shadow, midtone, highlight, low, high)."""
-  shadow, midtone, highlight, low, high = params
+def midtone_levels_function(x, shadow, midtone, highlight, low, high):
+  """Return the shadow/midtone/highlight/low/high levels adjustment function f(x).
+  
+  This function:
+    1) Clips the input data in the [shadow, highlight] range and maps [shadow, highlight] to [0, 1].
+    2) Applies the midtone stretch function f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone).
+    3) Maps [low, high] to [0, 1] and clips the output data in the [0, 1] range.
+  
+  Args:
+    x (np.array): The input data.
+    midtone (float): The input midtone level (expected in [0, 1]).    
+    shadow (float): The input shadow level (expected in [0, midtone]).
+    highlight (float): The input highlight level (expected in [midtone, 1]).
+    low (float): The "low" output level (expected <= 0).
+    high (float): The "high" output level (expected >= 1).
+    
+  Returns:
+    np.array: The stretched data.
+  """
   midtone = (midtone-shadow)/(highlight-shadow)
   x = np.clip(x, shadow, highlight)
   x = (x-shadow)/(highlight-shadow)

@@ -8,7 +8,7 @@
 """Image filters."""
 
 import numpy as np
-import scipy.signal as spsig
+import scipy.signal as ssig
 
 from . import params
 
@@ -24,7 +24,7 @@ class Mixin:
     """Apply a sharpening (Laplacian) convolution filter to selected channels of the image.
     
     Args:
-      channels (str, optional): The channels to apply the operation to:
+      channels (str, optional): The selected channels:
         - An empty string (default): Apply the operation to all channels (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB images).
         - "Lp": Apply the operation to the luma, with highlights protection.
@@ -39,17 +39,17 @@ class Mixin:
     # Set-up Laplacian kernel.
     kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = params.IMGTYPE)
     # Convolve selected channels with the kernel.
-    return self.apply_channels(lambda channel: spsig.convolve2d(channel, kernel, mode = "same", boundary = "fill", fillvalue = 0.), channels, multi = False)
+    return self.apply_channels(lambda channel: ssig.convolve2d(channel, kernel, mode = "same", boundary = "fill", fillvalue = 0.), channels, multi = False)
 
   def remove_hot_pixels(self, ratio, channels = ""):
     """Remove hot pixels in selected channels of the image.
     
-    All pixels of a channel greater than ratio times the eight nearest-neighbors average are 
-    replaced by this average.
+    All pixels of a selected channel greater than ratio times the eight nearest-neighbors average  
+    are replaced by this average.
     
     Args:
       ratio (float): The threshold for hot pixels detection. 
-      channels (str, optional): The channels to apply the operation to:
+      channels (str, optional): The selected channels:
         - An empty string (default): Apply the operation to all channels (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB images).
         - "Lp": Apply the operation to the luma, with highlights protection.
@@ -64,7 +64,7 @@ class Mixin:
     
     def remove_hot_pixels_channel(channel):
       """Remove hot pixels from the input channel data."""
-      avg = spsig.convolve2d(channel, kernel, mode = "same", boundary = "fill", fillvalue = 0.)/nnn
+      avg = ssig.convolve2d(channel, kernel, mode = "same", boundary = "fill", fillvalue = 0.)/nnn
       return np.where(channel > ratio*avg, avg, channel)
 
     if ratio <= 0.: raise ValueError("Error, ratio must be > 0.")

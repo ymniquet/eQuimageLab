@@ -75,7 +75,7 @@ class Mixin:
 
   # TESTED.
   def resample(self, width, height, method = "lanczos"):
-    """Resize the image.
+    """Resize/resample the image.
     
     Args:
       width (int): New image width (pixels).

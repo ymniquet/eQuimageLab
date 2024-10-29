@@ -31,8 +31,8 @@ def scale_pixels(image, source, target, cutoff = params.IMGTOL):
 
   Args:
     image (np.array): The input image.
-    source (np.array): The source values for scaling.
-    target (np.array): The target values for scaling.
+    source (np.array): The source values for scaling (must be the same size as the input image).
+    target (np.array): The target values for scaling (must be the same size as the input image).
     cutoff (float, optional): Threshold for scaling. Defaults to `params.IMGTOL`.
 
   Returns:
@@ -41,7 +41,7 @@ def scale_pixels(image, source, target, cutoff = params.IMGTOL):
   return np.where(abs(source) > cutoff, failsafe_divide(image*target, source), target)
 
 def lookup(x, xlut, ylut, slut, nlut):
-  """Interpolate y = f(x) using values ylut = f(xlut) from an evenly spaced look-up table.
+  """Linearly interpolate y = f(x) between the values ylut = f(xlut) of an evenly spaced look-up table.
 
   Args:
     x (float): The input value for interpolation.

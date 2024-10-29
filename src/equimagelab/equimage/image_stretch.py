@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# DOC+MCI.
 
 """Histogram stretch."""
 
@@ -14,15 +15,41 @@ from . import stretchfunctions as stf
 # Stretch functions. #
 ######################
 
-def mts(image, midtone):
-  """Apply a midtone stretch to the input image, with midtone 'midtone'."""
-  return stf.midtone_stretch_function(image, (midtone,))
-
 def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
-  """Apply a generalized hyperbolic stretch to the input image, with global
-     strength 'lnD1' = ln(D+1), local strength 'b', symmetry point 'SYP',
-     shadow protection point 'SPP', and highlight protection point 'HPP'."""
-  return stf.ghyperbolic_stretch_function(image, (lnD1, b, SYP, SPP, HPP, False))
+  """Apply a generalized hyperbolic stretch function to the input image.
+  
+  For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
+  This function clips the input image in the [0, 1] range before stretching.
+  
+  Args:
+    image (np.array): The input image.  
+    logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
+    b (float): The local stretch factor.
+    SYP (float): The symmetry point (expected in [0, 1]).
+    SPP (float): The shadow protection point (expected in [0, SYP]).
+    HPP (float): The highlight protection point (expected in [SYP, 1]).
+    inverse (bool): Return the inverse stretch function if True.
+    
+  Returns:
+    np.array: The stretched image.     
+  """  
+  return stf.ghyperbolic_stretch_function(image, lnD1, b, SYP, SPP, HPP, False)
+
+def mts(image, midtone):
+  """Apply a midtone stretch function to the input image.
+  
+  The midtone stretch function is defined as:
+    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
+  In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
+  
+  Args:
+    image (np.array): The input image.
+    midtone (float): The midtone level (expected in [0, 1]).
+    
+  Returns:
+    np.array: The stretched image.  
+  """
+  return stf.midtone_stretch_function(image, midtone)
 
 #####################################
 # For inclusion in the Image class. #
@@ -32,162 +59,241 @@ class Mixin:
   """To be included in the Image class."""
 
   def set_black_point(self, shadow, channels = ""):
-    """Set black (shadow) level 'shadow' in selected 'channels' of the image.
-       The 'channels' can be:
-         - An empty string: Apply the operation to all channels (RGB and HSV images).
-         - "L": Apply the operation to the luma (RGB images).
-         - "Lp": Apply the operation to the luma, with highlights protection.
+    """Set the black (shadow) level in selected channels of the image.
+    
+    The selected channels are clipped below shadow and linearly stretched to map [shadow, 1] onto [0, 1]. 
+    The output, stretched image levels therefore fit in the [0, infty[ range.    
+    
+    Args:
+      shadow (float): The black (shadow) level (expected < 1).
+      channels (str, optional): The selected channels:
+        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB images).
+        - "Lp": Apply the operation to the luma, with highlights protection.
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
-         - "V": Apply the operation to the HSV value (RGB and HSV images).
-         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    if shadow < 0.:
-      shadow = 0.
-      print("Warning, changed shadow = 0 !")
-    if shadow > .99:
-      shadow = .99
-      print("Warning, changed shadow = 0.99 !")
-    return self.apply_channels(lambda channel: stf.shadow_stretch_function(channel, (shadow,)), channels)
+        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+         
+    Returns:
+      Image: The processed image.    
+    """
+    if shadow > .9999:
+      raise ValuerError("Error, shadow must be <= 0.9999.")
+    return self.apply_channels(lambda channel: stf.shadow_stretch_function(channel, shadow), channels)
 
   def clip_shadow_highlight(self, shadow, highlight, channels = ""):
-    """Set black (shadow) level 'shadow' and highlight level 'highlight' in selected 'channels' of the image.
-       The 'channels' can be:
-         - An empty string: Apply the operation to all channels (RGB and HSV images).
-         - "L": Apply the operation to the luma (RGB images).
-         - "Lp": Apply the operation to the luma, with highlights protection.
+    """Clip shadows and highlights in selected channels of the image.
+    
+    The selected channels are clipped below shadow and above highlight and linearly stretched 
+    to map [shadow, highlight] onto [0, 1].
+    The output, stretched image levels therefore fit in the [0, 1] range.    
+    
+    Args:
+      shadow (float): The shadow level (expected < 1).
+      highlight (float): The highlight level (expected > shadow).
+      channels (str, optional): The selected channels:
+        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB images).
+        - "Lp": Apply the operation to the luma, with highlights protection.
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
-         - "V": Apply the operation to the HSV value (RGB and HSV images).
-         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    if shadow < 0.:
-      shadow = 0.
-      print("Warning, changed shadow = 0 !")
-    if shadow > .99:
-      shadow = .99
-      print("Warning, changed shadow = 0.99 !")
-    if highlight > 1.:
-      highlight = 1.
-      print("Warning, changed highlight = 1 !")
-    if highlight < shadow+.01:
-      highlight = shadow+.01
-      print(f"Warning, changed highlight = {highlight:.3f} !")
-    return self.apply_channels(lambda channel: stf.shadow_highlight_stretch_function(channel, (shadow, highlight)), channels)
+        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+         
+    Returns:
+      Image: The processed image. 
+    """
+    if shadow > .9999:
+      raise ValuerError("Error, shadow must be <= 0.9999.")
+    if highlight-shadow < .0001:
+      raise ValuerError("Error, highlight-shadow must be >= 0.0001.")
+    return self.apply_channels(lambda channel: stf.shadow_highlight_stretch_function(channel, shadow, highlight), channels)
 
   def set_dynamic_range(self, fr, to, channels = ""):
-    """Map (fr[0], fr[1]) to (to[0], to[1]) in selected 'channels' of the image,
-       and clip the output in the [to[0], to[1]] range.
-       The 'channels' can be:
-         - An empty string: Apply the operation to all channels (RGB and HSV images).
-         - "L": Apply the operation to the luma (RGB images).
-         - "Lp": Apply the operation to the luma, with highlights protection.
+    """Set the dynamic range of selected channels of the image.
+    
+    The selected channels are linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]], 
+    and clipped in the [to[0], to[1]] range.
+    
+    Args:
+      fr: The input range (a tuple or list of two floats such that fr[1] > fr[0]).
+      to: The output range (a tuple or list of two floatssuch that to[1] > to[0]).
+      channels (str, optional): The selected channels:
+        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB images).
+        - "Lp": Apply the operation to the luma, with highlights protection.
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
-         - "V": Apply the operation to the HSV value (RGB and HSV images).
-         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    if fr[0] >= fr[1]:
-      raise ValueError("Error, fr[0] >= fr[1] !")
-    if to[0] >= to[1]:
-      raise ValueError("Error, to[0] >= to[1] !")
-    return self.apply_channels(lambda channel: stf.dynamic_range_stretch_function(channel, (fr, to)), channels)
+        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+         
+    Returns:
+      Image: The processed image. 
+    """
+    if fr[1]-fr[0] < 0.0001:
+      raise ValueError("Error, fr[1]-fr[0] must be >= 0.0001 !")
+    if to[1]-to[0] < 0.0001:
+      raise ValueError("Error, to[1]-to[0] must be >= 0.0001 !")
+    return self.apply_channels(lambda channel: stf.dynamic_range_stretch_function(channel, fr, to), channels)
 
   def asinh_stretch(self, stretch, channels = ""):
-    """Apply an arcsinh stretch with strength 'stretch' to selected 'channels' of the image.
-       The 'channels' can be:
-         - An empty string: Apply the operation to all channels (RGB and HSV images).
-         - "L": Apply the operation to the luma (RGB images).
-         - "Lp": Apply the operation to the luma, with highlights protection.
+    """Apply an arcsinh stretch to selected channels of the image.
+  
+    The arcsinh stretch function f is applied to the selected channels:
+      f(x) = arcsinh(stretch*x)/arcsinh(stretch)
+      
+    Args:
+      stretch (float): The stretch factor (must be >= 0).
+      channels (str, optional): The selected channels:
+        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB images).
+        - "Lp": Apply the operation to the luma, with highlights protection.
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
-         - "V": Apply the operation to the HSV value (RGB and HSV images).
-         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    if stretch < 0.: raise ValueError("Error, stretch must be >= 0.")
-    return self.apply_channels(lambda channel: stf.asinh_stretch_function(channel, (stretch,)), channels)
+        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+         
+    Returns:
+      Image: The stretched image.     
+    """
+    if stretch < 0.:
+      raise ValueError("Error, stretch must be >= 0.")
+    return self.apply_channels(lambda channel: stf.asinh_stretch_function(channel, stretch), channels)
 
-  def ghyperbolic_stretch(self, lnD1, b, SYP, SPP = 0., HPP = 1., channels = "", inverse = False):
-    """Apply a generalized hyperbolic stretch to selected 'channels' of the image,
-       with global strength 'lnD1' = ln(D+1), local strength 'b', symmetry point 'SYP',
-       shadow protection point 'SPP', and highlight protection point 'HPP'.
-       Inverse the transformation if 'inverse' is True.
-       See: https://ghsastro.co.uk/.
-       The 'channels' can be:
-         - An empty string: Apply the operation to all channels (RGB and HSV images).
-         - "L": Apply the operation to the luma (RGB images).
-         - "Lp": Apply the operation to the luma, with highlights protection.
+  def ghyperbolic_stretch(self, lnD1, b, SYP, SPP = 0., HPP = 1., inverse = False, channels = ""):
+    """Apply a generalized hyperbolic stretch to selected channels of the image.
+      
+    For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
+    This function clips the image in the [0, 1] range before stretching.
+    
+    Args:
+      logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
+      b (float): The local stretch factor.
+      SYP (float): The symmetry point (will be clipped in the [0, 1] range).
+      SPP (float): The shadow protection point (will be clipped in the [0, SYP] range).
+      HPP (float): The highlight protection point (will be clipped in the [SYP, 1] range).
+      inverse (bool): Return the inverse stretch if True.
+      channels (str, optional): The selected channels:
+        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB images).
+        - "Lp": Apply the operation to the luma, with highlights protection.
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
-         - "V": Apply the operation to the HSV value (RGB and HSV images).
-         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    if lnD1 < 0.: raise ValueError("Error, lnD1 must be >= 0.")
+        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+        
+    Returns:
+      np.array: The stretched image.     
+    """
+    if lnD1 < 0.: 
+      raise ValueError("Error, lnD1 must be >= 0.")
     if SYP < 0.:
       SYP = 0.
       print("Warning, changed SYP = 0 !")
     if SYP > 1.:
       SYP = 1.
       print("Warning, changed SYP = 1 !")
+    if SPP < 0.:
+      SPP = 0.
+      print("Warning, changed SPP = 0 !")      
     if SPP > SYP:
       SPP = SYP
       print("Warning, changed SPP = SYP !")
     if HPP < SYP:
       HPP = SYP
       print("Warning, changed HPP = SYP !")
-    return self.apply_channels(lambda channel: stf.ghyperbolic_stretch_function(channel, (lnD1, b, SYP, SPP, HPP, inverse)), channels)
+    if HPP > 1.:
+      HPP = 1.
+      print("Warning, changed HPP = 1 !")            
+    return self.apply_channels(lambda channel: stf.ghyperbolic_stretch_function(channel, lnD1, b, SYP, SPP, HPP, inverse), channels)
 
   def midtone_stretch(self, midtone, channels = ""):
-    """Apply a midtone stretch with midtone 'midtone' to selected 'channels' of the image,
-       The 'channels' can be:
-         - An empty string: Apply the operation to all channels (RGB and HSV images).
-         - "L": Apply the operation to the luma (RGB images).
-         - "Lp": Apply the operation to the luma, with highlights protection.
+    """Apply a midtone stretch to selected channels of the image.
+  
+    The midtone stretch function f is applied to the selected channels:
+      f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
+    In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
+    
+    Args:
+      midtone (float): The midtone level (expected in [0, 1]).
+      channels (str, optional): The selected channels:
+        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB images).
+        - "Lp": Apply the operation to the luma, with highlights protection.
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
-         - "V": Apply the operation to the HSV value (RGB and HSV images).
-         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    if midtone <= 0. or midtone >= 1.: raise ValueError("Error, midtone must be > 0 and < 1.")
-    return self.apply_channels(lambda channel: stf.midtone_stretch_function(channel, (midtone,)), channels)
+        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images). 
+        
+    Returns:
+      np.array: The stretched image.
+    """
+    if midtone < .0001 or midtone >= .9999:
+      raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")
+    return self.apply_channels(lambda channel: stf.midtone_stretch_function(channel, midtone), channels)
 
   def gamma_stretch(self, gamma):
-    """Apply power law stretch with exponent 'gamma' to selected 'channels' of the image.
-       The 'channels' can be:
-         - An empty string: Apply the operation to all channels (RGB and HSV images).
-         - "L": Apply the operation to the luma (RGB images).
-         - "Lp": Apply the operation to the luma, with highlights protection.
+    """Apply a power law stretch (gamma correction) to selected channels of the image.
+    
+    The gamma stretch function f is applied to the selected channels:
+      f(x) = x**gamma
+    This function clips the image below 0 before stretching.
+    
+    Args:
+      gamma (float): The stretch exponent (must be > 0).    
+      channels (str, optional): The selected channels:
+        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB images).
+        - "Lp": Apply the operation to the luma, with highlights protection.
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
-         - "V": Apply the operation to the HSV value (RGB and HSV images).
-         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    if gamma < 0.:
-      raise ValueError("Error, gamma must be >= 0.")
-    return self.apply_channels(lambda channel: stf.gamma_stretch_function(channel, (gamma,)), channels)
+        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images). 
 
-  def adjust_midtone(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = ""):
-    """Apply a midtone stretch to selected 'channels' of the image,
-       with midtone 'midtone', black point 'shadow', highlight point 'highlight',
-       low range 'low' and high range 'high'.
-       The 'channels' can be:
-         - An empty string: Apply the operation to all channels (RGB and HSV images).
-         - "L": Apply the operation to the luma (RGB images).
-         - "Lp": Apply the operation to the luma, with highlights protection.
+    Returns:
+      np.array: The stretched image.        
+    """
+    if gamma <= 0.:
+      raise ValueError("Error, gamma must be > 0.")
+    return self.apply_channels(lambda channel: stf.gamma_stretch_function(channel, gamma), channels)
+
+  def adjust_midtone_levels(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = ""):
+    """Adjust shadow, midtone, highlight, low and high levels in selected channels of the image.
+    
+    This method:
+      1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight] to [0, 1].
+      2) Applies the midtone stretch function f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone).
+      3) Maps [low, high] to [0, 1] and clips the output data in the [0, 1] range.    
+    
+    Args:
+      midtone (float): The input midtone level (expected in [0, 1]).    
+      shadow (float): The input shadow level (expected < midtone).
+      highlight (float): The input highlight level (expected > midtone).
+      low (float): The "low" output level (expected <= 0).
+      high (float): The "high" output level (expected >= 1).
+      channels (str, optional): The selected channels:
+        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB images).
+        - "Lp": Apply the operation to the luma, with highlights protection.
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
-         - "V": Apply the operation to the HSV value (RGB and HSV images).
-         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images)."""
-    if midtone <= 0. or midtone >= 1.: raise ValueError("Error, midtone must be > 0 and < 1.")
-    if shadow < 0.:
-      shadow = 0.
-      print("Warning, changed shadow = 0 !")
-    if shadow > .99:
-      shadow = .99
-      print("Warning, changed shadow = 0.99 !")
-    if highlight > 1.:
-      highlight = 1.
-      print("Warning, changed highlight = 1 !")
-    if highlight < shadow+.01:
-      highlight = shadow+.01
-      print(f"Warning, changed highlight = {highlight:.3f} !")
+        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images). 
+
+    Returns:
+      np.array: The stretched image.
+    """
+    if midtone < .0001 or midtone > .9999: 
+      raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")    
+    if midtone-shadow < .0001:
+      raise ValueError("Error, midtone-shadow must be >= 0.0001.")    
+    if highlight-midtone < .0001:
+      raise ValueError("Error, highlight-midtone must be >= 0.0001.")    
     if low > 0.:
       low = 0.
       print("Warning, changed low = 0.")
     if high < 1.:
       high = 1.
       print("Warning, changed high = 1.")
-    return self.apply_channels(lambda channel: stf.adjust_midtone_function(channel, (shadow, midtone, highlight, low, high)), channels)
+    return self.apply_channels(lambda channel: stf.adjust_midtone_function(channel, shadow, midtone, highlight, low, high), channels)

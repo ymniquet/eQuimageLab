@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# DOC+MCI.
 
 """Image utils."""
 
@@ -16,10 +17,19 @@ from . import helpers
 #####################
 
 def is_valid_image(image):
-  """Return True if the input is a valid image candidate, False otherwise."""
+  """Return True if the input is a valid image candidate, False otherwise.
+  
+  Args:
+    image (np.array): The image candidate.    
+  
+  Returns:
+    bool: True if the input is a valid image candidate, False otherwise.   
+  """
   if not issubclass(type(image), np.ndarray): return False
-  if image.ndim != 3: return False
-  if image.shape[0] != 3: return False
+  if image.ndim == 3:
+    if image.shape[0] not in [1, 3]: return False
+  elif image.ndim != 2:
+    return False
   if image.dtype not in [np.float32, np.float64]: return False
 
 ##########################
@@ -27,12 +37,31 @@ def is_valid_image(image):
 ##########################
 
 def clip(image, vmin = 0., vmax = 1.):
-  """Clip the input image in the range [vmin, vmax]."""
+  """Clip the input image in the range [vmin, vmax].
+  
+  Args:
+    image (np.array): The input image.    
+    vmin (float): The lower clip bound.
+    vmax (float): The upper clip bound.
+
+  Returns:
+    np.array: The clipped image.  
+  """
   return np.clip(image, vmin, vmax)
 
 def blend(image1, image2, mixing):
-  """Blend image1 with image2.
-     Return image1*(1-mixing)+image2*mixing."""
+  """Blend two images.
+  
+  Returns image1*(1-mixing)+image2*mixing.
+  
+  Args:
+    image1 (np.array): The first image. 
+    image2 (np.array): The second image.        
+    mixing: The mixing coefficient(s) (float or np.array for pixel-dependent mixing).
+
+  Returns:
+    np.array: The blended image image1*(1-mixing)+image2*mixing.  
+  """  
   return image1*(1.-mixing)+image2*mixing
 
 #####################################
@@ -47,7 +76,11 @@ class Mixin:
   ##################
 
   def is_out_of_range(self):
-    """Return True if the image is out-of-range (data < 0 or > 1 in any channel), False otherwise."""
+    """Return True if the image is out-of-range (data < 0 or > 1 in any channel), False otherwise.
+    
+    Returns:
+      bool: True if the image is out-of-range.
+    """
     image = self.image(cls = np.ndarray)
     return np.any(image < -params.IMGTOL) or np.any(image > 1.+params.IMGTOL)
 
@@ -56,11 +89,19 @@ class Mixin:
   ##############
 
   def empty(self):
-    """Return an empty image with the same size."""
+    """Return an empty image with same size.
+    
+    Returns:
+      Image: An empty image with the same size as self.
+    """
     return np.empty_like(self)
 
   def black(self):
-    """Return a black image with the same size."""
+    """Return a black image with same size.
+    
+    Returns:
+      Image: An black image with the same size as self.
+    """    
     return np.zeros_like(self)
 
   ##############################
@@ -68,12 +109,28 @@ class Mixin:
   ##############################
 
   def clip(self, vmin = 0., vmax = 1.):
-    """Clip the image in the range [vmin, vmax]."""
+    """Clip the image in the range [vmin, vmax].
+    
+    Args:
+      vmin (float): The lower clip bound.
+      vmax (float): The upper clip bound.
+
+    Returns:
+      Image: The clipped image.  
+    """
     return clip(self, vmin, vmax)
 
   def scale_pixels(self, source, target, cutoff = params.IMGTOL):
-    """Scale all pixels by the ratio target/source.
-       Wherever abs(source) < cutoff, set all channels to target."""
+    """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff, set all channels to target.
+
+    Args:
+      source (np.arrray): The source values for scaling (must be the same size as the image).
+      target (np.arrray): The target values for scaling (must be the same size as the image).
+      cutoff (float, optional): Threshold for scaling. Defaults to `params.IMGTOL`.
+
+    Returns:
+      Image: The scaled image.
+    """
     return self.newImage_like(self, helpers.scale_pixels(self, source, target, cutoff))
 
   #############
@@ -81,11 +138,22 @@ class Mixin:
   #############
 
   def blend(self, image, mixing):
-    """Blend images.
-       Return self*(1-mixing)+image*mixing.
-       'mixing' can either be a scalar or an array (for pixel-dependent blending)."""
+    """Blend with the input image.
+    
+    Returns self*(1-mixing)+image*mixing.
+    The images must share the same shape, color space and color model.
+    
+    Args:
+      image (Image): The image to blend with. 
+      mixing: The mixing coefficient(s) (float or np.array for pixel-dependent mixing).
+
+    Returns:
+      Image: The blended image self*(1-mixing)+image*mixing.  
+    """
+    if self.shape != image.shape:
+      raise ValueError("Error, the images must have the same size & number of channels.")
     if self.colorspace != image.colorspace:
-      print("Warning: you are blending images with different color spaces !..")
+      raise ValueError("Error, the images must have the same color space !")
     if self.colormodel != image.colormodel:
-      print("Warning: you are blending images with different color models !..")
+      raise ValueError("Error, the images must have the same color model !")
     return self.newImage_like(self, blend(self, image, mixing))
