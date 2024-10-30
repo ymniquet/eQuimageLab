@@ -17,37 +17,37 @@ from . import stretchfunctions as stf
 
 def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
   """Apply a generalized hyperbolic stretch function to the input image.
-  
+
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
   This function clips the input image in the [0, 1] range before stretching.
-  
+
   Args:
-    image (np.array): The input image.  
+    image (np.array): The input image.
     logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
     b (float): The local stretch factor.
     SYP (float): The symmetry point (expected in [0, 1]).
     SPP (float): The shadow protection point (expected in [0, SYP]).
     HPP (float): The highlight protection point (expected in [SYP, 1]).
     inverse (bool): Return the inverse stretch function if True.
-    
+
   Returns:
-    np.array: The stretched image.     
-  """  
+    np.array: The stretched image.
+  """
   return stf.ghyperbolic_stretch_function(image, lnD1, b, SYP, SPP, HPP, False)
 
 def mts(image, midtone):
   """Apply a midtone stretch function to the input image.
-  
+
   The midtone stretch function is defined as:
     f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
   In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
-  
+
   Args:
     image (np.array): The input image.
     midtone (float): The midtone level (expected in [0, 1]).
-    
+
   Returns:
-    np.array: The stretched image.  
+    np.array: The stretched image.
   """
   return stf.midtone_stretch_function(image, midtone)
 
@@ -60,10 +60,10 @@ class Mixin:
 
   def set_black_point(self, shadow, channels = ""):
     """Set the black (shadow) level in selected channels of the image.
-    
-    The selected channels are clipped below shadow and linearly stretched to map [shadow, 1] onto [0, 1]. 
-    The output, stretched image levels therefore fit in the [0, infty[ range.    
-    
+
+    The selected channels are clipped below shadow and linearly stretched to map [shadow, 1] onto [0, 1].
+    The output, stretched image levels therefore fit in the [0, infty[ range.
+
     Args:
       shadow (float): The black (shadow) level (expected < 1).
       channels (str, optional): The selected channels:
@@ -74,9 +74,9 @@ class Mixin:
         - "V": Apply the operation to the HSV value (RGB and HSV images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
-         
+
     Returns:
-      Image: The processed image.    
+      Image: The processed image.
     """
     if shadow > .9999:
       raise ValuerError("Error, shadow must be <= 0.9999.")
@@ -84,11 +84,11 @@ class Mixin:
 
   def clip_shadow_highlight(self, shadow, highlight, channels = ""):
     """Clip shadows and highlights in selected channels of the image.
-    
-    The selected channels are clipped below shadow and above highlight and linearly stretched 
+
+    The selected channels are clipped below shadow and above highlight and linearly stretched
     to map [shadow, highlight] onto [0, 1].
-    The output, stretched image levels therefore fit in the [0, 1] range.    
-    
+    The output, stretched image levels therefore fit in the [0, 1] range.
+
     Args:
       shadow (float): The shadow level (expected < 1).
       highlight (float): The highlight level (expected > shadow).
@@ -100,9 +100,9 @@ class Mixin:
         - "V": Apply the operation to the HSV value (RGB and HSV images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
-         
+
     Returns:
-      Image: The processed image. 
+      Image: The processed image.
     """
     if shadow > .9999:
       raise ValuerError("Error, shadow must be <= 0.9999.")
@@ -112,10 +112,10 @@ class Mixin:
 
   def set_dynamic_range(self, fr, to, channels = ""):
     """Set the dynamic range of selected channels of the image.
-    
-    The selected channels are linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]], 
+
+    The selected channels are linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]],
     and clipped in the [to[0], to[1]] range.
-    
+
     Args:
       fr: The input range (a tuple or list of two floats such that fr[1] > fr[0]).
       to: The output range (a tuple or list of two floatssuch that to[1] > to[0]).
@@ -127,9 +127,9 @@ class Mixin:
         - "V": Apply the operation to the HSV value (RGB and HSV images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
-         
+
     Returns:
-      Image: The processed image. 
+      Image: The processed image.
     """
     if fr[1]-fr[0] < 0.0001:
       raise ValueError("Error, fr[1]-fr[0] must be >= 0.0001 !")
@@ -139,10 +139,10 @@ class Mixin:
 
   def asinh_stretch(self, stretch, channels = ""):
     """Apply an arcsinh stretch to selected channels of the image.
-  
+
     The arcsinh stretch function f is applied to the selected channels:
       f(x) = arcsinh(stretch*x)/arcsinh(stretch)
-      
+
     Args:
       stretch (float): The stretch factor (must be >= 0).
       channels (str, optional): The selected channels:
@@ -153,9 +153,9 @@ class Mixin:
         - "V": Apply the operation to the HSV value (RGB and HSV images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
-         
+
     Returns:
-      Image: The stretched image.     
+      Image: The stretched image.
     """
     if stretch < 0.:
       raise ValueError("Error, stretch must be >= 0.")
@@ -163,10 +163,10 @@ class Mixin:
 
   def ghyperbolic_stretch(self, lnD1, b, SYP, SPP = 0., HPP = 1., inverse = False, channels = ""):
     """Apply a generalized hyperbolic stretch to selected channels of the image.
-      
+
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
     This function clips the image in the [0, 1] range before stretching.
-    
+
     Args:
       logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
       b (float): The local stretch factor.
@@ -182,11 +182,11 @@ class Mixin:
         - "V": Apply the operation to the HSV value (RGB and HSV images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
-        
+
     Returns:
-      np.array: The stretched image.     
+      np.array: The stretched image.
     """
-    if lnD1 < 0.: 
+    if lnD1 < 0.:
       raise ValueError("Error, lnD1 must be >= 0.")
     if SYP < 0.:
       SYP = 0.
@@ -196,7 +196,7 @@ class Mixin:
       print("Warning, changed SYP = 1 !")
     if SPP < 0.:
       SPP = 0.
-      print("Warning, changed SPP = 0 !")      
+      print("Warning, changed SPP = 0 !")
     if SPP > SYP:
       SPP = SYP
       print("Warning, changed SPP = SYP !")
@@ -205,16 +205,16 @@ class Mixin:
       print("Warning, changed HPP = SYP !")
     if HPP > 1.:
       HPP = 1.
-      print("Warning, changed HPP = 1 !")            
+      print("Warning, changed HPP = 1 !")
     return self.apply_channels(lambda channel: stf.ghyperbolic_stretch_function(channel, lnD1, b, SYP, SPP, HPP, inverse), channels)
 
   def midtone_stretch(self, midtone, channels = ""):
     """Apply a midtone stretch to selected channels of the image.
-  
+
     The midtone stretch function f is applied to the selected channels:
       f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
     In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
-    
+
     Args:
       midtone (float): The midtone level (expected in [0, 1]).
       channels (str, optional): The selected channels:
@@ -224,8 +224,8 @@ class Mixin:
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "V": Apply the operation to the HSV value (RGB and HSV images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images). 
-        
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+
     Returns:
       np.array: The stretched image.
     """
@@ -235,13 +235,13 @@ class Mixin:
 
   def gamma_stretch(self, gamma):
     """Apply a power law stretch (gamma correction) to selected channels of the image.
-    
+
     The gamma stretch function f is applied to the selected channels:
       f(x) = x**gamma
     This function clips the image below 0 before stretching.
-    
+
     Args:
-      gamma (float): The stretch exponent (must be > 0).    
+      gamma (float): The stretch exponent (must be > 0).
       channels (str, optional): The selected channels:
         - An empty string (default): Apply the operation to all channels (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB images).
@@ -249,10 +249,10 @@ class Mixin:
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "V": Apply the operation to the HSV value (RGB and HSV images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images). 
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
 
     Returns:
-      np.array: The stretched image.        
+      np.array: The stretched image.
     """
     if gamma <= 0.:
       raise ValueError("Error, gamma must be > 0.")
@@ -260,14 +260,14 @@ class Mixin:
 
   def adjust_midtone_levels(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = ""):
     """Adjust shadow, midtone, highlight, low and high levels in selected channels of the image.
-    
+
     This method:
       1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight] to [0, 1].
       2) Applies the midtone stretch function f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone).
-      3) Maps [low, high] to [0, 1] and clips the output data in the [0, 1] range.    
-    
+      3) Maps [low, high] to [0, 1] and clips the output data in the [0, 1] range.
+
     Args:
-      midtone (float): The input midtone level (expected in [0, 1]).    
+      midtone (float): The input midtone level (expected in [0, 1]).
       shadow (float): The input shadow level (expected < midtone).
       highlight (float): The input highlight level (expected > midtone).
       low (float): The "low" output level (expected <= 0).
@@ -279,17 +279,17 @@ class Mixin:
                 (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "V": Apply the operation to the HSV value (RGB and HSV images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images). 
+        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
 
     Returns:
       np.array: The stretched image.
     """
-    if midtone < .0001 or midtone > .9999: 
-      raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")    
+    if midtone < .0001 or midtone > .9999:
+      raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")
     if midtone-shadow < .0001:
-      raise ValueError("Error, midtone-shadow must be >= 0.0001.")    
+      raise ValueError("Error, midtone-shadow must be >= 0.0001.")
     if highlight-midtone < .0001:
-      raise ValueError("Error, highlight-midtone must be >= 0.0001.")    
+      raise ValueError("Error, highlight-midtone must be >= 0.0001.")
     if low > 0.:
       low = 0.
       print("Warning, changed low = 0.")

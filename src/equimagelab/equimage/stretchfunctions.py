@@ -11,15 +11,15 @@ import numpy as np
 
 def shadow_stretch_function(x, shadow):
   """Return the linear shadow stretch function f(x).
-  
-  The input data x is clipped below shadow and linearly stretched 
-  to map [shadow, 1] onto [0, 1].  
+
+  The input data x is clipped below shadow and linearly stretched
+  to map [shadow, 1] onto [0, 1].
   The output, stretched data therefore fit in the [0, infty[ range.
-  
+
   Args:
     x (np.array): The input data.
     shadow (float): The shadow level (expected < 1).
-    
+
   Returns:
     np.array: The stretched data.
   """
@@ -28,8 +28,8 @@ def shadow_stretch_function(x, shadow):
 
 def shadow_highlight_stretch_function(x, shadow, highlight):
   """Return the linear shadow/highlight stretch function f(x).
-  
-  The input data x is clipped below shadow and above highlight and linearly stretched 
+
+  The input data x is clipped below shadow and above highlight and linearly stretched
   to map [shadow, highlight] onto [0, 1].
   The output, stretched data therefore fit in the [0, 1] range.
 
@@ -37,7 +37,7 @@ def shadow_highlight_stretch_function(x, shadow, highlight):
     x (np.array): The input data.
     shadow (float): The shadow level (expected < 1).
     highlight (float): The highlight level (expected > shadow).
-    
+
   Returns:
     np.array: The stretched data.
   """
@@ -46,15 +46,15 @@ def shadow_highlight_stretch_function(x, shadow, highlight):
 
 def dynamic_range_stretch_function(x, fr, to):
   """Return the linear dynamic range stretch function f(x).
-  
-  The input data x is linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]], 
+
+  The input data x is linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]],
   and clipped in the [to[0], to[1]] range.
-  
+
   Args:
     x (np.array): The input data.
     fr: The input range (a tuple or list of two floats).
     to: The output range (a tuple or list of two floats).
-    
+
   Returns:
     np.array: The stretched data.
   """
@@ -62,14 +62,14 @@ def dynamic_range_stretch_function(x, fr, to):
 
 def asinh_stretch_function(x, stretch):
   """Return the arcsinh stretch function f(x).
-  
+
   The arcsinh stretch function is defined as:
     f(x) = arcsinh(stretch*x)/arcsinh(stretch)
-  
+
   Args:
     x (np.array): The input data.
     stretch (float): The stretch factor (expected >= 0).
-    
+
   Returns:
     np.array: The stretched data.
   """
@@ -77,27 +77,27 @@ def asinh_stretch_function(x, stretch):
 
 def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
   """Return the generalized hyperbolic stretch function f(x).
-     
+
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
   This function clips the input data x in the [0, 1] range before stretching.
-  
+
   Notes:
   Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js.
-  
+
   Todo:
   Do not clip the input data and extend the transformation outside [0, 1] !
-  
+
   Args:
-    x (np.array): The input data.  
+    x (np.array): The input data.
     logD1 (float): The global stretch factor ln(D+1) (expected >= 0).
     b (float): The local stretch factor.
     SYP (float): The symmetry point (expected in [0, 1]).
     SPP (float): The shadow protection point (expected in [0, SYP]).
     HPP (float): The highlight protection point (expected in [SYP, 1]).
     inverse (bool): Return the inverse stretch function if True.
-    
+
   Returns:
-    np.array: The stretched data.     
+    np.array: The stretched data.
   """
   D = np.exp(logD1)-1.
   x = np.clip(x, 0., 1.)
@@ -265,15 +265,15 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
 
 def midtone_stretch_function(x, midtone):
   """Return the midtone stretch function f(x).
-  
+
   The midtone stretch function is defined as:
     f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
   In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
-  
+
   Args:
     x (np.array): The input data.
     midtone (float): The midtone level (expected in [0, 1]).
-    
+
   Returns:
     np.array: The stretched data.
   """
@@ -281,37 +281,37 @@ def midtone_stretch_function(x, midtone):
 
 def gamma_stretch_function(x, gamma):
   """Return the gamma stretch function f(x).
-  
+
   The gamma stretch function is defined as:
     f(x) = x**gamma
   This function clips the input data x below 0 before stretching.
-  
+
   Args:
     x (np.array): The input data.
     gamma (float): The stretch exponent (expected > 0).
-    
+
   Returns:
     np.array: The stretched data.
-  """  
+  """
   x = np.clip(x, 0., None)
   return x**gamma
 
 def midtone_levels_function(x, shadow, midtone, highlight, low, high):
   """Return the shadow/midtone/highlight/low/high levels adjustment function f(x).
-  
+
   This function:
     1) Clips the input data in the [shadow, highlight] range and maps [shadow, highlight] to [0, 1].
     2) Applies the midtone stretch function f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone).
     3) Maps [low, high] to [0, 1] and clips the output data in the [0, 1] range.
-  
+
   Args:
     x (np.array): The input data.
-    midtone (float): The input midtone level (expected in [0, 1]).    
+    midtone (float): The input midtone level (expected in [0, 1]).
     shadow (float): The input shadow level (expected in [0, midtone]).
     highlight (float): The input highlight level (expected in [midtone, 1]).
     low (float): The "low" output level (expected <= 0).
     high (float): The "high" output level (expected >= 1).
-    
+
   Returns:
     np.array: The stretched data.
   """

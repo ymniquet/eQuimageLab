@@ -18,12 +18,12 @@ from . import helpers
 
 def is_valid_image(image):
   """Return True if the input is a valid image candidate, False otherwise.
-  
+
   Args:
-    image (np.array): The image candidate.    
-  
+    image (np.array): The image candidate.
+
   Returns:
-    bool: True if the input is a valid image candidate, False otherwise.   
+    bool: True if the input is a valid image candidate, False otherwise.
   """
   if not issubclass(type(image), np.ndarray): return False
   if image.ndim == 3:
@@ -38,30 +38,30 @@ def is_valid_image(image):
 
 def clip(image, vmin = 0., vmax = 1.):
   """Clip the input image in the range [vmin, vmax].
-  
+
   Args:
-    image (np.array): The input image.    
+    image (np.array): The input image.
     vmin (float): The lower clip bound.
     vmax (float): The upper clip bound.
 
   Returns:
-    np.array: The clipped image.  
+    np.array: The clipped image.
   """
   return np.clip(image, vmin, vmax)
 
 def blend(image1, image2, mixing):
   """Blend two images.
-  
+
   Returns image1*(1-mixing)+image2*mixing.
-  
+
   Args:
-    image1 (np.array): The first image. 
-    image2 (np.array): The second image.        
+    image1 (np.array): The first image.
+    image2 (np.array): The second image.
     mixing: The mixing coefficient(s) (float or np.array for pixel-dependent mixing).
 
   Returns:
-    np.array: The blended image image1*(1-mixing)+image2*mixing.  
-  """  
+    np.array: The blended image image1*(1-mixing)+image2*mixing.
+  """
   return image1*(1.-mixing)+image2*mixing
 
 #####################################
@@ -77,7 +77,7 @@ class Mixin:
 
   def is_out_of_range(self):
     """Return True if the image is out-of-range (data < 0 or > 1 in any channel), False otherwise.
-    
+
     Returns:
       bool: True if the image is out-of-range.
     """
@@ -90,7 +90,7 @@ class Mixin:
 
   def empty(self):
     """Return an empty image with same size.
-    
+
     Returns:
       Image: An empty image with the same size as self.
     """
@@ -98,10 +98,10 @@ class Mixin:
 
   def black(self):
     """Return a black image with same size.
-    
+
     Returns:
       Image: An black image with the same size as self.
-    """    
+    """
     return np.zeros_like(self)
 
   ##############################
@@ -110,13 +110,13 @@ class Mixin:
 
   def clip(self, vmin = 0., vmax = 1.):
     """Clip the image in the range [vmin, vmax].
-    
+
     Args:
       vmin (float): The lower clip bound.
       vmax (float): The upper clip bound.
 
     Returns:
-      Image: The clipped image.  
+      Image: The clipped image.
     """
     return clip(self, vmin, vmax)
 
@@ -139,16 +139,16 @@ class Mixin:
 
   def blend(self, image, mixing):
     """Blend with the input image.
-    
+
     Returns self*(1-mixing)+image*mixing.
     The images must share the same shape, color space and color model.
-    
+
     Args:
-      image (Image): The image to blend with. 
+      image (Image): The image to blend with.
       mixing: The mixing coefficient(s) (float or np.array for pixel-dependent mixing).
 
     Returns:
-      Image: The blended image self*(1-mixing)+image*mixing.  
+      Image: The blended image self*(1-mixing)+image*mixing.
     """
     if self.shape != image.shape:
       raise ValueError("Error, the images must have the same size & number of channels.")

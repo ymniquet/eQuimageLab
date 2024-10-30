@@ -76,7 +76,7 @@ class Mixin:
   # TESTED.
   def resample(self, width, height, method = "lanczos"):
     """Resize/resample the image.
-    
+
     Args:
       width (int): New image width (pixels).
       height (int): New image height (pixels).
@@ -86,10 +86,10 @@ class Mixin:
         - "bicubic": Cubic spline interpolation.
         - "lanczos": Lanczos (truncated sinc) filter (default).
         - "box": Box average (equivalent to "nearest" for upscaling).
-        - "hamming": Hamming (cosine bell) filter.      
-  
+        - "hamming": Hamming (cosine bell) filter.
+
     Returns:
-      Image: The resized image. 
+      Image: The resized image.
     """
     if width < 1 or width > 32768: raise ValueError("Error, width must be >= 1 and <= 32768 pixels.")
     if height < 1 or height > 32768: raise ValueError("Error, height must be >= 1 and <= 32768 pixels.")
@@ -118,7 +118,7 @@ class Mixin:
   # TESTED.
   def rescale(self, scale, method = "lanczos"):
     """Rescale the image.
-    
+
     Args:
       scale (float): Scaling factor.
       method (str, optional): Resampling method:
@@ -127,10 +127,10 @@ class Mixin:
         - "bicubic": Cubic spline interpolation.
         - "lanczos": Lanczos (truncated sinc) filter (default).
         - "box": Box average (equivalent to "nearest" for upscaling).
-        - "hamming": Hamming (cosine bell) filter.      
-  
+        - "hamming": Hamming (cosine bell) filter.
+
     Returns:
-      Image: The rescaled image.     
+      Image: The rescaled image.
     """
     if scale <= 0. or scale > 16.: raise ValueError("Error, scale must be > 0 and <= 16.")
     width, height = self.get_width_height()
@@ -140,12 +140,12 @@ class Mixin:
   # TESTED.
   def crop(self, xmin, xmax, ymin, ymax):
     """Crop the image.
-    
+
     Args:
       xmin, xmax, ymin, ymax: Crop from x = xmin to x = xmax and from y = ymin to y = ymax (can be integers or floats).
-      
+
     Returns:
-      Image: The cropped image.     
+      Image: The cropped image.
     """
     if xmax <= xmin: raise ValueError("Error, xmax <= xmin.")
     if ymax <= ymin: raise ValueError("Error, ymax <= ymin.")

@@ -22,7 +22,7 @@ class Mixin:
   # TESTED.
   def sharpen(self, channels = ""):
     """Apply a sharpening (Laplacian) convolution filter to selected channels of the image.
-    
+
     Args:
       channels (str, optional): The selected channels:
         - An empty string (default): Apply the operation to all channels (RGB and HSV images).
@@ -32,7 +32,7 @@ class Mixin:
         - "V": Apply the operation to the HSV value (RGB and HSV images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
-         
+
     Returns:
       Image: The sharpened image.
     """
@@ -43,12 +43,12 @@ class Mixin:
 
   def remove_hot_pixels(self, ratio, channels = ""):
     """Remove hot pixels in selected channels of the image.
-    
-    All pixels of a selected channel greater than ratio times the eight nearest-neighbors average  
+
+    All pixels of a selected channel greater than ratio times the eight nearest-neighbors average
     are replaced by this average.
-    
+
     Args:
-      ratio (float): The threshold for hot pixels detection. 
+      ratio (float): The threshold for hot pixels detection.
       channels (str, optional): The selected channels:
         - An empty string (default): Apply the operation to all channels (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB images).
@@ -57,11 +57,11 @@ class Mixin:
         - "V": Apply the operation to the HSV value (RGB and HSV images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
-         
+
     Returns:
-      Image: The processed image.    
+      Image: The processed image.
     """
-    
+
     def remove_hot_pixels_channel(channel):
       """Remove hot pixels from the input channel data."""
       avg = ssig.convolve2d(channel, kernel, mode = "same", boundary = "fill", fillvalue = 0.)/nnn
