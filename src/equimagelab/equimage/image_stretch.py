@@ -67,13 +67,16 @@ class Mixin:
     Args:
       shadow (float): The black (shadow) level (expected < 1).
       channels (str, optional): The selected channels:
-        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB images).
-        - "Lp": Apply the operation to the luma, with highlights protection.
-                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+               (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
+               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -93,13 +96,16 @@ class Mixin:
       shadow (float): The shadow level (expected < 1).
       highlight (float): The highlight level (expected > shadow).
       channels (str, optional): The selected channels:
-        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB images).
-        - "Lp": Apply the operation to the luma, with highlights protection.
-                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+               (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
+               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -120,13 +126,16 @@ class Mixin:
       fr: The input range (a tuple or list of two floats such that fr[1] > fr[0]).
       to: The output range (a tuple or list of two floatssuch that to[1] > to[0]).
       channels (str, optional): The selected channels:
-        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB images).
-        - "Lp": Apply the operation to the luma, with highlights protection.
-                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+               (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
+               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -146,13 +155,16 @@ class Mixin:
     Args:
       stretch (float): The stretch factor (must be >= 0).
       channels (str, optional): The selected channels:
-        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB images).
-        - "Lp": Apply the operation to the luma, with highlights protection.
-                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+               (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
+               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
 
     Returns:
       Image: The stretched image.
@@ -175,13 +187,16 @@ class Mixin:
       HPP (float): The highlight protection point (will be clipped in the [SYP, 1] range).
       inverse (bool): Return the inverse stretch if True.
       channels (str, optional): The selected channels:
-        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB images).
-        - "Lp": Apply the operation to the luma, with highlights protection.
-                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+               (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
+               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
 
     Returns:
       np.array: The stretched image.
@@ -218,13 +233,16 @@ class Mixin:
     Args:
       midtone (float): The midtone level (expected in [0, 1]).
       channels (str, optional): The selected channels:
-        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB images).
-        - "Lp": Apply the operation to the luma, with highlights protection.
-                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+               (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
+               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
 
     Returns:
       np.array: The stretched image.
@@ -243,13 +261,16 @@ class Mixin:
     Args:
       gamma (float): The stretch exponent (must be > 0).
       channels (str, optional): The selected channels:
-        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB images).
-        - "Lp": Apply the operation to the luma, with highlights protection.
-                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+               (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
+               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
 
     Returns:
       np.array: The stretched image.
@@ -273,14 +294,16 @@ class Mixin:
       low (float): The "low" output level (expected <= 0).
       high (float): The "high" output level (expected >= 1).
       channels (str, optional): The selected channels:
-        - An empty string (default): Apply the operation to all channels (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB images).
-        - "Lp": Apply the operation to the luma, with highlights protection.
-                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "V": Apply the operation to the HSV value (RGB and HSV images).
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - A combination of "R", "G", "B": Apply the operation to the R/G/B channels (RGB images).
-
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+               (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
+               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
     Returns:
       np.array: The stretched image.
     """

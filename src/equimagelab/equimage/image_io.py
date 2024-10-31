@@ -22,12 +22,12 @@ import astropy.io.fits as pyfits
 # TESTED.
 def load_image(filename):
   """Load an image from a file.
-  
+
   Note: The color space is assumed to be sRGB and the color model "RGB" or "gray".
-  
+
   Args:
     filename (str): The file name.
-    
+
   Returns:
     The image as an Image object and the file meta-data (including exif if available) as a dictionary.
   """
@@ -54,7 +54,7 @@ def load_image(filename):
     image = iio.imread(filename) if params.IMAGEIO else skio.imread(filename)
   if image.ndim == 2: # Assume single channel images are monochrome.
     nc = 1
-    image = np.expand_dims(image, axis = -1) 
+    image = np.expand_dims(image, axis = -1)
   elif image.ndim == 3:
     nc = image.shape[2]
   else:
@@ -100,20 +100,20 @@ def load_image(filename):
 # TESTED.
 def save_image(image, filename, depth = 8):
   """Save image as a file.
-  
-  Note: The color model must be "RGB" or "gray", but the color space is *not* embedded 
+
+  Note: The color model must be "RGB" or "gray", but the color space is *not* embedded
     in the file at present.
-     
+
   Args:
     image (Image): The image.
-    depth (int, optional): The color depth of the file in bits/channel (default 8).   
+    depth (int, optional): The color depth of the file in bits/channel (default 8).
     filename (str): The file name. The file format is chosen according to the extension:
       - .png: PNG file with depth = 8 or 16 bits/channel.
       - .tif, .tiff: TIFF file with depth = 8, 16 (integers), or 32 (floats) bits/channel.
       - .fit, .fits, .fts: FITS file with 32 bits (floats)/channel (irrespective of depth).
   """
   image.check_color_model("RGB", "gray")
-  is_gray = (image.colormodel == "gray")      
+  is_gray = (image.colormodel == "gray")
   if is_gray:
     print(f"Saving grayscale image as file {filename}...")
   else:

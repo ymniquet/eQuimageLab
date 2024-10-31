@@ -20,12 +20,12 @@ class Mixin:
 
   def statistics(self, channels = "RGBL"):
     """Compute statistics of selected channels of the image.
-    
+
     Args:
-      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), 
-        "V" (for HSV value), "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the 
+      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue),
+        "V" (for HSV value), "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the
         statistics of the value and saturation can be computed. Default is "RGBL".
-        
+
     Returns:
       dict: stats[key] for key in channels, with:
         - stats[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
@@ -38,8 +38,8 @@ class Mixin:
         - stats[key].percentiles = (pr25, pr50, pr75) = the 25th, 50th and 75th percentiles (excluding pixels <= 0 and >= 1).
         - stats[key].zerocount = number of pixels <= 0.
         - stats[key].oorcount = number of pixels > 1 (out-of-range).
-        
-    Note: The statistics are also embedded in the object as self.stats.        
+
+    Note: The statistics are also embedded in the object as self.stats.
     """
     class Container: pass # An empty container class.
     width, height = self.get_width_height()
@@ -52,15 +52,15 @@ class Mixin:
       if key == "R":
         self.check_color_model("RGB", "gray")
         name = "Red"
-        channel = self[0] 
+        channel = self[0]
       elif key == "G":
         self.check_color_model("RGB", "gray")
         name = "Green"
-        channel = self[1] if self.color_model == "RGB" else self[0] 
+        channel = self[1] if self.color_model == "RGB" else self[0]
       elif key == "B":
         self.check_color_model("RGB", "gray")
         name = "Blue"
-        channel = self[2] if self.color_model == "RGB" else self[0] 
+        channel = self[2] if self.color_model == "RGB" else self[0]
       elif key == "V":
         name = "Value"
         channel = self.value()
@@ -93,20 +93,20 @@ class Mixin:
 
   def histograms(self, channels = "RGBL", nbins = None):
     """Compute histograms of selected channels of the image.
-    
+
     Args:
-      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), 
-        "V" (for HSV value), "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the 
-        statistics of the value and saturation can be computed. Default is "RGBL".   
+      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue),
+        "V" (for HSV value), "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the
+        statistics of the value and saturation can be computed. Default is "RGBL".
       nbins (int, optional): Number of bins in the histograms (auto if None, default).
-      
+
     Returns:
       dict: hists[key] for key in channels, with:
         - hists[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
         - hists[key].color = suggested line color for plots.
         - hists[key].edges = histogram bins edges.
         - hists[key].counts = histogram bins counts.
-        
+
     Note: The histograms are also embedded in the object as self.hists.
     """
     class Container: pass # An empty container class.
@@ -118,15 +118,15 @@ class Mixin:
       if key == "R":
         self.check_color_model("RGB", "gray")
         name = "Red"
-        channel = self[0] 
+        channel = self[0]
       elif key == "G":
         self.check_color_model("RGB", "gray")
         name = "Green"
-        channel = self[1] if self.color_model == "RGB" else self[0] 
+        channel = self[1] if self.color_model == "RGB" else self[0]
       elif key == "B":
         self.check_color_model("RGB", "gray")
         name = "Blue"
-        channel = self[2] if self.color_model == "RGB" else self[0] 
+        channel = self[2] if self.color_model == "RGB" else self[0]
       elif key == "V":
         name = "Value"
         color = "black"
