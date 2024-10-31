@@ -60,9 +60,29 @@ class Image(np.ndarray,
     return cls.newImage(image, colorspace, colormodel)
 
   def __array_finalize__(self, obj):
-    """Finalize object creation."""
+    """Finalize object creation.
+    
+    Args: 
+      obj: The parent object.
+    """  
     if obj is None: return
-    self.copy_meta(obj)
+    # Is self a valid image ?
+    if self.ndim != 3: return
+    if self.shape[0] not in [1, 3]: return
+    if self.dtype != params.IMGTYPE: return
+    # If so, copy meta-data from obj.
+    self.__copy_meta__(obj)
+    
+  def __copy_meta__(self, source):
+    """Copy meta-data from the source.
+
+    Note: The colormodel attribute can not be overridden if the image is a grayscale.
+
+    Args:
+      source (Image): The source for meta-data.
+    """
+    self.colorspace = getattr(source, "colorspace", "sRGB")
+    self.colormodel = getattr(source, "colormodel",  "RGB") if self.shape[0] > 1 else "gray"
 
   ######################
   # Object management. #
@@ -102,46 +122,37 @@ class Image(np.ndarray,
 
   @classmethod
   def newImage_like(cls, source, image, **kwargs):
-    """Return a new Image object with the input image and the meta-data (color space and model, ...) copied from source.
+    """Return a new Image object with the input image but the meta-data (color space and model, ...) from an other source.
       
     These meta-data may be overridden with the kwargs (e.g., colorspace = "lRGB", etc...).
     The colormodel attribute can not, however, be overridden if the image is a grayscale.
 
     Args:
-      source (Image): The source image for meta-data.
       image: The input image (np.array or Image).
+      source (Image): The source for meta-data.      
       kwargs: The meta-data to be overridden (e.g., colorspace = "lRGB", ...).
       
     Returns:
       Image: The new image object.    
     """
     obj = cls.newImage(image)
-    obj.copy_meta(source)
+    obj.__copy_meta__(source)
     for name, value in kwargs.items():
       if not hasattr(obj, name): raise ValueError(f"Error, the image object has no attribute {name}.")
+      if name == "colormodel" and obj.shape[0] == 1: 
+        continue # Do not override color model of grayscale images.
       setattr(obj, name, value)
-    if obj.shape[0] == 1: # Do not override color model of grayscale images.
-      obj.colormodel == "gray" 
     return obj
-
-  def copy_meta(self, source):
-    """Copy meta-data from source image.
-
-    Args:
-      source (Image): The source image.
-    """
-    self.colorspace = getattr(source, "colorspace", None) 
-    self.colormodel = getattr(source, "colormodel", None)
 
   def image(self, channels = 0, cls = None):
     """Return a view on the image.
     
     Args:
-      cls, optional: The class of the view object [np.ndarray or Image if None (default)]
+      cls, optional: The class of the returned view object [np.ndarray or Image if None (default)]
       channels: Position of the channel axis. Moving the channel axis will raise an error if cls is Image (or None).
     
     Returns:
-      cls: A view on the image.
+      A view on the image with class cls.
     """
     view = self.view(type = cls) if cls is not None else self.view()
     return view if channels == 0 else np.moveaxis(view, 0, channels)

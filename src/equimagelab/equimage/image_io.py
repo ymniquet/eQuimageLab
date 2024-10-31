@@ -21,9 +21,16 @@ import astropy.io.fits as pyfits
 
 # TESTED.
 def load_image(filename):
-  """Load image file 'filename'.
-     Return the image and meta-data (including exif if available).
-     The color space is assumed to be sRGB."""
+  """Load an image from a file.
+  
+  Note: The color space is assumed to be sRGB and the color model "RGB" or "gray".
+  
+  Args:
+    filename (str): The file name.
+    
+  Returns:
+    The image as an Image object and the file meta-data (including exif if available) as a dictionary.
+  """
   print(f"Loading file {filename}...")
   try:
     header = PILImage.open(filename)
@@ -45,8 +52,9 @@ def load_image(filename):
     image = np.flip(image, axis = 0)    # and an upside down image.
   else:
     image = iio.imread(filename) if params.IMAGEIO else skio.imread(filename)
-  if image.ndim == 2:
+  if image.ndim == 2: # Assume single channel images are monochrome.
     nc = 1
+    image = np.expand_dims(image, axis = -1) 
   elif image.ndim == 3:
     nc = image.shape[2]
   else:
@@ -76,8 +84,6 @@ def load_image(filename):
     raise TypeError(f"Error, image data type {dtype} is not supported.")
   print(f"Bit depth per channel = {bpc}.")
   print(f"Bit depth per pixel = {nc*bpc}.")
-  if nc == 1: # Assume single channel images are monochrome.
-    image = np.repeat(image[:, :, np.newaxis], 3, axis = 2)
   image = np.moveaxis(image, -1, 0) # Move last (channel) axis to leading position.
   for ic in range(nc):
     print(f"Channel #{ic}: minimum = {image[ic].min():.5f}, maximum = {image[ic].max():.5f}.")
@@ -92,18 +98,24 @@ def load_image(filename):
   return Image(np.ascontiguousarray(image)), meta
 
 # TESTED.
-def save_image(image, filename, depth = 8, grayscale = True):
-  """Save image 'image' in file 'filename' with color depth 'depth' (bits/channel).
-     The file format is chosen according to the 'filename' extension:
-      - .png : PNG file with depth = 8 or 16 bits/channel.
-      - .tif, .tiff : TIFF file with depth = 8, 16 (integers), or 32 (floats) bits/channel.
-      - .fit/.fits/.fts : FITS file with 32 bits (floats)/channel (irrespective of depth).
-     The color model must be RGB, but the color space is *not* embedded in the file at present.
-     The image is saved as a single channel gray scale if all RGB channels are the same and 'grayscale' is True."""
-  image.check_color_model("RGB")
-  is_gray_scale = grayscale and image.is_gray_scale()
-  if is_gray_scale:
-    print(f"Saving gray scale image as file {filename}...")
+def save_image(image, filename, depth = 8):
+  """Save image as a file.
+  
+  Note: The color model must be "RGB" or "gray", but the color space is *not* embedded 
+    in the file at present.
+     
+  Args:
+    image (Image): The image.
+    depth (int, optional): The color depth of the file in bits/channel (default 8).   
+    filename (str): The file name. The file format is chosen according to the extension:
+      - .png: PNG file with depth = 8 or 16 bits/channel.
+      - .tif, .tiff: TIFF file with depth = 8, 16 (integers), or 32 (floats) bits/channel.
+      - .fit, .fits, .fts: FITS file with 32 bits (floats)/channel (irrespective of depth).
+  """
+  image.check_color_model("RGB", "gray")
+  is_gray = (image.colormodel == "gray")      
+  if is_gray:
+    print(f"Saving grayscale image as file {filename}...")
   else:
     print(f"Saving RGB image as file {filename}...")
   root, ext = os.path.splitext(filename)
@@ -117,7 +129,7 @@ def save_image(image, filename, depth = 8, grayscale = True):
     else:
       raise ValueError("Error, color depth must be 8 or 16, or 32 bits.")
     print(f"Color depth = {depth} bits per channel (integers).")
-    if is_gray_scale: image = image[:, :, 0]
+    if is_gray: image = image[:, :, 0]
     if ext == ".png":
       if params.IMAGEIO:
         if depth > 16: raise ValueError("Error, color depth of png files must be 8 or 16 bits per channel.")
@@ -133,7 +145,7 @@ def save_image(image, filename, depth = 8, grayscale = True):
   elif ext in [".fit", ".fits", ".fts"]:
     print(f"Color depth = {np.finfo(image.dtype).bits} bits per channel (floats).")
     image = image.flip_height() # Flip image upside down.
-    if is_gray_scale: image = image[0]
+    if is_gray: image = image[0]
     hdu = pyfits.PrimaryHDU(image)
     hdu.writeto(filename, overwrite = True)
   else:

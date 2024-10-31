@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# DOC+MCI.
 
 """Image statistics & histograms."""
 
@@ -18,22 +19,28 @@ class Mixin:
   """To be included in the Image class."""
 
   def statistics(self, channels = "RGBL"):
-    """Compute image statistics of channels 'channels' of a RGB image or HSV image.
-       'channels' is a combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
-       "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the statistics of the value and saturation
-       can be computed.
-       Return stats[key] for key in channels, with:
-         - stats[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
-         - stats[key].width = image width (provided for convenience).
-         - stats[key].height = image height (provided for convenience).
-         - stats[key].npixels = number of image pixels = image width*image height (provided for convenience).
-         - stats[key].minimum = minimum value in channel key.
-         - stats[key].maximum = maximum value in channel key
-         - stats[key].median = pr50 = median value in channel key (excluding pixels <= 0 and >= 1).
-         - stats[key].percentiles = (pr25, pr50, pr75) = the 25th, 50th and 75th percentiles in channel key (excluding pixels <= 0 and >= 1).
-         - stats[key].zerocount = number of pixels <= 0 in channel key.
-         - stats[key].oorcount = number of pixels  > 1 (out-of-range) in channel key.
-        The statistics are also embedded in the object as self.stats."""
+    """Compute statistics of selected channels of the image.
+    
+    Args:
+      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), 
+        "V" (for HSV value), "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the 
+        statistics of the value and saturation can be computed. Default is "RGBL".
+        
+    Returns:
+      dict: stats[key] for key in channels, with:
+        - stats[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
+        - stats[key].width = image width (provided for convenience).
+        - stats[key].height = image height (provided for convenience).
+        - stats[key].npixels = number of image pixels = image width*image height (provided for convenience).
+        - stats[key].minimum = minimum level.
+        - stats[key].maximum = maximum level.
+        - stats[key].median = pr50 = median level (excluding pixels <= 0 and >= 1).
+        - stats[key].percentiles = (pr25, pr50, pr75) = the 25th, 50th and 75th percentiles (excluding pixels <= 0 and >= 1).
+        - stats[key].zerocount = number of pixels <= 0.
+        - stats[key].oorcount = number of pixels > 1 (out-of-range).
+        
+    Note: The statistics are also embedded in the object as self.stats.        
+    """
     class Container: pass # An empty container class.
     width, height = self.get_width_height()
     npixels = width*height
@@ -43,17 +50,17 @@ class Mixin:
         print(f"Warning, channel '{key}' selected twice or more...")
         continue
       if key == "R":
-        self.check_color_model("RGB")
+        self.check_color_model("RGB", "gray")
         name = "Red"
-        channel = self[0]
+        channel = self[0] 
       elif key == "G":
-        self.check_color_model("RGB")
+        self.check_color_model("RGB", "gray")
         name = "Green"
-        channel = self[1]
+        channel = self[1] if self.color_model == "RGB" else self[0] 
       elif key == "B":
-        self.check_color_model("RGB")
+        self.check_color_model("RGB", "gray")
         name = "Blue"
-        channel = self[2]
+        channel = self[2] if self.color_model == "RGB" else self[0] 
       elif key == "V":
         name = "Value"
         channel = self.value()
@@ -85,16 +92,23 @@ class Mixin:
     return stats
 
   def histograms(self, channels = "RGBL", nbins = None):
-    """Compute histograms of channels 'channels' of a RGB or HSV image.
-       'channels' is a combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
-       "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the histograms of the value and saturation
-       can be computed. 'nbins' is the number of bins in the [0, 1] range (automatically adjusted if None).
-       Return hists[key] for key in channels, with:
-         - hists[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
-         - hists[key].color = suggested line color for plots.
-         - hists[key].edges = histogram bins edges.
-         - hists[key].counts = histogram bins counts.
-        The histograms are also embedded in the object as self.hists."""
+    """Compute histograms of selected channels of the image.
+    
+    Args:
+      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), 
+        "V" (for HSV value), "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the 
+        statistics of the value and saturation can be computed. Default is "RGBL".   
+      nbins (int, optional): Number of bins in the histograms (auto if None, default).
+      
+    Returns:
+      dict: hists[key] for key in channels, with:
+        - hists[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
+        - hists[key].color = suggested line color for plots.
+        - hists[key].edges = histogram bins edges.
+        - hists[key].counts = histogram bins counts.
+        
+    Note: The histograms are also embedded in the object as self.hists.
+    """
     class Container: pass # An empty container class.
     hists = {}
     for key in channels:
@@ -102,20 +116,17 @@ class Mixin:
         print(f"Warning, channel '{key}' selected twice or more...")
         continue
       if key == "R":
-        self.check_color_model("RGB")
+        self.check_color_model("RGB", "gray")
         name = "Red"
-        color = "red"
-        channel = self[0]
+        channel = self[0] 
       elif key == "G":
-        self.check_color_model("RGB")
+        self.check_color_model("RGB", "gray")
         name = "Green"
-        color = "green"
-        channel = self[1]
+        channel = self[1] if self.color_model == "RGB" else self[0] 
       elif key == "B":
-        self.check_color_model("RGB")
+        self.check_color_model("RGB", "gray")
         name = "Blue"
-        color = "blue"
-        channel = self[2]
+        channel = self[2] if self.color_model == "RGB" else self[0] 
       elif key == "V":
         name = "Value"
         color = "black"
@@ -140,13 +151,12 @@ class Mixin:
       else:
         nbinsc = nbins
       nbinsc = int(round(nbinsc*(maximum-minimum)))
-      if nbinsc > 32768: # Limit number of bins.
+      if nbinsc > 32768: # Limit the number of bins.
         nbinsc = 32768
         print(f"Warning, limiting the number of bins to {nbinsc} for channel '{key}'.")
-      hists[key] = Container(l)
+      hists[key] = Container()
       hists[key].name = name
       hists[key].color = color
       hists[key].counts, hists[key].edges = np.histogram(channel, bins = nbinsc, range = (minimum, maximum), density = False)
     self.hists = hists
     return hists
-

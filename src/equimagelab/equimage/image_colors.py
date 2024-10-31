@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# DOC+MCI.
 
 """Color management."""
 
@@ -23,8 +24,12 @@ class Mixin:
   # Image queries. #
   ##################
 
-  def is_gray_scale(self):
-    """Return True if a RGB image is a grayscale (same RGB channels), False otherwise."""
+  def is_grayscale_RGB(self):
+    """Return True if a RGB image is actually a grayscale (same RGB channels), False otherwise.
+    
+    Returns:
+      bool: True if the RGB image is a grayscale (same RGB channels), False otherwise.
+    """
     self.check_color_model("RGB")
     image = self.image(cls = np.ndarray)
     return np.all(abs(image[1]-image[0]) < params.IMGTOL) and np.all(abs(image[2]-image[0]) < params.IMGTOL)
@@ -35,14 +40,27 @@ class Mixin:
 
   # TESTED.
   def negative(self):
-    """Return the negative of a RGB image."""
-    self.check_color_model("RGB")
+    """Return the negative of a RGB or grayscale image.
+    
+    Returns:
+      Image: The negative of the image.
+    """
+    self.check_color_model("RGB", "gray")
     return 1.-self
 
   # TESTED.
-  def gray_scale(self, channel = "Y"):
+  def grayscale(self, channel = "Y", RGB = False):
     """Convert the selected channel of a RGB image into a grayscale image.
-       'channel' can be "V" (value), "L" (luma) or "Y" (luminance)."""
+    
+    Args:
+      channel: The converted channel ("V" for the HSV value, "L" for the luma, "Y" for the luminance).
+        Namely, the output grayscale image has the same value/luma/luminance as the original RGB image.
+      RGB (bool, optional): If True, return the grayscale as a RGB image (with identical R/G/B
+        channels). If False (default), return the grayscale as a single channel image.
+    
+    Returns:
+      Image: The grayscale image.
+    """
     self.check_color_model("RGB")
     if channel == "V":
       grayscale = self.value()
@@ -54,15 +72,29 @@ class Mixin:
         grayscale = colorspaces.lRGB_to_sRGB(grayscale) # Preserve luminance in the sRGB color space.
     else:
       raise ValueError(f"Error, invalid channel '{channel}' (must be 'V', 'L' or 'Y').")
-    return self.newImage_like(self, np.repeat(grayscale[np.newaxis, :, :,], 3, axis = 0))
-
+    if RGB:
+      return self.newImage_like(self, np.repeat(grayscale[np.newaxis, :, :], 3, axis = 0))
+    else:
+      return self.newImage_like(self, grayscale)
+    
   ##########################
   # Color transformations. #
   ##########################
 
   # TESTED.
   def color_balance(self, red = 1., green = 1., blue = 1.):
-    """Multiply the red channel of a RGB image by 'red', the green channel by 'green', and the blue channel by 'blue'."""
+    """Adjust the color balance of a RGB image.
+    
+    Scales the red/green/blue channels by the input multipliers.
+    
+    Args:
+      red (float, optional): The multiplier for the red channel (default 1).
+      green (float, optional): The multiplier for the green channel (default 1).      
+      blue (float, optional): The multiplier for the blue channel (default 1).
+    
+    Returns:
+      Image: The processed image.
+    """
     self.check_color_model("RGB")
     if red < 0.: raise ValueError("Error, red must be >= 0.")
     if green < 0.: raise ValueError("Error, green must be >= 0.")
@@ -73,19 +105,39 @@ class Mixin:
     if blue  != 1.: image[2] *= blue
     return image
 
-    def color_saturation(self, all = 0., R = None, Y = None, G = None, C = None, B = None, M = None, model = "midsat", interpolation = "cubic"):
+    def color_saturation(self, A = 0., model = "midsat", interpolation = "cubic", **kwargs):
       """Adjust color saturation.
-         The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model':
-           - "deltasat": Shift the saturation S <- S+delta.
-           - "midsat": Apply a midtone stretch function S <- f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
-                       This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1.
-         delta is expected in the [-1, 1] range, with delta = 0 leaving the image unchanged. delta > 0 saturates the
-         colors, while delta < 0 turn the image into a a grayscale. delta = 'all' is first set for all hues (default 0),
-         then is updated for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues,
-         if these kwargs are not None. delta is interpolated for arbitrary HSV hues using nearest neighbor interpolation
-         ('interpolation' = "nearest"), linear ('interpolation' = "linear") or cubic ('interpolation' = "cubic") spline.
-         The image is converted back to its original color model ("RGB" or "HSV") after the operation."""
-
+      
+      The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model' kwarg:
+        - "deltasat": Shift the saturation S <- S+delta.
+        - "midsat": Apply a midtone stretch function S <- f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
+                    This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1.
+      The image is converted back to the original color model ("RGB" or "HSV") after this operation.
+      delta is expected in the [-1, 1] range, with delta = 0 leaving the image unchanged. delta > 0 saturates the colors,
+      while delta < 0 turn the image into a a grayscale. 
+      delta is first set for all hues (with the 'A' kwarg), then is updated for the red ('R'), yellow ('Y'), green ('G'),
+      cyan ('C'), blue ('B') and magenta ('M') hues, if these kwargs are provided. 
+      delta is interpolated for arbitrary HSV hues using nearest neighbor, linear or cubic spline interpolation, according 
+      to the 'interpolation' kwarg.
+      
+      Args:
+        A (float, optional): The delta for all hues (default 0).
+        R (float, optional): The red delta (default A).
+        Y (float, optional): The yellow delta (default A).
+        G (float, optional): The green delta (default A).
+        C (float, optional): The cyan delta (default A).
+        B (float, optional): The blue delta (default A).
+        M (float, optional): The magenta delta (default A).
+        model (str, optional): The saturation model ["deltasat" or "midsat" (default)]
+        interpolation (str, optional): The hue interpolation model:
+          - "nearest": Nearest neighbor interpolation.
+          - "linear": Linear spline interpolation.
+          - "cubic": Cubic spline interpolation (default).
+        
+      Returns:
+        Image: The processed image.
+      """
+      
     def interpolate(self, hue, psat, interpolation):
       """Interpolate the saturation parameter psat[RYGCBM] for arbitrary hues."""
       if np.all(psat == psat[0]):
@@ -104,12 +156,12 @@ class Mixin:
 
     self.check_color_model("RGB", "HSV")
     psat = np.empty(6)
-    psat[0] = R if R is not None else all
-    psat[1] = Y if Y is not None else all
-    psat[2] = G if G is not None else all
-    psat[3] = C if C is not None else all
-    psat[4] = B if B is not None else all
-    psat[5] = M if M is not None else all
+    psat[0] = kwargs.get("R", A)
+    psat[1] = kwargs.get("Y", A)
+    psat[2] = kwargs.get("G", A)
+    psat[3] = kwargs.get("C", A)
+    psat[4] = kwargs.get("B", A)
+    psat[5] = kwargs.get("M", A)
     hsv = self.HSV()
     hue = hsv[0]
     sat = hsv[1]
@@ -128,15 +180,27 @@ class Mixin:
   # Color noise reduction. #
   ##########################
 
-  def SCNR(self, hue = "green", protection = "avgneutral", mixing = 1., lightness = True):
-    """Selective color noise reduction of a given 'hue' of a RGB image. 'hue' can be "red" alias "R",
-       "yellow" alias "Y", "green" alias "G", "cyan" alias "C", "blue" alias "B", or "magenta" alias "M".
-       The selected hue is reduced according to the 'protection' mode. For the green hue for example,
-         - G <- min(G, C) with C = (R+B)/2 for average neutral protection ('protection' = "avgneutral").
-         - G <- min(G, C) with C = max(R, B) for maximum neutral protection ('protection' = "maxneutral").
-         - G <- G[(1-m)+C*m] with C = (R+B)/2 and m = 'mixing' for additive mask protection ('protection' = "addmask").
-         - G <- G[(1-m)+C*m] with C = max(R, B) and m = 'mixing' for maximum mask protection ('protection' = "maxmask").
-       The RGB components of each pixel are then rescaled to preserve the CIE lightness L* if 'lightness' is True."""
+  def SCNR(self, hue = "green", protection = "avgneutral", amount = 1., lightness = True):
+    """Selective color noise reduction of a given hue of a RGB image. 
+    
+    The input hue is reduced according to the 'protection' kwarg. For the green hue for example,
+      - G <- min(G, C) with C = (R+B)/2 for average neutral protection (protection = "avgneutral").
+      - G <- min(G, C) with C = max(R, B) for maximum neutral protection (protection = "maxneutral").
+      - G <- G*[(1-a)+C*a] with C = (R+B)/2 for additive mask protection (protection = "addmask").
+      - G <- G*[(1-a)+C*a] with C = max(R, B) for maximum mask protection (protection = "maxmask").    
+    The parameter a in [0, 1] controls the strength of the mask protection. 
+    
+    Args:
+      hue (str, optional): The hue to be reduced ["red" alias "R", "yellow" alias "Y", "green" alias "G" (default),
+        "cyan" alias "C", "blue" alias "B", or "magenta" alias "M"].
+      protection (str, optional): The protection mode ["avgneutral" (default), "maxneutral", "addmask" or "maxmask"].
+      amount (float, optional): The a parameter for mask protection (protection = "addmask" or "maxmask", default 1).
+      lightness (bool, optional): If True (default), rescale the output pixels to preserve the CIE lightness L* of the
+        original image.
+      
+    Returns:
+      Image: The processed image.
+    """
     self.check_color_model("RGB")
     if hue == "red" or hue == "R":
       icc, ic1, ic2, negative = 0, 1, 2, False
@@ -151,7 +215,7 @@ class Mixin:
     elif hue == "magenta" or hue == "M":
       icc, ic1, ic2, negative = 1, 0, 2, True
     else:
-      raise ValueError(f"Error, unknowm hue '{hue}'.")
+      raise ValueError(f"Error, unknown hue '{hue}'.")
     image = self.clip() # Clip before reducing color noise.
     if negative: image = image.negative()
     if protection == "avgneutral":
@@ -162,10 +226,10 @@ class Mixin:
       image[icc] = np.minimum(image[icc], c)
     elif protection == "addmask":
       c = np.minimum(1., image[ic1]+image[ic2])
-      image[icc] *= (1.-mixing)+c*mixing
+      image[icc] *= (1.-amount)+c*amount
     elif protection == "maxmask":
       c = np.maximum(image[ic1], image[ic2])
-      image[icc] *= (1.-mixing)+c*mixing
+      image[icc] *= (1.-amount)+c*amount
     else:
       raise ValueError(f"Error, unknown protection mode '{protection}'.")
     if negative: image = image.negative()
@@ -177,4 +241,3 @@ class Mixin:
       difflight = image.lightness()-self.lightness()
       print(f"Maximum lightness difference = {abs(difflight).max()}.")
     return image
-
