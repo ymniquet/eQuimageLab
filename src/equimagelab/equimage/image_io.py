@@ -109,11 +109,11 @@ def save_image(image, filename, depth = 8, grayscale = True):
   root, ext = os.path.splitext(filename)
   if ext in [".png", ".tif", ".tiff"]:
     if depth == 8:
-      image = image.rgb8()
+      image = image.int8()
     elif depth == 16:
-      image = image.rgb16()
+      image = image.int16()
     elif depth == 32:
-      image = image.rgb32()
+      image = image.int32()
     else:
       raise ValueError("Error, color depth must be 8 or 16, or 32 bits.")
     print(f"Color depth = {depth} bits per channel (integers).")

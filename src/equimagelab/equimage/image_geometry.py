@@ -108,7 +108,7 @@ class Mixin:
       method = PILImage.Resampling.HAMMING
     else:
       raise ValueError(f"Error, unknown resampling method '{method}'.")
-    nc = self.shape[0]
+    nc = self.get_nc()
     resized = np.empty((nc, height, width), dtype = params.IMGTYPE)
     for ic in range(nc): # Resize each channel using PIL.
       PILchannel = PILImage.fromarray(np.float32(self[ic]), "F").resize((width, height), method) # Convert to np.float32 while resizing.

@@ -60,7 +60,7 @@ class Mixin:
       H(f) = 1/(1+(f/fc)^(2n))
 
     where n is the order of the filter and fc the cut-off frequency.
-    The channels are Fast-Fourier Transformed back and forth to apply the filter.
+    The data are Fast-Fourier Transformed back and forth to apply the filter.
 
     Args:
       cutoff (float): The normalized cutoff frequency in [0, 1] (fc = (1-cutoff)fs/2 with fs the FFT sampling frequency).
@@ -95,7 +95,7 @@ class Mixin:
     where BLUR(CIN) is the convolution of CIN with a gaussian of standard deviation sigma.
     As BLUR(CIN) is a low-pass filter, CIN-BLUR(CIN) is a high-pass filter whose output is
     admixed in the original image. This enhances details; the larger the mixing strength,
-    the sharper the image, at the expense of noise.
+    the sharper the image, at the expense of noise and fidelity.
 
     Args:
       sigma (float): The standard deviation of the gaussian (pixels).
@@ -139,12 +139,12 @@ class Mixin:
   def wavelets_filter(self, sigma, wavelet = "coif4", mode = "soft", method = "Bayeshrink", shifts = 0, channels = "L"):
     """Wavelets filter for denoising selected channels of the image.
 
-    Performs a wavelets transform on the selected channels and filters the wavelet bands to reduce noise.
+    Performs a wavelets transform on the selected channels and filters the wavelets to reduce noise.
 
     Args:
       sigma: The estimated noise standard deviation used to compute the wavelets filter threshold.
         The larger sigma, the smoother the output image.
-      wavelet (str, optional): The wavelets used to process the image (default "coif4").
+      wavelet (str, optional): The wavelets used to decompose the image (default "coif4").
         Can be any of the orthogonal wavelets of `pywt.wavelist`. Recommended wavelets are:
           - Daubechies wavelets ("db1"..."db8"),
           - Symlets ("sym2"..."sym8"),
@@ -154,7 +154,7 @@ class Mixin:
         Separate thresholds are applied to the wavelets bands for "BayesShrink", whereas a
         single threshold is applied for "VisuShrink" (best in principle for Gaussian noise,
         but may appear overly smooth).
-      shifts (int, optional): Number of spin cycles (default 0). The wavelets filter is not
+      shifts (int, optional): Number of spin cycles (default 0). The wavelets transform is not
         shift-invariant. To mimic a shift-invariant transform as best as possible, the output image
         is an average of the original image shifted shifts times in each direction, filtered, then
         shifted back to the original position.
@@ -279,14 +279,14 @@ class Mixin:
     and M(r) is an average of CIN in a patch around r.
     Therefore, the non-local means filter averages the neighboring pixels whose patches (texture) are
     sufficiently similar. The non-local means filter can restore textures that would be blurred by
-    other denoising algorithms such as bilateral_filter and total_variation.
+    other denoising algorithms such as the bilateral and total variation filters.
 
     Args:
       size (int, optional): The size of the (square) patch used to compute M(r) (default 7).
       dist (int, optional): The maximal distance between the patches (default 11).
       h (float, optional): The cut-off in gray levels (default 0.01; the filter is applied to all channels independently).
       sigma (float, optional): The standard deviation of the noise (if known), subtracted out when computing f(r, r').
-        This can lead to a modest improvement in image quality (leave default 0 if unknown).
+        This can lead to a modest improvement in image quality (keep default 0 if unknown).
       fast (bool, optional): If true (default), the pixels within the patch are averaged uniformly.
         If false, they are weighted by a gaussian (better yet slower).
       channels (str, optional): The selected channels:
