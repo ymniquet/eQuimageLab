@@ -11,6 +11,7 @@ import numpy as np
 import skimage.color as skcolor
 
 from . import params
+from . import helpers
 
 #############################
 # sRGB <-> lRGB conversion. #
@@ -465,8 +466,8 @@ class Mixin:
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
-               (after the operation, the out-of-range pixels are mixed with f(RGB)).
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+               (after the operation, the out-of-range pixels are blended with f(RGB)).
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
                               if False, the operation must be applied one channel at a time.
 
@@ -497,13 +498,13 @@ class Mixin:
         return hsv
       else:
         self.color_model_error()
-    elif channels == "L" or channels == "Ls" or channels == "Lm":
+    elif channels == "L" or channels == "Ls" or channels == "Lb":
       luma = self.luma()
       output = self.scale_pixels(luma, f(luma))
       if channels == "Ls":
         return output.protect_highlights_sat()
-      elif channels == "Lm":
-        raise RuntimeError("Not yet implemented !..")
+      elif channels == "Lb":
+        return output.protect_highlights_blend(self.apply_channels(f, "RGB", multi))
       else:
         return output
     else:
@@ -558,8 +559,8 @@ class Mixin:
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
-               (after the operation, the out-of-range pixels are mixed with f(RGB)).
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+               (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The clipped image.
@@ -569,7 +570,10 @@ class Mixin:
   def protect_highlights_sat(self):
     """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant luma.
 
-    This method aims at protecting the highlights from overflowing when stretching the luma.
+    The out-of-range RGB components of the pixels are decreased while the in-range RGB components are
+    increased so that the luma is conserved. This desaturates (whitens) the pixels with out-ot-range
+    components.
+    This aims at protecting the highlights from overflowing when stretching the luma.
 
     Warning: The luma must be <= 1 even though some pixels have HSV value > 1.
 
@@ -580,7 +584,7 @@ class Mixin:
     luma = self.luma() # Original luma.
     newimage = self.copy()
     if np.any(luma > 1.+params.IMGTOL/2):
-      print("Warning, can not protect highlights if the luma itself is out-of-range. Returning original image...")
+      print("Warning, can not protect highlights if the luma is out-of-range. Returning original image...")
       return newimage
     newimage /= np.maximum(self.max(axis = 0), 1.) # Rescale maximum HSV value to 1.
     newluma = newimage.luma() # Updated luma.
@@ -592,3 +596,23 @@ class Mixin:
     diffluma = luma-output.luma()
     print(f"Maximum luma difference = {abs(diffluma).max()}.")
     return output
+
+  def protect_highlights_blend(self, bounded):
+    """Normalize out-of-range pixels with HSV value > 1 by blending with a bounded image with HSV values <= 1.
+
+    Each pixel of the image with out-of-range RGB components is brought back in-range by blending with the
+    pixel of the input bounded image.
+    This aims at protecting the highlights from overflowing when stretching the luma.
+
+    Args:
+      bounded (Image): The "in-range" image to blend with. All pixels must have HSV values <= 1.
+
+    Returns:
+      Image: The processed image.
+    """
+    self.check_color_model("RGB")
+    if np.any(bounded.value() > 1.+params.IMGTOL/2):
+      print("Warning, can not protect highlights if the input bounded image is out-of-range. Returning original image...")
+      return self.copy()
+    mixing = np.where(self > 1.+params.IMGTOL, helpers.failsafe_divide(self-1., self-bounded), 0.)
+    return self.blend(bounded, mixing.max(axis = 0))

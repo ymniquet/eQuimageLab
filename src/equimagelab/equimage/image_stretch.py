@@ -75,8 +75,8 @@ class Mixin:
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
-               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+               (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -104,8 +104,8 @@ class Mixin:
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
-               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+               (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -134,8 +134,8 @@ class Mixin:
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
-               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+               (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -163,8 +163,8 @@ class Mixin:
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
-               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+               (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The stretched image.
@@ -195,8 +195,8 @@ class Mixin:
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
-               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+               (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       np.array: The stretched image.
@@ -241,8 +241,8 @@ class Mixin:
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
-               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+               (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       np.array: The stretched image.
@@ -269,8 +269,8 @@ class Mixin:
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
-               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+               (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       np.array: The stretched image.
@@ -302,8 +302,8 @@ class Mixin:
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
                (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lm": Apply the operation to the luma, with highlights protection by mixing.
-               (after the operation, the out-of-range pixels are mixed with channels = "RGB").
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+               (after the operation, the out-of-range pixels are blended with channels = "RGB").
     Returns:
       np.array: The stretched image.
     """
