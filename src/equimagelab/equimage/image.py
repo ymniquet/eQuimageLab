@@ -208,3 +208,23 @@ class Image(np.ndarray,
     image = self.image(cls = np.ndarray, channels = -1)
     data = np.clip(image*4294967295, 0, 4294967295)
     return np.rint(data).astype("uint32")
+
+###############################
+# Helpers for image creation. #
+###############################
+
+def newImage_like(source, image, **kwargs):
+  """Return a new Image object with the input image but the meta-data (color space and model, ...) from an other source.
+
+  These meta-data may be overridden with the kwargs (e.g., colorspace = "lRGB", etc...).
+  The colormodel attribute can not, however, be overridden if the image is a grayscale.
+
+  Args:
+    image: The input image (np.array or Image).
+    source (Image): The source for meta-data.
+    kwargs: The meta-data to be overridden (e.g., colorspace = "lRGB", ...).
+
+  Returns:
+    Image: The new image object.
+  """
+  return source.newImage_like(source, image, **kwargs)
