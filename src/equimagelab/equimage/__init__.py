@@ -8,7 +8,7 @@
 
 # Import everything.
 
-from .image import Image, newImage_like
+from .image import Image
 from .image_colorspaces import get_RGB_luma, set_RGB_luma
 from .image_utils import is_valid_image, clip, blend
 from .image_stretch import mts, ghs

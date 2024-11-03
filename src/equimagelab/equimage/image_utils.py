@@ -20,7 +20,7 @@ def is_valid_image(image):
   """Return True if the input is a valid image candidate, False otherwise.
 
   Args:
-    image (np.array): The image candidate.
+    image (numpy.ndarray): The image candidate.
 
   Returns:
     bool: True if the input is a valid image candidate, False otherwise.
@@ -40,12 +40,12 @@ def clip(image, vmin = 0., vmax = 1.):
   """Clip the input image in the range [vmin, vmax].
 
   Args:
-    image (np.array): The input image.
+    image (numpy.ndarray): The input image.
     vmin (float): The lower clip bound.
     vmax (float): The upper clip bound.
 
   Returns:
-    np.array: The clipped image.
+    numpy.ndarray: The clipped image.
   """
   return np.clip(image, vmin, vmax)
 
@@ -55,12 +55,12 @@ def blend(image1, image2, mixing):
   Returns image1*(1-mixing)+image2*mixing.
 
   Args:
-    image1 (np.array): The first image.
-    image2 (np.array): The second image.
-    mixing: The mixing coefficient(s) (float or np.array for pixel-dependent mixing).
+    image1 (numpy.ndarray): The first image.
+    image2 (numpy.ndarray): The second image.
+    mixing: The mixing coefficient(s) (float or numpy.ndarray for pixel-dependent mixing).
 
   Returns:
-    np.array: The blended image image1*(1-mixing)+image2*mixing.
+    numpy.ndarray: The blended image image1*(1-mixing)+image2*mixing.
   """
   return image1*(1.-mixing)+image2*mixing
 
@@ -81,8 +81,7 @@ class Mixin:
     Returns:
       bool: True if the image is out-of-range.
     """
-    image = self.image(cls = np.ndarray)
-    return np.any(image < -params.IMGTOL) or np.any(image > 1.+params.IMGTOL)
+    return np.any(self.image < -params.IMGTOL) or np.any(self.image > 1.+params.IMGTOL)
 
   ##############
   # Templates. #
@@ -118,7 +117,7 @@ class Mixin:
     Returns:
       Image: The clipped image.
     """
-    return clip(self, vmin, vmax)
+    return np.clip(self, vmin, vmax)
 
   def scale_pixels(self, source, target, cutoff = params.IMGTOL):
     """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff, set all channels to target.
@@ -131,7 +130,7 @@ class Mixin:
     Returns:
       Image: The scaled image.
     """
-    return self.newImage_like(self, helpers.scale_pixels(self, source, target, cutoff))
+    return self.newImage(helpers.scale_pixels(self.image, np.asarray(source), np.asarray(target), cutoff))
 
   #############
   # Blending. #
@@ -145,15 +144,15 @@ class Mixin:
 
     Args:
       image (Image): The image to blend with.
-      mixing: The mixing coefficient(s) (float or np.array for pixel-dependent mixing).
+      mixing: The mixing coefficient(s) (float or numpy.ndarray for pixel-dependent mixing).
 
     Returns:
       Image: The blended image self*(1-mixing)+image*mixing.
     """
-    if self.shape != image.shape:
-      raise ValueError("Error, the images must have the same size & number of channels.")
+    if self.get_shape() != image.get_shape():
+      raise ValueError("Error, the images must share the same size & number of channels.")
     if self.colorspace != image.colorspace:
-      raise ValueError("Error, the images must have the same color space !")
+      raise ValueError("Error, the images must share the same color space !")
     if self.colormodel != image.colormodel:
-      raise ValueError("Error, the images must have the same color model !")
-    return self.newImage_like(self, blend(self, image, mixing))
+      raise ValueError("Error, the images must share the same color model !")
+    return self.newImage(self.image*(1.-mixing)+image.image*mixing)

@@ -13,13 +13,18 @@ import plotly.io as pio
 pio.renderers.default = "jupyterlab"
 
 from . import params
+from ..equimage.image import Image
 
 def show(image, histograms = None, statistics = None, width = params.maxwidth, height = params.maxheight, sample = 1, renderer = None):
+  if isinstance(image, Image):
+    image = image.get_image()
   if image.ndim == 2:
-    image = image[::sample, ::sample]
+    sampled = image[::sample, ::sample]
+  elif image.shape[0] == 1:
+    sampled = image[0, ::sample, ::sample]
   else:
-    image = np.moveaxis(image[:, ::sample, ::sample], 0, -1)
-  figure = px.imshow(image, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
+    sampled = np.moveaxis(image[:, ::sample, ::sample], 0, -1)
+  figure = px.imshow(sampled, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
   layout = go.Layout(autosize = True, height = height) #, margin = go.layout.Margin(l = 0, r = 0, b = 0, t = 0))
   widget = go.FigureWidget(data = figure) #, layout = layout) # Fails to account for layout ??
   widget.update_layout(layout)

@@ -21,7 +21,6 @@ class Mixin:
   # Filter. #
   ###########
 
-  # TESTED.
   def gaussian_filter(self, sigma, mode = "reflect", channels = ""):
     """Convolve (blur) selected channels of the image with a gaussian.
 
@@ -54,7 +53,6 @@ class Mixin:
       mode = "constant"
     return self.apply_channels(lambda channel: skim.filters.gaussian(channel, channel_axis = 0, sigma = sigma, mode = mode, cval = 0.), channels)
 
-  # TESTED.
   def butterworth_filter(self, cutoff, order = 2, padding = 0, channels = ""):
     """Apply a Butterworth low-pass filter to selected channels of the image.
 
@@ -130,7 +128,6 @@ class Mixin:
   # Denoise. #
   ############
 
-  # TESTED.
   def estimate_noise(self):
     """Estimate the rms noise of the image, averaged over all channels.
 
@@ -143,7 +140,7 @@ class Mixin:
     To do:
       Estimate the noise in arbitrary channels.
     """
-    return skim.restoration.estimate_sigma(self, channel_axis = 0, average_sigmas = True)
+    return skim.restoration.estimate_sigma(self.image, channel_axis = 0, average_sigmas = True)
 
   def wavelets_filter(self, sigma, wavelet = "coif4", mode = "soft", method = "Bayeshrink", shifts = 0, channels = "L"):
     """Wavelets filter for denoising selected channels of the image.
@@ -191,7 +188,6 @@ class Mixin:
     return self.apply_channels(lambda channel: skim.restoration.cycle_spin(channel, channel_axis = 0, max_shifts = shifts,
                                func = skim.restoration.denoise_wavelet, func_kw = kwargs, num_workers = None), channels)
 
-  # TESTED.
   def bilateral_filter(self, sigma_space, sigma_color = .1, mode = "reflect", channels = ""):
     """Bilateral filter for denoising selected channels of the image.
 
@@ -238,7 +234,6 @@ class Mixin:
     return self.apply_channels(lambda channel: skim.restoration.denoise_bilateral(channel, channel_axis = 0, sigma_spatial = sigma_space,
                                sigma_color = sigma_color, mode = mode, cval = 0.), channels)
 
-  # TESTED.
   def total_variation(self, weight = .1, algorithm = "Chambolle", channels = ""):
     """Total variation denoising of selected channels of the image.
 
@@ -281,7 +276,6 @@ class Mixin:
     else:
       raise ValueError(f"Error, unknown algorithm {algorithm} (must be 'Chambolle' or 'Bregman').")
 
-  # TESTED.
   def non_local_means(self, size = 7, dist = 11, h = .01, sigma = 0., fast = True, channels = ""):
     """Non-local means filter for denoising selected channels of the image.
 
@@ -331,36 +325,36 @@ class Mixin:
   # Contrast. #
   #############
 
-    def CLAHE(self, size = None, clip = .01, nbins = 256, channels = "L"):
-      """Contrast Limited Adaptive Histogram Equalization (CLAHE) of selected channels of the image.
+  def CLAHE(self, size = None, clip = .01, nbins = 256, channels = "L"):
+    """Contrast Limited Adaptive Histogram Equalization (CLAHE) of selected channels of the image.
 
-      See https://en.wikipedia.org/wiki/Adaptive_histogram_equalization.
+    See https://en.wikipedia.org/wiki/Adaptive_histogram_equalization.
 
-      Args:
-        size (optional): The size of the tiles (in pixels) used to sample local histograms,
-          given as a single integer or as pair of integers (width, height of the tiles).
-          If None (default), the tile size defaults to 1/8 of the image width and height.
-        clip (float, optional): The clip limit used to control contrast enhancement (default 0.01).
-        nbins (int, optional): The number of bins in the local histograms (default 256).
-      channels (str, optional): The selected channels:
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
-      However, CLAHE is only used, in principle, for the "V" (default) and "L(s, m)" channels.
+    Args:
+      size (optional): The size of the tiles (in pixels) used to sample local histograms,
+        given as a single integer or as pair of integers (width, height of the tiles).
+        If None (default), the tile size defaults to 1/8 of the image width and height.
+      clip (float, optional): The clip limit used to control contrast enhancement (default 0.01).
+      nbins (int, optional): The number of bins in the local histograms (default 256).
+    channels (str, optional): The selected channels:
+      - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+      - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+      - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+      - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+      - "L": Apply the operation to the luma (RGB and grayscale images).
+      - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+              (after the operation, the out-of-range pixels are desaturated at constant luma).
+      - "Lb": Apply the operation to the luma, with highlights protection by blending.
+              (after the operation, the out-of-range pixels are blended with channels = "RGB").
+    However, CLAHE is only used, in principle, for the "V" (default) and "L(s, m)" channels.
 
-      Returns:
-        Image: The processed image.
+    Returns:
+      Image: The processed image.
 
-      See also:
-        skimage.exposure.equalize_adapthist
-      """
-      clipped = self.clip_channels(channels) # Clip relevant channels before CLAHE to avoid artifacts.
-      return clipped.apply_channels(lambda channel: skim.exposure.equalize_adapthist(channel, kernel_size = size, clip_limit = clip, nbins = nbins),
-                                    channels, multi = False)
+    See also:
+      skimage.exposure.equalize_adapthist
+    """
+    clipped = self.clip_channels(channels) # Clip relevant channels before CLAHE to avoid artifacts.
+    return clipped.apply_channels(lambda channel: skim.exposure.equalize_adapthist(channel, kernel_size = size, clip_limit = clip, nbins = nbins),
+                                  channels, multi = False)

@@ -19,39 +19,10 @@ from . import params
 class Mixin:
   """To be included in the Image class."""
 
-  ##################
-  # Image queries. #
-  ##################
-
-  def get_width(self):
-    """Return the width of the image.
-
-    Returns:
-      int: The width of the image in pixels.
-    """
-    return self.shape[2]
-
-  def get_height(self):
-    """Return the height of the image.
-
-    Returns:
-      int: The height of the image in pixels.
-    """
-    return self.shape[1]
-
-  def get_width_height(self):
-    """Return the width and height of the image.
-
-    Returns:
-      A tuple of integers, (width, height) of the image in pixels.
-    """
-    return self.shape[2], self.shape[1]
-
   ################################
   # Geometrical transformations. #
   ################################
 
-  # TESTED.
   def flip_height(self):
     """Flip the image along its height.
 
@@ -60,7 +31,6 @@ class Mixin:
     """
     return np.flip(self, axis = 1)
 
-  # TESTED.
   def flip_width(self):
     """Flip the image along its width.
 
@@ -73,9 +43,8 @@ class Mixin:
   # Resize & Crop. #
   ##################
 
-  # TESTED.
-  def resample(self, width, height, method = "lanczos"):
-    """Resize/resample the image.
+  def resize(self, width, height, method = "lanczos"):
+    """Resize the image.
 
     Args:
       width (int): New image width (pixels).
@@ -109,13 +78,12 @@ class Mixin:
     else:
       raise ValueError(f"Error, unknown resampling method '{method}'.")
     nc = self.get_nc()
-    resized = np.empty((nc, height, width), dtype = params.IMGTYPE)
+    output = np.empty((nc, height, width), dtype = params.IMGTYPE)
     for ic in range(nc): # Resize each channel using PIL.
-      PILchannel = PILImage.fromarray(np.float32(self[ic]), "F").resize((width, height), method) # Convert to np.float32 while resizing.
-      resized[ic] = np.asarray(PILchannel, dtype = params.IMGTYPE)
-    return self.newImage_like(self, resized)
+      PILchannel = PILImage.fromarray(np.float32(self.image[ic]), "F").resize((width, height), method) # Convert to np.float32 while resizing.
+      output[ic] = np.asarray(PILchannel, dtype = params.IMGTYPE)
+    return self.newImage(output)
 
-  # TESTED.
   def rescale(self, scale, method = "lanczos"):
     """Rescale the image.
 
@@ -133,11 +101,10 @@ class Mixin:
       Image: The rescaled image.
     """
     if scale <= 0. or scale > 16.: raise ValueError("Error, scale must be > 0 and <= 16.")
-    width, height = self.get_width_height()
+    width, height = self.get_size()
     newwidth, newheight = int(round(scale*width)), int(round(scale*height))
-    return self.resample(newwidth, newheight, method)
+    return self.resize(newwidth, newheight, method)
 
-  # TESTED.
   def crop(self, xmin, xmax, ymin, ymax):
     """Crop the image.
 
@@ -149,9 +116,9 @@ class Mixin:
     """
     if xmax <= xmin: raise ValueError("Error, xmax <= xmin.")
     if ymax <= ymin: raise ValueError("Error, ymax <= ymin.")
-    width, height = self.get_width_height()
+    width, height = self.get_size()
     xmin = max(int(np.floor(xmin))  , 0)
     xmax = min(int(np.ceil (xmax))+1, width)
     ymin = max(int(np.floor(ymin))  , 0)
     ymax = min(int(np.ceil (ymax))+1, height)
-    return self[:, ymin:ymax, xmin:xmax].copy()
+    return self.newImage(self.image[:, ymin:ymax, xmin:xmax])

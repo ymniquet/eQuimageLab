@@ -19,7 +19,6 @@ from . import params
 class Mixin:
   """To be included in the Image class."""
 
-  # TESTED.
   def sharpen(self, channels = ""):
     """Apply a sharpening (Laplacian) convolution filter to selected channels of the image.
 
@@ -76,6 +75,6 @@ class Mixin:
     if ratio <= 0.: raise ValueError("Error, ratio must be > 0.")
     # Set-up the (unnormalized) kernel for nearest-neighbors average.
     kernel = np.array([[1., 1., 1.], [1., 0., 1.], [1., 1., 1.]], dtype = params.IMGTYPE)
-    # Normalize with respect to the number of nearest neighbors.
-    nnn = sp.signal.convolve2d(np.ones(self.get_height(), self.get_width()), kernel, mode = "same", boundary = "fill", fillvalue = 0.)
+    # Normalize with respect to the actual number of nearest neighbors.
+    nnn = sp.signal.convolve2d(np.ones(*self.get_size()), kernel, mode = "same", boundary = "fill", fillvalue = 0.)
     return self.apply_channels(remove_hot_pixels_channel, channels, multi = False)

@@ -17,11 +17,11 @@ def shadow_stretch_function(x, shadow):
   The output, stretched data therefore fit in the [0, infty[ range.
 
   Args:
-    x (np.array): The input data.
+    x (numpy.ndarray): The input data.
     shadow (float): The shadow level (expected < 1).
 
   Returns:
-    np.array: The stretched data.
+    numpy.ndarray: The stretched data.
   """
   x = np.clip(x, shadow, None)
   return (x-shadow)/(1.-shadow)
@@ -34,12 +34,12 @@ def shadow_highlight_stretch_function(x, shadow, highlight):
   The output, stretched data therefore fit in the [0, 1] range.
 
   Args:
-    x (np.array): The input data.
+    x (numpy.ndarray): The input data.
     shadow (float): The shadow level (expected < 1).
     highlight (float): The highlight level (expected > shadow).
 
   Returns:
-    np.array: The stretched data.
+    numpy.ndarray: The stretched data.
   """
   x = np.clip(x, shadow, highlight)
   return (x-shadow)/(highlight-shadow)
@@ -51,12 +51,12 @@ def dynamic_range_stretch_function(x, fr, to):
   and clipped in the [to[0], to[1]] range.
 
   Args:
-    x (np.array): The input data.
+    x (numpy.ndarray): The input data.
     fr: The input range (a tuple or list of two floats).
     to: The output range (a tuple or list of two floats).
 
   Returns:
-    np.array: The stretched data.
+    numpy.ndarray: The stretched data.
   """
   return np.interp(x, fr, to)
 
@@ -67,11 +67,11 @@ def asinh_stretch_function(x, stretch):
     f(x) = arcsinh(stretch*x)/arcsinh(stretch)
 
   Args:
-    x (np.array): The input data.
+    x (numpy.ndarray): The input data.
     stretch (float): The stretch factor (expected >= 0).
 
   Returns:
-    np.array: The stretched data.
+    numpy.ndarray: The stretched data.
   """
   return np.arcsinh(stretch*x)/np.arcsinh(stretch) if abs(stretch) > 1.e-6 else x
 
@@ -88,7 +88,7 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
   Do not clip the input data and extend the transformation outside [0, 1] !
 
   Args:
-    x (np.array): The input data.
+    x (numpy.ndarray): The input data.
     logD1 (float): The global stretch factor ln(D+1) (expected >= 0).
     b (float): The local stretch factor.
     SYP (float): The symmetry point (expected in [0, 1]).
@@ -97,7 +97,7 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
     inverse (bool): Return the inverse stretch function if True.
 
   Returns:
-    np.array: The stretched data.
+    numpy.ndarray: The stretched data.
   """
   D = np.exp(logD1)-1.
   x = np.clip(x, 0., 1.)
@@ -271,11 +271,11 @@ def midtone_stretch_function(x, midtone):
   In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
 
   Args:
-    x (np.array): The input data.
+    x (numpy.ndarray): The input data.
     midtone (float): The midtone level (expected in [0, 1]).
 
   Returns:
-    np.array: The stretched data.
+    numpy.ndarray: The stretched data.
   """
   return (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
 
@@ -287,11 +287,11 @@ def gamma_stretch_function(x, gamma):
   This function clips the input data x below 0 before stretching.
 
   Args:
-    x (np.array): The input data.
+    x (numpy.ndarray): The input data.
     gamma (float): The stretch exponent (expected > 0).
 
   Returns:
-    np.array: The stretched data.
+    numpy.ndarray: The stretched data.
   """
   x = np.clip(x, 0., None)
   return x**gamma
@@ -305,7 +305,7 @@ def midtone_levels_function(x, shadow, midtone, highlight, low, high):
     3) Maps [low, high] to [0, 1] and clips the output data in the [0, 1] range.
 
   Args:
-    x (np.array): The input data.
+    x (numpy.ndarray): The input data.
     midtone (float): The input midtone level (expected in [0, 1]).
     shadow (float): The input shadow level (expected in [0, midtone]).
     highlight (float): The input highlight level (expected in [midtone, 1]).
@@ -313,7 +313,7 @@ def midtone_levels_function(x, shadow, midtone, highlight, low, high):
     high (float): The "high" output level (expected >= 1).
 
   Returns:
-    np.array: The stretched data.
+    numpy.ndarray: The stretched data.
   """
   midtone = (midtone-shadow)/(highlight-shadow)
   x = np.clip(x, shadow, highlight)

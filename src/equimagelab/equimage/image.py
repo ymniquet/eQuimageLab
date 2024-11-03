@@ -7,6 +7,7 @@
 
 """Image class."""
 
+import copy
 import numpy as np
 
 from . import params
@@ -19,15 +20,17 @@ from . import image_filters
 from . import image_skimage
 from . import image_stats
 
-class Image(np.ndarray,
+class Image(np.lib.mixins.NDArrayOperatorsMixin,
             image_colorspaces.Mixin, image_utils.Mixin, image_geometry.Mixin,
             image_colors.Mixin, image_stretch.Mixin, image_filters.Mixin, image_skimage.Mixin,
             image_stats.Mixin):
   """Image class.
 
+  The image is stored as self.image, a numpy.ndarray with dtype params.IMGTYPE = np.float32 or np.float64.
   Color images are stored as arrays with shape (3, height, width) and grayscale images as arrays with
-  shape (1, height, width). The leading axis spans the color channels, and the next two are the height
-  and width axes. The images are encoded as floats with type params.IMGTYPE = np.float32 or np.float64).
+  shape (1, height, width). The leading axis spans the color channels, and the next two the height
+  and width of the image.
+
   The class embeds colorspace and colormodel attributes for the color space and model of the image.
 
   The colorspace attribute can be:
@@ -42,124 +45,176 @@ class Image(np.ndarray,
   The default color space is sRGB and the default color model is RGB.
   """
 
-  #################
-  # Constructors. #
-  #################
+  ################
+  # Constructor. #
+  ################
 
-  def __new__(cls, image, colorspace = "sRGB", colormodel = "RGB"):
+  def __init__(self, image, colorspace = "sRGB", colormodel = "RGB"):
+    """Initialize a new Image object with the input image.
+
+    Args:
+      image: The input image (numpy.ndarray or Image).
+      colorspace (str, optional): The image color space (default "sRGB").
+        Can be "lRGB" (linear RGB color space) or "sRGB" (sRGB color space).
+      colormodel (str, optional): The image color model (default "RGB").
+        Can be "RGB" (RGB image), "HSV" (HSV image) or "gray (grayscale image).
+    """
+    # Check color space and model.
+    if colorspace not in ["lRGB", "sRGB"]:
+      raise ValueError(f"Error, the color space must either be 'lRGB' or 'sRGB' (got {colorspace}).")
+    if colormodel not in ["RGB", "HSV", "gray"]:
+      raise ValueError(f"Error, the color model must either be 'RGB', 'HSV' or 'gray' (got {colormodel}).")
+    # Convert the input image into an array.
+    image = np.asarray(image, dtype = params.IMGTYPE)
+    # Validate the image.
+    if image.ndim == 2:
+      colormodel = "gray"  # Enforce colormodel = "gray".
+      image = np.expand_dims(image, axis = 0)
+    elif image.ndim == 3:
+      nc = image.shape[0]
+      if nc == 1:
+        colormodel = "gray" # Enforce colormodel = "gray".
+      elif nc == 3:
+        if colormodel == "gray":
+          raise ValueError(f"Error, a grayscale image must have a single channel (found {nc}).")
+      else:
+        raise ValueError(f"Error, an image must have 1 or 3 channels (found {nc}).")
+    else:
+      raise ValueError(f"Error, an image must have 2 or 3 dimensions (found {image.ndim}).")
+    # Register image, color space and model.
+    self.image = image
+    self.colorspace = colorspace
+    self.colormodel = colormodel
+
+  def newImage(self, image, **kwargs):
     """Return a new Image object with the input image.
 
     Args:
-      image: The input image (np.array or Image).
-      colorspace (str, optional): The image color space (if not defined by the input image, default sRGB).
-      colormodel (str, optional): The image color model (if not defined by the input image, default  RGB).
+      image (numpy.ndarray): The input image.
+      colorspace (str, optional): The image color space (default self.colorspace).
+        Can be "lRGB" (linear RGB color space) or "sRGB" (sRGB color space).
+      colormodel (str, optional): The image color model (default self.colormodel).
+        Can be "RGB" (RGB image), "HSV" (HSV image) or "gray (grayscale image).
 
     Returns:
-      Image: The new image object.
+      Image: The new Image object.
     """
-    return cls.newImage(image, colorspace, colormodel)
+    colorspace = kwargs.pop("colorspace", self.colorspace)
+    colormodel = kwargs.pop("colormodel", self.colormodel)
+    if kwargs:
+      print("Discarding extra keyword arguments in Image.newImage...")
+    return Image(image, colorspace, colormodel)
 
-  def __array_finalize__(self, obj):
-    """Finalize object creation.
+  def copy(self):
+    """Return a copy of the object.
 
-    Args:
-      obj: The parent object.
+    Returns:
+      Image: A (deep) copy of the object.
     """
-    if obj is None: return
-    # Is self a valid image ?
-    if self.ndim != 3: return
-    if self.shape[0] not in [1, 3]: return
-    if self.dtype != params.IMGTYPE: return
-    # If so, copy meta-data from obj.
-    self.__copy_meta__(obj)
-
-  def __copy_meta__(self, source):
-    """Copy meta-data from the source.
-
-    Note: The colormodel attribute can not be overridden if the image is a grayscale.
-
-    Args:
-      source (Image): The source for meta-data.
-    """
-    self.colorspace = getattr(source, "colorspace", "sRGB")
-    self.colormodel = getattr(source, "colormodel",  "RGB") if self.shape[0] > 1 else "gray"
+    return copy.deepcopy(self)
 
   ######################
   # Object management. #
   ######################
 
-  @classmethod
-  def newImage(cls, image, colorspace = "sRGB", colormodel = "RGB"):
-    """Return a new Image object with the input image.
+  def __repr__(self):
+    """Return the object representation."""
+    return f"{self.__class__.__name__}(colorspace = {self.colorspace}, colormodel = {self.colormodel}, size = {self.image.shape[2]}x{self.image.shape[1]} pixels)"
 
-    Args:
-      image: The input image (np.array or Image).
-      colorspace (str, optional): The image color space (if not defined by the input image, default sRGB).
-      colormodel (str, optional): The image color model (if not defined by the input image, default  RGB).
+  def __array__(self, dtype = None, copy = None):
+    """Expose the object as an numpy.ndarray."""
+    return np.array(self.image, dtype, copy)
 
-    Returns:
-      Image: The new image object.
-    """
-    colorspace = getattr(image, "colorspace", colorspace)
-    colormodel = getattr(image, "colormodel", colormodel)
-    obj = np.asarray(image, dtype = params.IMGTYPE).view(cls)
-    # Validate the image.
-    if obj.ndim == 2:
-      colormodel = "gray"
-      obj = np.expand_dims(obj, axis = 0)
-    elif obj.ndim == 3:
-      nc = obj.shape[0]
-      if nc == 1:
-        colormodel = "gray"
-      elif nc != 3:
-        raise ValueError(f"Error, a color image must have 3 channels (found {nc}).")
+  def __array_ufunc__(self, ufunc, method, *args, **kwargs):
+    """Apply numpy ufuncs to the Image object."""
+    if method != "__call__": return
+    inputs = []
+    mixed = False
+    reference = None
+    for arg in args:
+      if isinstance(arg, Image):
+        if reference is None:
+          reference = arg
+        else:
+          if arg.colorspace != reference.colorspace or arg.colormodel != reference.colormodel and not mixed:
+            print("Warning ! This operation mixes images with different color spaces or models !..")
+            mixed = True
+        inputs.append(arg.image)
+      else:
+        inputs.append(arg)
+    output = ufunc(*inputs, **kwargs)
+    if isinstance(output, np.ndarray):
+      if output.ndim == 0: # Is output actually a scalar ?
+        return output[()]
+      else:
+        if not mixed and output.shape == reference.image.shape:
+          return Image(output, reference.colorspace, reference.colormodel)
+        else:
+          return output
     else:
-      raise ValueError(f"Error, an image must have 2 (grayscale) or 3 (color) dimensions (found {obj.ndim}).")
-    # Register color space and model.
-    obj.colorspace = colorspace
-    obj.colormodel = colormodel
-    return obj
+      return output
 
-  @classmethod
-  def newImage_like(cls, source, image, **kwargs):
-    """Return a new Image object with the input image but the meta-data (color space and model, ...) from an other source.
-
-    These meta-data may be overridden with the kwargs (e.g., colorspace = "lRGB", etc...).
-    The colormodel attribute can not, however, be overridden if the image is a grayscale.
-
-    Args:
-      image: The input image (np.array or Image).
-      source (Image): The source for meta-data.
-      kwargs: The meta-data to be overridden (e.g., colorspace = "lRGB", ...).
-
-    Returns:
-      Image: The new image object.
-    """
-    obj = cls.newImage(image)
-    obj.__copy_meta__(source)
-    for name, value in kwargs.items():
-      if not hasattr(obj, name): raise ValueError(f"Error, the image object has no attribute {name}.")
-      if name == "colormodel" and obj.shape[0] == 1:
-        continue # Do not override color model of grayscale images.
-      setattr(obj, name, value)
-    return obj
-
-  def image(self, channels = 0, cls = None):
-    """Return a view on the image.
-
-    Args:
-      cls, optional: The class of the returned view object [np.ndarray or Image if None (default)]
-      channels: Position of the channel axis. Moving the channel axis will raise an error if cls is Image (or None).
-
-    Returns:
-      A view on the image with class cls.
-    """
-    view = self.view(type = cls) if cls is not None else self.view()
-    return view if channels == 0 else np.moveaxis(view, 0, channels)
+  def __array_function__(self, func, types, args, kwargs):
+    """Apply numpy array functions to the object."""
+    inputs = []
+    mixed = False
+    reference = None
+    for arg in args:
+      if isinstance(arg, Image):
+        if reference is None:
+          reference = arg
+        else:
+          if arg.colorspace != reference.colorspace or arg.colormodel != reference.colormodel and not mixed:
+            print("Warning ! This operation mixes images with different color spaces or models !..")
+            mixed = True
+        inputs.append(arg.image)
+      else:
+        inputs.append(arg)
+    output = func(*inputs, **kwargs)
+    if isinstance(output, np.ndarray):
+      if output.ndim == 0: # Is output actually a scalar ?
+        return output[()]
+      else:
+        if not mixed and output.shape == reference.image.shape:
+          return Image(output, reference.colorspace, reference.colormodel)
+        else:
+          return output
+    else:
+      return output
 
   ##################
   # Image queries. #
   ##################
+
+  def get_image(self, channels = 0, copy = False):
+    """Return the image data as a numpy.ndarray.
+
+    Args:
+      channels (int, optional): Position of the channel axis (default 0).
+      copy (bool, optional): If True, return a copy of the image data;
+                             If false (default), return a view.
+
+    Returns:
+      numpy.ndarray: The image data as a numpy.ndarray.
+    """
+    output = np.moveaxis(self.image, 0, channels)
+    return output.copy() if copy else output
+
+  def get_shape(self):
+    """Return the shape the image data.
+
+    Returns:
+      A tuple (number of channels, height of the image in pixels, width of the image in pixels).
+    """
+    return self.image.shape
+
+  def get_size(self):
+    """Return the width and height of the image.
+
+    Returns:
+      A tuple (width, height) of the image in pixels.
+    """
+    return self.image.shape[2], self.image.shape[1]
 
   def get_nc(self):
     """Return the number of channels of the image.
@@ -167,13 +222,7 @@ class Image(np.ndarray,
     Returns:
       int: The number of channels of the image.
     """
-    return self.shape[0]
-
-  def print_meta(self):
-    """Print the image meta-data (color space and model, ...)."""
-    print("Image meta-data:")
-    print(f"Color space = {self.colorspace}")
-    print(f"Color model = {self.colormodel}")
+    return self.image.shape[0]
 
   ######################
   # Image conversions. #
@@ -183,9 +232,9 @@ class Image(np.ndarray,
     """Return the image as a (height, width, channels) array of 8 bits integers in the range [0, 255].
 
     Returns:
-      np.array: The image as a (height, width, channels) array of 8 bits integers in the range [0, 255].
+      numpy.ndarray: The image as a (height, width, channels) array of 8 bits integers in the range [0, 255].
     """
-    image = self.image(cls = np.ndarray, channels = -1)
+    image = self.get_image(channels = -1)
     data = np.clip(image*255, 0, 255)
     return np.rint(data).astype("uint8")
 
@@ -193,9 +242,9 @@ class Image(np.ndarray,
     """Return the image as a (height, width, channels) array of 16 bits integers in the range [0, 65535].
 
     Returns:
-      np.array: The image as a (height, width, channels) array of 16 bits integers in the range [0, 65535].
+      numpy.ndarray: The image as a (height, width, channels) array of 16 bits integers in the range [0, 65535].
     """
-    image = self.image(cls = np.ndarray, channels = -1)
+    image = self.get_image(channels = -1)
     data = np.clip(image*65535, 0, 65535)
     return np.rint(data).astype("uint16")
 
@@ -203,28 +252,8 @@ class Image(np.ndarray,
     """Return the image as a (height, width, channels) array of 32 bits integers in the range [0, 4294967295].
 
     Returns:
-      np.array: The image as a (height, width, channels) array of 32 bits integers in the range [0, 4294967295].
+      numpy.ndarray: The image as a (height, width, channels) array of 32 bits integers in the range [0, 4294967295].
     """
-    image = self.image(cls = np.ndarray, channels = -1)
+    image = self.get_image(channels = -1)
     data = np.clip(image*4294967295, 0, 4294967295)
     return np.rint(data).astype("uint32")
-
-###############################
-# Helpers for image creation. #
-###############################
-
-def newImage_like(source, image, **kwargs):
-  """Return a new Image object with the input image but the meta-data (color space and model, ...) from an other source.
-
-  These meta-data may be overridden with the kwargs (e.g., colorspace = "lRGB", etc...).
-  The colormodel attribute can not, however, be overridden if the image is a grayscale.
-
-  Args:
-    image: The input image (np.array or Image).
-    source (Image): The source for meta-data.
-    kwargs: The meta-data to be overridden (e.g., colorspace = "lRGB", ...).
-
-  Returns:
-    Image: The new image object.
-  """
-  return source.newImage_like(source, image, **kwargs)

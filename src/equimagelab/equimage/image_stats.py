@@ -42,7 +42,7 @@ class Mixin:
     Note: The statistics are also embedded in the object as self.stats.
     """
     class Container: pass # An empty container class.
-    width, height = self.get_width_height()
+    width, height = self.get_size()
     npixels = width*height
     stats = {}
     for key in channels:
@@ -52,15 +52,15 @@ class Mixin:
       if key == "R":
         self.check_color_model("RGB", "gray")
         name = "Red"
-        channel = self[0]
+        channel = self.image[0]
       elif key == "G":
         self.check_color_model("RGB", "gray")
         name = "Green"
-        channel = self[1] if self.color_model == "RGB" else self[0]
+        channel = self.image[1] if self.colormodel == "RGB" else self.image[0]
       elif key == "B":
         self.check_color_model("RGB", "gray")
         name = "Blue"
-        channel = self[2] if self.color_model == "RGB" else self[0]
+        channel = self.image[2] if self.colormodel == "RGB" else self.image[0]
       elif key == "V":
         name = "Value"
         channel = self.value()
@@ -118,15 +118,15 @@ class Mixin:
       if key == "R":
         self.check_color_model("RGB", "gray")
         name = "Red"
-        channel = self[0]
+        channel = self.image[0]
       elif key == "G":
         self.check_color_model("RGB", "gray")
         name = "Green"
-        channel = self[1] if self.color_model == "RGB" else self[0]
+        channel = self.image[1] if self.colormodel == "RGB" else self.image[0]
       elif key == "B":
         self.check_color_model("RGB", "gray")
         name = "Blue"
-        channel = self[2] if self.color_model == "RGB" else self[0]
+        channel = self.image[2] if self.colormodel == "RGB" else self.image[0]
       elif key == "V":
         name = "Value"
         color = "black"

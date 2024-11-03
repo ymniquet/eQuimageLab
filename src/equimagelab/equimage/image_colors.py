@@ -31,14 +31,13 @@ class Mixin:
       bool: True if the RGB image is a grayscale (same RGB channels), False otherwise.
     """
     self.check_color_model("RGB")
-    image = self.image(cls = np.ndarray)
+    image = self.image
     return np.all(abs(image[1]-image[0]) < params.IMGTOL) and np.all(abs(image[2]-image[0]) < params.IMGTOL)
 
   ############################
   # Gray scales & negatives. #
   ############################
 
-  # TESTED.
   def negative(self):
     """Return the negative of a RGB or grayscale image.
 
@@ -48,7 +47,6 @@ class Mixin:
     self.check_color_model("RGB", "gray")
     return 1.-self
 
-  # TESTED.
   def grayscale(self, channel = "Y", RGB = False):
     """Convert the selected channel of a RGB image into a grayscale image.
 
@@ -73,15 +71,14 @@ class Mixin:
     else:
       raise ValueError(f"Error, invalid channel '{channel}' (must be 'V', 'L' or 'Y').")
     if RGB:
-      return self.newImage_like(self, np.repeat(grayscale[np.newaxis, :, :], 3, axis = 0))
+      return self.newImage(np.repeat(grayscale[np.newaxis, :, :], 3, axis = 0))
     else:
-      return self.newImage_like(self, grayscale)
+      return self.newImage(grayscale, colormodel = "gray")
 
   ##########################
   # Color transformations. #
   ##########################
 
-  # TESTED.
   def color_balance(self, red = 1., green = 1., blue = 1.):
     """Adjust the color balance of a RGB image.
 
@@ -99,11 +96,11 @@ class Mixin:
     if red < 0.: raise ValueError("Error, red must be >= 0.")
     if green < 0.: raise ValueError("Error, green must be >= 0.")
     if blue < 0.: raise ValueError("Error, blue must be >= 0.")
-    image = self.copy()
-    if red   != 1.: image[0] *= red
-    if green != 1.: image[1] *= green
-    if blue  != 1.: image[2] *= blue
-    return image
+    output = self.copy()
+    if red   != 1.: output.image[0] *= red
+    if green != 1.: output.image[1] *= green
+    if blue  != 1.: output.image[2] *= blue
+    return output
 
     def color_saturation(self, A = 0., model = "midsat", interpolation = "cubic", **kwargs):
       """Adjust color saturation.
@@ -163,8 +160,8 @@ class Mixin:
     psat[4] = kwargs.get("B", A)
     psat[5] = kwargs.get("M", A)
     hsv = self.HSV()
-    hue = hsv[0]
-    sat = hsv[1]
+    hue = hsv.image[0]
+    sat = hsv.image[1]
     delta = interpolate(hue, psat, interpolation)
     if model == "deltasat":
       sat += delta
@@ -173,7 +170,7 @@ class Mixin:
       sat = (midsat-1.)*sat/((2.*midsat-1.)*sat-midsat)
     else:
       raise ValueError(f"Error, unknown saturation model '{model}.")
-    hsv[1] = np.clip(sat, 0., 1.)
+    hsv.image[1] = np.clip(sat, 0., 1.)
     return hsv if self.colormodel == "HSV" else hsv.RGB()
 
   ##########################
@@ -216,8 +213,8 @@ class Mixin:
       icc, ic1, ic2, negative = 1, 0, 2, True
     else:
       raise ValueError(f"Error, unknown hue '{hue}'.")
-    image = self.clip() # Clip before reducing color noise.
-    if negative: image = image.negative()
+    image = np.clip(self.image, 0., 1.) # Clip before reducing color noise.
+    if negative: image = 1.-image
     if protection == "avgneutral":
       c = (image[ic1]+image[ic2])/2.
       image[icc] = np.minimum(image[icc], c)
@@ -232,12 +229,13 @@ class Mixin:
       image[icc] *= (1.-amount)+c*amount
     else:
       raise ValueError(f"Error, unknown protection mode '{protection}'.")
-    if negative: image = image.negative()
+    if negative: image = 1.-image
+    output = self.newImage(image)
     if lightness:
-      self.check_color_space("lRGB", "sRGB")
-      image = image.lRGB()
-      image = image.scale_pixels(image.luminance(), self.luminance())
-      if self.colormodel == "sRGB": image = image.sRGB()
-      difflight = image.lightness()-self.lightness()
+      output.check_color_space("lRGB", "sRGB")
+      output = output.lRGB()
+      output = output.scale_pixels(output.luminance(), self.luminance())
+      if self.colormodel == "sRGB": output = output.sRGB()
+      difflight = output.lightness()-self.lightness()
       print(f"Maximum lightness difference = {abs(difflight).max()}.")
-    return image
+    return output

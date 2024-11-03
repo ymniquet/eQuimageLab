@@ -20,7 +20,6 @@ else:
   import skimage.io as skio
 import astropy.io.fits as pyfits
 
-# TESTED.
 def load_image(filename):
   """Load an image from a file.
 
@@ -98,7 +97,6 @@ def load_image(filename):
   meta = {"exif": exif, "colordepth": bpc}
   return Image(np.ascontiguousarray(image)), meta
 
-# TESTED.
 def save_image(image, filename, depth = 8):
   """Save image as a file.
 
@@ -128,7 +126,7 @@ def save_image(image, filename, depth = 8):
     elif depth == 32:
       image = image.int32()
     else:
-      raise ValueError("Error, color depth must be 8 or 16, or 32 bits.")
+      raise ValueError("Error, color depth must be 8 or 16, or 32 bits per channel.")
     print(f"Color depth = {depth} bits per channel (integers).")
     if is_gray: image = image[:, :, 0]
     if ext == ".png":
@@ -145,7 +143,7 @@ def save_image(image, filename, depth = 8):
         skio.imsave(filename, image, plugin = "tifffile", check_contrast = False, compression = "zlib")
   elif ext in [".fit", ".fits", ".fts"]:
     print(f"Color depth = {np.finfo(image.dtype).bits} bits per channel (floats).")
-    image = image.flip_height() # Flip image upside down.
+    image = image.flip_height().get_image() # Flip image upside down.
     if is_gray: image = image[0]
     hdu = pyfits.PrimaryHDU(image)
     hdu.writeto(filename, overwrite = True)

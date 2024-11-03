@@ -22,7 +22,7 @@ def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
   This function clips the input image in the [0, 1] range before stretching.
 
   Args:
-    image (np.array): The input image.
+    image (numpy.ndarray): The input image.
     logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
     b (float): The local stretch factor.
     SYP (float): The symmetry point (expected in [0, 1]).
@@ -31,7 +31,7 @@ def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
     inverse (bool): Return the inverse stretch function if True.
 
   Returns:
-    np.array: The stretched image.
+    numpy.ndarray: The stretched image.
   """
   return stf.ghyperbolic_stretch_function(image, lnD1, b, SYP, SPP, HPP, False)
 
@@ -43,11 +43,11 @@ def mts(image, midtone):
   In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
 
   Args:
-    image (np.array): The input image.
+    image (numpy.ndarray): The input image.
     midtone (float): The midtone level (expected in [0, 1]).
 
   Returns:
-    np.array: The stretched image.
+    numpy.ndarray: The stretched image.
   """
   return stf.midtone_stretch_function(image, midtone)
 
@@ -199,7 +199,7 @@ class Mixin:
                (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
-      np.array: The stretched image.
+      numpy.ndarray: The stretched image.
     """
     if lnD1 < 0.:
       raise ValueError("Error, lnD1 must be >= 0.")
@@ -245,7 +245,7 @@ class Mixin:
                (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
-      np.array: The stretched image.
+      numpy.ndarray: The stretched image.
     """
     if midtone < .0001 or midtone >= .9999:
       raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")
@@ -273,7 +273,7 @@ class Mixin:
                (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
-      np.array: The stretched image.
+      numpy.ndarray: The stretched image.
     """
     if gamma <= 0.:
       raise ValueError("Error, gamma must be > 0.")
@@ -305,7 +305,7 @@ class Mixin:
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
                (after the operation, the out-of-range pixels are blended with channels = "RGB").
     Returns:
-      np.array: The stretched image.
+      numpy.ndarray: The stretched image.
     """
     if midtone < .0001 or midtone > .9999:
       raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")

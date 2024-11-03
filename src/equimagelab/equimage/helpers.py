@@ -15,11 +15,11 @@ def failsafe_divide(A, B):
   """Return A/B, ignoring errors (division by zero, ...).
 
   Args:
-    A (np.array): The numerator array.
-    B (np.array): The denominator array.
+    A (numpy.ndarray): The numerator array.
+    B (numpy.ndarray): The denominator array.
 
   Returns:
-    np.array: The element-wise division A/B.
+    numpy.ndarray: The element-wise division A/B.
   """
   status = np.seterr(all = "ignore")
   C = np.divide(A, B)
@@ -30,13 +30,13 @@ def scale_pixels(image, source, target, cutoff = params.IMGTOL):
   """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff, set all channels to target.
 
   Args:
-    image (np.array): The input image.
-    source (np.array): The source values for scaling (must be the same size as the input image).
-    target (np.array): The target values for scaling (must be the same size as the input image).
+    image (numpy.ndarray): The input image.
+    source (numpy.ndarray): The source values for scaling (must be the same size as the input image).
+    target (numpy.ndarray): The target values for scaling (must be the same size as the input image).
     cutoff (float, optional): Threshold for scaling. Defaults to `params.IMGTOL`.
 
   Returns:
-    np.array: The scaled image.
+    numpy.ndarray: The scaled image.
   """
   return np.where(abs(source) > cutoff, failsafe_divide(image*target, source), target)
 
@@ -45,9 +45,9 @@ def lookup(x, xlut, ylut, slut, nlut):
 
   Args:
     x (float): The input value for interpolation.
-    xlut (np.array): The x values of the look-up table (must be evenly spaced).
-    ylut (np.array): The y values of the look-up table ylut = f(xlut).
-    slut (np.array): The slopes (ylut[1:]-ylut[:-1])/(xlut[1:]-xlut[:-1]) used for linear interpolation between the elements of ylut.
+    xlut (numpy.ndarray): The x values of the look-up table (must be evenly spaced).
+    ylut (numpy.ndarray): The y values of the look-up table ylut = f(xlut).
+    slut (numpy.ndarray): The slopes (ylut[1:]-ylut[:-1])/(xlut[1:]-xlut[:-1]) used for linear interpolation between the elements of ylut.
     nlut (int): The number of elements in the look-up table.
 
   Returns:
