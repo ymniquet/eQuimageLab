@@ -76,7 +76,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
         colormodel = "gray" # Enforce colormodel = "gray".
       elif nc == 3:
         if colormodel == "gray":
-          raise ValueError(f"Error, a grayscale image must have a single channel (found {nc}).")
+          raise ValueError(f"Error, a grayscale image must have one single channel (found {nc}).")
       else:
         raise ValueError(f"Error, an image must have 1 or 3 channels (found {nc}).")
     else:
@@ -126,7 +126,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     return np.array(self.image, dtype, copy)
 
   def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-    """Apply numpy ufuncs to the Image object."""
+    """Apply numpy ufuncs to the object."""
     if method != "__call__": return
     inputs = []
     mixed = False
@@ -187,7 +187,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   ##################
 
   def get_image(self, channels = 0, copy = False):
-    """Return the image data as a numpy.ndarray.
+    """Return the image data.
 
     Args:
       channels (int, optional): Position of the channel axis (default 0).
@@ -195,13 +195,13 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
                              If false (default), return a view.
 
     Returns:
-      numpy.ndarray: The image data as a numpy.ndarray.
+      numpy.ndarray: The image data.
     """
     output = np.moveaxis(self.image, 0, channels)
     return output.copy() if copy else output
 
   def get_shape(self):
-    """Return the shape the image data.
+    """Return the shape of the image data.
 
     Returns:
       A tuple (number of channels, height of the image in pixels, width of the image in pixels).

@@ -17,13 +17,13 @@ from ..equimage.image import Image
 
 def show(image, histograms = None, statistics = None, width = params.maxwidth, height = params.maxheight, sample = 1, renderer = None):
   if isinstance(image, Image):
-    image = image.get_image()
+    image = image.get_image(channels = -1)
   if image.ndim == 2:
     sampled = image[::sample, ::sample]
-  elif image.shape[0] == 1:
-    sampled = image[0, ::sample, ::sample]
+  elif image.shape[2] == 1:
+    sampled = image[::sample, ::sample, 0]
   else:
-    sampled = np.moveaxis(image[:, ::sample, ::sample], 0, -1)
+    sampled = image[::sample, ::sample, :]
   figure = px.imshow(sampled, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
   layout = go.Layout(autosize = True, height = height) #, margin = go.layout.Margin(l = 0, r = 0, b = 0, t = 0))
   widget = go.FigureWidget(data = figure) #, layout = layout) # Fails to account for layout ??

@@ -153,12 +153,14 @@ class Mixin:
 
     self.check_color_model("RGB", "HSV")
     psat = np.empty(6)
-    psat[0] = kwargs.get("R", A)
-    psat[1] = kwargs.get("Y", A)
-    psat[2] = kwargs.get("G", A)
-    psat[3] = kwargs.get("C", A)
-    psat[4] = kwargs.get("B", A)
-    psat[5] = kwargs.get("M", A)
+    psat[0] = kwargs.pop("R", A)
+    psat[1] = kwargs.pop("Y", A)
+    psat[2] = kwargs.pop("G", A)
+    psat[3] = kwargs.pop("C", A)
+    psat[4] = kwargs.pop("B", A)
+    psat[5] = kwargs.pop("M", A)
+    if kwargs:
+      print("Discarding extra keyword arguments in Image.color_saturation...")
     hsv = self.HSV()
     hue = hsv.image[0]
     sat = hsv.image[1]
