@@ -26,8 +26,45 @@ def show(image, histograms = None, statistics = None, width = params.maxwidth, h
     sampled = image[::sample, ::sample, :]
   figure = px.imshow(sampled, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
   layout = go.Layout(autosize = True, height = height) #, margin = go.layout.Margin(l = 0, r = 0, b = 0, t = 0))
-  widget = go.FigureWidget(data = figure) #, layout = layout) # Fails to account for layout ??
+  widget = go.FigureWidget(data = figure) # Fails to account for layout ??
   widget.update_layout(layout)
+  widget.show(renderer)
+
+def show_statistics(image, channels = None, renderer = None):
+  if channels is None:
+    stats = getattr(image, "stats", None)
+    if stats is None: stats = image.statistics()
+  else:
+    stats = image.statistics(channels)
+  columns = [[], [], [], [], [], [], [], []]
+  for channel in stats.values():
+    columns[0].append(channel.name)
+    columns[1].append(f"{channel.minimum:.5f}")
+    columns[2].append(f"{channel.percentiles[0]:.5f}")
+    columns[3].append(f"{channel.percentiles[1]:.5f}")
+    columns[4].append(f"{channel.percentiles[2]:.5f}")
+    columns[5].append(f"{channel.maximum:.5f}")
+    columns[6].append(f"{channel.zerocount} ({100.*channel.zerocount/channel.npixels:.2f}%)")
+    columns[7].append(f"{channel.outcount} ({100.*channel.outcount/channel.npixels:.2f}%)")
+  align = ["left"]+7*["right"]
+  header = dict(values = ["Channel", "Minimum", "25%", "Median (50%)", "75%", "Maximum", "Shadowed", "Highlighted"], align = align)
+  cells = dict(values = columns, align = align)
+  table = go.Table(header = header, cells = cells, columnwidth = [1, 1, 1, 1, 1, 1, 1.5, 1.5])
+  widget = go.FigureWidget(data = table)
+  widget.show(renderer)
+
+def show_histograms(image, log = False, channels = None, renderer = None):
+  if channels is None:
+    hists = getattr(image, "hists", None)
+    if hists is None: hists = image.histograms()
+  else:
+    hists = image.histograms(channels)
+  widget = go.FigureWidget()
+  for channel in hists.values():
+    x = (channel.edges[1:]+channel.edges[:-1])/2.
+    widget.add_trace(go.Scatter(x = x, y = channel.counts, name = channel.name, line = dict(color = channel.color, width = 2)))
+  if log: widget.update_yaxes(type = "log")
+  widget.update_layout(xaxis_title = "level", yaxis_title = "count")
   widget.show(renderer)
 
 def compare(images, width = params.maxwidth, height = params.maxheight, sample = 1, renderer = None):

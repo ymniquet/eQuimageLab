@@ -37,7 +37,7 @@ class Mixin:
         - stats[key].median = pr50 = median level (excluding pixels <= 0 and >= 1).
         - stats[key].percentiles = (pr25, pr50, pr75) = the 25th, 50th and 75th percentiles (excluding pixels <= 0 and >= 1).
         - stats[key].zerocount = number of pixels <= 0.
-        - stats[key].oorcount = number of pixels > 1 (out-of-range).
+        - stats[key].outcount = number of pixels > 1 (out-of-range).
 
     Note: The statistics are also embedded in the object as self.stats.
     """
@@ -77,8 +77,8 @@ class Mixin:
       stats[key].width = width
       stats[key].height = height
       stats[key].npixels = npixels
-      stats[key].minimum = channel.min()
-      stats[key].maximum = channel.max()
+      stats[key].minimum = np.min(channel)
+      stats[key].maximum = np.max(channel)
       mask = (channel >= params.IMGTOL) & (channel <= 1.-params.IMGTOL)
       if np.any(mask):
         stats[key].percentiles = np.percentile(channel[mask], [25., 50., 75.])
@@ -118,14 +118,17 @@ class Mixin:
       if key == "R":
         self.check_color_model("RGB", "gray")
         name = "Red"
+        color = "red"
         channel = self.image[0]
       elif key == "G":
         self.check_color_model("RGB", "gray")
         name = "Green"
+        color = "green"
         channel = self.image[1] if self.colormodel == "RGB" else self.image[0]
       elif key == "B":
         self.check_color_model("RGB", "gray")
         name = "Blue"
+        color = "blue"
         channel = self.image[2] if self.colormodel == "RGB" else self.image[0]
       elif key == "V":
         name = "Value"
@@ -141,10 +144,10 @@ class Mixin:
         channel = self.luma()
       else:
         raise ValueError(f"Error, unknown channel '{key}'.")
-      minimum = channel.min()
-      maximum = channel.max()
+      minimum = np.min(channel)
+      maximum = np.max(channel)
       if nbins is None:
-        median = channel.median()
+        median = np.median(channel)
         span = min(median-minimum, maximum-median)
         span = max(span, 1.e-3)
         nbinsc = int(round(128./span))
