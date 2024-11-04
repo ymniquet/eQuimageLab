@@ -15,23 +15,50 @@ pio.renderers.default = "jupyterlab"
 from . import params
 from ..equimage.image import Image
 
-def show(image, histograms = None, statistics = None, width = params.maxwidth, height = params.maxheight, sample = 1, renderer = None):
+def show(image, histograms = False, statistics = False, sample = 1, width = params.maxwidth, renderer = None):
   if isinstance(image, Image):
-    image = image.get_image(channels = -1)
-  if image.ndim == 2:
-    sampled = image[::sample, ::sample]
-  elif image.shape[2] == 1:
-    sampled = image[::sample, ::sample, 0]
+    data = image.get_image(channels = -1)
   else:
-    sampled = image[::sample, ::sample, :]
-  figure = px.imshow(sampled, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
-  layout = go.Layout(autosize = True, height = height) #, margin = go.layout.Margin(l = 0, r = 0, b = 0, t = 0))
-  widget = go.FigureWidget(data = figure) # Fails to account for layout ??
-  widget.update_layout(layout)
-  widget.show(renderer)
+    data = image
+  if data.ndim == 2:
+    sampled = data[::sample, ::sample]
+  elif data.shape[2] == 1:
+    sampled = data[::sample, ::sample, 0]
+  else:
+    sampled = data[::sample, ::sample, :]
+  raster = px.imshow(sampled, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
+  figure = go.Figure(data = raster)
+  layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width*sampled.shape[0]/sampled.shape[1]+params.bmargin+params.tmargin,
+                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
+  figure.update_layout(layout)
+  figure.show(renderer)
+  if histograms is not False:
+    if histograms is True:
+      histograms = ""
+    show_histograms(image, channels = histograms, width = width, renderer = renderer)
+  if statistics is not False:
+    if statistics is True:
+      statistics = ""
+    show_statistics(image, channels = statistics, width = width, renderer = renderer)
 
-def show_statistics(image, channels = None, renderer = None):
-  if channels is None:
+def show_histograms(image, channels = "", log = True, width = params.maxwidth, renderer = None):
+  if channels == "":
+    hists = getattr(image, "hists", None)
+    if hists is None: hists = image.histograms()
+  else:
+    hists = image.histograms(channels)
+  figure = go.Figure()
+  for channel in hists.values():
+    midpoints = (channel.edges[1:]+channel.edges[:-1])/2.
+    figure.add_trace(go.Scatter(x = midpoints, y = channel.counts, name = channel.name, line = dict(color = channel.color, width = 2)))
+  if log: figure.update_yaxes(type = "log")
+  layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width/3+params.bmargin+params.tmargin,
+                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
+  figure.update_layout(layout, xaxis_title = "level", yaxis_title = "count")
+  figure.show(renderer)
+
+def show_statistics(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, renderer = None):
+  if channels == "":
     stats = getattr(image, "stats", None)
     if stats is None: stats = image.statistics()
   else:
@@ -47,28 +74,14 @@ def show_statistics(image, channels = None, renderer = None):
     columns[6].append(f"{channel.zerocount} ({100.*channel.zerocount/channel.npixels:.2f}%)")
     columns[7].append(f"{channel.outcount} ({100.*channel.outcount/channel.npixels:.2f}%)")
   align = ["left"]+7*["right"]
-  header = dict(values = ["Channel", "Minimum", "25%", "Median (50%)", "75%", "Maximum", "Shadowed", "Highlighted"], align = align)
-  cells = dict(values = columns, align = align)
+  header = dict(values = ["Channel", "Minimum", "25%", "50%", "75%", "Maximum", "Shadowed", "Highlighted"], align = align, height = rowheight)
+  cells = dict(values = columns, align = align, height = rowheight)
   table = go.Table(header = header, cells = cells, columnwidth = [1, 1, 1, 1, 1, 1, 1.5, 1.5])
-  widget = go.FigureWidget(data = table)
-  widget.show(renderer)
-
-def show_histograms(image, log = False, channels = None, renderer = None):
-  if channels is None:
-    hists = getattr(image, "hists", None)
-    if hists is None: hists = image.histograms()
-  else:
-    hists = image.histograms(channels)
-  widget = go.FigureWidget()
-  for channel in hists.values():
-    x = (channel.edges[1:]+channel.edges[:-1])/2.
-    widget.add_trace(go.Scatter(x = x, y = channel.counts, name = channel.name, line = dict(color = channel.color, width = 2)))
-  if log: widget.update_yaxes(type = "log")
-  widget.update_layout(xaxis_title = "level", yaxis_title = "count")
-  widget.show(renderer)
-
-def compare(images, width = params.maxwidth, height = params.maxheight, sample = 1, renderer = None):
-  return None
+  figure = go.Figure(data = table)
+  layout = go.Layout(width = width+params.lmargin+params.rmargin, height = (len(stats)+1)*rowheight+params.bmargin+params.tmargin,
+                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
+  figure.update_layout(layout)
+  figure.show(renderer)
 
 def shadowed(image):
   return None

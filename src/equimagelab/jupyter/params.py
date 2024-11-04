@@ -8,3 +8,10 @@
 
 maxwidth = 1024 # Maximum width of the displayed image.
 maxheight = 768 # Maximum height of the displayed image.
+
+lmargin = 96 # Left margin.
+rmargin = 128 # Right margin.
+tmargin = 48  # Top margin.
+bmargin = 48  # Bottom margin.
+
+rowheight = 25 # Height of the table rows.
