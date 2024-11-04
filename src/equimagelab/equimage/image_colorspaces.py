@@ -97,48 +97,6 @@ def saturation(image):
 # Luma. #
 #########
 
-def get_RGB_luma():
-  """Return the RGB weights of the luma.
-
-  Returns:
-    tuple: The (red, blue, green) weights of the luma.
-
-  Also see:
-    luma,
-    set_RGB_luma
-  """
-  return params.rgbluma
-
-def set_RGB_luma(rgb):
-  """Set the RGB weights of the luma.
-
-  Args:
-    rgb: The RGB weights of the luma as:
-      - a tuple, list or array of the (red, green, blue) weights. They will be normalized so that their sum is 1.
-      - the string "uniform": the RGB weights are set to (1/3, 1/3, 1/3).
-      - the string "human": the RGB weights are set to (.299, .587, .114). The luma is then the luminance for lRGB images,
-        and an approximate substitute for the lightness for sRGB images.
-
-  Also see:
-    luma,
-    get_RGB_luma
-  """
-  if isinstance(rgb, str):
-    if rgb == "uniform":
-      set_RGB_luma((1./3., 1./3., 1./3.))
-    elif rgb == "human":
-      set_RGB_luma((.299, .587, .114))
-    else:
-      raise ValueError("Error, the input rgb weights must be an array with three scalar elements, the string 'uniform' or the string 'human'.")
-  else:
-    w = np.array(rgb, dtype = params.IMGTYPE)
-    if w.shape != (3,): raise ValueError("Error, the input rgb weights must be an array with three scalar elements, the string 'uniform' or the string 'human'.")
-    if any(w < 0.): raise ValueError("Error, the input rgb weights must be >= 0.")
-    s = np.sum(w)
-    if s == 0.: raise ValueError("Error, the sum of the input rgb weights must be > 0.")
-    params.rgbluma = w/s
-    print(f"Luma = {params.rgbluma[0]:.3f}R+{params.rgbluma[1]:.3f}G+{params.rgbluma[2]:.3f}B.")
-
 def luma(image):
   """Return the luma L of the input RGB image.
 
@@ -153,7 +111,8 @@ def luma(image):
   Returns:
     numpy.ndarray: The luma L.
   """
-  return params.rgbluma[0]*image[0]+params.rgbluma[1]*image[1]+params.rgbluma[2]*image[2] if image.shape[0] > 1 else image[0]
+  rgbluma = params.get_RGB_luma()
+  return rgbluma[0]*image[0]+rgbluma[1]*image[1]+rgbluma[2]*image[2] if image.shape[0] > 1 else image[0]
 
 ############################
 # Luminance and lightness. #
