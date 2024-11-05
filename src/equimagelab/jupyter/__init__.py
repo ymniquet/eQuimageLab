@@ -9,4 +9,6 @@
 # Import everything.
 
 from . import params
-from .display import *
+from .utils import filter, shadowed, highlighted, differences
+from .backend_plotly import show, show_histograms, show_statistics
+from .backend_dash import dashboard

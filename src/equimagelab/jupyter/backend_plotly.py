@@ -4,7 +4,7 @@
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
 
-"""Jupyter-lab display management."""
+"""Plotly backend for Jupyter-lab interface."""
 
 import numpy as np
 import plotly.express as px
@@ -13,24 +13,25 @@ import plotly.io as pio
 pio.renderers.default = "jupyterlab"
 
 from . import params
+from .utils import prepare_images
+
 from ..equimage.image import Image
 
-def show(image, histograms = False, statistics = False, sample = 1, width = params.maxwidth, renderer = None):
-  if isinstance(image, Image):
-    data = image.get_image(channels = -1)
+def __show_image(image, sample, width):
+  img = prepare_images(image, sample = sample)
+  if img.shape[0] == 1:
+    img = img[0]
   else:
-    data = image
-  if data.ndim == 2:
-    sampled = data[::sample, ::sample]
-  elif data.shape[2] == 1:
-    sampled = data[::sample, ::sample, 0]
-  else:
-    sampled = data[::sample, ::sample, :]
-  raster = px.imshow(sampled, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
+    img = np.moveaxis(img, 0, -1)
+  raster = px.imshow(img, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
   figure = go.Figure(data = raster)
-  layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width*sampled.shape[0]/sampled.shape[1]+params.bmargin+params.tmargin,
+  layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width*img.shape[0]/img.shape[1]+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
   figure.update_layout(layout)
+  return figure
+
+def show(image, histograms = False, statistics = False, sample = 1, width = params.maxwidth, renderer = None):
+  figure = __show_image(image, sample, width)
   figure.show(renderer)
   if histograms is not False:
     if histograms is True:
@@ -41,12 +42,15 @@ def show(image, histograms = False, statistics = False, sample = 1, width = para
       statistics = ""
     show_statistics(image, channels = statistics, width = width, renderer = renderer)
 
-def show_histograms(image, channels = "", log = True, width = params.maxwidth, renderer = None):
+def __show_histograms(image, channels, log, width):
+  if not issubclass(type(image), Image):
+    print("The histograms can only be computed for Image objects.")
+    return None
   if channels == "":
     hists = getattr(image, "hists", None)
     if hists is None: hists = image.histograms()
   else:
-    hists = image.histograms(channels)
+    hists = image.histograms(channels = channels)
   figure = go.Figure()
   for channel in hists.values():
     midpoints = (channel.edges[1:]+channel.edges[:-1])/2.
@@ -55,14 +59,21 @@ def show_histograms(image, channels = "", log = True, width = params.maxwidth, r
   layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width/3+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
   figure.update_layout(layout, xaxis_title = "level", yaxis_title = "count")
-  figure.show(renderer)
+  return figure
 
-def show_statistics(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, renderer = None):
+def show_histograms(image, channels = "", log = True, width = params.maxwidth, renderer = None):
+  figure = __show_histograms(image, channels, log, width)
+  if figure is not None: figure.show(renderer)
+
+def __show_statistics(image, channels, width, rowheight):
+  if not issubclass(type(image), Image):
+    print("The histograms can only be computed for Image objects.")
+    return None
   if channels == "":
     stats = getattr(image, "stats", None)
     if stats is None: stats = image.statistics()
   else:
-    stats = image.statistics(channels)
+    stats = image.statistics(channels = channels)
   columns = [[], [], [], [], [], [], [], []]
   for channel in stats.values():
     columns[0].append(channel.name)
@@ -81,12 +92,8 @@ def show_statistics(image, channels = "", width = params.maxwidth, rowheight = p
   layout = go.Layout(width = width+params.lmargin+params.rmargin, height = (len(stats)+1)*rowheight+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
   figure.update_layout(layout)
-  figure.show(renderer)
+  return figure
 
-def shadowed(image):
-  return None
-
-def highlighted(image):
-  return None
-
-# def red, blue, green, value, luma, lightness...
+def show_statistics(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, renderer = None):
+  figure = __show_statistics(image, channels, width, rowheight)
+  if figure is not None: figure.show(renderer)

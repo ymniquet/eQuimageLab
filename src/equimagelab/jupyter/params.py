@@ -6,6 +6,10 @@
 
 """Jupyter-lab interface parameters."""
 
+import numpy as np
+
+from ..equimage.params import IMGTYPE, IMGTOL
+
 maxwidth = 1024 # Maximum width of the displayed image.
 maxheight = 768 # Maximum height of the displayed image.
 
@@ -15,3 +19,7 @@ tmargin = 48  # Top margin.
 bmargin = 48  # Bottom margin.
 
 rowheight = 25 # Height of the table rows.
+
+SHADOWCOLOR = np.array([[1.], [.5], [0.]], dtype = IMGTYPE)
+HIGHLIGHTCOLOR = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)
+DIFFCOLOR = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)
