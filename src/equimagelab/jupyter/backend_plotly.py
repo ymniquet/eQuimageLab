@@ -17,7 +17,7 @@ from .utils import prepare_images
 
 from ..equimage.image import Image
 
-def __show_image(image, sample, width):
+def _show_image_(image, sample, width):
   img = prepare_images(image, sample = sample)
   if img.shape[0] == 1:
     img = img[0]
@@ -31,18 +31,18 @@ def __show_image(image, sample, width):
   return figure
 
 def show(image, histograms = False, statistics = False, sample = 1, width = params.maxwidth, renderer = None):
-  figure = __show_image(image, sample, width)
+  figure = _show_image_(image, sample, width)
   figure.show(renderer)
   if histograms is not False:
     if histograms is True:
       histograms = ""
-    show_histograms(image, channels = histograms, width = width, renderer = renderer)
+    show_histograms_(image, channels = histograms, width = width, renderer = renderer)
   if statistics is not False:
     if statistics is True:
       statistics = ""
     show_statistics(image, channels = statistics, width = width, renderer = renderer)
 
-def __show_histograms(image, channels, log, width):
+def _show_histograms_(image, channels, log, width):
   if not issubclass(type(image), Image):
     print("The histograms can only be computed for Image objects.")
     return None
@@ -62,10 +62,10 @@ def __show_histograms(image, channels, log, width):
   return figure
 
 def show_histograms(image, channels = "", log = True, width = params.maxwidth, renderer = None):
-  figure = __show_histograms(image, channels, log, width)
+  figure = _show_histograms_(image, channels, log, width)
   if figure is not None: figure.show(renderer)
 
-def __show_statistics(image, channels, width, rowheight):
+def _show_statistics_(image, channels, width, rowheight):
   if not issubclass(type(image), Image):
     print("The histograms can only be computed for Image objects.")
     return None
@@ -95,5 +95,5 @@ def __show_statistics(image, channels, width, rowheight):
   return figure
 
 def show_statistics(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, renderer = None):
-  figure = __show_statistics(image, channels, width, rowheight)
+  figure = _show_statistics_(image, channels, width, rowheight)
   if figure is not None: figure.show(renderer)

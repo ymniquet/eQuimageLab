@@ -25,7 +25,7 @@ def prepare_images(*args, sample = 1):
       if img.ndim == 3: valid = img.shape[0] in [1, 3]
       valid = valid and img.dtype in [np.float32, np.float64]
     if not valid:
-      raise ValueError("Error, arg {arg} is not a valid image.")
+      raise ValueError(f"Error, arg {arg} is not a valid image.")
     if img.ndim == 2:
       img = np.expand_dims(img, axis = 0)
     if sample > 1:

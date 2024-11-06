@@ -11,4 +11,4 @@
 from . import params
 from .utils import filter, shadowed, highlighted, differences
 from .backend_plotly import show, show_histograms, show_statistics
-from .backend_dash import dashboard
+from .backend_dash import Dashboard
