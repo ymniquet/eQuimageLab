@@ -21,12 +21,13 @@ from ..equimage.image import Image
 
 class Dashboard():
 
-  def __init__(self):
+  def __init__(self, interval = 333):
+    self.content = []
     self.refresh = False
-    self.interval = dash.dcc.Interval(id = "update-dashboard", interval = 333, n_intervals = 0)
-    self.content = [self.interval]
     self.app = dash.Dash(title = "eQuimageLab dashboard", update_title = None)
-    self.app.layout = dash.html.Div(self.content, id = "dashboard")
+    dashboard = dash.html.Div(self.content, id = "dashboard")
+    interval = dash.dcc.Interval(id = "update-dashboard", interval = interval, n_intervals = 0)
+    self.app.layout = dash.html.Div([dashboard, interval])
     self.app.callback(dash.dependencies.Output("dashboard", "children"), dash.dependencies.Input("update-dashboard", "n_intervals"))(self.__update_dashboard)
     self.app.run_server(debug = False, use_reloader = False, jupyter_mode = "external")
 
@@ -35,21 +36,41 @@ class Dashboard():
     self.refresh = False
     return self.content if refresh else dash.no_update
 
-  def update(self, image, histograms = False, statistics = False, sample = 1):
+  def show(self, images, histograms = False, statistics = False, sample = 1):
     self.refresh = False
-    content = [self.interval]
-    content.append(dash.dcc.Graph(figure = _show_image_(image, sample, width = params.maxwidth)))
-    if histograms is not False:
-      if histograms is True:
-        histograms = ""
-      figure = _show_histograms_(image, channels = histograms, log = True, width = params.maxwidth)
-      if figure is not None: content.append(dash.dcc.Graph(figure = figure))
-    if statistics is not False:
-      if statistics is True:
-        statistics = ""
+    if isinstance(images, (list, tuple)):
+      nimages = len(images)
+      if nimages == 1:
+        imgtabs = {"Image": images[0]}
+      elif nimages == 2:
+        imgtabs = {"Image": images[0], "Reference": images[1]}
+      else:
+        n = 0
+        imgtabs = {}
+        for image in images:
+          n += 1
+          imgtabs[f"Image #{n}"] = image
+    elif isinstance(images, dict):
+      imgtabs = images
+    else:
+      imgtabs = {"Image": images}
+    tabs = []
+    for label, image in imgtabs.items():
+      tab = []
+      tab.append(dash.dcc.Graph(figure = _show_image_(image, sample, width = params.maxwidth)))
+      if histograms is not False:
+        if histograms is True: histograms = ""
+        figure = _show_histograms_(image, channels = histograms, log = True, width = params.maxwidth)
+        if figure is not None: tab.append(dash.dcc.Graph(figure = figure))
+      if statistics is not False:
+        if statistics is True: statistics = ""
         table = _show_statistics_(image, channels = statistics, width = params.maxwidth, rowheight = params.rowheight)
-        if table is not None: content.append(dash.dcc.Graph(figure = table))
-    self.content = content
+        if table is not None: tab.append(dash.dcc.Graph(figure = table))
+      tabs.append(dash.dcc.Tab(tab, label = label))
+    if len(imgtabs) == 1:
+      self.content = tabs
+    else:
+      self.content = [dash.dcc.Tabs(tabs)]
     self.refresh = True
 
 def _show_statistics_(image, channels, width, rowheight):

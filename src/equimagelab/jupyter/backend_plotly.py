@@ -34,12 +34,10 @@ def show(image, histograms = False, statistics = False, sample = 1, width = para
   figure = _show_image_(image, sample, width)
   figure.show(renderer)
   if histograms is not False:
-    if histograms is True:
-      histograms = ""
+    if histograms is True: histograms = ""
     show_histograms_(image, channels = histograms, width = width, renderer = renderer)
   if statistics is not False:
-    if statistics is True:
-      statistics = ""
+    if statistics is True: statistics = ""
     show_statistics(image, channels = statistics, width = width, renderer = renderer)
 
 def _show_histograms_(image, channels, log, width):
@@ -58,7 +56,7 @@ def _show_histograms_(image, channels, log, width):
   if log: figure.update_yaxes(type = "log")
   layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width/3+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
-  figure.update_layout(layout, xaxis_title = "level", yaxis_title = "count")
+  figure.update_layout(layout, xaxis_title = "Level", yaxis_title = "Count")
   return figure
 
 def show_histograms(image, channels = "", log = True, width = params.maxwidth, renderer = None):
