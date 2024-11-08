@@ -11,6 +11,10 @@ import numpy as np
 
 from . import params
 
+class Container:
+  """An empty container class"""
+  pass # An empty container class.
+
 def failsafe_divide(A, B):
   """Return A/B, ignoring errors (division by zero, ...).
 

@@ -10,6 +10,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
+from plotly.subplots import make_subplots
 pio.renderers.default = "jupyterlab"
 
 from . import params
@@ -17,7 +18,7 @@ from .utils import prepare_images
 
 from ..equimage.image import Image
 
-def _show_image_(image, sample, width):
+def _show_image_(image, sample = 1, width = params.maxwidth):
   img = prepare_images(image, sample = sample)
   if img.shape[0] == 1:
     img = img[0]
@@ -31,41 +32,47 @@ def _show_image_(image, sample, width):
   return figure
 
 def show(image, histograms = False, statistics = False, sample = 1, width = params.maxwidth, renderer = None):
-  figure = _show_image_(image, sample, width)
+  figure = _show_image_(image, sample = sample, width = width)
   figure.show(renderer)
   if histograms is not False:
     if histograms is True: histograms = ""
-    show_histograms_(image, channels = histograms, width = width, renderer = renderer)
+    show_histograms(image, channels = histograms, width = width, renderer = renderer)
   if statistics is not False:
     if statistics is True: statistics = ""
     show_statistics(image, channels = statistics, width = width, renderer = renderer)
 
-def _show_histograms_(image, channels, log, width):
+def _show_histograms_(image, channels = "", log = True, trans = None, width = params.maxwidth):
   if not issubclass(type(image), Image):
-    print("The histograms can only be computed for Image objects.")
+    print("The histograms can only be displayed for Image objects.")
     return None
   if channels == "":
     hists = getattr(image, "hists", None)
     if hists is None: hists = image.histograms()
   else:
     hists = image.histograms(channels = channels)
-  figure = go.Figure()
+  figure = make_subplots(specs = [[{"secondary_y": trans is not None}]])
   for channel in hists.values():
     midpoints = (channel.edges[1:]+channel.edges[:-1])/2.
-    figure.add_trace(go.Scatter(x = midpoints, y = channel.counts, name = channel.name, line = dict(color = channel.color, width = 2)))
-  if log: figure.update_yaxes(type = "log")
+    figure.add_trace(go.Scatter(x = midpoints, y = channel.counts, name = channel.name, mode = "lines", line = dict(color = channel.color, width = 2)), secondary_y = False)
+  figure.update_xaxes(title_text = "Level")
+  figure.update_yaxes(title_text = "Count", secondary_y = False)
+  if log: figure.update_yaxes(type = "log", secondary_y = False)
+  if trans is not None:
+    figure.add_trace(go.Scatter(x = trans.x, y = trans.y, mode = "lines", line = dict(color = "purple", width = 2), showlegend = False), secondary_y = True)
+    figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], mode = "lines", line = dict(color = "purple", width = 1, dash = "dot"), showlegend = False), secondary_y = True)
+    figure.update_yaxes(title_text = trans.ylabel, titlefont = dict(color = "purple"), showgrid = False, tickfont = dict(color = "purple"), secondary_y = True)
   layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width/3+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
-  figure.update_layout(layout, xaxis_title = "Level", yaxis_title = "Count")
+  figure.update_layout(layout)
   return figure
 
-def show_histograms(image, channels = "", log = True, width = params.maxwidth, renderer = None):
-  figure = _show_histograms_(image, channels, log, width)
+def show_histograms(image, channels = "", log = True, trans = None, width = params.maxwidth, renderer = None):
+  figure = _show_histograms_(image, channels = channels, log = log, trans = trans, width = width)
   if figure is not None: figure.show(renderer)
 
-def _show_statistics_(image, channels, width, rowheight):
+def _show_statistics_(image, channels = "", width = params.maxwidth, rowheight = params.rowheight):
   if not issubclass(type(image), Image):
-    print("The histograms can only be computed for Image objects.")
+    print("The statistics can only be displayed for Image objects.")
     return None
   if channels == "":
     stats = getattr(image, "stats", None)
@@ -93,5 +100,5 @@ def _show_statistics_(image, channels, width, rowheight):
   return figure
 
 def show_statistics(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, renderer = None):
-  figure = _show_statistics_(image, channels, width, rowheight)
+  figure = _show_statistics_(image, channels = channels, width = width, rowheight = rowheight)
   if figure is not None: figure.show(renderer)

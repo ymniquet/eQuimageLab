@@ -15,7 +15,7 @@ import dash
 
 from . import params
 from .utils import prepare_images
-from .backend_plotly import _show_image_, _show_histograms_
+from .backend_plotly import _show_image_, _show_histograms_, _show_statistics_
 
 from ..equimage.image import Image
 
@@ -36,7 +36,7 @@ class Dashboard():
     self.refresh = False
     return self.content if refresh else dash.no_update
 
-  def show(self, images, histograms = False, statistics = False, sample = 1):
+  def show(self, images, histograms = False, statistics = False, sample = 1, trans = None):
     self.refresh = False
     if isinstance(images, (list, tuple)):
       nimages = len(images)
@@ -57,14 +57,14 @@ class Dashboard():
     tabs = []
     for label, image in imgtabs.items():
       tab = []
-      tab.append(dash.dcc.Graph(figure = _show_image_(image, sample, width = params.maxwidth)))
+      tab.append(dash.dcc.Graph(figure = _show_image_(image, sample = sample)))
       if histograms is not False:
         if histograms is True: histograms = ""
-        figure = _show_histograms_(image, channels = histograms, log = True, width = params.maxwidth)
+        figure = _show_histograms_(image, channels = histograms, log = True, trans = trans if label == "Reference" else None)
         if figure is not None: tab.append(dash.dcc.Graph(figure = figure))
       if statistics is not False:
         if statistics is True: statistics = ""
-        table = _show_statistics_(image, channels = statistics, width = params.maxwidth, rowheight = params.rowheight)
+        table = _show_statistics_(image, channels = statistics)
         if table is not None: tab.append(dash.dcc.Graph(figure = table))
       tabs.append(dash.dcc.Tab(tab, label = label))
     if len(imgtabs) == 1:
@@ -73,31 +73,18 @@ class Dashboard():
       self.content = [dash.dcc.Tabs(tabs)]
     self.refresh = True
 
-def _show_statistics_(image, channels, width, rowheight):
-  if not issubclass(type(image), Image):
-    print("The histograms can only be computed for Image objects.")
-    return None
-  if channels == "":
-    stats = getattr(image, "stats", None)
-    if stats is None: stats = image.statistics()
-  else:
-    stats = image.statistics(channels = channels)
-  columns = [[], [], [], [], [], [], [], []]
-  for channel in stats.values():
-    columns[0].append(channel.name)
-    columns[1].append(f"{channel.minimum:.5f}")
-    columns[2].append(f"{channel.percentiles[0]:.5f}")
-    columns[3].append(f"{channel.percentiles[1]:.5f}")
-    columns[4].append(f"{channel.percentiles[2]:.5f}")
-    columns[5].append(f"{channel.maximum:.5f}")
-    columns[6].append(f"{channel.zerocount} ({100.*channel.zerocount/channel.npixels:.2f}%)")
-    columns[7].append(f"{channel.outcount} ({100.*channel.outcount/channel.npixels:.2f}%)")
-  align = ["left"]+7*["right"]
-  header = dict(values = ["Channel", "Minimum", "25%", "50%", "75%", "Maximum", "Shadowed", "Highlighted"], align = align, height = rowheight)
-  cells = dict(values = columns, align = align, height = rowheight)
-  table = go.Table(header = header, cells = cells, columnwidth = [1, 1, 1, 1, 1, 1, 1.5, 1.5])
-  figure = go.Figure(data = table)
-  layout = go.Layout(width = width+params.lmargin+params.rmargin, height = (len(stats)+1)*rowheight+params.bmargin+params.tmargin,
-                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
-  figure.update_layout(layout)
-  return figure
+  def show_t(self, image, histograms = "RGBL", sample = 1):
+    if not issubclass(type(image), Image):
+      print("The transformations can only be displayed for Image objects.")
+    trans = getattr(image, "trans", None)
+    if trans is None:
+      print("There is no transformation embedded in the input image.")
+      return
+    reference = trans.input
+    channels = trans.xlabel
+    for c in channels:
+      if c in "RGBVSL":
+        if c not in histograms:
+          histograms += c
+    self.show({"Image": image, "Reference": reference}, histograms = histograms, statistics = histograms, trans = trans, sample = sample)
+

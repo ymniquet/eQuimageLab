@@ -10,6 +10,7 @@
 import numpy as np
 
 from . import params
+from . import helpers
 
 #####################################
 # For inclusion in the Image class. #
@@ -41,7 +42,6 @@ class Mixin:
 
     Note: The statistics are also embedded in the object as self.stats.
     """
-    class Container: pass # An empty container class.
     width, height = self.get_size()
     npixels = width*height
     stats = {}
@@ -72,7 +72,7 @@ class Mixin:
         channel = self.luma()
       else:
         raise ValueError(f"Error, unknown channel '{key}'.")
-      stats[key] = Container()
+      stats[key] = helpers.Container()
       stats[key].name = name
       stats[key].width = width
       stats[key].height = height
@@ -109,7 +109,6 @@ class Mixin:
 
     Note: The histograms are also embedded in the object as self.hists.
     """
-    class Container: pass # An empty container class.
     hists = {}
     for key in channels:
       if hists.get(key, None) is not None: # Already computed.
@@ -150,14 +149,14 @@ class Mixin:
         median = np.median(channel)
         span = min(median-minimum, maximum-median)
         span = max(span, 1.e-3)
-        nbinsc = int(round(128./span))
+        nbinsc = int(round(128/span))
       else:
         nbinsc = nbins
       nbinsc = int(round(nbinsc*(maximum-minimum)))
       if nbinsc > 32768: # Limit the number of bins.
         nbinsc = 32768
         print(f"Warning, limiting the number of bins to {nbinsc} for channel '{key}'.")
-      hists[key] = Container()
+      hists[key] = helpers.Container()
       hists[key].name = name
       hists[key].color = color
       hists[key].counts, hists[key].edges = np.histogram(channel, bins = nbinsc, range = (minimum, maximum), density = False)

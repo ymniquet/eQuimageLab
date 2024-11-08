@@ -20,6 +20,10 @@ IMGTOL = 1.e-6 if IMGTYPE is np.float32 else 1.e-9
 
 IMAGEIO = False
 
+# Number of x mesh points when plotting transformation functions y = f(x in [0, 1]).
+
+ntrans = 512
+
 # Weights of the RGB components in the luma.
 
 rgbluma = IMGTYPE((.299, .587, .114))

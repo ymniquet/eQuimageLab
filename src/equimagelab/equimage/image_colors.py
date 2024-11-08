@@ -11,6 +11,7 @@ import numpy as np
 import scipy.interpolate as spint
 
 from . import params
+from . import helpers
 from . import image_colorspaces as colorspaces
 
 #####################################
@@ -102,7 +103,7 @@ class Mixin:
     if blue  != 1.: output.image[2] *= blue
     return output
 
-    def color_saturation(self, A = 0., model = "midsat", interpolation = "cubic", **kwargs):
+    def color_saturation(self, A = 0., model = "midsat", interpolation = "cubic", trans = False, **kwargs):
       """Adjust color saturation.
 
       The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model' kwarg:
@@ -130,6 +131,8 @@ class Mixin:
           - "nearest": Nearest neighbor interpolation.
           - "linear": Linear spline interpolation.
           - "cubic": Cubic spline interpolation (default).
+        trans (boolean, optional): If True, embeds the transformation delta(hue) in the output
+          image as output.trans (see Image.apply_channels).
 
       Returns:
         Image: The processed image.
@@ -173,7 +176,16 @@ class Mixin:
     else:
       raise ValueError(f"Error, unknown saturation model '{model}.")
     hsv.image[1] = np.clip(sat, 0., 1.)
-    return hsv if self.colormodel == "HSV" else hsv.RGB()
+    output = hsv if self.colormodel == "HSV" else hsv.RGB()
+    if trans:
+      t = helpers.Container()
+      t.input = self
+      t.x = np.linspace(0., 1., params.ntrans)
+      t.y = interpolate(t.x, psat, interpolation)
+      t.xlabel = "H"
+      t.ylabel = "$\Delta_{sat}$"
+      output.trans = t
+    return output
 
   ##########################
   # Color noise reduction. #

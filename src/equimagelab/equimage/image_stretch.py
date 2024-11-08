@@ -58,7 +58,7 @@ def mts(image, midtone):
 class Mixin:
   """To be included in the Image class."""
 
-  def set_black_point(self, shadow, channels = ""):
+  def set_black_point(self, shadow, channels = "", trans = True):
     """Set the black (shadow) level in selected channels of the image.
 
     The selected channels are clipped below shadow and linearly stretched to map [shadow, 1] onto [0, 1].
@@ -83,9 +83,9 @@ class Mixin:
     """
     if shadow > .9999:
       raise ValuerError("Error, shadow must be <= 0.9999.")
-    return self.apply_channels(lambda channel: stf.shadow_stretch_function(channel, shadow), channels)
+    return self.apply_channels(lambda channel: stf.shadow_stretch_function(channel, shadow), channels, trans = trans)
 
-  def clip_shadow_highlight(self, shadow, highlight, channels = ""):
+  def clip_shadow_highlight(self, shadow, highlight, channels = "", trans = True):
     """Clip shadows and highlights in selected channels of the image.
 
     The selected channels are clipped below shadow and above highlight and linearly stretched
@@ -114,9 +114,9 @@ class Mixin:
       raise ValuerError("Error, shadow must be <= 0.9999.")
     if highlight-shadow < .0001:
       raise ValuerError("Error, highlight-shadow must be >= 0.0001.")
-    return self.apply_channels(lambda channel: stf.shadow_highlight_stretch_function(channel, shadow, highlight), channels)
+    return self.apply_channels(lambda channel: stf.shadow_highlight_stretch_function(channel, shadow, highlight), channels, trans = trans)
 
-  def set_dynamic_range(self, fr, to, channels = ""):
+  def set_dynamic_range(self, fr, to, channels = "", trans = True):
     """Set the dynamic range of selected channels of the image.
 
     The selected channels are linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]],
@@ -144,9 +144,9 @@ class Mixin:
       raise ValueError("Error, fr[1]-fr[0] must be >= 0.0001 !")
     if to[1]-to[0] < 0.0001:
       raise ValueError("Error, to[1]-to[0] must be >= 0.0001 !")
-    return self.apply_channels(lambda channel: stf.dynamic_range_stretch_function(channel, fr, to), channels)
+    return self.apply_channels(lambda channel: stf.dynamic_range_stretch_function(channel, fr, to), channels, trans = trans)
 
-  def asinh_stretch(self, stretch, channels = ""):
+  def asinh_stretch(self, stretch, channels = "", trans = True):
     """Apply an arcsinh stretch to selected channels of the image.
 
     The arcsinh stretch function f is applied to the selected channels:
@@ -171,9 +171,9 @@ class Mixin:
     """
     if stretch < 0.:
       raise ValueError("Error, stretch must be >= 0.")
-    return self.apply_channels(lambda channel: stf.asinh_stretch_function(channel, stretch), channels)
+    return self.apply_channels(lambda channel: stf.asinh_stretch_function(channel, stretch), channels, trans = trans)
 
-  def ghyperbolic_stretch(self, lnD1, b, SYP, SPP = 0., HPP = 1., inverse = False, channels = ""):
+  def ghyperbolic_stretch(self, lnD1, b, SYP, SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
     """Apply a generalized hyperbolic stretch to selected channels of the image.
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
@@ -221,9 +221,9 @@ class Mixin:
     if HPP > 1.:
       HPP = 1.
       print("Warning, changed HPP = 1 !")
-    return self.apply_channels(lambda channel: stf.ghyperbolic_stretch_function(channel, lnD1, b, SYP, SPP, HPP, inverse), channels)
+    return self.apply_channels(lambda channel: stf.ghyperbolic_stretch_function(channel, lnD1, b, SYP, SPP, HPP, inverse), channels, trans = trans)
 
-  def midtone_stretch(self, midtone, channels = ""):
+  def midtone_stretch(self, midtone, channels = "", trans = True):
     """Apply a midtone stretch to selected channels of the image.
 
     The midtone stretch function f is applied to the selected channels:
@@ -249,9 +249,9 @@ class Mixin:
     """
     if midtone < .0001 or midtone >= .9999:
       raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")
-    return self.apply_channels(lambda channel: stf.midtone_stretch_function(channel, midtone), channels)
+    return self.apply_channels(lambda channel: stf.midtone_stretch_function(channel, midtone), channels, trans = trans)
 
-  def gamma_stretch(self, gamma):
+  def gamma_stretch(self, gamma, channels = "", trans = True):
     """Apply a power law stretch (gamma correction) to selected channels of the image.
 
     The gamma stretch function f is applied to the selected channels:
@@ -277,9 +277,9 @@ class Mixin:
     """
     if gamma <= 0.:
       raise ValueError("Error, gamma must be > 0.")
-    return self.apply_channels(lambda channel: stf.gamma_stretch_function(channel, gamma), channels)
+    return self.apply_channels(lambda channel: stf.gamma_stretch_function(channel, gamma), channels, trans = trans)
 
-  def adjust_midtone_levels(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = ""):
+  def adjust_midtone_levels(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = "", trans = True):
     """Adjust shadow, midtone, highlight, low and high levels in selected channels of the image.
 
     This method:
@@ -319,4 +319,4 @@ class Mixin:
     if high < 1.:
       high = 1.
       print("Warning, changed high = 1.")
-    return self.apply_channels(lambda channel: stf.adjust_midtone_function(channel, shadow, midtone, highlight, low, high), channels)
+    return self.apply_channels(lambda channel: stf.adjust_midtone_function(channel, shadow, midtone, highlight, low, high), channels, trans = trans)

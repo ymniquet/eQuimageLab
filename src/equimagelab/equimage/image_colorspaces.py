@@ -396,7 +396,7 @@ class Mixin:
   # Channel-selective operations. #
   #################################
 
-  def apply_channels(self, f, channels, multi = True):
+  def apply_channels(self, f, channels, multi = True, trans = False):
     """Apply the operation f(channel) to selected channels of the image.
 
     Note: When applying an operation to the luma, the RGB components of the image are rescaled
@@ -429,62 +429,111 @@ class Mixin:
                (after the operation, the out-of-range pixels are blended with f(RGB)).
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
                               if False, the operation must be applied one channel at a time.
+      trans (bool, optional): If True (default False), embeds the transformation y = f(x in [0, 1]) in the
+        output image as output.trans, where:
+          - output.trans.x is a mesh of the [0, 1] interval.
+          - output.trans.xlabel is a label for output.trans.x.
+          - output.trans.y = f(output.trans.x)
+          - output.trans.ylabel is a label for output.trans.y.
+          - output.trans.input is a reference to the input image (self).
+        trans shall be set True only for *local* transformations f.
 
     Returns:
       Image: The processed image.
     """
+
+    def transformation(f, x, xlabel):
+      """Return the transformation container."""
+      xmin = min(0., x.min())
+      xmax = max(1., x.max())
+      t = helpers.Container()
+      t.input = self
+      t.x = np.linspace(xmin, xmax, max(int(round(params.ntrans*(xmax-xmin))), 2*params.ntrans))
+      t.y = f(t.x)
+      t.xlabel = xlabel
+      t.ylabel = f"f({xlabel})"
+      return t
+
     is_RGB  = (self.colormodel == "RGB")
     is_HSV  = (self.colormodel == "HSV")
     is_gray = (self.colormodel == "gray")
+    if channels == "":
+      if is_gray:
+        channels = "L"
+      elif is_RGB:
+        channels = "RGB"
+      else:
+        channels = "123"
     if channels == "V":
-      if is_RGB or is_gray:
+      if is_gray:
+        output = self.newImage(f(self.image))
+        if trans: output.trans = transformation(f, self.image, "V")
+        return output
+      elif is_RGB:
         value = self.value()
-        return self.scale_pixels(value, f(value))
+        output = self.scale_pixels(value, f(value))
+        if trans: output.trans = transformation(f, value, "V")
+        return output
       elif is_HSV:
-        hsv = self.copy()
-        hsv.image[2] = f(self.image[2])
-        return hsv
+        output = self.copy()
+        output.image[2] = f(self.image[2])
+        if trans: output.trans = transformation(f, self.image[2], "V")
+        return output
       else:
         self.color_model_error()
     elif channels == "S":
       if is_RGB:
         hsv = self.HSV()
+        if trans: t = transformation(f, hsv.image[1], "S")
         hsv.image[1] = f(hsv.image[1])
-        return hsv.RGB()
+        output = hsv.RGB()
+        if trans: output.trans = t
+        return output
       elif is_HSV:
-        hsv = self.copy()
-        hsv.image[1] = f(self.image[1])
-        return hsv
+        output = self.copy()
+        output.image[1] = f(self.image[1])
+        if trans: output.trans = transformation(f, self.image[1], "S")
+        return output
       else:
         self.color_model_error()
     elif channels == "L" or channels == "Ls" or channels == "Lb":
-      luma = self.luma()
-      output = self.scale_pixels(luma, f(luma))
-      if channels == "Ls":
-        return output.protect_highlights_sat()
-      elif channels == "Lb":
-        return output.protect_highlights_blend(self.apply_channels(f, "RGB", multi))
-      else:
+      if is_gray:
+        output = self.newImage(f(self.image))
+        if trans: output.trans = transformation(f, self.image, "L")
         return output
+      elif is_RGB:
+        luma = self.luma()
+        output = self.scale_pixels(luma, f(luma))
+        if channels == "Ls":
+          output = output.protect_highlights_sat()
+        elif channels == "Lb":
+          output = output.protect_highlights_blend(self.apply_channels(f, "RGB", multi))
+        if trans: output.trans = transformation(f, luma, "L")
+        return output
+      else:
+        self.color_model_error()
     else:
-      selected = [False, False, False]
+      nc = self.get_nc()
+      selected = nc*[False]
       for c in channels:
         ok = True
         if c == "1":
           ic = 0
         elif c == "2":
           ic = 1
+          ok = not is_gray
         elif c == "3":
           ic = 2
+          ok = not is_gray
         elif c == "R":
           ic = 0
-          ok = ok and (is_RGB or is_gray)
+          ok = is_RGB
         elif c == "G":
           ic = 1
-          ok = ok and is_RGB
+          ok = is_RGB
         elif c == "B":
           ic = 2
-          ok = ok and is_RGB
+          ok = is_RGB
         else:
           ok = False
         if not ok:
@@ -492,18 +541,17 @@ class Mixin:
         if selected[ic]:
           print(f"Warning, channel '{c}' selected twice or more...")
         selected[ic] = True
-      if not any(selected):
-        selected = [True, True, True]
       if all(selected) and multi:
-        return self.newImage(f(self.image))
+        output = self.newImage(f(self.image))
       else:
-        output = np.empty_like(self.image)
-        for ic in range(self.get_nc()):
+        output = self.newImage(np.empty_like(self.image))
+        for ic in range(nc):
           if selected[ic]:
-            output[ic] = f(self.image[ic])
+            output.image[ic] = f(self.image[ic])
           else:
-            output[ic] =   self.image[ic]
-        return self.newImage(output)
+            output.image[ic] =   self.image[ic]
+      if trans: output.trans = transformation(f, self.image[selected], channels)
+      return output
 
   def clip_channels(self, channels):
     """Clip selected channels of the image in the [0, 1] range.
