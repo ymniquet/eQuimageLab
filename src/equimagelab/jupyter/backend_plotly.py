@@ -50,20 +50,24 @@ def _show_histograms_(image, channels = "", log = True, trans = None, width = pa
     if hists is None: hists = image.histograms()
   else:
     hists = image.histograms(channels = channels)
-  figure = make_subplots(specs = [[{"secondary_y": trans is not None}]])
+  figure = make_subplots(specs = [[{"secondary_y": trans is not None, "r": -0.06}]])
   for channel in hists.values():
     midpoints = (channel.edges[1:]+channel.edges[:-1])/2.
     figure.add_trace(go.Scatter(x = midpoints, y = channel.counts, name = channel.name, mode = "lines", line = dict(color = channel.color, width = 2)), secondary_y = False)
-  figure.update_xaxes(title_text = "Level")
-  figure.update_yaxes(title_text = "Count", secondary_y = False)
-  if log: figure.update_yaxes(type = "log", secondary_y = False)
+  figure.update_xaxes(title_text = "Level", ticks = "inside", rangemode = "tozero")
+  figure.update_yaxes(title_text = "Count", ticks = "inside", secondary_y = False)
+  if log:
+    figure.update_yaxes(type = "log", secondary_y = False)
+  else:
+    figure.update_yaxes(rangemode = "tozero", secondary_y = False)
   if trans is not None:
     figure.add_trace(go.Scatter(x = trans.x, y = trans.y, mode = "lines", line = dict(color = "purple", width = 2), showlegend = False), secondary_y = True)
     figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], mode = "lines", line = dict(color = "purple", width = 1, dash = "dot"), showlegend = False), secondary_y = True)
-    figure.update_yaxes(title_text = trans.ylabel, titlefont = dict(color = "purple"), showgrid = False, tickfont = dict(color = "purple"), secondary_y = True)
+    figure.update_yaxes(title_text = trans.ylabel, titlefont = dict(color = "purple"), ticks = "inside", tickfont = dict(color = "purple"),
+                        showgrid = False, rangemode = "tozero", secondary_y = True)
   layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width/3+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
-  figure.update_layout(layout)
+  figure.update_layout(layout, legend = dict(xanchor = "left", x = 1.05, yanchor = "top", y = 1.))
   return figure
 
 def show_histograms(image, channels = "", log = True, trans = None, width = params.maxwidth, renderer = None):
@@ -102,3 +106,20 @@ def _show_statistics_(image, channels = "", width = params.maxwidth, rowheight =
 def show_statistics(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, renderer = None):
   figure = _show_statistics_(image, channels = channels, width = width, rowheight = rowheight)
   if figure is not None: figure.show(renderer)
+
+def show_t(image, histograms = "RGBL", sample = 1, width = params.maxwidth, renderer = None):
+  if not issubclass(type(image), Image):
+    print("The transformations can only be displayed for Image objects.")
+  trans = getattr(image, "trans", None)
+  if trans is None:
+    print("There is no transformation embedded in the input image.")
+    return
+  reference = trans.input
+  channels = trans.xlabel
+  for c in channels:
+    if c in "RGBVSL":
+      if c not in histograms:
+        histograms += c
+  show_histograms(reference, channels = histograms, log = True, trans = trans, width = width, renderer = renderer)
+  show_histograms(image, channels = histograms, log = True, width = width, renderer = renderer)
+  show(image, histograms = False, statistics = False, sample = sample, width = width, renderer = renderer)
