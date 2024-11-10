@@ -20,6 +20,6 @@ bmargin = 48  # Bottom margin.
 
 rowheight = 25 # Height of the table rows.
 
-SHADOWCOLOR = np.array([[1.], [.5], [0.]], dtype = IMGTYPE)
-HIGHLIGHTCOLOR = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)
-DIFFCOLOR = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)
+shadowcolor = np.array([[1.], [.5], [0.]], dtype = IMGTYPE)
+highlightcolor = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)
+diffcolor = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)

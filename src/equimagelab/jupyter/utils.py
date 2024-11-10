@@ -58,10 +58,10 @@ def shadowed(image, reference = None):
     img, ref = prepare_images(image, reference)
   output = img.copy()
   imgmask = np.all(img < params.IMGTOL, axis = 0)
-  output[:, imgmask] = params.SHADOWCOLOR
+  output[:, imgmask] = params.shadowcolor
   if reference is not None:
     refmask = np.all(ref < params.IMGTOL, axis = 0)
-    output[:, imgmask & refmask] = .5*params.SHADOWCOLOR
+    output[:, imgmask & refmask] = .5*params.shadowcolor
   return output
 
 def highlighted(image, reference = None):
@@ -71,10 +71,10 @@ def highlighted(image, reference = None):
     img, ref = prepare_images(image, reference)
   output = img.copy()
   imgmask = np.any(img > 1.-params.IMGTOL, axis = 0)
-  output[:, imgmask] = params.HIGHLIGHTCOLOR
+  output[:, imgmask] = params.highlightcolor
   if reference is not None:
     refmask = np.any(ref > 1.-params.IMGTOL, axis = 0)
-    output[:, imgmask & refmask] = .5*params.HIGHLIGHTCOLOR
+    output[:, imgmask & refmask] = .5*params.highlightcolor
   return output
 
 def differences(image, reference):
@@ -82,6 +82,6 @@ def differences(image, reference):
   img, ref = prepare_images(image, reference)
   output = img.copy()
   mask = np.any(img != ref, axis = 0)
-  output[:, mask] = params.DIFFCOLOR
+  output[:, mask] = params.diffcolor
   return output
 

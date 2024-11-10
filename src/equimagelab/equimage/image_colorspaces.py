@@ -433,6 +433,7 @@ class Mixin:
         output image as output.trans, where:
           - output.trans.x is a mesh of the [0, 1] interval.
           - output.trans.xlabel is a label for output.trans.x.
+          - output.trans.xticks is a list of remarkable x values for this transformation (if any).
           - output.trans.y = f(output.trans.x)
           - output.trans.ylabel is a label for output.trans.y.
           - output.trans.input is a reference to the input image (self).
