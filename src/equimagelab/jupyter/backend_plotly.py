@@ -18,12 +18,25 @@ from .utils import prepare_images
 
 from ..equimage.image import Image
 
-def _wrap_image_(image, sample = 1, width = params.maxwidth):
+def _figure_image_(image, sample = 1, width = params.maxwidth):
+  """Prepare a ploty figure for the input image.
+
+  Args:
+    image: The image (Image object or numpy.ndarray).
+    sample (int, optional): Downsampling rate (default 1).
+      Only image[:, ::sample, ::sample] is shown, to speed up operations.
+    width (int, optional): The width of the figure (default params.maxwidth).
+
+  Returns:
+    go.Figure: A plotly figure.
+  """
+  # Prepare image.
   img = prepare_images(image, sample = sample)
   if img.shape[0] == 1:
     img = img[0]
   else:
     img = np.moveaxis(img, 0, -1)
+  # Plot image.
   raster = px.imshow(img, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
   figure = go.Figure(data = raster)
   layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width*img.shape[0]/img.shape[1]+params.bmargin+params.tmargin,
@@ -31,7 +44,22 @@ def _wrap_image_(image, sample = 1, width = params.maxwidth):
   figure.update_layout(layout)
   return figure
 
-def _wrap_histograms_(image, channels = "", log = True, trans = None, xlabel = "Level", width = params.maxwidth):
+def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel = "Level", width = params.maxwidth):
+  """Prepare a plotly figure with the histograms of an image.
+
+  Args:
+    image (Image): The image.
+    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
+    log (bool, optional): If True (default), plot the histogram counts in log scale.
+    trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on top
+      of the histograms (default None).
+    xlabel (str, optional): The x axis label of the plot (default "Level").
+    width (int, optional): The width of the figure (default params.maxwidth).
+
+  Returns:
+    go.Figure: A plotly figure.
+  """
+  # Prepare histograms.
   if not issubclass(type(image), Image):
     print("The histograms can only be displayed for Image objects.")
     return None
@@ -40,12 +68,14 @@ def _wrap_histograms_(image, channels = "", log = True, trans = None, xlabel = "
     if hists is None: hists = image.histograms()
   else:
     hists = image.histograms(channels = channels)
+  # Set-up colors.
   purple = dict(color = "purple")
   purple2 = dict(color = "purple", width = 2)
   purpledot1 = dict(color = "purple", dash = "dot", width = 1)
   purpledash1 = dict(color = "purple", dash = "dash", width = 1)
   purpledashdot1 = dict(color = "purple", dash = "dashdot", width = 1)
   blackdashdot1 = dict(color = "black", dash = "dashdot", width = 1)
+  # Plot histograms.
   figure = make_subplots(specs = [[dict(secondary_y = trans is not None, r = -0.06)]])
   updatemenus = []
   ntraces = 0
@@ -62,8 +92,10 @@ def _wrap_histograms_(image, channels = "", log = True, trans = None, xlabel = "
     active = 0
   else:
     active = -1
+  # Add lin/log toggle button.
   buttons = [dict(label = "lin/log", method = "relayout", args = [{"yaxis.type": "log"}], args2 = [{"yaxis.type": "linear"}])]
   updatemenus.append(dict(type = "buttons", buttons = buttons, active = active, showactive = False, xanchor = "left", x = 0., yanchor = "bottom", y = 1.025))
+  # Plot transformation.
   if trans is not None:
     cef = np.log(np.maximum(np.gradient(trans.y, trans.x), 1.e-12))
     figure.add_trace(go.Scatter(x = trans.x, y = trans.y, mode = "lines", line = purple2, showlegend = False), secondary_y = True)
@@ -78,17 +110,31 @@ def _wrap_histograms_(image, channels = "", log = True, trans = None, xlabel = "
     ftitle = f"f({trans.xlabel})"
     ceftitle = f"log f'({trans.xlabel})"
     figure.update_yaxes(title_text = ftitle, titlefont = purple, ticks = "inside", tickfont = purple, showgrid = False, rangemode = "tozero", secondary_y = True)
+    # Add f/log f' toggle button.
     keepvisible = ntraces*[True]
     buttons = [dict(label = "f/log f'", method = "update",
                     args  = [{"visible": keepvisible+[False, True, True, False, False]}, {"yaxis2.title": ceftitle}],
                     args2 = [{"visible": keepvisible+[True, False, True, True, True]}, {"yaxis2.title": ftitle}])]
     updatemenus.append(dict(type = "buttons", buttons = buttons, active = -1, showactive = False, xanchor = "left", x = .066, yanchor = "bottom", y = 1.025))
+  # Finalize layout.
   layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width/3+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
   figure.update_layout(layout, legend = dict(xanchor = "left", x = 1.05, yanchor = "top", y = 1.), updatemenus = updatemenus)
   return figure
 
-def _wrap_statistics_(image, channels = "", width = params.maxwidth, rowheight = params.rowheight):
+def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight = params.rowheight):
+  """Prepare a plotly table with the statistics of an image.
+
+  Args:
+    image (Image): The image.
+    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
+    width (int, optional): The width of the table (default params.maxwidth).
+    rowheight (int, optional): The height of the rows (default params.rowheight).
+
+  Returns:
+    go.Figure: A plotly figure with the table.
+  """
+  # Prepare statistics.
   if not issubclass(type(image), Image):
     print("The statistics can only be displayed for Image objects.")
     return None
@@ -97,6 +143,7 @@ def _wrap_statistics_(image, channels = "", width = params.maxwidth, rowheight =
     if stats is None: stats = image.statistics()
   else:
     stats = image.statistics(channels = channels)
+  # Create table.
   columns = [[], [], [], [], [], [], [], []]
   for channel in stats.values():
     columns[0].append(channel.name)
@@ -111,6 +158,7 @@ def _wrap_statistics_(image, channels = "", width = params.maxwidth, rowheight =
   header = dict(values = ["Channel", "Minimum", "25%", "50%", "75%", "Maximum", "Shadowed", "Highlighted"], align = align, height = rowheight)
   cells = dict(values = columns, align = align, height = rowheight)
   table = go.Table(header = header, cells = cells, columnwidth = [1, 1, 1, 1, 1, 1, 1.5, 1.5])
+  # Create figure.
   figure = go.Figure(data = table)
   layout = go.Layout(width = width+params.lmargin+params.rmargin, height = (len(stats)+1)*rowheight+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
@@ -118,7 +166,20 @@ def _wrap_statistics_(image, channels = "", width = params.maxwidth, rowheight =
   return figure
 
 def show(image, histograms = False, statistics = False, sample = 1, width = params.maxwidth, renderer = None):
-  figure = _wrap_image_(image, sample = sample, width = width)
+  """Show an image using plotly.
+
+  Args:
+    image: The image (Image object or numpy.ndarray; must be an Image object if histograms or statistics are True).
+    histograms (optional): If True or a string, show the histograms of the image. The string lists the
+      channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
+    statistics (optional): If True or a string, show the statistics of the image. The string lists the
+      channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
+    sample (int, optional): Downsampling rate (default 1).
+      Only image[:, ::sample, ::sample] is shown, to speed up operations.
+    width (int, optional): The width of the figure (default params.maxwidth).
+    renderer (optional): The plotly renderer (default None = "jupyterlab").
+  """
+  figure = _figure_image_(image, sample = sample, width = width)
   figure.show(renderer)
   if histograms is not False:
     if histograms is True: histograms = ""
@@ -128,14 +189,48 @@ def show(image, histograms = False, statistics = False, sample = 1, width = para
     show_statistics(image, channels = statistics, width = width, renderer = renderer)
 
 def show_histograms(image, channels = "", log = True, trans = None, xlabel = "Level", width = params.maxwidth, renderer = None):
-  figure = _wrap_histograms_(image, channels = channels, log = log, trans = trans, xlabel = xlabel, width = width)
+  """Plot the histograms of an image using plotly.
+
+  Args:
+    image (Image): The image.
+    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
+    log (bool, optional): If True (default), plot the histogram counts in log scale.
+    trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on top
+      of the histograms (default None).
+    xlabel (str, optional): The x axis label of the plot (default "Level").
+    width (int, optional): The width of the figure (default params.maxwidth).
+    renderer (optional): The plotly renderer (default None = "jupyterlab").
+  """
+  figure = _figure_histograms_(image, channels = channels, log = log, trans = trans, xlabel = xlabel, width = width)
   if figure is not None: figure.show(renderer)
 
 def show_statistics(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, renderer = None):
-  figure = _wrap_statistics_(image, channels = channels, width = width, rowheight = rowheight)
+  """Display a table with the statistics of an image using plotly.
+
+  Args:
+    image (Image): The image.
+    channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
+    width (int, optional): The width of the table (default params.maxwidth).
+    rowheight (int, optional): The height of the rows (default params.rowheight).
+    renderer (optional): The plotly renderer (default None = "jupyterlab").
+  """
+  figure = _figure_statistics_(image, channels = channels, width = width, rowheight = rowheight)
   if figure is not None: figure.show(renderer)
 
 def show_t(image, histograms = "RGBL", sample = 1, width = params.maxwidth, renderer = None):
+  """Show an image embedding an histogram transformation using plotly.
+
+  Displays the original histograms with the transformation curve, the final image histograms, and the image.
+
+  Args:
+    image: The image (Image object; must embed a transformation image.trans - see Image.apply_channels).
+    channels (str, optional): The channels of the histograms (default "RGBL" for red, green, blue, luma).
+      The channels of the transformation are added if needed.
+    sample (int, optional): Downsampling rate (default 1).
+      Only image[:, ::sample, ::sample] is shown, to speed up operations.
+    width (int, optional): The width of the figure (default params.maxwidth).
+    renderer (optional): The plotly renderer (default None = "jupyterlab").
+  """
   if not issubclass(type(image), Image):
     print("The transformations can only be displayed for Image objects.")
   trans = getattr(image, "trans", None)

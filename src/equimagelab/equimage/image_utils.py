@@ -41,8 +41,8 @@ def clip(image, vmin = 0., vmax = 1.):
 
   Args:
     image (numpy.ndarray): The input image.
-    vmin (float): The lower clip bound.
-    vmax (float): The upper clip bound.
+    vmin (float, optional): The lower clip bound (default 0).
+    vmax (float, optional): The upper clip bound (default 1).
 
   Returns:
     numpy.ndarray: The clipped image.
@@ -111,8 +111,8 @@ class Mixin:
     """Clip the image in the range [vmin, vmax].
 
     Args:
-      vmin (float): The lower clip bound.
-      vmax (float): The upper clip bound.
+      vmin (float, optional): The lower clip bound (default 0).
+      vmax (float, optional): The upper clip bound (default 1).
 
     Returns:
       Image: The clipped image.

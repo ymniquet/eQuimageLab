@@ -15,7 +15,7 @@ import dash
 
 from . import params
 from .utils import prepare_images
-from .backend_plotly import _wrap_image_, _wrap_histograms_, _wrap_statistics_
+from .backend_plotly import _figure_image_, _figure_histograms_, _figure_statistics_
 
 from ..equimage.image import Image
 
@@ -57,14 +57,14 @@ class Dashboard():
     tabs = []
     for label, image in imgtabs.items():
       tab = []
-      tab.append(dash.dcc.Graph(figure = _wrap_image_(image, sample = sample)))
+      tab.append(dash.dcc.Graph(figure = _figure_image_(image, sample = sample)))
       if histograms is not False:
         if histograms is True: histograms = ""
-        figure = _wrap_histograms_(image, channels = histograms, log = True, trans = trans if label == "Reference" else None)
+        figure = _figure_histograms_(image, channels = histograms, log = True, trans = trans if label == "Reference" else None)
         if figure is not None: tab.append(dash.dcc.Graph(figure = figure))
       if statistics is not False:
         if statistics is True: statistics = ""
-        table = _wrap_statistics_(image, channels = statistics)
+        table = _figure_statistics_(image, channels = statistics)
         if table is not None: tab.append(dash.dcc.Graph(figure = table))
       tabs.append(dash.dcc.Tab(tab, label = label))
     if len(imgtabs) == 1:
