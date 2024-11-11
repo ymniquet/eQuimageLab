@@ -20,8 +20,18 @@ from .backend_plotly import _figure_image_, _figure_histograms_, _figure_statist
 from ..equimage.image import Image
 
 class Dashboard():
+  """Dashboad class."""
 
   def __init__(self, interval = 333):
+    """Initialize dashboard.
+
+    This dashboard (based on Dash) displays images, histograms, statistics, etc... in a separate
+    browser tab or window.
+    It fetches updates from the Dash server every input interval.
+
+    Args:
+      interval (int, optional): The time interval (ms, default 333) between dashboard updates.
+    """
     self.content = []
     self.refresh = False
     self.app = dash.Dash(title = "eQuimageLab dashboard", update_title = None)
@@ -32,13 +42,31 @@ class Dashboard():
     self.app.run_server(debug = False, use_reloader = False, jupyter_mode = "external")
 
   def __update_dashboard(self, n):
+    """The callback for dashboard updates."""
     refresh = self.refresh
     self.refresh = False
     return self.content if refresh else dash.no_update
 
   def show(self, images, histograms = False, statistics = False, sample = 1, trans = None):
+    """Show image(s) on the dashboard.
+
+    Args:
+      images: The image(s) as a single/tuple/list/dictionary of Image object(s) or numpy.ndarray.
+        If a tuple/list/dictionary, each image is displayed in a separate tab.
+        The tabs are named according to the keys for a dictionary. Otherwise, the tabs are named "Image"
+        and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
+        The images must all be Image objects if histograms or statistics is True.
+      histograms (optional): If True or a string, show the histograms of the image(s). The string lists the
+        channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
+      statistics (optional): If True or a string, show the statistics of the image(s). The string lists the
+        channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
+      sample (int, optional): Downsampling rate (default 1).
+        Only images[:, ::sample, ::sample] is shown, to speed up operations.
+      trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on
+        top of the histograms of the "Reference" tab (default None).
+    """
     self.refresh = False
-    if isinstance(images, (list, tuple)):
+    if isinstance(images, (tuple, list)):
       nimages = len(images)
       if nimages == 1:
         imgtabs = {"Image": images[0]}
@@ -73,7 +101,19 @@ class Dashboard():
       self.content = [dash.dcc.Tabs(tabs)]
     self.refresh = True
 
-  def show_t(self, image, histograms = "RGBL", sample = 1):
+  def show_t(self, image, channels = "RGBL", sample = 1):
+    """Show the input and output images of an histogram transformation on the dashboard.
+
+    Displays the input image, histograms, statistics, and transformation curve in tab "Reference",
+    and the output image, histograms, and statistics in tab "Image".
+
+    Args:
+      image (Image): The output image (must embed a transformation image.trans - see Image.apply_channels).
+      channels (str, optional): The channels of the histograms and statistics (default "RGBL" for red,
+        green, blue, luma). The channels of the transformation are added if needed.
+      sample (int, optional): Downsampling rate (default 1).
+        Only image[:, ::sample, ::sample] is shown, to speed up operations.
+    """
     if not issubclass(type(image), Image):
       print("The transformations can only be displayed for Image objects.")
     trans = getattr(image, "trans", None)
@@ -81,9 +121,8 @@ class Dashboard():
       print("There is no transformation embedded in the input image.")
       return
     reference = trans.input
-    channels = trans.xlabel
-    for c in channels:
+    for c in trans.channels:
       if c in "RGBVSL":
-        if c not in histograms:
-          histograms += c
-    self.show({"Image": image, "Reference": reference}, histograms = histograms, statistics = histograms, trans = trans, sample = sample)
+        if c not in channels:
+          channels += c
+    self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels, trans = trans, sample = sample)

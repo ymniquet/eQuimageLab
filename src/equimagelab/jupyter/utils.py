@@ -13,6 +13,22 @@ from . import params
 from ..equimage.image import Image
 
 def prepare_images(*args, sample = 1):
+  """Prepare the images for plotly and Dash.
+
+  Returns all images as numpy.ndarray with dimensions (3, height, width) (for color images)
+  or (1, height, width) (for grayscale images).
+
+  Args:
+    args: A set of Image object(s) or numpy.ndarray with dimensions (3, height, width) (for
+      color images), (1, height, width) or (height, width) (for grayscale images).
+    sample (int, optional): Downsampling rate (default 1).
+      Only args[:, ::sample, ::sample] are shown, to speed up operations.
+
+  Returns:
+    All args as numpy.ndarray with dimensions (3, height, width) (for color images)
+      or (1, height, width) (for grayscale images). These arrays are references (not
+      copies) of the original images when possible.
+  """
   output = ()
   for arg in args:
     valid = False
@@ -34,6 +50,19 @@ def prepare_images(*args, sample = 1):
   return output[0] if len(output) == 1 else output
 
 def filter(image, channels):
+  """Filter the channels of an image.
+
+  Returns a copy of the image with some red/green/blue channels set to zero.
+
+  Args:
+    image: The image (Image object or numpy.ndarray).
+    channels (str): The preserved channels. A combination of the letters "R" (red),
+      "G" (green), and "B" (blue).
+
+  Returns:
+    np.ndarray: A copy of the image as an array with dimensions (3, height, width)
+      and the unselected channels set to zero.
+  """
   selected = np.array([False, False, False])
   for c in channels:
     if c == "R":
@@ -52,6 +81,20 @@ def filter(image, channels):
   return output
 
 def shadowed(image, reference = None):
+  """Highlight black pixels in an image.
+
+  Highlight pixels black on the input image with color params.shadowcolor.
+  If a reference image is provided, highlight pixels black on both input and reference images
+  with color 0.5*params.shadowcolor.
+
+  Args:
+    image: The image (Image object or numpy.ndarray).
+    reference (optional): The reference image (Image object or numpy.ndarray, default None).
+
+  Returns:
+    A copy of the image as an array with dimensions (3, height, width)
+      and the black pixels highlighted with color params.shadowcolor.
+  """
   if reference is None:
     img = prepare_images(image)
   else:
@@ -65,6 +108,21 @@ def shadowed(image, reference = None):
   return output
 
 def highlighted(image, reference = None):
+  """Highlight saturated pixels in an image.
+
+  A pixel is saturated if at least one channel is >= 1.
+  Show pixels saturated on the input image with color params.highlightcolor.
+  If a reference image is provided, show pixels saturated on both input and reference images
+  with color 0.5*params.highlightcolor.
+
+  Args:
+    image: The image (Image object or numpy.ndarray).
+    reference (optional): The reference image (Image object or numpy.ndarray, default None).
+
+  Returns:
+    A copy of the image as an array with dimensions (3, height, width)
+      and the saturated pixels highlighted with color params.highlightcolor.
+  """
   if reference is None:
     img = prepare_images(image)
   else:
@@ -78,10 +136,18 @@ def highlighted(image, reference = None):
   return output
 
 def differences(image, reference):
-  """Highlight differences between image and reference with color params.DIFFCOLOR."""
+  """Highlight differences between an image and reference.
+
+  Args:
+    image: The image (Image object or numpy.ndarray).
+    reference: The reference image (Image object or numpy.ndarray).
+
+  Returns:
+    A copy of the image as an array with dimensions (3, height, width)
+      and the differences with the reference highlighted with color params.diffcolor.
+  """
   img, ref = prepare_images(image, reference)
   output = img.copy()
   mask = np.any(img != ref, axis = 0)
   output[:, mask] = params.diffcolor
   return output
-

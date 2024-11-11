@@ -180,6 +180,7 @@ class Mixin:
     if trans:
       t = helpers.Container()
       t.input = self
+      t.channels = "H"
       t.x = np.linspace(0., 1., params.ntrans)
       t.y = interpolate(t.x, psat, interpolation)
       t.xlabel = "H"

@@ -28,7 +28,7 @@ def _figure_image_(image, sample = 1, width = params.maxwidth):
     width (int, optional): The width of the figure (default params.maxwidth).
 
   Returns:
-    go.Figure: A plotly figure.
+    go.Figure: A plotly figure with the image.
   """
   # Prepare image.
   img = prepare_images(image, sample = sample)
@@ -57,7 +57,7 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
     width (int, optional): The width of the figure (default params.maxwidth).
 
   Returns:
-    go.Figure: A plotly figure.
+    go.Figure: A plotly figure with the histograms of the image.
   """
   # Prepare histograms.
   if not issubclass(type(image), Image):
@@ -107,8 +107,8 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
     if xticks is not None:
       for xtick in xticks:
         figure.add_vline(x = xtick, line = purpledash1, secondary_y = True)
-    ftitle = f"f({trans.xlabel})"
-    ceftitle = f"log f'({trans.xlabel})"
+    ftitle = f"{trans.ylabel}({trans.xlabel})"
+    ceftitle = f"log {trans.ylabel}'({trans.xlabel})"
     figure.update_yaxes(title_text = ftitle, titlefont = purple, ticks = "inside", tickfont = purple, showgrid = False, rangemode = "tozero", secondary_y = True)
     # Add f/log f' toggle button.
     keepvisible = ntraces*[True]
@@ -132,7 +132,7 @@ def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight
     rowheight (int, optional): The height of the rows (default params.rowheight).
 
   Returns:
-    go.Figure: A plotly figure with the table.
+    go.Figure: A plotly figure with the table of the statistics of the image.
   """
   # Prepare statistics.
   if not issubclass(type(image), Image):
@@ -169,7 +169,7 @@ def show(image, histograms = False, statistics = False, sample = 1, width = para
   """Show an image using plotly.
 
   Args:
-    image: The image (Image object or numpy.ndarray; must be an Image object if histograms or statistics are True).
+    image: The image (Image object or numpy.ndarray; must be an Image object if histograms or statistics is True).
     histograms (optional): If True or a string, show the histograms of the image. The string lists the
       channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
     statistics (optional): If True or a string, show the statistics of the image. The string lists the
@@ -217,13 +217,13 @@ def show_statistics(image, channels = "", width = params.maxwidth, rowheight = p
   figure = _figure_statistics_(image, channels = channels, width = width, rowheight = rowheight)
   if figure is not None: figure.show(renderer)
 
-def show_t(image, histograms = "RGBL", sample = 1, width = params.maxwidth, renderer = None):
+def show_t(image, channels = "RGBL", sample = 1, width = params.maxwidth, renderer = None):
   """Show an image embedding an histogram transformation using plotly.
 
-  Displays the original histograms with the transformation curve, the final image histograms, and the image.
+  Displays the input histograms with the transformation curve, the output histograms, and the output image.
 
   Args:
-    image: The image (Image object; must embed a transformation image.trans - see Image.apply_channels).
+    image (Image): The output image (must embed a transformation image.trans - see Image.apply_channels).
     channels (str, optional): The channels of the histograms (default "RGBL" for red, green, blue, luma).
       The channels of the transformation are added if needed.
     sample (int, optional): Downsampling rate (default 1).
@@ -238,11 +238,10 @@ def show_t(image, histograms = "RGBL", sample = 1, width = params.maxwidth, rend
     print("There is no transformation embedded in the input image.")
     return
   reference = trans.input
-  channels = trans.xlabel
-  for c in channels:
+  for c in trans.channels:
     if c in "RGBVSL":
-      if c not in histograms:
-        histograms += c
-  show_histograms(reference, channels = histograms, log = True, trans = trans, xlabel = "Input level", width = width, renderer = renderer)
-  show_histograms(image, channels = histograms, log = True, xlabel = "Output level", width = width, renderer = renderer)
+      if c not in channels:
+        channels += c
+  show_histograms(reference, channels = channels, log = True, trans = trans, xlabel = "Input level", width = width, renderer = renderer)
+  show_histograms(image, channels = channels, log = True, xlabel = "Output level", width = width, renderer = renderer)
   show(image, histograms = False, statistics = False, sample = sample, width = width, renderer = renderer)
