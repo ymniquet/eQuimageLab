@@ -25,8 +25,8 @@ class Dashboard():
   def __init__(self, interval = 333):
     """Initialize dashboard.
 
-    This dashboard (based on Dash) displays images, histograms, statistics, etc... in a separate
-    browser tab or window.
+    This dashboard uses Dash to displays image, histograms, statistics, etc... in a
+    separate browser tab or window.
     It fetches updates from the Dash server every input interval.
 
     Args:
@@ -61,7 +61,7 @@ class Dashboard():
       statistics (optional): If True or a string, show the statistics of the image(s). The string lists the
         channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
       sample (int, optional): Downsampling rate (default 1).
-        Only images[:, ::sample, ::sample] is shown, to speed up operations.
+        Only images[:, ::sample, ::sample] are shown, to speed up operations.
       trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on
         top of the histograms of the "Reference" tab (default None).
     """

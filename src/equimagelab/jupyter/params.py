@@ -10,17 +10,54 @@ import numpy as np
 
 from ..equimage.params import IMGTYPE, IMGTOL
 
-maxwidth = 1024 # Maximum width of the displayed image.
-maxheight = 768 # Maximum height of the displayed image.
+# Figure size and margins.
 
-lmargin = 96 # Left margin.
+maxwidth = 1024 # Maximum width of the displayed image.
+
+lmargin = 96  # Left margin.
 rmargin = 144 # Right margin.
-tmargin = 48  # Top margin.
 bmargin = 48  # Bottom margin.
+tmargin = 48  # Top margin.
 
 rowheight = 25 # Height of the table rows.
 
 # Colors for shadows, highlights and differences.
+
 shadowcolor = np.array([[1.], [.5], [0.]], dtype = IMGTYPE)
 highlightcolor = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)
 diffcolor = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)
+
+# Setters.
+
+def set_max_width(width):
+  """Set maximum figure width.
+
+  Args:
+    width (int): The maximum figure width.
+  """
+  global maxwidth
+  maxwidth = width
+
+def set_margins(left = None, right = None, bottom = None, top = None):
+  """Set or update figure margins.
+
+  Args:
+    left (int, optional): The left margin (if not the default None).
+    right (int, optional): The right margin (if not the default None).
+    bottom (int, optional): The bottom margin (if not the default None).
+    top (int, optional): The top margin (if not the default None).
+  """
+  global lmargin, rmargin, tmargin, bmargin
+  if left is not None: lmargin = left
+  if right is not None: rmargin = right
+  if bottom is not None: bmargin = bottom
+  if top is not None: tmargin = top
+
+def set_row_height(height):
+  """Set table row height.
+
+  Args:
+    height (int): The table row height.
+  """
+  global rowheight
+  rowheight = height

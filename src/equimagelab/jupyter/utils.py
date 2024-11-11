@@ -13,7 +13,7 @@ from . import params
 from ..equimage.image import Image
 
 def prepare_images(*args, sample = 1):
-  """Prepare the images for plotly and Dash.
+  """Prepare images for plotly and Dash.
 
   Returns all images as numpy.ndarray with dimensions (3, height, width) (for color images)
   or (1, height, width) (for grayscale images).
@@ -25,8 +25,8 @@ def prepare_images(*args, sample = 1):
       Only args[:, ::sample, ::sample] are shown, to speed up operations.
 
   Returns:
-    All args as numpy.ndarray with dimensions (3, height, width) (for color images)
-      or (1, height, width) (for grayscale images). These arrays are references (not
+    All args as numpy.ndarray with dimensions (3, height/sample, width/sample) (for color images)
+      or (1, height/sample, width/sample) (for grayscale images). These arrays are references (not
       copies) of the original images when possible.
   """
   output = ()
@@ -52,11 +52,11 @@ def prepare_images(*args, sample = 1):
 def filter(image, channels):
   """Filter the channels of an image.
 
-  Returns a copy of the image with some red/green/blue channels set to zero.
+  Returns a copy of the image with unselected red/green/blue channels set to zero.
 
   Args:
     image: The image (Image object or numpy.ndarray).
-    channels (str): The preserved channels. A combination of the letters "R" (red),
+    channels (str): The selected channels. A combination of the letters "R" (red),
       "G" (green), and "B" (blue).
 
   Returns:
@@ -136,7 +136,7 @@ def highlighted(image, reference = None):
   return output
 
 def differences(image, reference):
-  """Highlight differences between an image and reference.
+  """Highlight differences between an image and a reference.
 
   Args:
     image: The image (Image object or numpy.ndarray).
