@@ -43,6 +43,8 @@ def _figure_image_(image, sample = 1, width = params.maxwidth, template = "plotl
   layout = go.Layout(template = template,
                      width = width+params.lmargin+params.rmargin, height = width*img.shape[0]/img.shape[1]+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
+  #figure.update_xaxes(title_text = "x (pixels)")
+  #figure.update_yaxes(title_text = "y (pixels)")
   figure.update_layout(layout)
   return figure
 
@@ -168,7 +170,7 @@ def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight
   figure = go.Figure(data = table)
   layout = go.Layout(template = template,
                      width = width+params.lmargin+params.rmargin, height = (len(stats)+1)*rowheight+params.bmargin+params.tmargin,
-                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
+                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = 32, t = 32, autoexpand = True))
   figure.update_layout(layout)
   return figure
 

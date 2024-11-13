@@ -12,12 +12,13 @@ import plotly.graph_objects as go
 import plotly.io as pio
 pio.renderers.default = "jupyterlab"
 import dash
+from dash import Dash, dcc, html
 import dash_bootstrap_templates as dbt
 import dash_bootstrap_components as dbc
 
 from . import params
 from .utils import prepare_images
-from .backend_plotly import _figure_image_, _figure_histograms_, _figure_statistics_
+from .backend_plotly import _figure_image_, _figure_histograms_
 
 from ..equimage.image import Image
 
@@ -37,17 +38,17 @@ class Dashboard():
     self.content = []
     self.refresh = False
     dbt.load_figure_template("slate")
-    self.app = dash.Dash(title = "eQuimageLab dashboard", update_title = None, external_stylesheets = [dbc.themes.SLATE])
-    dashboard = dash.html.Div(self.content, id = "dashboard", style = {"width": params.maxwidth+params.lmargin+params.rmargin})
-    interval = dash.dcc.Interval(id = "update-dashboard", interval = interval, n_intervals = 0)
-    self.app.layout = dash.html.Div([dashboard, interval])
+    self.app = Dash(title = "eQuimageLab dashboard", update_title = None, external_stylesheets = [dbc.themes.SLATE])
+    dashboard = html.Div(self.content, id = "dashboard", style = {"width": params.maxwidth+params.lmargin+params.rmargin})
+    interval = dcc.Interval(id = "update-dashboard", interval = interval, n_intervals = 0)
+    self.app.layout = html.Div([dashboard, interval])
     self.app.callback(dash.dependencies.Output("dashboard", "children"), dash.dependencies.Input("update-dashboard", "n_intervals"))(self.__update_dashboard)
     self.app.run_server(debug = False, use_reloader = False, jupyter_mode = "external")
 
   def __update_dashboard(self, n):
     """The callback for dashboard updates."""
     refresh = self.refresh
-    self.refresh = False
+    if refresh: self.refresh = False
     return self.content if refresh else dash.no_update
 
   def show(self, images, histograms = False, statistics = False, sample = 1, trans = None):
@@ -88,15 +89,16 @@ class Dashboard():
     tabs = []
     for label, image in imgtabs.items():
       tab = []
-      tab.append(dash.dcc.Graph(figure = _figure_image_(image, sample = sample, template = "slate")))
+      tab.append(dcc.Graph(figure = _figure_image_(image, sample = sample, width = params.maxwidth, template = "slate")))
       if histograms is not False:
         if histograms is True: histograms = ""
-        figure = _figure_histograms_(image, channels = histograms, log = True, trans = trans if label == "Reference" else None, template = "slate")
-        if figure is not None: tab.append(dash.dcc.Graph(figure = figure))
+        figure = _figure_histograms_(image, channels = histograms, log = True, trans = trans if label == "Reference" else None,
+                                     width = params.maxwidth, template = "slate")
+        if figure is not None: tab.append(dcc.Graph(figure = figure))
       if statistics is not False:
         if statistics is True: statistics = ""
-        table = _figure_statistics_(image, channels = statistics, template = "slate")
-        if table is not None: tab.append(dash.dcc.Graph(figure = table))
+        table = _table_statistics_(image, channels = statistics)
+        if table is not None: tab.append(table)
       tabs.append(dbc.Tab(tab, label = label))
     if len(imgtabs) == 1:
       self.content = tabs
@@ -129,3 +131,37 @@ class Dashboard():
         if c not in channels:
           channels += c
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels, trans = trans, sample = sample)
+
+def _table_statistics_(image, channels = ""):
+  """Prepare a table with the statistics of an image.
+
+  Args:
+    image (Image): The image.
+    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
+
+  Returns:
+    dbc.Table: A dash bootstrap components table with the statistics of the image.
+  """
+  # Prepare statistics.
+  if not issubclass(type(image), Image):
+    print("The statistics can only be displayed for Image objects.")
+    return None
+  if channels == "":
+    stats = getattr(image, "stats", None)
+    if stats is None: stats = image.statistics()
+  else:
+    stats = image.statistics(channels = channels)
+  # Create table.
+  header = [html.Thead(html.Tr([html.Th("Channel", style = {"text-align": "left"}), html.Th("Minimum"), html.Th("25%"), html.Th("50%"),
+                                html.Th("75%"), html.Th("Maximum"), html.Th("Shadowed"), html.Th("Highlighted")]))]
+  rows = []
+  for channel in stats.values():
+    rows.append(html.Tr([html.Td(channel.name, style = {"text-align": "left"}), html.Td(f"{channel.minimum:.5f}"),
+                         html.Td(f"{channel.percentiles[0]:.5f}"), html.Td(f"{channel.percentiles[1]:.5f}"),
+                         html.Td(f"{channel.percentiles[2]:.5f}"), html.Td(f"{channel.maximum:.5f}"),
+                         html.Td(f"{channel.zerocount} ({100.*channel.zerocount/channel.npixels:.2f}%)"),
+                         html.Td(f"{channel.outcount} ({100.*channel.outcount/channel.npixels:.2f}%)")]))
+  body = [html.Tbody(rows)]
+  table = dbc.Table(header+body, size = "sm", bordered = True, striped = True, style = {"text-align": "right",
+                    "width": f"{params.maxwidth}px", "margin": f"32px {params.rmargin}px 32px {params.lmargin}px"})
+  return table

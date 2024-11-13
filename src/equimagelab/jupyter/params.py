@@ -33,7 +33,7 @@ def set_max_width(width):
   """Set maximum figure width.
 
   Args:
-    width (int): The maximum figure width.
+    width (int): The maximum figure width in pixels.
   """
   global maxwidth
   maxwidth = width
@@ -42,10 +42,10 @@ def set_margins(left = None, right = None, bottom = None, top = None):
   """Set or update figure margins.
 
   Args:
-    left (int, optional): The left margin (if not the default None).
-    right (int, optional): The right margin (if not the default None).
-    bottom (int, optional): The bottom margin (if not the default None).
-    top (int, optional): The top margin (if not the default None).
+    left (int, optional): The left margin in pixels [if not None (default)].
+    right (int, optional): The right margin in pixels [if not None (default)].
+    bottom (int, optional): The bottom margin in pixels [if not None (default)].
+    top (int, optional): The top margin in pixels [if not None (default)].
   """
   global lmargin, rmargin, tmargin, bmargin
   if left is not None: lmargin = left
@@ -57,7 +57,7 @@ def set_row_height(height):
   """Set table row height.
 
   Args:
-    height (int): The table row height.
+    height (int): The table row height in pixels.
   """
   global rowheight
   rowheight = height
