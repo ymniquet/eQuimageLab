@@ -28,7 +28,10 @@ dependencies = [
     "scikit-image >= 0.21",
     "dask",
     "jupyterlab >= 4.0",
-    "plotly >= 5.0"
+    "plotly >= 5.0",
+    "dash",
+    "dash-bootstrap-components",
+    "dash_bootstrap_templates"
 ]
 
 [project.urls]

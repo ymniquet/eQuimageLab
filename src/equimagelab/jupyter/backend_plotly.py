@@ -18,7 +18,7 @@ from .utils import prepare_images
 
 from ..equimage.image import Image
 
-def _figure_image_(image, sample = 1, width = params.maxwidth):
+def _figure_image_(image, sample = 1, width = params.maxwidth, template = "plotly"):
   """Prepare a ploty figure for the input image.
 
   Args:
@@ -26,6 +26,7 @@ def _figure_image_(image, sample = 1, width = params.maxwidth):
     sample (int, optional): Downsampling rate (default 1).
       Only image[:, ::sample, ::sample] is shown, to speed up operations.
     width (int, optional): The width of the figure (default params.maxwidth).
+    template (str, optional): The template for the figure (default "plotly").
 
   Returns:
     go.Figure: A plotly figure with the image.
@@ -39,12 +40,13 @@ def _figure_image_(image, sample = 1, width = params.maxwidth):
   # Plot image.
   raster = px.imshow(img, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
   figure = go.Figure(data = raster)
-  layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width*img.shape[0]/img.shape[1]+params.bmargin+params.tmargin,
+  layout = go.Layout(template = template,
+                     width = width+params.lmargin+params.rmargin, height = width*img.shape[0]/img.shape[1]+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
   figure.update_layout(layout)
   return figure
 
-def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel = "Level", width = params.maxwidth):
+def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel = "Level", width = params.maxwidth, template = "plotly"):
   """Prepare a plotly figure with the histograms of an image.
 
   Args:
@@ -55,6 +57,7 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
       of the histograms (default None).
     xlabel (str, optional): The x axis label of the plot (default "Level").
     width (int, optional): The width of the figure (default params.maxwidth).
+    template (str, optional): The template for the figure (default "plotly").
 
   Returns:
     go.Figure: A plotly figure with the histograms of the image.
@@ -69,12 +72,12 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
   else:
     hists = image.histograms(channels = channels)
   # Set-up colors.
-  purple = dict(color = "purple")
-  purple2 = dict(color = "purple", width = 2)
-  purpledot1 = dict(color = "purple", dash = "dot", width = 1)
-  purpledash1 = dict(color = "purple", dash = "dash", width = 1)
-  purpledashdot1 = dict(color = "purple", dash = "dashdot", width = 1)
-  blackdashdot1 = dict(color = "black", dash = "dashdot", width = 1)
+  msblue = dict(color = "mediumslateblue")
+  msblue2 = dict(color = "mediumslateblue", width = 2)
+  msbluedot1 = dict(color = "mediumslateblue", dash = "dot", width = 1)
+  msbluedash1 = dict(color = "mediumslateblue", dash = "dash", width = 1)
+  msbluedashdot1 = dict(color = "mediumslateblue", dash = "dashdot", width = 1)
+  msbluedashdot1 = dict(color = "slateblue", dash = "dashdot", width = 1)
   # Plot histograms.
   figure = make_subplots(specs = [[dict(secondary_y = trans is not None, r = -0.06)]])
   updatemenus = []
@@ -83,8 +86,8 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
     ntraces += 1
     midpoints = (channel.edges[1:]+channel.edges[:-1])/2.
     figure.add_trace(go.Scatter(x = midpoints, y = channel.counts, name = channel.name, mode = "lines", line = dict(color = channel.color, width = 2)), secondary_y = False)
-  figure.add_vline(x = 0., line = blackdashdot1, secondary_y = False)
-  figure.add_vline(x = 1., line = blackdashdot1, secondary_y = False)
+  figure.add_vline(x = 0., line = msbluedashdot1, secondary_y = False)
+  figure.add_vline(x = 1., line = msbluedashdot1, secondary_y = False)
   figure.update_xaxes(title_text = xlabel, ticks = "inside", rangemode = "tozero")
   figure.update_yaxes(title_text = "Count", ticks = "inside", rangemode = "tozero", secondary_y = False)
   if log:
@@ -98,18 +101,18 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
   # Plot transformation.
   if trans is not None:
     cef = np.log(np.maximum(np.gradient(trans.y, trans.x), 1.e-12))
-    figure.add_trace(go.Scatter(x = trans.x, y = trans.y, mode = "lines", line = purple2, showlegend = False), secondary_y = True)
-    figure.add_trace(go.Scatter(x = trans.x, y = cef, mode = "lines", line = purple2, showlegend = False, visible = False), secondary_y = True)
-    figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], mode = "lines", line = purpledashdot1, showlegend = False), secondary_y = True)
-    figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], mode = "lines", line = purpledashdot1, showlegend = False), secondary_y = True)
-    figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], mode = "lines", line = purpledot1, showlegend = False), secondary_y = True)
+    figure.add_trace(go.Scatter(x = trans.x, y = trans.y, mode = "lines", line = msblue2, showlegend = False), secondary_y = True)
+    figure.add_trace(go.Scatter(x = trans.x, y = cef, mode = "lines", line = msblue2, showlegend = False, visible = False), secondary_y = True)
+    figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], mode = "lines", line = msbluedashdot1, showlegend = False), secondary_y = True)
+    figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], mode = "lines", line = msbluedashdot1, showlegend = False), secondary_y = True)
+    figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], mode = "lines", line = msbluedot1, showlegend = False), secondary_y = True)
     xticks = getattr(trans, "xticks", None)
     if xticks is not None:
       for xtick in xticks:
-        figure.add_vline(x = xtick, line = purpledash1, secondary_y = True)
+        figure.add_vline(x = xtick, line = msbluedash1, secondary_y = True)
     ftitle = f"{trans.ylabel}({trans.xlabel})"
     ceftitle = f"log {trans.ylabel}'({trans.xlabel})"
-    figure.update_yaxes(title_text = ftitle, titlefont = purple, ticks = "inside", tickfont = purple, showgrid = False, rangemode = "tozero", secondary_y = True)
+    figure.update_yaxes(title_text = ftitle, titlefont = msblue, ticks = "inside", tickfont = msblue, showgrid = False, rangemode = "tozero", secondary_y = True)
     # Add f/log f' toggle button.
     keepvisible = ntraces*[True]
     buttons = [dict(label = "f/log f'", method = "update",
@@ -117,12 +120,14 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
                     args2 = [{"visible": keepvisible+[True, False, True, True, True]}, {"yaxis2.title": ftitle}])]
     updatemenus.append(dict(type = "buttons", buttons = buttons, active = -1, showactive = False, xanchor = "left", x = .066, yanchor = "bottom", y = 1.025))
   # Finalize layout.
-  layout = go.Layout(width = width+params.lmargin+params.rmargin, height = width/3+params.bmargin+params.tmargin,
-                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
-  figure.update_layout(layout, legend = dict(xanchor = "left", x = 1.05, yanchor = "top", y = 1.), updatemenus = updatemenus)
+  layout = go.Layout(template = template,
+                     width = width+params.lmargin+params.rmargin, height = width/3+params.bmargin+params.tmargin,
+                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True),
+                     legend = dict(xanchor = "left", x = 1.05, yanchor = "top", y = 1.))
+  figure.update_layout(layout, updatemenus = updatemenus)
   return figure
 
-def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight = params.rowheight):
+def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, template = "plotly"):
   """Prepare a plotly table with the statistics of an image.
 
   Args:
@@ -130,6 +135,7 @@ def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
     width (int, optional): The width of the table (default params.maxwidth).
     rowheight (int, optional): The height of the rows (default params.rowheight).
+    template (str, optional): The template for the figure (default "plotly").
 
   Returns:
     go.Figure: A plotly figure with the table of the statistics of the image.
@@ -160,7 +166,8 @@ def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight
   table = go.Table(header = header, cells = cells, columnwidth = [1, 1, 1, 1, 1, 1, 1.5, 1.5])
   # Create figure.
   figure = go.Figure(data = table)
-  layout = go.Layout(width = width+params.lmargin+params.rmargin, height = (len(stats)+1)*rowheight+params.bmargin+params.tmargin,
+  layout = go.Layout(template = template,
+                     width = width+params.lmargin+params.rmargin, height = (len(stats)+1)*rowheight+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
   figure.update_layout(layout)
   return figure

@@ -131,7 +131,7 @@ class Mixin:
         channel = self.image[2] if self.colormodel == "RGB" else self.image[0]
       elif key == "V":
         name = "Value"
-        color = "black"
+        color = "darkslategray"
         channel = self.value()
       elif key == "S":
         name = "Saturation"
@@ -139,7 +139,7 @@ class Mixin:
         channel = self.saturation()
       elif key == "L":
         name = "Luma"
-        color = "gray"
+        color = "lightslategray"
         channel = self.luma()
       else:
         raise ValueError(f"Error, unknown channel '{key}'.")

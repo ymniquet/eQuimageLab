@@ -15,7 +15,7 @@ from ..equimage.params import IMGTYPE, IMGTOL
 maxwidth = 1024 # Maximum width of the displayed image.
 
 lmargin = 96  # Left margin.
-rmargin = 144 # Right margin.
+rmargin = 160 # Right margin.
 bmargin = 48  # Bottom margin.
 tmargin = 48  # Top margin.
 

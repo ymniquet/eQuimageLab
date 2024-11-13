@@ -12,6 +12,8 @@ import plotly.graph_objects as go
 import plotly.io as pio
 pio.renderers.default = "jupyterlab"
 import dash
+import dash_bootstrap_templates as dbt
+import dash_bootstrap_components as dbc
 
 from . import params
 from .utils import prepare_images
@@ -34,8 +36,9 @@ class Dashboard():
     """
     self.content = []
     self.refresh = False
-    self.app = dash.Dash(title = "eQuimageLab dashboard", update_title = None)
-    dashboard = dash.html.Div(self.content, id = "dashboard")
+    dbt.load_figure_template("slate")
+    self.app = dash.Dash(title = "eQuimageLab dashboard", update_title = None, external_stylesheets = [dbc.themes.SLATE])
+    dashboard = dash.html.Div(self.content, id = "dashboard", style = {"width": params.maxwidth+params.lmargin+params.rmargin})
     interval = dash.dcc.Interval(id = "update-dashboard", interval = interval, n_intervals = 0)
     self.app.layout = dash.html.Div([dashboard, interval])
     self.app.callback(dash.dependencies.Output("dashboard", "children"), dash.dependencies.Input("update-dashboard", "n_intervals"))(self.__update_dashboard)
@@ -85,20 +88,20 @@ class Dashboard():
     tabs = []
     for label, image in imgtabs.items():
       tab = []
-      tab.append(dash.dcc.Graph(figure = _figure_image_(image, sample = sample)))
+      tab.append(dash.dcc.Graph(figure = _figure_image_(image, sample = sample, template = "slate")))
       if histograms is not False:
         if histograms is True: histograms = ""
-        figure = _figure_histograms_(image, channels = histograms, log = True, trans = trans if label == "Reference" else None)
+        figure = _figure_histograms_(image, channels = histograms, log = True, trans = trans if label == "Reference" else None, template = "slate")
         if figure is not None: tab.append(dash.dcc.Graph(figure = figure))
       if statistics is not False:
         if statistics is True: statistics = ""
-        table = _figure_statistics_(image, channels = statistics)
+        table = _figure_statistics_(image, channels = statistics, template = "slate")
         if table is not None: tab.append(dash.dcc.Graph(figure = table))
-      tabs.append(dash.dcc.Tab(tab, label = label))
+      tabs.append(dbc.Tab(tab, label = label))
     if len(imgtabs) == 1:
       self.content = tabs
     else:
-      self.content = [dash.dcc.Tabs(tabs)]
+      self.content = [dbc.Tabs(tabs)]
     self.refresh = True
 
   def show_t(self, image, channels = "RGBL", sample = 1):
