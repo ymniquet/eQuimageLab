@@ -15,9 +15,10 @@ import dash
 from dash import Dash, dcc, html
 import dash_bootstrap_templates as dbt
 import dash_bootstrap_components as dbc
+import dash_extensions as dxt
 
 from . import params
-from .utils import prepare_images
+from .utils import prepare_images, prepare_images_as_png_strings
 from .backend_plotly import _figure_image_, _figure_histograms_
 
 from ..equimage.image import Image
@@ -51,7 +52,7 @@ class Dashboard():
     if refresh: self.refresh = False
     return self.content if refresh else dash.no_update
 
-  def show(self, images, histograms = False, statistics = False, sample = 1, trans = None):
+  def show(self, images, histograms = False, statistics = False, sampling = 1, trans = None):
     """Show image(s) on the dashboard.
 
     Args:
@@ -64,8 +65,8 @@ class Dashboard():
         channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
       statistics (optional): If True or a string, show the statistics of the image(s). The string lists the
         channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
-      sample (int, optional): Downsampling rate (default 1).
-        Only images[:, ::sample, ::sample] are shown, to speed up operations.
+      sampling (int, optional): Downsampling rate (default 1).
+        Only images[:, ::sampling, ::sampling] are shown, to speed up operations.
       trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on
         top of the histograms of the "Reference" tab (default None).
     """
@@ -73,40 +74,40 @@ class Dashboard():
     if isinstance(images, (tuple, list)):
       nimages = len(images)
       if nimages == 1:
-        imgtabs = {"Image": images[0]}
+        imgdict = {"Image": images[0]}
       elif nimages == 2:
-        imgtabs = {"Image": images[0], "Reference": images[1]}
+        imgdict = {"Image": images[0], "Reference": images[1]}
       else:
         n = 0
-        imgtabs = {}
+        imgdict = {}
         for image in images:
           n += 1
-          imgtabs[f"Image #{n}"] = image
+          imgdict[f"Image #{n}"] = image
     elif isinstance(images, dict):
-      imgtabs = images
+      imgdict = images
     else:
-      imgtabs = {"Image": images}
+      imgdict = {"Image": images}
     tabs = []
-    for label, image in imgtabs.items():
+    for key, image in imgdict.items():
       tab = []
-      tab.append(dcc.Graph(figure = _figure_image_(image, sample = sample, width = params.maxwidth, template = "slate")))
+      tab.append(dcc.Graph(figure = _figure_image_(image, sampling = sampling, width = params.maxwidth, template = "slate")))
       if histograms is not False:
         if histograms is True: histograms = ""
-        figure = _figure_histograms_(image, channels = histograms, log = True, trans = trans if label == "Reference" else None,
+        figure = _figure_histograms_(image, channels = histograms, log = True, trans = trans if key == "Reference" else None,
                                      width = params.maxwidth, template = "slate")
         if figure is not None: tab.append(dcc.Graph(figure = figure))
       if statistics is not False:
         if statistics is True: statistics = ""
         table = _table_statistics_(image, channels = statistics)
         if table is not None: tab.append(table)
-      tabs.append(dbc.Tab(tab, label = label))
-    if len(imgtabs) == 1:
+      tabs.append(dbc.Tab(tab, label = key))
+    if len(imgdict) == 1:
       self.content = tabs
     else:
       self.content = [dbc.Tabs(tabs)]
     self.refresh = True
 
-  def show_t(self, image, channels = "RGBL", sample = 1):
+  def show_t(self, image, channels = "RGBL", sampling = 1):
     """Show the input and output images of an histogram transformation on the dashboard.
 
     Displays the input image, histograms, statistics, and transformation curve in tab "Reference",
@@ -116,8 +117,8 @@ class Dashboard():
       image (Image): The output image (must embed a transformation image.trans - see Image.apply_channels).
       channels (str, optional): The channels of the histograms and statistics (default "RGBL" for red,
         green, blue, luma). The channels of the transformation are added if needed.
-      sample (int, optional): Downsampling rate (default 1).
-        Only image[:, ::sample, ::sample] is shown, to speed up operations.
+      sampling (int, optional): Downsampling rate (default 1).
+        Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
     """
     if not issubclass(type(image), Image):
       print("The transformations can only be displayed for Image objects.")
@@ -130,7 +131,70 @@ class Dashboard():
       if c in "RGBVSL":
         if c not in channels:
           channels += c
-    self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels, trans = trans, sample = sample)
+    self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels, trans = trans, sampling = sampling)
+
+  def carousel(self, images, sampling = 1, interval = 2000):
+    """Show a carousel of images on the dashboard.
+
+    Args:
+      images: The images as a tuple/list/dictionary of Image object(s) or numpy.ndarray.
+        The images are captioned according to the keys for a dictionary. Otherwise, the images are captioned
+        "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
+      sampling (int, optional): Downsampling rate (default 1).
+        Only images[:, ::sampling, ::sampling] are shown, to speed up operations.
+      interval (int, optional): The interval (ms) between image switches in the carousel (default 2000).
+    """
+    self.refresh = False
+    if isinstance(images, (tuple, list)):
+      nimages = len(images)
+      if nimages == 1:
+        imgdict = {"Image": images[0]}
+      elif nimages == 2:
+        imgdict = {"Image": images[0], "Reference": images[1]}
+      else:
+        n = 0
+        imgdict = {}
+        for image in images:
+          n += 1
+          imgdict[f"Image #{n}"] = image
+    elif isinstance(images, dict):
+      imgdict = images
+    else:
+      imgdict = {"Image": images}
+    n = 0
+    items = []
+    for key, image in imgdict.items():
+      n += 1
+      items.append(dict(key = f"{n}", src = prepare_images_as_png_strings(image, sampling = sampling), header = key))
+    self.content = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
+                   style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
+    self.refresh = True
+
+  def slide(self, image1, image2, label1 = "Image", label2 = "Reference", sampling = 1):
+    """Compare two images with a "before/after" slider on the dashboard.
+
+    Args:
+      image1: The first image as an Image object or numpy.ndarray.
+      image2: The second image as an Image object or numpy.ndarray.
+      label1 (str, optional): The label of the first image (default "Image").
+      label2 (str, optional): The label of the second image (default "Reference").
+      sampling (int, optional): Downsampling rate (default 1).
+        Only image1[:, ::sampling, ::sampling] and image2[:, ::sampling, ::sampling] are shown, to speed up operations.
+    """
+    self.refresh = False
+    img1, img2 = prepare_images_as_png_strings(image1, image2, sampling = sampling)
+    left   = html.Div([label2],
+                      style = {"width": f"{params.lmargin}px", "margin": "0px", "float": "left",
+                               "padding": "4px", "writing-mode": "vertical-rl"})
+    center = html.Div([dxt.BeforeAfter(before = dict(src = img1), after = dict(src = img2), width = f"{params.maxwidth}")],
+                      style = {"width": f"{params.maxwidth}px", "margin": "0px", "float": "left"})
+    right  = html.Div([label1],
+                      style = {"margin": "0px", "float": "left",
+                               "padding": "4px", "writing-mode": "vertical-rl"})
+    self.content = html.Div([left, center, right],
+                      style = {"width": f"{params.maxwidth+params.lmargin+params.rmargin}px",
+                               "margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
+    self.refresh = True
 
 def _table_statistics_(image, channels = ""):
   """Prepare a table with the statistics of an image.
@@ -162,6 +226,7 @@ def _table_statistics_(image, channels = ""):
                          html.Td(f"{channel.zerocount} ({100.*channel.zerocount/channel.npixels:.2f}%)"),
                          html.Td(f"{channel.outcount} ({100.*channel.outcount/channel.npixels:.2f}%)")]))
   body = [html.Tbody(rows)]
-  table = dbc.Table(header+body, size = "sm", bordered = True, striped = True, style = {"text-align": "right",
-                    "width": f"{params.maxwidth}px", "margin": f"32px {params.rmargin}px 32px {params.lmargin}px"})
+  table = dbc.Table(header+body, size = "sm", bordered = True, striped = True,
+                    style = {"text-align": "right", "width": f"{params.maxwidth}px",
+                             "margin": f"32px {params.rmargin}px 32px {params.lmargin}px"})
   return table

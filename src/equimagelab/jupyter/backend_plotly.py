@@ -18,21 +18,21 @@ from .utils import prepare_images
 
 from ..equimage.image import Image
 
-def _figure_image_(image, sample = 1, width = params.maxwidth, template = "plotly"):
+def _figure_image_(image, sampling = 1, width = params.maxwidth, template = "plotly_dark"):
   """Prepare a ploty figure for the input image.
 
   Args:
     image: The image (Image object or numpy.ndarray).
-    sample (int, optional): Downsampling rate (default 1).
-      Only image[:, ::sample, ::sample] is shown, to speed up operations.
+    sampling (int, optional): Downsampling rate (default 1).
+      Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
     width (int, optional): The width of the figure (default params.maxwidth).
-    template (str, optional): The template for the figure (default "plotly").
+    template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
     go.Figure: A plotly figure with the image.
   """
   # Prepare image.
-  img = prepare_images(image, sample = sample)
+  img = prepare_images(image, sampling = sampling)
   if img.shape[0] == 1:
     img = img[0]
   else:
@@ -48,7 +48,7 @@ def _figure_image_(image, sample = 1, width = params.maxwidth, template = "plotl
   figure.update_layout(layout)
   return figure
 
-def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel = "Level", width = params.maxwidth, template = "plotly"):
+def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel = "Level", width = params.maxwidth, template = "plotly_dark"):
   """Prepare a plotly figure with the histograms of an image.
 
   Args:
@@ -59,7 +59,7 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
       of the histograms (default None).
     xlabel (str, optional): The x axis label of the plot (default "Level").
     width (int, optional): The width of the figure (default params.maxwidth).
-    template (str, optional): The template for the figure (default "plotly").
+    template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
     go.Figure: A plotly figure with the histograms of the image.
@@ -129,7 +129,7 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
   figure.update_layout(layout, updatemenus = updatemenus)
   return figure
 
-def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, template = "plotly"):
+def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, template = "plotly_dark"):
   """Prepare a plotly table with the statistics of an image.
 
   Args:
@@ -137,7 +137,7 @@ def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
     width (int, optional): The width of the table (default params.maxwidth).
     rowheight (int, optional): The height of the rows (default params.rowheight).
-    template (str, optional): The template for the figure (default "plotly").
+    template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
     go.Figure: A plotly figure with the table of the statistics of the image.
@@ -174,7 +174,7 @@ def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight
   figure.update_layout(layout)
   return figure
 
-def show(image, histograms = False, statistics = False, sample = 1, width = params.maxwidth, renderer = None):
+def show(image, histograms = False, statistics = False, sampling = 1, width = params.maxwidth, renderer = None):
   """Show an image using plotly.
 
   Args:
@@ -183,12 +183,12 @@ def show(image, histograms = False, statistics = False, sample = 1, width = para
       channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
     statistics (optional): If True or a string, show the statistics of the image. The string lists the
       channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
-    sample (int, optional): Downsampling rate (default 1).
-      Only image[:, ::sample, ::sample] is shown, to speed up operations.
+    sampling (int, optional): Downsampling rate (default 1).
+      Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
     width (int, optional): The width of the figure (default params.maxwidth).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
-  figure = _figure_image_(image, sample = sample, width = width)
+  figure = _figure_image_(image, sampling = sampling, width = width)
   figure.show(renderer)
   if histograms is not False:
     if histograms is True: histograms = ""
@@ -226,7 +226,7 @@ def show_statistics(image, channels = "", width = params.maxwidth, rowheight = p
   figure = _figure_statistics_(image, channels = channels, width = width, rowheight = rowheight)
   if figure is not None: figure.show(renderer)
 
-def show_t(image, channels = "RGBL", sample = 1, width = params.maxwidth, renderer = None):
+def show_t(image, channels = "RGBL", sampling = 1, width = params.maxwidth, renderer = None):
   """Show an image embedding an histogram transformation using plotly.
 
   Displays the input histograms with the transformation curve, the output histograms, and the output image.
@@ -235,8 +235,8 @@ def show_t(image, channels = "RGBL", sample = 1, width = params.maxwidth, render
     image (Image): The output image (must embed a transformation image.trans - see Image.apply_channels).
     channels (str, optional): The channels of the histograms (default "RGBL" for red, green, blue, luma).
       The channels of the transformation are added if needed.
-    sample (int, optional): Downsampling rate (default 1).
-      Only image[:, ::sample, ::sample] is shown, to speed up operations.
+    sampling (int, optional): Downsampling rate (default 1).
+      Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
     width (int, optional): The width of the figure (default params.maxwidth).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
@@ -253,4 +253,4 @@ def show_t(image, channels = "RGBL", sample = 1, width = params.maxwidth, render
         channels += c
   show_histograms(reference, channels = channels, log = True, trans = trans, xlabel = "Input level", width = width, renderer = renderer)
   show_histograms(image, channels = channels, log = True, xlabel = "Output level", width = width, renderer = renderer)
-  show(image, histograms = False, statistics = False, sample = sample, width = width, renderer = renderer)
+  show(image, histograms = False, statistics = False, sampling = sampling, width = width, renderer = renderer)

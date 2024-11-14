@@ -6,27 +6,30 @@
 
 """Utils for Jupyter-lab interface."""
 
+import base64
+from io import BytesIO
+from PIL import Image as PILImage
 import numpy as np
 
 from . import params
 
 from ..equimage.image import Image
 
-def prepare_images(*args, sample = 1):
+def prepare_images(*args, sampling = 1):
   """Prepare images for plotly and Dash.
 
-  Returns all images as numpy.ndarray with dimensions (3, height, width) (for color images)
+  Returns all images as numpy.ndarrays with dimensions (3, height, width) (for color images)
   or (1, height, width) (for grayscale images).
 
   Args:
-    args: A set of Image object(s) or numpy.ndarray with dimensions (3, height, width) (for
+    args: A set of Image object(s) or numpy.ndarrays with dimensions (3, height, width) (for
       color images), (1, height, width) or (height, width) (for grayscale images).
-    sample (int, optional): Downsampling rate (default 1).
-      Only args[:, ::sample, ::sample] are shown, to speed up operations.
+    sampling (int, optional): Downsampling rate (default 1).
+      Only args[:, ::sampling, ::sampling] are shown, to speed up operations.
 
   Returns:
-    All args as numpy.ndarray with dimensions (3, height/sample, width/sample) (for color images)
-      or (1, height/sample, width/sample) (for grayscale images). These arrays are references (not
+    All args as float numpy.ndarrays with dimensions (3, height/sampling, width/sampling) (for color images)
+      or (1, height/sampling, width/sampling) (for grayscale images). These arrays are references (not
       copies) of the original images when possible.
   """
   output = ()
@@ -44,9 +47,48 @@ def prepare_images(*args, sample = 1):
       raise ValueError(f"Error, arg {arg} is not a valid image.")
     if img.ndim == 2:
       img = np.expand_dims(img, axis = 0)
-    if sample > 1:
-      img = img[:, ::sample, ::sample]
+    if sampling > 1:
+      img = img[:, ::sampling, ::sampling]
     output += (img, )
+  return output[0] if len(output) == 1 else output
+
+def prepare_images_as_png_strings(*args, sampling = 1):
+  """Prepare images as PNGs encoded in base64 strings.
+
+  Returns all images as PNGs encoded in base64 strings.
+
+  Args:
+    args: A set of Image object(s) or numpy.ndarray with dimensions (3, height, width) (for
+      color images), (1, height, width) or (height, width) (for grayscale images).
+    sampling (int, optional): Downsampling rate (default 1).
+      Only args[:, ::sampling, ::sampling] are shown, to speed up operations.
+
+  Returns:
+    All args as PNGs encoded in base64 strings.
+  """
+  output = ()
+  for arg in args:
+    valid = False
+    if issubclass(type(arg), Image):
+      img = arg.get_image()
+      valid = True
+    elif issubclass(type(arg), np.ndarray):
+      img = arg
+      valid = img.ndim in [2, 3]
+      if img.ndim == 3: valid = img.shape[0] in [1, 3]
+      valid = valid and img.dtype in [np.float32, np.float64]
+    if not valid:
+      raise ValueError(f"Error, arg {arg} is not a valid image.")
+    if img.ndim == 2:
+      img = np.expand_dims(img, axis = 0)
+    data = np.rint(np.clip(img[:, ::sampling, ::sampling]*255, 0, 255)).astype("uint8")
+    if data.shape[0] == 1:
+      PILimg = PILImage.fromarray(data[0, :, :])
+    else:
+      PILimg = PILImage.fromarray(np.moveaxis(data, 0, -1))
+    buffer = BytesIO()
+    PILimg.save(buffer, format = "PNG")
+    output += ("data:image/png;base64,"+base64.b64encode(buffer.getvalue()).decode("utf-8"),)
   return output[0] if len(output) == 1 else output
 
 def filter(image, channels):

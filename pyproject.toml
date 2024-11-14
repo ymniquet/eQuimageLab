@@ -31,7 +31,8 @@ dependencies = [
     "plotly >= 5.0",
     "dash",
     "dash-bootstrap-components",
-    "dash_bootstrap_templates"
+    "dash_bootstrap_templates",
+    "dash_extentsions"
 ]
 
 [project.urls]
