@@ -57,9 +57,9 @@ class Dashboard():
 
     Args:
       images: The image(s) as a single/tuple/list/dictionary of Image object(s) or numpy.ndarray.
-        If a tuple/list/dictionary, each image is displayed in a separate tab.
-        The tabs are named according to the keys for a dictionary. Otherwise, the tabs are named "Image"
-        and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
+        Each image is displayed in a separate tab. The tabs are labelled according to the keys for
+        a dictionary. Otherwise, the tabs are labelled "Image" &"Reference" if there are one or two images,
+        and "Image #1", "Image #2"... if there are more.
         The images must all be Image objects if histograms or statistics is True.
       histograms (optional): If True or a string, show the histograms of the image(s). The string lists the
         channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
@@ -101,10 +101,10 @@ class Dashboard():
         table = _table_statistics_(image, channels = statistics)
         if table is not None: tab.append(table)
       tabs.append(dbc.Tab(tab, label = key))
-    if len(imgdict) == 1:
-      self.content = tabs
-    else:
-      self.content = [dbc.Tabs(tabs)]
+    #if len(imgdict) == 1:
+      #self.content = tabs
+    #else:
+    self.content = [dbc.Tabs(tabs, active_tab = "tab-0")]
     self.refresh = True
 
   def show_t(self, image, channels = "RGBL", sampling = 1):
@@ -127,9 +127,9 @@ class Dashboard():
       print("There is no transformation embedded in the input image.")
       return
     reference = trans.input
-    for c in trans.channels:
-      if c in "RGBVSL":
-        if c not in channels:
+    if trans.type == "hist":
+      for c in trans.channels:
+        if c in "RGBVSL" and not c in channels:
           channels += c
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels, trans = trans, sampling = sampling)
 
@@ -166,8 +166,9 @@ class Dashboard():
     for key, image in imgdict.items():
       n += 1
       items.append(dict(key = f"{n}", src = prepare_images_as_png_strings(image, sampling = sampling), header = key))
-    self.content = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
-                   style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
+    widget = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
+             style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
+    self.content = [dbc.Tabs([dbc.Tab([widget], label = "Carousel")], active_tab = "tab-0")]
     self.refresh = True
 
   def slide(self, image1, image2, label1 = "Image", label2 = "Reference", sampling = 1):
@@ -191,9 +192,10 @@ class Dashboard():
     right  = html.Div([label1],
                       style = {"margin": "0px", "float": "left",
                                "padding": "4px", "writing-mode": "vertical-rl"})
-    self.content = html.Div([left, center, right],
+    widget = html.Div([left, center, right],
                       style = {"width": f"{params.maxwidth+params.lmargin+params.rmargin}px",
                                "margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
+    self.content = [dbc.Tabs([dbc.Tab([widget], label = "Compare images")], active_tab = "tab-0")]
     self.refresh = True
 
 def _table_statistics_(image, channels = ""):

@@ -3,7 +3,6 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
-# DOC+MCI.
 
 """Color spaces and models management."""
 
@@ -431,14 +430,14 @@ class Mixin:
                               if False, the operation must be applied one channel at a time.
       trans (bool, optional): If True (default False), embeds the transformation y = f(x in [0, 1]) in the
         output image as output.trans, where:
+          - output.trans.type = "hist".
           - output.trans.input is a reference to the input image (self).
           - output.trans.channels are the channels selected for the transformation.
           - output.trans.x is a mesh of the [0, 1] interval.
           - output.trans.y = f(output.trans.x)
-          - output.trans.xlabel is a label for output.trans.x.
           - output.trans.ylabel is a label for output.trans.y.
           - output.trans.xticks is a list of remarkable x values for this transformation (if any).
-        trans shall be set True only for *local* transformations f.
+        trans shall be set True only for *local* histogram transformations f.
 
     Returns:
       Image: The processed image.
@@ -449,11 +448,11 @@ class Mixin:
       xmin = min(0., x.min())
       xmax = max(1., x.max())
       t = helpers.Container()
+      t.type = "hist"
       t.input = self
       t.channels = channels
       t.x = np.linspace(xmin, xmax, max(int(round(params.ntrans*(xmax-xmin))), 2*params.ntrans))
       t.y = f(t.x)
-      t.xlabel = channels
       t.ylabel = "f"
       return t
 

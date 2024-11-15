@@ -3,7 +3,6 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
-# DOC+MCI.
 
 """Color management."""
 
@@ -103,42 +102,42 @@ class Mixin:
     if blue  != 1.: output.image[2] *= blue
     return output
 
-    def color_saturation(self, A = 0., model = "midsat", interpolation = "cubic", trans = False, **kwargs):
-      """Adjust color saturation.
+  def color_saturation(self, A = 0., model = "midsat", interpolation = "cubic", trans = True, **kwargs):
+    """Adjust color saturation.
 
-      The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model' kwarg:
-        - "deltasat": Shift the saturation S <- S+delta.
-        - "midsat": Apply a midtone stretch function S <- f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
-                    This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1.
-      The image is converted back to the original color model ("RGB" or "HSV") after this operation.
-      delta is expected in the [-1, 1] range, with delta = 0 leaving the image unchanged. delta > 0 saturates the colors,
-      while delta < 0 turn the image into a a grayscale.
-      delta is first set for all hues (with the 'A' kwarg), then is updated for the red ('R'), yellow ('Y'), green ('G'),
-      cyan ('C'), blue ('B') and magenta ('M') hues, if these kwargs are provided.
-      delta is interpolated for arbitrary HSV hues using nearest neighbor, linear or cubic spline interpolation, according
-      to the 'interpolation' kwarg.
+    The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model' kwarg:
+      - "deltasat": Shift the saturation S <- S+delta.
+      - "midsat": Apply a midtone stretch function S <- f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
+                  This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1.
+    The image is converted back to the original color model ("RGB" or "HSV") after this operation.
+    delta is expected in the [-1, 1] range, with delta = 0 leaving the image unchanged. delta > 0 saturates the colors,
+    while delta < 0 turn the image into a a grayscale.
+    delta is first set for all hues (with the 'A' kwarg), then is updated for the red ('R'), yellow ('Y'), green ('G'),
+    cyan ('C'), blue ('B') and magenta ('M') hues, if these kwargs are provided.
+    delta is interpolated for arbitrary HSV hues using nearest neighbor, linear or cubic spline interpolation, according
+    to the 'interpolation' kwarg.
 
-      Args:
-        A (float, optional): The delta for all hues (default 0).
-        R (float, optional): The red delta (default A).
-        Y (float, optional): The yellow delta (default A).
-        G (float, optional): The green delta (default A).
-        C (float, optional): The cyan delta (default A).
-        B (float, optional): The blue delta (default A).
-        M (float, optional): The magenta delta (default A).
-        model (str, optional): The saturation model ["deltasat" or "midsat" (default)]
-        interpolation (str, optional): The hue interpolation model:
-          - "nearest": Nearest neighbor interpolation.
-          - "linear": Linear spline interpolation.
-          - "cubic": Cubic spline interpolation (default).
-        trans (boolean, optional): If True, embeds the transformation delta(hue) in the output
-          image as output.trans (see Image.apply_channels).
+    Args:
+      A (float, optional): The delta for all hues (default 0).
+      R (float, optional): The red delta (default A).
+      Y (float, optional): The yellow delta (default A).
+      G (float, optional): The green delta (default A).
+      C (float, optional): The cyan delta (default A).
+      B (float, optional): The blue delta (default A).
+      M (float, optional): The magenta delta (default A).
+      model (str, optional): The saturation model ["deltasat" or "midsat" (default)]
+      interpolation (str, optional): The hue interpolation model:
+        - "nearest": Nearest neighbor interpolation.
+        - "linear": Linear spline interpolation.
+        - "cubic": Cubic spline interpolation (default).
+      trans (boolean, optional): If True, embeds the transformation delta(hue) in the output
+        image as output.trans.
 
-      Returns:
-        Image: The processed image.
-      """
+    Returns:
+      Image: The processed image.
+    """
 
-    def interpolate(self, hue, psat, interpolation):
+    def interpolate(hue, psat, interpolation):
       """Interpolate the saturation parameter psat[RYGCBM] for arbitrary hues."""
       if np.all(psat == psat[0]):
         return np.full_like(hue, psat[0]) # Short-cut if the saturation parameter is the same for RYGCBM.
@@ -179,12 +178,14 @@ class Mixin:
     output = hsv if self.colormodel == "HSV" else hsv.RGB()
     if trans:
       t = helpers.Container()
+      t.type = "hue"
       t.input = self
-      t.channels = "H"
+      t.xm = np.linspace(0., 1., 7)
+      t.ym = np.append(psat, psat[0])
+      t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
       t.x = np.linspace(0., 1., params.ntrans)
       t.y = interpolate(t.x, psat, interpolation)
-      t.xlabel = "H"
-      t.ylabel = "$\Delta_{sat}$"
+      t.ylabel = "\u0394"
       output.trans = t
     return output
 

@@ -18,19 +18,20 @@ from .utils import prepare_images
 
 from ..equimage.image import Image
 
-def _figure_image_(image, sampling = 1, width = params.maxwidth, template = "plotly_dark"):
+def _figure_image_(image, sampling = 1, width = -1, template = "plotly_dark"):
   """Prepare a ploty figure for the input image.
 
   Args:
     image: The image (Image object or numpy.ndarray).
     sampling (int, optional): Downsampling rate (default 1).
       Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
-    width (int, optional): The width of the figure (default params.maxwidth).
+    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
     go.Figure: A plotly figure with the image.
   """
+  if width <= 0: width = params.maxwidth
   # Prepare image.
   img = prepare_images(image, sampling = sampling)
   if img.shape[0] == 1:
@@ -48,7 +49,7 @@ def _figure_image_(image, sampling = 1, width = params.maxwidth, template = "plo
   figure.update_layout(layout)
   return figure
 
-def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel = "Level", width = params.maxwidth, template = "plotly_dark"):
+def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel = "Level", width = -1, template = "plotly_dark"):
   """Prepare a plotly figure with the histograms of an image.
 
   Args:
@@ -58,12 +59,13 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
     trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on top
       of the histograms (default None).
     xlabel (str, optional): The x axis label of the plot (default "Level").
-    width (int, optional): The width of the figure (default params.maxwidth).
+    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
     go.Figure: A plotly figure with the histograms of the image.
   """
+  if width <= 0: width = params.maxwidth
   # Prepare histograms.
   if not issubclass(type(image), Image):
     print("The histograms can only be displayed for Image objects.")
@@ -94,54 +96,72 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
   figure.update_yaxes(title_text = "Count", ticks = "inside", rangemode = "tozero", secondary_y = False)
   if log:
     figure.update_yaxes(type = "log", secondary_y = False)
-    active = 0
+    active =  0
   else:
     active = -1
   # Add lin/log toggle button.
+  ybutton = 1.+.025*1024./width
   buttons = [dict(label = "lin/log", method = "relayout", args = [{"yaxis.type": "log"}], args2 = [{"yaxis.type": "linear"}])]
-  updatemenus.append(dict(type = "buttons", buttons = buttons, active = active, showactive = False, xanchor = "left", x = 0., yanchor = "bottom", y = 1.025))
+  updatemenus.append(dict(type = "buttons", buttons = buttons, active = active, showactive = False,
+                          xanchor = "left", x = 0., yanchor = "bottom", y = ybutton))
   # Plot transformation.
   if trans is not None:
-    cef = np.log(np.maximum(np.gradient(trans.y, trans.x), 1.e-12))
-    figure.add_trace(go.Scatter(x = trans.x, y = trans.y, mode = "lines", line = msblue2, showlegend = False), secondary_y = True)
-    figure.add_trace(go.Scatter(x = trans.x, y = cef, mode = "lines", line = msblue2, showlegend = False, visible = False), secondary_y = True)
-    figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], mode = "lines", line = msbluedashdot1, showlegend = False), secondary_y = True)
-    figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], mode = "lines", line = msbluedashdot1, showlegend = False), secondary_y = True)
-    figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], mode = "lines", line = msbluedot1, showlegend = False), secondary_y = True)
-    xticks = getattr(trans, "xticks", None)
-    if xticks is not None:
-      for xtick in xticks:
-        figure.add_vline(x = xtick, line = msbluedash1, secondary_y = True)
-    ftitle = f"{trans.ylabel}({trans.xlabel})"
-    ceftitle = f"log {trans.ylabel}'({trans.xlabel})"
-    figure.update_yaxes(title_text = ftitle, titlefont = msblue, ticks = "inside", tickfont = msblue, showgrid = False, rangemode = "tozero", secondary_y = True)
-    # Add f/log f' toggle button.
-    keepvisible = ntraces*[True]
-    buttons = [dict(label = "f/log f'", method = "update",
-                    args  = [{"visible": keepvisible+[False, True, True, False, False]}, {"yaxis2.title": ceftitle}],
-                    args2 = [{"visible": keepvisible+[True, False, True, True, True]}, {"yaxis2.title": ftitle}])]
-    updatemenus.append(dict(type = "buttons", buttons = buttons, active = -1, showactive = False, xanchor = "left", x = .066, yanchor = "bottom", y = 1.025))
+    if trans.type == "hist":
+      cef = np.log(np.maximum(np.gradient(trans.y, trans.x), 1.e-12))
+      figure.add_trace(go.Scatter(x = trans.x, y = trans.y, mode = "lines", line = msblue2, showlegend = False), secondary_y = True)
+      figure.add_trace(go.Scatter(x = trans.x, y = cef, mode = "lines", line = msblue2, showlegend = False, visible = False), secondary_y = True)
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], mode = "lines", line = msbluedashdot1, showlegend = False), secondary_y = True)
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], mode = "lines", line = msbluedashdot1, showlegend = False), secondary_y = True)
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], mode = "lines", line = msbluedot1, showlegend = False), secondary_y = True)
+      xticks = getattr(trans, "xticks", None)
+      if xticks is not None:
+        for xtick in xticks:
+          figure.add_vline(x = xtick, line = msbluedash1, secondary_y = True)
+      ftitle = f"{trans.ylabel}({trans.channels})"
+      ceftitle = f"log {trans.ylabel}'({trans.channels})"
+      figure.update_yaxes(title_text = ftitle, titlefont = msblue, ticks = "inside", tickfont = msblue, showgrid = False,
+                          rangemode = "tozero", secondary_y = True)
+      # Add f/log f' toggle button.
+      keepvisible = ntraces*[True]
+      buttons = [dict(label = "f/log f'", method = "update",
+                      args  = [{"visible": keepvisible+[False, True, True, False, False]}, {"yaxis2.title": ceftitle}],
+                      args2 = [{"visible": keepvisible+[True, False, True, True, True]}, {"yaxis2.title": ftitle}])]
+      xbutton = .066*1024./width
+      updatemenus.append(dict(type = "buttons", buttons = buttons, active = -1, showactive = False,
+                              xanchor = "left", x = xbutton, yanchor = "bottom", y = ybutton))
+    elif trans.type == "hue":
+      figure.add_trace(go.Scatter(x = trans.x, y = trans.y, mode = "lines", line = msblue2, showlegend = False), secondary_y = True)
+      figure.add_trace(go.Scatter(x = trans.xm, y = trans.ym, mode = "markers", marker = dict(size = 16, color = trans.cm), showlegend = False), secondary_y = True)
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], mode = "lines", line = msbluedashdot1, showlegend = False), secondary_y = True)
+      figure.update_xaxes(range = [0., 1.])
+      figure.update_yaxes(title_text = trans.ylabel, titlefont = msblue, ticks = "inside", tickfont = msblue, showgrid = False,
+                          rangemode = "tozero", secondary_y = True)
+    else:
+      print(f"Can not handle transformations of type '{trans.type}'.")
   # Finalize layout.
+  xlegend = 1.+.05*1024./width
   layout = go.Layout(template = template,
                      width = width+params.lmargin+params.rmargin, height = width/3+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True),
-                     legend = dict(xanchor = "left", x = 1.05, yanchor = "top", y = 1.))
+                     legend = dict(xanchor = "left", x = xlegend, yanchor = "top", y = 1.))
   figure.update_layout(layout, updatemenus = updatemenus)
   return figure
 
-def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, template = "plotly_dark"):
+def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, template = "plotly_dark"):
   """Prepare a plotly table with the statistics of an image.
 
   Args:
     image (Image): The image.
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
-    width (int, optional): The width of the table (default params.maxwidth).
-    rowheight (int, optional): The height of the rows (default params.rowheight).
+    width (int, optional): The width of the table (defaults to params.maxwidth if negative).
+    rowheight (int, optional): The height of the rows (default to params.rowheight if negative).
     template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
     go.Figure: A plotly figure with the table of the statistics of the image.
   """
+  if width <= 0: width = params.maxwidth
+  if rowheight <= 0: rowheight = params.rowheight
   # Prepare statistics.
   if not issubclass(type(image), Image):
     print("The statistics can only be displayed for Image objects.")
@@ -174,7 +194,7 @@ def _figure_statistics_(image, channels = "", width = params.maxwidth, rowheight
   figure.update_layout(layout)
   return figure
 
-def show(image, histograms = False, statistics = False, sampling = 1, width = params.maxwidth, renderer = None):
+def show(image, histograms = False, statistics = False, sampling = 1, width = -1, renderer = None):
   """Show an image using plotly.
 
   Args:
@@ -185,9 +205,10 @@ def show(image, histograms = False, statistics = False, sampling = 1, width = pa
       channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
     sampling (int, optional): Downsampling rate (default 1).
       Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
-    width (int, optional): The width of the figure (default params.maxwidth).
+    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
+  if width <= 0: width = params.maxwidth
   figure = _figure_image_(image, sampling = sampling, width = width)
   figure.show(renderer)
   if histograms is not False:
@@ -197,7 +218,7 @@ def show(image, histograms = False, statistics = False, sampling = 1, width = pa
     if statistics is True: statistics = ""
     show_statistics(image, channels = statistics, width = width, renderer = renderer)
 
-def show_histograms(image, channels = "", log = True, trans = None, xlabel = "Level", width = params.maxwidth, renderer = None):
+def show_histograms(image, channels = "", log = True, trans = None, xlabel = "Level", width = -1, renderer = None):
   """Plot the histograms of an image using plotly.
 
   Args:
@@ -207,26 +228,29 @@ def show_histograms(image, channels = "", log = True, trans = None, xlabel = "Le
     trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on top
       of the histograms (default None).
     xlabel (str, optional): The x axis label of the plot (default "Level").
-    width (int, optional): The width of the figure (default params.maxwidth).
+    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
+  if width <= 0: width = params.maxwidth
   figure = _figure_histograms_(image, channels = channels, log = log, trans = trans, xlabel = xlabel, width = width)
   if figure is not None: figure.show(renderer)
 
-def show_statistics(image, channels = "", width = params.maxwidth, rowheight = params.rowheight, renderer = None):
+def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer = None):
   """Display a table with the statistics of an image using plotly.
 
   Args:
     image (Image): The image.
     channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
-    width (int, optional): The width of the table (default params.maxwidth).
-    rowheight (int, optional): The height of the rows (default params.rowheight).
+    width (int, optional): The width of the table (defaults to params.maxwidth if negative).
+    rowheight (int, optional): The height of the rows (default to params.rowheight if negative).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
+  if width <= 0: width = params.maxwidth
+  if rowheight <= 0: rowheight = params.rowheight
   figure = _figure_statistics_(image, channels = channels, width = width, rowheight = rowheight)
   if figure is not None: figure.show(renderer)
 
-def show_t(image, channels = "RGBL", sampling = 1, width = params.maxwidth, renderer = None):
+def show_t(image, channels = "RGBL", sampling = 1, width = -1, renderer = None):
   """Show an image embedding an histogram transformation using plotly.
 
   Displays the input histograms with the transformation curve, the output histograms, and the output image.
@@ -237,9 +261,10 @@ def show_t(image, channels = "RGBL", sampling = 1, width = params.maxwidth, rend
       The channels of the transformation are added if needed.
     sampling (int, optional): Downsampling rate (default 1).
       Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
-    width (int, optional): The width of the figure (default params.maxwidth).
+    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
+  if width <= 0: width = params.maxwidth
   if not issubclass(type(image), Image):
     print("The transformations can only be displayed for Image objects.")
   trans = getattr(image, "trans", None)
@@ -247,9 +272,9 @@ def show_t(image, channels = "RGBL", sampling = 1, width = params.maxwidth, rend
     print("There is no transformation embedded in the input image.")
     return
   reference = trans.input
-  for c in trans.channels:
-    if c in "RGBVSL":
-      if c not in channels:
+  if trans.type == "hist":
+    for c in trans.channels:
+      if c in "RGBVSL" and not c in channels:
         channels += c
   show_histograms(reference, channels = channels, log = True, trans = trans, xlabel = "Input level", width = width, renderer = renderer)
   show_histograms(image, channels = channels, log = True, xlabel = "Output level", width = width, renderer = renderer)
