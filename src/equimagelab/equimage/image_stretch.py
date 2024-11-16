@@ -314,6 +314,6 @@ class Mixin:
     if high < 1.:
       high = 1.
       print("Warning, changed high = 1.")
-    output = self.apply_channels(lambda channel: stf.adjust_midtone_function(channel, shadow, midtone, highlight, low, high), channels, trans = trans)
+    output = self.apply_channels(lambda channel: stf.midtone_levels_function(channel, shadow, midtone, highlight, low, high), channels, trans = trans)
     if trans: output.trans.xticks = [shadow, midtone, highlight]
     return output

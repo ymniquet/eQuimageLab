@@ -226,7 +226,7 @@ class Mixin:
       pass
     raise ColorModelError(f"Error, this operation is not implemented for {self.colormodel} images.")
 
-  def check_color_spaces(self, *colorspaces):
+  def check_color_space(self, *colorspaces):
     """Raise a color space error if the color space of the image is not in the arguments.
 
     See also:

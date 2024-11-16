@@ -250,7 +250,7 @@ class Mixin:
       output.check_color_space("lRGB", "sRGB")
       output = output.lRGB()
       output = output.scale_pixels(output.luminance(), self.luminance())
-      if self.colormodel == "sRGB": output = output.sRGB()
+      if self.colorspace == "sRGB": output = output.sRGB()
       difflight = output.lightness()-self.lightness()
       print(f"Maximum lightness difference = {abs(difflight).max()}.")
     return output
