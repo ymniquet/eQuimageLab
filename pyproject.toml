@@ -37,7 +37,7 @@ dependencies = [
 
 [project.urls]
 homepage = "https://astro.ymniquet.fr/"
-repository = "https://github.com/ymniquet/eQuimage"
+repository = "https://github.com/ymniquet/eQuimageLab"
 
 [project.gui-scripts]
 eQuimageLab = "equimagelab.launcher:run"
@@ -48,3 +48,4 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "equimagelab.icons" = ["icon.png", "icon.ico"]
+"equimagelab.jupyter.images" = ["splash.png"]

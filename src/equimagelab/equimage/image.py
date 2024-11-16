@@ -264,17 +264,18 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   # Image I/O. #
   ##############
 
-  def save(self, filename, depth = 8):
+  def save(self, filename, depth = 8, verbose = True):
     """Save image as a file.
 
     Note: The color model must be "RGB" or "gray", but the color space is *not* embedded
       in the file at present.
 
     Args:
-      depth (int, optional): The color depth of the file in bits/channel (default 8).
       filename (str): The file name. The file format is chosen according to the extension:
-        - .png: PNG file with depth = 8 or 16 bits/channel.
-        - .tif, .tiff: TIFF file with depth = 8, 16 (integers), or 32 (floats) bits/channel.
-        - .fit, .fits, .fts: FITS file with 32 bits (floats)/channel (irrespective of depth).
+        - .png: PNG file with depth = 8 or 16 bits integer per channel.
+        - .tif, .tiff: TIFF file with depth = 8, 16 bits integer per channel, or 32 bits float per channel.
+        - .fit, .fits, .fts: FITS file with 32 bits float per channel (irrespective of depth).
+      depth (int, optional): The color depth of the file in bits per channel (default 8).
+      verbose (bool, optional): If True (default), print information about the file.
     """
-    save_image(self, filename, depth)
+    save_image(self, filename, depth = depth, verbose = verbose)

@@ -6,11 +6,10 @@
 
 """Dash backend for Jupyter-lab interface."""
 
+import os
+import inspect
+packagepath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-import plotly.io as pio
-pio.renderers.default = "jupyterlab"
 import dash
 from dash import Dash, dcc, html
 import dash_bootstrap_templates as dbt
@@ -22,6 +21,7 @@ from .utils import prepare_images, prepare_images_as_png_strings
 from .backend_plotly import _figure_image_, _figure_histograms_
 
 from ..equimage.image import Image
+from ..equimage.image_io import load_image
 
 class Dashboard():
   """Dashboad class."""
@@ -45,6 +45,12 @@ class Dashboard():
     self.app.layout = html.Div([dashboard, interval])
     self.app.callback(dash.dependencies.Output("dashboard", "children"), dash.dependencies.Input("update-dashboard", "n_intervals"))(self.__update_dashboard)
     self.app.run_server(debug = False, use_reloader = False, jupyter_mode = "external")
+    # Display splash image.
+    try:
+      splash, meta = load_image(packagepath+"/images/splash.png", verbose = False)
+      self.show({"Welcome": splash})
+    except:
+      pass
 
   def __update_dashboard(self, n):
     """The callback for dashboard updates."""

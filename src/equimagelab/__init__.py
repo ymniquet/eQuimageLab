@@ -8,6 +8,9 @@
 
 __version__ = "1.0.0"
 
+import os
+os.environ["LANGUAGE"] = "en"
+
 # Import everything.
 
 from .equimage import *

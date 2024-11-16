@@ -34,9 +34,9 @@ class Mixin:
       command (str): The command to be run (e.g., "gimp -n $"). Any "$" is replaced by the name of the image
         file to be opened by the editor.
       export (str, optional): The format used to export the image. Can be:
-        - "png": PNG file with depth = 8 or 16 bit integers per channel.
-        - "tiff" (default): TIFF file with depth = 8, 16 or 32 bit integers per channel.
-        - "fits": FITS file width depth = 32 bit floats per channel.
+        - "png": PNG file with depth = 8 or 16 bits integer per channel.
+        - "tiff" (default): TIFF file with depth = 8, 16 or 32 bits integer per channel.
+        - "fits": FITS file width depth = 32 bits float per channel.
       depth (int, optional): The color depth (bits per channel) used to export the image (see above; default 16).
       editor (str, optional): The name of the editor (for pretty-print purposes; default "<Editor>").
 
@@ -61,7 +61,8 @@ class Mixin:
           splitcmd.append(item)
       if not filefound: raise ValueError("Error, no place holder for the image file ($) found in the command.")
       # Save image.
-      self.save(filepath, depth = depth)
+      print(f"Writing file {filepath} with depth = {depth} bpc...")
+      self.save(filepath, depth = depth, verbose = False)
       ctime = os.path.getmtime(filepath)
       # Run editor.
       print(f"Running {editor}...")
@@ -72,7 +73,8 @@ class Mixin:
       if mtime == ctime:
         print(f"The image has not been modified by {editor}; Returning the original...")
         return self.copy()
-      image, meta = load_image_as_array(filepath)
+      print(f"Reading file {filepath}...")
+      image, meta = load_image_as_array(filepath, verbose = False)
       return self.newImage(image)
 
   def edit_with_gimp(self, export = "tiff", depth = 16):
@@ -87,9 +89,9 @@ class Mixin:
 
     Args:
       export (str, optional): The format used to export the image. Can be:
-        - "png": PNG file with depth = 8 or 16 bit integers per channel.
-        - "tiff" (default): TIFF file with depth = 8, 16 or 32 bit integers per channel.
-        - "fits": FITS file width depth = 32 bit floats per channel.
+        - "png": PNG file with depth = 8 or 16 bits integer per channel.
+        - "tiff" (default): TIFF file with depth = 8, 16 or 32 bits integer per channel.
+        - "fits": FITS file width depth = 32 bits float per channel.
       depth (int, optional): The color depth (bits per channel) used to export the image (see above; default 16).
 
     Returns:
@@ -100,7 +102,7 @@ class Mixin:
   def edit_with_siril(self):
     """Edit the image with SIRIL.
 
-    The image is saved as a FITS file (32 bit floats per channel) on disk; SIRIL is then run on
+    The image is saved as a FITS file (32 bits float per channel) on disk; SIRIL is then run on
     this file, which is finally reloaded in eQuimageLab and returned.
 
     The user must simply overwrite the edited file when leaving SIRIL.

@@ -18,26 +18,27 @@ else:
   import skimage.io as skio
 import astropy.io.fits as pyfits
 
-def load_image_as_array(filename):
+def load_image_as_array(filename, verbose = True):
   """Load an image from a file.
 
   Note: The color space is assumed to be sRGB and the color model "RGB" or "gray".
 
   Args:
     filename (str): The file name.
+    verbose (bool, optional): If True (default), print information about the image.
 
   Returns:
     The image as numpy.ndarray and the file meta-data (including exif if available) as a dictionary.
   """
-  print(f"Loading file {filename}...")
+  if verbose: print(f"Loading file {filename}...")
   try:
     header = PILImage.open(filename)
     fmt = header.format
-    print(f"Format = {fmt}.")
+    if verbose: print(f"Format = {fmt}.")
   except:
     header = None
     fmt = None
-    print("Failed to identify image file format; Attempting to load anyway...")
+    if verbose: print("Failed to identify image file format; Attempting to load anyway...")
   if fmt == "PNG": # Load with the FreeImage plugin to enable 16 bits color depth.
     image = iio.imread(filename, plugin = "PNG-FI") if params.IMAGEIO else skio.imread(filename)
   elif fmt == "TIFF":
@@ -57,11 +58,11 @@ def load_image_as_array(filename):
     nc = image.shape[2]
   else:
     raise ValueError(f"Error, invalid image shape = {image.shape}.")
-  print(f"Image size = {image.shape[1]}x{image.shape[0]} pixels.")
-  print(f"Number of channels = {nc}.")
+  if verbose: print(f"Image size = {image.shape[1]}x{image.shape[0]} pixels.")
+  if verbose: print(f"Number of channels = {nc}.")
   if nc not in [1, 3, 4]: raise ValueError(f"Error, images with {nc} channels are not supported.")
   dtype = str(image.dtype)
-  print(f"Data type = {dtype}.")
+  if verbose: print(f"Data type = {dtype}.")
   if dtype == "uint8":
     bpc = 8
     image = params.IMGTYPE(image/255)
@@ -79,36 +80,37 @@ def load_image_as_array(filename):
     image = params.IMGTYPE(image)
   else:
     raise TypeError(f"Error, image data type {dtype} is not supported.")
-  print(f"Bit depth per channel = {bpc}.")
-  print(f"Bit depth per pixel = {nc*bpc}.")
+  if verbose: print(f"Bit depth per channel = {bpc}.")
+  if verbose: print(f"Bit depth per pixel = {nc*bpc}.")
   image = np.moveaxis(image, -1, 0) # Move last (channel) axis to leading position.
   for ic in range(nc):
-    print(f"Channel #{ic}: minimum = {image[ic].min():.5f}, maximum = {image[ic].max():.5f}.")
+    if verbose: print(f"Channel #{ic}: minimum = {image[ic].min():.5f}, maximum = {image[ic].max():.5f}.")
   if nc == 4: image = image[0:3]*image[3] # Assume fourth channel is transparency.
   try:
     exif = header.getexif()
-    print("Succesfully read EXIF data...")
+    if verbose: print("Succesfully read EXIF data...")
   except:
     exif = None
   meta = {"exif": exif, "colordepth": bpc}
   return np.ascontiguousarray(image), meta
 
-def load_image(filename):
+def load_image(filename, verbose = True):
   """Load an image from a file.
 
   Note: The color space is assumed to be sRGB and the color model "RGB" or "gray".
 
   Args:
     filename (str): The file name.
+    verbose (bool, optional): If True (default), print information about the image.
 
   Returns:
     The image as an Image object and the file meta-data (including exif if available) as a dictionary.
   """
   from .image import Image
-  image, meta = load_image_as_array(filename)
+  image, meta = load_image_as_array(filename, verbose = verbose)
   return Image(image), meta
 
-def save_image(image, filename, depth = 8):
+def save_image(image, filename, depth = 8, verbose = True):
   """Save image as a file.
 
   Note: The color model must be "RGB" or "gray", but the color space is *not* embedded
@@ -116,18 +118,19 @@ def save_image(image, filename, depth = 8):
 
   Args:
     image (Image): The image.
-    depth (int, optional): The color depth of the file in bits/channel (default 8).
     filename (str): The file name. The file format is chosen according to the extension:
-      - .png: PNG file with depth = 8 or 16 bits/channel.
-      - .tif, .tiff: TIFF file with depth = 8, 16 (integers), or 32 (floats) bits/channel.
-      - .fit, .fits, .fts: FITS file with 32 bits (floats)/channel (irrespective of depth).
+      - .png: PNG file with depth = 8 or 16 bit integers per channel.
+      - .tif, .tiff: TIFF file with depth = 8, 16 bit integers per channel, or 32 bit floats per channel.
+      - .fit, .fits, .fts: FITS file with 32 bit floats per channel (irrespective of depth).
+    depth (int, optional): The color depth of the file in bits per channel (default 8).
+    verbose (bool, optional): If True (default), print information about the file.
   """
   image.check_color_model("RGB", "gray")
   is_gray = (image.colormodel == "gray")
   if is_gray:
-    print(f"Saving grayscale image as file {filename}...")
+    if verbose: print(f"Saving grayscale image as file {filename}...")
   else:
-    print(f"Saving RGB image as file {filename}...")
+    if verbose: print(f"Saving RGB image as file {filename}...")
   root, ext = os.path.splitext(filename)
   if ext in [".png", ".tif", ".tiff"]:
     if depth == 8:
@@ -138,7 +141,7 @@ def save_image(image, filename, depth = 8):
       image = image.int32()
     else:
       raise ValueError("Error, color depth must be 8 or 16, or 32 bits per channel.")
-    print(f"Color depth = {depth} bits per channel (integers).")
+    if verbose: print(f"Color depth = {depth} bits integer per channel.")
     if is_gray: image = image[:, :, 0]
     if ext == ".png":
       if params.IMAGEIO:
@@ -153,7 +156,7 @@ def save_image(image, filename, depth = 8):
       else:
         skio.imsave(filename, image, plugin = "tifffile", check_contrast = False, compression = "zlib")
   elif ext in [".fit", ".fits", ".fts"]:
-    print(f"Color depth = {np.finfo(image.dtype).bits} bits per channel (floats).")
+    if verbose: print(f"Color depth = {np.finfo(image.dtype).bits} bits float per channel.")
     image = image.flip_height().get_image() # Flip image upside down.
     if is_gray: image = image[0]
     hdu = pyfits.PrimaryHDU(image)

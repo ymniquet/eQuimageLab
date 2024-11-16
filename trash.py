@@ -46,6 +46,6 @@
           if selected[ic]:
             output[ic] = utils.clip(self[ic])
           else:
-            output[ic] = self[ic]          
+            output[ic] = self[ic]
         return output
 
