@@ -14,15 +14,15 @@ from . import params
 
 def threshold_mask(filtered, threshold, extend = 0, smooth = 0):
   """Set-up a threshold mask.
-  
+
   Returns the pixels such that filtered >= threshold.
-  
+
   Args:
     filtered (numpy.ndarray): The output of a filter (local average, ...) applied to an image (see Image.filter).
-    threshold (float): The threshold for the mask. The mask is 1 wherever filtered >= threshold, and 0 elsewhere.  
+    threshold (float): The threshold for the mask. The mask is 1 wherever filtered >= threshold, and 0 elsewhere.
     extend (int, optional): Once computed, the mask can be extended by extend pixels (default 0).
     smooth (int, optional): Once extended, the edges of the mask can be smoothed over smooth pixels (default 0).
-    
+
   Returns:
     numpy.ndarray: The mask as an array with the same shape as filtered (*not* converted to a grayscale Image object).
   """
@@ -44,12 +44,12 @@ def threshold_mask(filtered, threshold, extend = 0, smooth = 0):
 
 class Mixin:
   """To be included in the Image class."""
-  
+
   def filter(self, channel, filter, radius, mode = "reflect"):
     """Apply a spatial filter to a selected channel of the image.
-    
+
     The main purpose of this method is to prepare masks for image processing.
-    
+
     Args:
       channel (str): The selected channel:
         - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
@@ -63,26 +63,26 @@ class Mixin:
         - "median": Return the median of the channel within a disk around each pixel.
         - "gaussian": Return the gaussian average of the channel around each pixel.
         - "maximum": Return the maximum of the channel within a disk around each pixel.
-.     radius (float): The radius of the disk in pixels. The standard deviation for gaussian average is radius/3.        
+.     radius (float): The radius of the disk in pixels. The standard deviation for gaussian average is radius/3.
       mode (str, optional): How to extend the image across its boundaries:
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
         - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
         - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
         - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
-        
+
     Returns:
-      numpy.ndarray: A (image height, image width) array with the output of the filter, 
+      numpy.ndarray: A (image height, image width) array with the output of the filter,
         *not* converted to a grayscale Image object.
     """
-    if mode == "zero": mode = "constant" # Translate modes.    
+    if mode == "zero": mode = "constant" # Translate modes.
     if channel == "1":
       data = self.image[0]
     elif channel == "2":
       self.check_is_not_gray()
-      data = self.image[1] 
+      data = self.image[1]
     elif channel == "3":
       self.check_is_not_gray()
-      data = self.image[2] 
+      data = self.image[2]
     elif channel == "R":
       self.check_color_model("RGB")
       data = self.image[0]
@@ -91,14 +91,14 @@ class Mixin:
       data = self.image[1]
     elif channel == "B":
       self.check_color_model("RGB")
-      data = self.image[2]    
+      data = self.image[2]
     elif channel == "V":
       data = self.value()
     elif channel == "L":
       data = self.luma()
     elif channel == "L*":
       data = self.lightness()/100.
-    else: 
+    else:
       raise ValueError(f"Error, unknown or incompatible channel '{channel}'.")
     if filter == "gaussian":
       return ndimg.gaussian_filter(data, sigma = radius/3., mode = mode, cval = 0.)
@@ -109,6 +109,6 @@ class Mixin:
     elif filter == "median":
       return ndimg.median_filter(data, footprint = skimo.disk(radius), mode = mode, cval = 0.)
     elif filter == "maximum":
-      return ndimg.maximum_filter(data, footprint = skimo.disk(radius), mode = mode, cval = 0.)  
+      return ndimg.maximum_filter(data, footprint = skimo.disk(radius), mode = mode, cval = 0.)
     else:
       raise ValueError(f"Error, unknown filter '{filter}'.")

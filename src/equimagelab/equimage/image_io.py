@@ -10,7 +10,6 @@ import os
 import numpy as np
 
 from . import params
-from .image import Image
 
 from PIL import Image as PILImage
 if params.IMAGEIO:
@@ -19,7 +18,7 @@ else:
   import skimage.io as skio
 import astropy.io.fits as pyfits
 
-def load_image(filename):
+def load_image_as_array(filename):
   """Load an image from a file.
 
   Note: The color space is assumed to be sRGB and the color model "RGB" or "gray".
@@ -28,7 +27,7 @@ def load_image(filename):
     filename (str): The file name.
 
   Returns:
-    The image as an Image object and the file meta-data (including exif if available) as a dictionary.
+    The image as numpy.ndarray and the file meta-data (including exif if available) as a dictionary.
   """
   print(f"Loading file {filename}...")
   try:
@@ -92,7 +91,22 @@ def load_image(filename):
   except:
     exif = None
   meta = {"exif": exif, "colordepth": bpc}
-  return Image(np.ascontiguousarray(image)), meta
+  return np.ascontiguousarray(image), meta
+
+def load_image(filename):
+  """Load an image from a file.
+
+  Note: The color space is assumed to be sRGB and the color model "RGB" or "gray".
+
+  Args:
+    filename (str): The file name.
+
+  Returns:
+    The image as an Image object and the file meta-data (including exif if available) as a dictionary.
+  """
+  from .image import Image
+  image, meta = load_image_as_array(filename)
+  return Image(image), meta
 
 def save_image(image, filename, depth = 8):
   """Save image as a file.

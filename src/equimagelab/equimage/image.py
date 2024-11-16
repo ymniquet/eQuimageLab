@@ -19,11 +19,14 @@ from . import image_filters
 from . import image_skimage
 from . import image_masks
 from . import image_stats
+from . import image_editors
+
+from .image_io import save_image
 
 class Image(np.lib.mixins.NDArrayOperatorsMixin,
             image_colorspaces.Mixin, image_utils.Mixin, image_geometry.Mixin,
             image_colors.Mixin, image_stretch.Mixin, image_filters.Mixin, image_skimage.Mixin,
-            image_masks.Mixin, image_stats.Mixin):
+            image_masks.Mixin, image_stats.Mixin, image_editors.Mixin):
   """Image class.
 
   The image is stored as self.image, a numpy.ndarray with dtype params.IMGTYPE = np.float32 or np.float64.
@@ -256,3 +259,22 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     image = self.get_image(channels = -1)
     data = np.clip(image*4294967295, 0, 4294967295)
     return np.rint(data).astype("uint32")
+
+  ##############
+  # Image I/O. #
+  ##############
+
+  def save(self, filename, depth = 8):
+    """Save image as a file.
+
+    Note: The color model must be "RGB" or "gray", but the color space is *not* embedded
+      in the file at present.
+
+    Args:
+      depth (int, optional): The color depth of the file in bits/channel (default 8).
+      filename (str): The file name. The file format is chosen according to the extension:
+        - .png: PNG file with depth = 8 or 16 bits/channel.
+        - .tif, .tiff: TIFF file with depth = 8, 16 (integers), or 32 (floats) bits/channel.
+        - .fit, .fits, .fts: FITS file with 32 bits (floats)/channel (irrespective of depth).
+    """
+    save_image(self, filename, depth)

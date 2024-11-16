@@ -41,8 +41,8 @@ class Mixin:
     Returns:
       Image: The sharpened image.
     """
-    # Translate modes.    
-    if mode == "zero": mode = "constant"    
+    # Translate modes.
+    if mode == "zero": mode = "constant"
     # Set-up Laplacian kernel.
     kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = params.IMGTYPE)
     # Convolve selected channels with the kernel.
@@ -72,7 +72,7 @@ class Mixin:
         - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
         - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
         - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
-        
+
     Returns:
       Image: The processed image.
     """
@@ -83,8 +83,8 @@ class Mixin:
       return np.where(channel > ratio*avg, avg, channel)
 
     if ratio <= 0.: raise ValueError("Error, ratio must be > 0.")
-    # Translate modes.    
-    if mode == "zero": mode = "constant"   
+    # Translate modes.
+    if mode == "zero": mode = "constant"
     # Set-up the (unnormalized) kernel for nearest-neighbors average.
     kernel = np.array([[1., 1., 1.], [1., 0., 1.], [1., 1., 1.]], dtype = params.IMGTYPE)
     # Normalize with respect to the actual number of nearest neighbors.

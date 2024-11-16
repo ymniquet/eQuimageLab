@@ -249,7 +249,7 @@ class Mixin:
       color_model_error
     """
     if self.colormodel == "gray": self.color_model_error()
-    
+
   ############################
   # Color space conversions. #
   ############################
