@@ -46,7 +46,7 @@
      id="namedview835"
      showgrid="false"
      inkscape:zoom="0.27455356"
-     inkscape:cx="1493.3334"
+     inkscape:cx="1455.0895"
      inkscape:cy="1557.0663"
      inkscape:window-x="-9"
      inkscape:window-y="-9"
@@ -58,14 +58,14 @@
      inkscape:label="Image"
      id="g841">
     <image
-       sodipodi:absref="C:\Users\ymniq\TB_Sim\niquet\astronomie\eQuimage\src\eQuimage\icons\icon-alpha.png"
+       sodipodi:absref="C:\Users\ymniq\Desktop\Unistellar\Documents &amp; Codes\Codes\eQuimageLab\src\equimagelab\icons\icon-alpha.png"
        xlink:href="icon-alpha.png"
-       width="2986.6667"
-       height="2986.6667"
+       id="image843"
        preserveAspectRatio="none"
-       id="image843" />
+       height="2986.6667"
+       width="2986.6667" />
     <g
-       id="g879">
+       id="g855">
       <path
          style="fill:#ffffff;fill-opacity:0.5;stroke:#ffffff;stroke-width:62.4939;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:16;stroke-dasharray:none;stroke-opacity:0.5"
          d="m 926.00889,674.05944 c 4.2758,503.79186 0,1138.60466 0,1638.54786"
@@ -87,12 +87,19 @@
          id="path873" />
       <path
          style="fill:#ffff00;fill-opacity:1;stroke:#ffff00;stroke-width:120.945;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:16;stroke-dasharray:none;stroke-opacity:1"
-         d="m 1373.1382,1493.3334 h 240.3903"
-         id="path873-0" />
-      <path
-         style="fill:#ffff00;fill-opacity:1;stroke:#ffff00;stroke-width:120.945;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:16;stroke-dasharray:none;stroke-opacity:1"
          d="m 1939.5122,2063.3496 h 240.3903"
          id="path873-0-9" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:933.333px;line-height:1.25;font-family:'Comic Sans MS';-inkscape-font-specification:'Comic Sans MS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#000000;fill-opacity:1;stroke:none"
+         x="596.68652"
+         y="1830.1171"
+         id="text840"><tspan
+           sodipodi:role="line"
+           id="tspan838"
+           x="596.68652"
+           y="1830.1171"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:933.333px;font-family:'Comic Sans MS';-inkscape-font-specification:'Comic Sans MS, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#ffffff">LAB</tspan></text>
     </g>
   </g>
 </svg>
