@@ -15,7 +15,7 @@ from . import params
 
 from ..equimage.image import Image
 
-def prepare_images(*args, sampling = 1):
+def prepare_images(*args, sampling = -1):
   """Prepare images for plotly and Dash.
 
   Returns all images as numpy.ndarrays with dimensions (3, height, width) (for color images)
@@ -24,7 +24,7 @@ def prepare_images(*args, sampling = 1):
   Args:
     args: A set of Image object(s) or numpy.ndarrays with dimensions (3, height, width) (for
       color images), (1, height, width) or (height, width) (for grayscale images).
-    sampling (int, optional): Downsampling rate (default 1).
+    sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
       Only args[:, ::sampling, ::sampling] are shown, to speed up operations.
 
   Returns:
@@ -32,6 +32,7 @@ def prepare_images(*args, sampling = 1):
       or (1, height/sampling, width/sampling) (for grayscale images). These arrays are references (not
       copies) of the original images when possible.
   """
+  if sampling <= 0: sampling = params.sampling
   output = ()
   for arg in args:
     valid = False
@@ -49,7 +50,7 @@ def prepare_images(*args, sampling = 1):
     output += (img, )
   return output[0] if len(output) == 1 else output
 
-def prepare_images_as_png_strings(*args, sampling = 1):
+def prepare_images_as_png_strings(*args, sampling = -1):
   """Prepare images as PNGs encoded in base64 strings.
 
   Returns all images as PNGs encoded in base64 strings.
@@ -57,12 +58,13 @@ def prepare_images_as_png_strings(*args, sampling = 1):
   Args:
     args: A set of Image object(s) or numpy.ndarray with dimensions (3, height, width) (for
       color images), (1, height, width) or (height, width) (for grayscale images).
-    sampling (int, optional): Downsampling rate (default 1).
+    sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
       Only args[:, ::sampling, ::sampling] are shown, to speed up operations.
 
   Returns:
     All args as PNGs encoded in base64 strings.
   """
+  if sampling <= 0: sampling = params.sampling
   output = ()
   for arg in args:
     valid = False

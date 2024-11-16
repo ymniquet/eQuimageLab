@@ -58,7 +58,7 @@ class Dashboard():
     if refresh: self.refresh = False
     return self.content if refresh else dash.no_update
 
-  def show(self, images, histograms = False, statistics = False, sampling = 1, trans = None):
+  def show(self, images, histograms = False, statistics = False, sampling = -1, trans = None):
     """Show image(s) on the dashboard.
 
     Args:
@@ -71,7 +71,7 @@ class Dashboard():
         channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
       statistics (optional): If True or a string, show the statistics of the image(s). The string lists the
         channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
-      sampling (int, optional): Downsampling rate (default 1).
+      sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
         Only images[:, ::sampling, ::sampling] are shown, to speed up operations.
       trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on
         top of the histograms of the "Reference" tab (default None).
@@ -113,7 +113,7 @@ class Dashboard():
     self.content = [dbc.Tabs(tabs, active_tab = "tab-0")]
     self.refresh = True
 
-  def show_t(self, image, channels = "RGBL", sampling = 1):
+  def show_t(self, image, channels = "RGBL", sampling = -1):
     """Show the input and output images of an histogram transformation on the dashboard.
 
     Displays the input image, histograms, statistics, and transformation curve in tab "Reference",
@@ -123,7 +123,7 @@ class Dashboard():
       image (Image): The output image (must embed a transformation image.trans - see Image.apply_channels).
       channels (str, optional): The channels of the histograms and statistics (default "RGBL" for red,
         green, blue, luma). The channels of the transformation are added if needed.
-      sampling (int, optional): Downsampling rate (default 1).
+      sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
         Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
     """
     if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
@@ -138,14 +138,14 @@ class Dashboard():
           channels += c
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels, trans = trans, sampling = sampling)
 
-  def carousel(self, images, sampling = 1, interval = 2000):
+  def carousel(self, images, sampling = -1, interval = 2000):
     """Show a carousel of images on the dashboard.
 
     Args:
       images: The images as a tuple/list/dictionary of Image object(s) or numpy.ndarray.
         The images are captioned according to the keys for a dictionary. Otherwise, the images are captioned
         "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
-      sampling (int, optional): Downsampling rate (default 1).
+      sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
         Only images[:, ::sampling, ::sampling] are shown, to speed up operations.
       interval (int, optional): The interval (ms) between image switches in the carousel (default 2000).
     """
@@ -176,7 +176,7 @@ class Dashboard():
     self.content = [dbc.Tabs([dbc.Tab([widget], label = "Carousel")], active_tab = "tab-0")]
     self.refresh = True
 
-  def slide(self, image1, image2, label1 = "Image", label2 = "Reference", sampling = 1):
+  def slide(self, image1, image2, label1 = "Image", label2 = "Reference", sampling = -1):
     """Compare two images with a "before/after" slider on the dashboard.
 
     Args:
@@ -184,7 +184,7 @@ class Dashboard():
       image2: The second image as an Image object or numpy.ndarray.
       label1 (str, optional): The label of the first image (default "Image").
       label2 (str, optional): The label of the second image (default "Reference").
-      sampling (int, optional): Downsampling rate (default 1).
+      sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
         Only image1[:, ::sampling, ::sampling] and image2[:, ::sampling, ::sampling] are shown, to speed up operations.
     """
     self.refresh = False

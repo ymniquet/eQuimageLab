@@ -18,12 +18,12 @@ from .utils import prepare_images
 
 from ..equimage.image import Image
 
-def _figure_image_(image, sampling = 1, width = -1, template = "plotly_dark"):
+def _figure_image_(image, sampling = -1, width = -1, template = "plotly_dark"):
   """Prepare a ploty figure for the input image.
 
   Args:
     image: The image (Image object or numpy.ndarray).
-    sampling (int, optional): Downsampling rate (default 1).
+    sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
       Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     template (str, optional): The template for the figure (default "plotly_dark").
@@ -194,7 +194,7 @@ def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, templa
   figure.update_layout(layout)
   return figure
 
-def show(image, histograms = False, statistics = False, sampling = 1, width = -1, renderer = None):
+def show(image, histograms = False, statistics = False, sampling = -1, width = -1, renderer = None):
   """Show an image using plotly.
 
   Args:
@@ -203,12 +203,11 @@ def show(image, histograms = False, statistics = False, sampling = 1, width = -1
       channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
     statistics (optional): If True or a string, show the statistics of the image. The string lists the
       channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
-    sampling (int, optional): Downsampling rate (default 1).
+    sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
       Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
-  if width <= 0: width = params.maxwidth
   figure = _figure_image_(image, sampling = sampling, width = width)
   figure.show(renderer)
   if histograms is not False:
@@ -231,7 +230,6 @@ def show_histograms(image, channels = "", log = True, trans = None, xlabel = "Le
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
-  if width <= 0: width = params.maxwidth
   figure = _figure_histograms_(image, channels = channels, log = log, trans = trans, xlabel = xlabel, width = width)
   if figure is not None: figure.show(renderer)
 
@@ -245,12 +243,10 @@ def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer =
     rowheight (int, optional): The height of the rows (default to params.rowheight if negative).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
-  if width <= 0: width = params.maxwidth
-  if rowheight <= 0: rowheight = params.rowheight
   figure = _figure_statistics_(image, channels = channels, width = width, rowheight = rowheight)
   if figure is not None: figure.show(renderer)
 
-def show_t(image, channels = "RGBL", sampling = 1, width = -1, renderer = None):
+def show_t(image, channels = "RGBL", sampling = -1, width = -1, renderer = None):
   """Show an image embedding an histogram transformation using plotly.
 
   Displays the input histograms with the transformation curve, the output histograms, and the output image.
@@ -259,12 +255,11 @@ def show_t(image, channels = "RGBL", sampling = 1, width = -1, renderer = None):
     image (Image): The output image (must embed a transformation image.trans - see Image.apply_channels).
     channels (str, optional): The channels of the histograms (default "RGBL" for red, green, blue, luma).
       The channels of the transformation are added if needed.
-    sampling (int, optional): Downsampling rate (default 1).
+    sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
       Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
-  if width <= 0: width = params.maxwidth
   if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
   trans = getattr(image, "trans", None)
   if trans is None:

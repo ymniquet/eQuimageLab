@@ -10,6 +10,11 @@ import numpy as np
 
 from ..equimage.params import IMGTYPE, IMGTOL
 
+# Images downsampling rate for display.
+# Only images[:, ::sampling, ::sampling] are shown to speed up operations.
+
+sampling = 1
+
 # Figure size and margins.
 
 maxwidth = 1024 # Maximum width of the displayed image.
@@ -29,14 +34,23 @@ diffcolor = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)
 
 # Setters.
 
-def set_max_width(width):
+def set_image_sampling(s):
+  """Set image downsampling rate for display.
+
+  Args:
+    s (int): The image downsampling rate in pixels.
+  """
+  global sampling
+  sampling = s
+
+def set_max_width(w):
   """Set maximum figure width.
 
   Args:
-    width (int): The maximum figure width in pixels.
+    w (int): The maximum figure width in pixels.
   """
   global maxwidth
-  maxwidth = width
+  maxwidth = w
 
 def set_margins(left = None, right = None, bottom = None, top = None):
   """Set or update figure margins.
@@ -53,11 +67,11 @@ def set_margins(left = None, right = None, bottom = None, top = None):
   if bottom is not None: bmargin = bottom
   if top is not None: tmargin = top
 
-def set_row_height(height):
+def set_row_height(h):
   """Set table row height.
 
   Args:
-    height (int): The table row height in pixels.
+    h (int): The table row height in pixels.
   """
   global rowheight
-  rowheight = height
+  rowheight = h
