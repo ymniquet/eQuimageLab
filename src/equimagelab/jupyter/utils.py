@@ -43,12 +43,9 @@ def prepare_images(*args, sampling = 1):
       valid = img.ndim in [2, 3]
       if img.ndim == 3: valid = img.shape[0] in [1, 3]
       valid = valid and img.dtype in [np.float32, np.float64]
-    if not valid:
-      raise ValueError(f"Error, arg {arg} is not a valid image.")
-    if img.ndim == 2:
-      img = np.expand_dims(img, axis = 0)
-    if sampling > 1:
-      img = img[:, ::sampling, ::sampling]
+    if not valid: raise ValueError(f"Error, arg {arg} is not a valid image.")
+    if img.ndim == 2: img = np.expand_dims(img, axis = 0)
+    if sampling > 1: img = img[:, ::sampling, ::sampling]
     output += (img, )
   return output[0] if len(output) == 1 else output
 
@@ -77,10 +74,8 @@ def prepare_images_as_png_strings(*args, sampling = 1):
       valid = img.ndim in [2, 3]
       if img.ndim == 3: valid = img.shape[0] in [1, 3]
       valid = valid and img.dtype in [np.float32, np.float64]
-    if not valid:
-      raise ValueError(f"Error, arg {arg} is not a valid image.")
-    if img.ndim == 2:
-      img = np.expand_dims(img, axis = 0)
+    if not valid: raise ValueError(f"Error, arg {arg} is not a valid image.")
+    if img.ndim == 2: img = np.expand_dims(img, axis = 0)
     data = np.rint(np.clip(img[:, ::sampling, ::sampling]*255, 0, 255)).astype("uint8")
     if data.shape[0] == 1:
       PILimg = PILImage.fromarray(data[0, :, :])
@@ -116,8 +111,7 @@ def filter(image, channels):
     else:
       raise ValueError(f"Error, unknown channel {c}.")
   img = prepare_images(image)
-  if img.shape[0] != 3:
-    raise ValueError("Error, the input must be a RGB (not grayscale) image.""")
+  if img.shape[0] != 3: raise ValueError("Error, the input must be a RGB (not grayscale) image.""")
   output = img.copy()
   output[~selected] = 0.
   return output

@@ -17,12 +17,13 @@ from . import image_colors
 from . import image_stretch
 from . import image_filters
 from . import image_skimage
+from . import image_masks
 from . import image_stats
 
 class Image(np.lib.mixins.NDArrayOperatorsMixin,
             image_colorspaces.Mixin, image_utils.Mixin, image_geometry.Mixin,
             image_colors.Mixin, image_stretch.Mixin, image_filters.Mixin, image_skimage.Mixin,
-            image_stats.Mixin):
+            image_masks.Mixin, image_stats.Mixin):
   """Image class.
 
   The image is stored as self.image, a numpy.ndarray with dtype params.IMGTYPE = np.float32 or np.float64.
@@ -100,8 +101,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     """
     colorspace = kwargs.pop("colorspace", self.colorspace)
     colormodel = kwargs.pop("colormodel", self.colormodel)
-    if kwargs:
-      print("Discarding extra keyword arguments in Image.newImage...")
+    if kwargs: print("Discarding extra keyword arguments in Image.newImage...")
     return Image(image, colorspace, colormodel)
 
   def copy(self):

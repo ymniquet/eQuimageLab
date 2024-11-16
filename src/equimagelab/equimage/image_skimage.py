@@ -48,8 +48,7 @@ class Mixin:
     See also:
       skimage.filters.gaussian
     """
-    if mode == "zero": # Translate modes.
-      mode = "constant"
+    if mode == "zero": mode = "constant" # Translate modes.
     return self.apply_channels(lambda channel: skim.filters.gaussian(channel, channel_axis = 0, sigma = sigma, mode = mode, cval = 0.), channels)
 
   def butterworth_filter(self, cutoff, order = 2, padding = 0, channels = ""):

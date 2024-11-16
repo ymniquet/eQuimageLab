@@ -161,8 +161,7 @@ class Mixin:
     psat[3] = kwargs.pop("C", A)
     psat[4] = kwargs.pop("B", A)
     psat[5] = kwargs.pop("M", A)
-    if kwargs:
-      print("Discarding extra keyword arguments in Image.color_saturation...")
+    if kwargs: print("Discarding extra keyword arguments in Image.color_saturation...")
     hsv = self.HSV()
     hue = hsv.image[0]
     sat = hsv.image[1]

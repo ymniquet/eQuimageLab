@@ -60,8 +60,7 @@ def load_image(filename):
     raise ValueError(f"Error, invalid image shape = {image.shape}.")
   print(f"Image size = {image.shape[1]}x{image.shape[0]} pixels.")
   print(f"Number of channels = {nc}.")
-  if nc not in [1, 3, 4]:
-    raise ValueError(f"Error, images with {nc} channels are not supported.")
+  if nc not in [1, 3, 4]: raise ValueError(f"Error, images with {nc} channels are not supported.")
   dtype = str(image.dtype)
   print(f"Data type = {dtype}.")
   if dtype == "uint8":
@@ -86,8 +85,7 @@ def load_image(filename):
   image = np.moveaxis(image, -1, 0) # Move last (channel) axis to leading position.
   for ic in range(nc):
     print(f"Channel #{ic}: minimum = {image[ic].min():.5f}, maximum = {image[ic].max():.5f}.")
-  if nc == 4: # Assume fourth channel is transparency.
-    image = image[0:3]*image[3]
+  if nc == 4: image = image[0:3]*image[3] # Assume fourth channel is transparency.
   try:
     exif = header.getexif()
     print("Succesfully read EXIF data...")

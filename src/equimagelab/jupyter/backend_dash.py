@@ -120,8 +120,7 @@ class Dashboard():
       sampling (int, optional): Downsampling rate (default 1).
         Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
     """
-    if not issubclass(type(image), Image):
-      print("The transformations can only be displayed for Image objects.")
+    if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
     trans = getattr(image, "trans", None)
     if trans is None:
       print("There is no transformation embedded in the input image.")

@@ -7,7 +7,7 @@
 """Image filters."""
 
 import numpy as np
-import scipy.signal as ssig
+import scipy.ndimage as ndimg
 
 from . import params
 
@@ -18,7 +18,7 @@ from . import params
 class Mixin:
   """To be included in the Image class."""
 
-  def sharpen(self, channels = ""):
+  def sharpen(self, mode = "reflect", channels = ""):
     """Apply a sharpening (Laplacian) convolution filter to selected channels of the image.
 
     Args:
@@ -33,16 +33,22 @@ class Mixin:
                (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
                (after the operation, the out-of-range pixels are blended with channels = "RGB").
-
+      mode (str, optional): How to extend the image across its boundaries:
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
     Returns:
       Image: The sharpened image.
     """
+    # Translate modes.    
+    if mode == "zero": mode = "constant"    
     # Set-up Laplacian kernel.
     kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = params.IMGTYPE)
     # Convolve selected channels with the kernel.
-    return self.apply_channels(lambda channel: ssig.convolve2d(channel, kernel, mode = "same", boundary = "fill", fillvalue = 0.), channels, multi = False)
+    return self.apply_channels(lambda channel: ndimg.convolve(channel, kernel, mode = mode, cval = 0.), channels, multi = False)
 
-  def remove_hot_pixels(self, ratio, channels = ""):
+  def remove_hot_pixels(self, ratio, mode = "reflect", channels = ""):
     """Remove hot pixels in selected channels of the image.
 
     All pixels of a selected channel greater than ratio times the eight nearest-neighbors average
@@ -61,19 +67,26 @@ class Mixin:
                (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
                (after the operation, the out-of-range pixels are blended with channels = "RGB").
-
+      mode (str, optional): How to extend the image across its boundaries:
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
+        
     Returns:
       Image: The processed image.
     """
 
     def remove_hot_pixels_channel(channel):
       """Remove hot pixels from the input channel data."""
-      avg = ssig.convolve2d(channel, kernel, mode = "same", boundary = "fill", fillvalue = 0.)/nnn
+      avg = ndimg.convolve(channel, kernel, mode = mode, cval = 0.)/nnn
       return np.where(channel > ratio*avg, avg, channel)
 
     if ratio <= 0.: raise ValueError("Error, ratio must be > 0.")
+    # Translate modes.    
+    if mode == "zero": mode = "constant"   
     # Set-up the (unnormalized) kernel for nearest-neighbors average.
     kernel = np.array([[1., 1., 1.], [1., 0., 1.], [1., 1., 1.]], dtype = params.IMGTYPE)
     # Normalize with respect to the actual number of nearest neighbors.
-    nnn = sp.signal.convolve2d(np.ones(*self.get_size()), kernel, mode = "same", boundary = "fill", fillvalue = 0.)
+    nnn = ndimg.convolve(np.ones(*self.get_size()), kernel, mode = mode, cval = 0.)
     return self.apply_channels(remove_hot_pixels_channel, channels, multi = False)

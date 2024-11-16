@@ -265,8 +265,7 @@ def show_t(image, channels = "RGBL", sampling = 1, width = -1, renderer = None):
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
   if width <= 0: width = params.maxwidth
-  if not issubclass(type(image), Image):
-    print("The transformations can only be displayed for Image objects.")
+  if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
   trans = getattr(image, "trans", None)
   if trans is None:
     print("There is no transformation embedded in the input image.")

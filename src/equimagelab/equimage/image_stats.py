@@ -40,8 +40,7 @@ class Mixin:
         - hists[key].edges = histogram bins edges.
         - hists[key].counts = histogram bins counts.
     """
-    if not hasattr(self, "hists"):
-      self.hists = {} # Register empty histograms in the object, if none already computed.
+    if not hasattr(self, "hists"): self.hists = {} # Register empty histograms in the object, if none already computed.
     if len(channels) > 0: # Append missing keys if channels ends with a "*".
       if channels[-1] == "*":
         channels = channels[:-1]
@@ -132,8 +131,7 @@ class Mixin:
         - stats[key].zerocount = number of pixels <= 0.
         - stats[key].outcount = number of pixels > 1 (out-of-range).
     """
-    if not hasattr(self, "stats"):
-      self.stats = {} # Register empty statistics in the object, if none already computed.
+    if not hasattr(self, "stats"): self.stats = {} # Register empty statistics in the object, if none already computed.
     if len(channels) > 0: # Append missing keys if channels ends with a "*".
       if channels[-1] == "*":
         channels = channels[:-1]

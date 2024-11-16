@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# DOC+MCI.
 
 """Color spaces and models management."""
 
@@ -241,6 +242,14 @@ class Mixin:
     """
     if self.colormodel not in colormodels: self.color_model_error()
 
+  def check_is_not_gray(self):
+    """Raise a color model error if the image is a grayscale.
+
+    See also:
+      color_model_error
+    """
+    if self.colormodel == "gray": self.color_model_error()
+    
   ############################
   # Color space conversions. #
   ############################
@@ -416,7 +425,7 @@ class Mixin:
     Args:
       f: The function f(numpy.ndarray) -> np.array applied to the selected channels.
       channels (str): The selected channels:
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - An empty string: Apply the operation to all channels (RGB, HSV and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
             Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
@@ -538,10 +547,8 @@ class Mixin:
           ok = is_RGB
         else:
           ok = False
-        if not ok:
-          raise ValueError(f"Error, unknown or incompatible channel '{c}'.")
-        if selected[ic]:
-          print(f"Warning, channel '{c}' selected twice or more...")
+        if not ok: raise ValueError(f"Error, unknown or incompatible channel '{c}'.")
+        if selected[ic]: print(f"Warning, channel '{c}' selected twice or more...")
         selected[ic] = True
       if all(selected) and multi:
         output = self.newImage(f(self.image))

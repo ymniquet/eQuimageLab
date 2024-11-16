@@ -12,4 +12,5 @@ from .image import Image
 from .params import get_RGB_luma, set_RGB_luma
 from .image_utils import is_valid_image, clip, blend
 from .image_stretch import mts, ghs
+from .image_masks import threshold_mask
 from .image_io import load_image, save_image
