@@ -43,7 +43,7 @@ def set_image_sampling(s):
   global sampling
   sampling = s
 
-def set_max_width(w):
+def set_figure_max_width(w):
   """Set maximum figure width.
 
   Args:
@@ -52,7 +52,7 @@ def set_max_width(w):
   global maxwidth
   maxwidth = w
 
-def set_margins(left = None, right = None, bottom = None, top = None):
+def set_figure_margins(left = None, right = None, bottom = None, top = None):
   """Set or update figure margins.
 
   Args:
@@ -67,7 +67,7 @@ def set_margins(left = None, right = None, bottom = None, top = None):
   if bottom is not None: bmargin = bottom
   if top is not None: tmargin = top
 
-def set_row_height(h):
+def set_table_row_height(h):
   """Set table row height.
 
   Args:

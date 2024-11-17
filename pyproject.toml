@@ -17,22 +17,21 @@ classifiers = [
     "Operating System :: OS Independent"
 ]
 dependencies = [
-    "numpy >= 1.26",
-    "matplotlib >= 3.0",
+    "numpy",
     "scipy",
     "pywavelets",
     "pillow",
     "tifffile",
     "imagecodecs",
     "astropy",
-    "scikit-image >= 0.21",
+    "scikit-image",
     "dask",
-    "jupyterlab >= 4.0",
-    "plotly >= 5.0",
+    "jupyterlab",
+    "plotly",
     "dash",
     "dash-bootstrap-components",
     "dash_bootstrap_templates",
-    "dash_extentsions"
+    "dash_extensions"
 ]
 
 [project.urls]
@@ -48,4 +47,5 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "equimagelab.icons" = ["icon.png", "icon.ico"]
+"equimagelab.examples" = ["*.ipynb"]
 "equimagelab.jupyter.images" = ["splash.png"]

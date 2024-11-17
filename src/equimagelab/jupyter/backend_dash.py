@@ -6,6 +6,10 @@
 
 """Dash backend for Jupyter-lab interface."""
 
+# TODO:
+#  - Display RGB levels on images.
+#  - Bind zooms across tabs.
+
 import os
 import inspect
 packagepath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
@@ -31,18 +35,19 @@ class Dashboard():
 
     This dashboard uses Dash to displays image, histograms, statistics, etc... in a
     separate browser tab or window.
-    It fetches updates from the Dash server every input interval.
+    It fetches updates from the Dash server at given intervals.
 
     Args:
       interval (int, optional): The time interval (ms, default 333) between dashboard updates.
     """
+    # Initialize data.
     self.content = []
     self.refresh = False
+    self.interval = interval
+    # Set-up Dash app.
     dbt.load_figure_template("slate")
     self.app = Dash(title = "eQuimageLab dashboard", update_title = None, external_stylesheets = [dbc.themes.SLATE])
-    dashboard = html.Div(self.content, id = "dashboard", style = {"width": params.maxwidth+params.lmargin+params.rmargin})
-    interval = dcc.Interval(id = "update-dashboard", interval = interval, n_intervals = 0)
-    self.app.layout = html.Div([dashboard, interval])
+    self.app.layout = self.__layout_dashboard
     self.app.callback(dash.dependencies.Output("dashboard", "children"), dash.dependencies.Input("update-dashboard", "n_intervals"))(self.__update_dashboard)
     self.app.run_server(debug = False, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
@@ -52,8 +57,18 @@ class Dashboard():
     except:
       pass
 
+  def __layout_dashboard(self):
+    """Lay out dashboard."""
+    dashboard = html.Div(self.content, id = "dashboard", style = {"width": params.maxwidth+params.lmargin+params.rmargin})
+    interval = dcc.Interval(id = "update-dashboard", interval = self.interval, n_intervals = 0)    
+    return html.Div([dashboard, interval])
+    
   def __update_dashboard(self, n):
-    """The callback for dashboard updates."""
+    """Callback for dashboard updates.
+    
+    Args:
+      n: The number of calls since the start of the application.
+    """
     refresh = self.refresh
     if refresh: self.refresh = False
     return self.content if refresh else dash.no_update
@@ -107,9 +122,6 @@ class Dashboard():
         table = _table_statistics_(image, channels = statistics)
         if table is not None: tab.append(table)
       tabs.append(dbc.Tab(tab, label = key))
-    #if len(imgdict) == 1:
-      #self.content = tabs
-    #else:
     self.content = [dbc.Tabs(tabs, active_tab = "tab-0")]
     self.refresh = True
 
