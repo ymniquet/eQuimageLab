@@ -109,13 +109,13 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
   if trans is not None:
     if trans.type == "hist":
       cef = np.log(np.maximum(np.gradient(trans.y, trans.x), 1.e-12))
-      figure.add_trace(go.Scatter(x = trans.x, y = trans.y, name = trans.ylabel, mode = "lines", line = msblue2, showlegend = False), 
+      figure.add_trace(go.Scatter(x = trans.x, y = trans.y, name = trans.ylabel, mode = "lines", line = msblue2, showlegend = False),
                        secondary_y = True)
-      figure.add_trace(go.Scatter(x = trans.x, y = cef, name = f"log {trans.ylabel}'", mode = "lines", line = msblue2, showlegend = False, visible = False), 
+      figure.add_trace(go.Scatter(x = trans.x, y = cef, name = f"log {trans.ylabel}'", mode = "lines", line = msblue2, showlegend = False, visible = False),
                        secondary_y = True)
-      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False), 
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False),
                        secondary_y = True)
-      figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False), 
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False),
                        secondary_y = True)
       figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], name = "", mode = "lines", line = msbluedot1, showlegend = False),
                        secondary_y = True)
@@ -135,11 +135,11 @@ def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel =
       updatemenus.append(dict(type = "buttons", buttons = buttons, active = -1, showactive = False,
                               xanchor = "left", x = xbutton, yanchor = "bottom", y = ybutton))
     elif trans.type == "hue":
-      figure.add_trace(go.Scatter(x = trans.x, y = trans.y, name = trans.ylabel, mode = "lines", line = msblue2, showlegend = False), 
+      figure.add_trace(go.Scatter(x = trans.x, y = trans.y, name = trans.ylabel, mode = "lines", line = msblue2, showlegend = False),
                        secondary_y = True)
       figure.add_trace(go.Scatter(x = trans.xm, y = trans.ym, name = trans.ylabel, mode = "markers", marker = dict(size = 16, color = trans.cm), showlegend = False),
                        secondary_y = True)
-      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False), 
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False),
                        secondary_y = True)
       figure.update_xaxes(range = [0., 1.])
       figure.update_yaxes(title_text = trans.ylabel, titlefont = msblue, ticks = "inside", tickfont = msblue, showgrid = False, rangemode = "tozero", secondary_y = True)

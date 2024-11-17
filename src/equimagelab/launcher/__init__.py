@@ -7,7 +7,17 @@
 """Launcher for eQuimageLab."""
 
 import os
+import inspect
+import tkinter
 import subprocess
 
 def run():
-  subprocess.run(["jupyter", "lab"])
+  splash = tkinter.Tk()
+  canvas = Canvas(canvas, width = 800, height = 600)
+  canvas.pack()
+  packagepath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
+  image = tkinter.PhotoImage(file = os.path.join(packagepath, "..", "images", "splash.png"))
+  canvas.create_image(0, 0, anchor = tkinter.NW, image = image)
+  mainloop = tkinter.mainloop()
+
+  #subprocess.run(["jupyter", "lab"])

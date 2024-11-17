@@ -12,7 +12,6 @@
 
 import os
 import inspect
-packagepath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
 import numpy as np
 import dash
 from dash import Dash, dcc, html
@@ -52,7 +51,8 @@ class Dashboard():
     self.app.run_server(debug = False, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
     try:
-      splash, meta = load_image(packagepath+"/images/splash.png", verbose = False)
+      packagepath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
+      splash, meta = load_image(os.path.join(packagepath, "..", "images", "splash.png"), verbose = False)
       self.show({"Welcome": splash})
     except:
       pass
@@ -60,12 +60,12 @@ class Dashboard():
   def __layout_dashboard(self):
     """Lay out dashboard."""
     dashboard = html.Div(self.content, id = "dashboard", style = {"width": params.maxwidth+params.lmargin+params.rmargin})
-    interval = dcc.Interval(id = "update-dashboard", interval = self.interval, n_intervals = 0)    
+    interval = dcc.Interval(id = "update-dashboard", interval = self.interval, n_intervals = 0)
     return html.Div([dashboard, interval])
-    
+
   def __update_dashboard(self, n):
     """Callback for dashboard updates.
-    
+
     Args:
       n: The number of calls since the start of the application.
     """
