@@ -32,7 +32,7 @@ dependencies = [
     "dash-bootstrap-components",
     "dash_bootstrap_templates",
     "dash_extensions",
-    "tkinter"
+    "tk"
 ]
 
 [project.urls]
@@ -48,5 +48,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "equimagelab.icons" = ["icon.png", "icon.ico"]
+"equimagelab.images" = ["splash.png"]
+"equimagelab.launcher" = ["*.ipynb"]
 "equimagelab.examples" = ["*.ipynb"]
-"equimagelab.jupyter.images" = ["splash.png"]

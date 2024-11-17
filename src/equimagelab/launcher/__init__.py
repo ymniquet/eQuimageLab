@@ -7,17 +7,60 @@
 """Launcher for eQuimageLab."""
 
 import os
+import sys
+import shutil
 import inspect
 import tkinter
+import tkinter.filedialog
+import tkinter.messagebox
 import subprocess
+from pathlib import Path
+from PIL import Image, ImageTk
 
 def run():
-  splash = tkinter.Tk()
-  canvas = Canvas(canvas, width = 800, height = 600)
-  canvas.pack()
-  packagepath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
-  image = tkinter.PhotoImage(file = os.path.join(packagepath, "..", "images", "splash.png"))
-  canvas.create_image(0, 0, anchor = tkinter.NW, image = image)
-  mainloop = tkinter.mainloop()
+  """Run eQuimageLab."""
 
-  #subprocess.run(["jupyter", "lab"])
+  def run_jupyter_lab(notebook):
+    """Run jupyter lab on input notebook."""
+    root.destroy()
+    subprocess.run(["jupyter", "lab", notebook])
+    sys.exit(0)
+
+  def open_notebook():
+    """Select and open a jupyter notebook."""
+    # Open file selection dialog.
+    notebook = tkinter.filedialog.askopenfilename(title = "Open notebook", filetypes = [("Jupyter notebooks", "*.ipynb")], initialdir = Path.home())
+    if notebook == "": return
+    # Run jupyter lab.
+    run_jupyter_lab(notebook)
+
+  def create_new_notebook():
+    """Create and open a new jupyter notebook."""
+    # Open file selection dialog.
+    notebook = tkinter.filedialog.asksaveasfilename(title = "Save new notebook as", filetypes = [("Jupyter notebooks", "*.ipynb")],
+                                                    initialdir = Path.home(), initialfile = "eqlab.ipynb", defaultextension = ".ipynb")
+    if notebook == "": return
+    # Create notebook.
+    try:
+      shutil.copyfile(os.path.join(packagepath, "equimagelab.ipynb"), notebook)
+    except:
+      tkinter.messagebox.showerror("Error", f"Failed to create notebook {notebook}.")
+      return
+    # Run jupyter lab.
+    run_jupyter_lab(notebook)
+
+  packagepath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
+  # Open Tk window.
+  root = tkinter.Tk()
+  root.title("eQuimageLab")
+  canvas = tkinter.Canvas(root, width = 800, height = 600)
+  canvas.pack(side = "top")
+  image = Image.open(os.path.join(packagepath, "..", "images", "splash.png")).resize((800, 600))
+  imagetk = ImageTk.PhotoImage(image)
+  canvas.create_image(0, 0, anchor = "nw", image = imagetk)
+  menu = tkinter.Menu(root)
+  menu.add_command(label = "Open notebook", command = open_notebook)
+  menu.add_command(label = "New notebook", command = create_new_notebook)
+  menu.add_command(label = "Quit", command = lambda: sys.exit(0))
+  root.config(menu = menu)
+  root.mainloop()
