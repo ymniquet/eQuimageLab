@@ -13,7 +13,8 @@ import numpy as np
 
 from . import params
 
-from ..equimage.image import Image
+from ..equimage import Image
+from ..equimage import params as eqparams
 
 def prepare_images(*args, sampling = -1):
   """Prepare images for plotly and Dash.
@@ -50,7 +51,7 @@ def prepare_images(*args, sampling = -1):
     output += (img, )
   return output[0] if len(output) == 1 else output
 
-def prepare_images_as_png_strings(*args, sampling = -1):
+def prepare_images_as_b64strings(*args, sampling = -1):
   """Prepare images as PNGs encoded in base64 strings.
 
   Returns all images as PNGs encoded in base64 strings.
@@ -138,10 +139,10 @@ def shadowed(image, reference = None):
   else:
     img, ref = prepare_images(image, reference)
   output = img.copy()
-  imgmask = np.all(img < params.IMGTOL, axis = 0)
+  imgmask = np.all(img < eqparams.IMGTOL, axis = 0)
   output[:, imgmask] = params.shadowcolor
   if reference is not None:
-    refmask = np.all(ref < params.IMGTOL, axis = 0)
+    refmask = np.all(ref < eqparams.IMGTOL, axis = 0)
     output[:, imgmask & refmask] = .5*params.shadowcolor
   return output
 
@@ -166,10 +167,10 @@ def highlighted(image, reference = None):
   else:
     img, ref = prepare_images(image, reference)
   output = img.copy()
-  imgmask = np.any(img > 1.-params.IMGTOL, axis = 0)
+  imgmask = np.any(img > 1.-eqparams.IMGTOL, axis = 0)
   output[:, imgmask] = params.highlightcolor
   if reference is not None:
-    refmask = np.any(ref > 1.-params.IMGTOL, axis = 0)
+    refmask = np.any(ref > 1.-eqparams.IMGTOL, axis = 0)
     output[:, imgmask & refmask] = .5*params.highlightcolor
   return output
 

@@ -8,8 +8,6 @@
 
 import numpy as np
 
-from ..equimage.params import IMGTYPE, IMGTOL
-
 # Images downsampling rate for display.
 # Only images[:, ::sampling, ::sampling] are shown to speed up operations.
 
@@ -28,9 +26,9 @@ rowheight = 25 # Height of the table rows.
 
 # Colors for shadows, highlights and differences.
 
-shadowcolor = np.array([[1.], [.5], [0.]], dtype = IMGTYPE)
-highlightcolor = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)
-diffcolor = np.array([[1.], [1.], [0.]], dtype = IMGTYPE)
+shadowcolor = np.array([[1.], [.5], [0.]])
+highlightcolor = np.array([[1.], [1.], [0.]])
+diffcolor = np.array([[1.], [1.], [0.]])
 
 # Setters.
 

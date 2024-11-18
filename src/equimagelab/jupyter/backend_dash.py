@@ -11,7 +11,6 @@
 #  - Bind zooms across tabs.
 
 import os
-import inspect
 import numpy as np
 import dash
 from dash import Dash, dcc, html
@@ -20,11 +19,10 @@ import dash_bootstrap_components as dbc
 import dash_extensions as dxt
 
 from . import params
-from .utils import prepare_images, prepare_images_as_png_strings
+from .utils import prepare_images, prepare_images_as_b64strings
 from .backend_plotly import _figure_image_, _figure_histograms_
 
-from ..equimage.image import Image
-from ..equimage.image_io import load_image
+from ..equimage import Image, load_image
 
 class Dashboard():
   """Dashboad class."""
@@ -39,6 +37,7 @@ class Dashboard():
     Args:
       interval (int, optional): The time interval (ms, default 333) between dashboard updates.
     """
+    from .. import __packagepath__
     # Initialize data.
     self.content = []
     self.refresh = False
@@ -51,8 +50,7 @@ class Dashboard():
     self.app.run_server(debug = False, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
     try:
-      packagepath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
-      splash, meta = load_image(os.path.join(packagepath, "..", "images", "splash.png"), verbose = False)
+      splash, meta = load_image(os.path.join(__packagepath__, "images", "splash.png"), verbose = False)
       self.show({"Welcome": splash})
     except:
       pass
@@ -182,7 +180,7 @@ class Dashboard():
     items = []
     for key, image in imgdict.items():
       n += 1
-      items.append(dict(key = f"{n}", src = prepare_images_as_png_strings(image, sampling = sampling), header = key))
+      items.append(dict(key = f"{n}", src = prepare_images_as_b64strings(image, sampling = sampling), header = key))
     widget = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
              style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
     self.content = [dbc.Tabs([dbc.Tab([widget], label = "Carousel")], active_tab = "tab-0")]
@@ -200,7 +198,7 @@ class Dashboard():
         Only image1[:, ::sampling, ::sampling] and image2[:, ::sampling, ::sampling] are shown, to speed up operations.
     """
     self.refresh = False
-    img1, img2 = prepare_images_as_png_strings(image1, image2, sampling = sampling)
+    img1, img2 = prepare_images_as_b64strings(image1, image2, sampling = sampling)
     left   = html.Div([label2],
                       style = {"width": f"{params.lmargin}px", "margin": "0px", "float": "left",
                                "padding": "4px", "writing-mode": "vertical-rl"})

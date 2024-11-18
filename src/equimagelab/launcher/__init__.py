@@ -9,7 +9,6 @@
 import os
 import sys
 import shutil
-import inspect
 import tkinter
 import tkinter.filedialog
 import tkinter.messagebox
@@ -57,13 +56,13 @@ def run():
     root.destroy()
     sys.exit(0)
 
-  packagepath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
+  from .. import __packagepath__
   # Open Tk window.
   root = tkinter.Tk()
   root.title("eQuimageLab")
   canvas = tkinter.Canvas(root, width = 800, height = 600)
   canvas.pack(side = "top")
-  image = Image.open(os.path.join(packagepath, "..", "images", "splash.png")).resize((800, 600))
+  image = Image.open(os.path.join(__packagepath__, "images", "splash.png")).resize((800, 600))
   imagetk = ImageTk.PhotoImage(image)
   canvas.create_image(0, 0, anchor = "nw", image = imagetk)
   menu = tkinter.Menu(root)

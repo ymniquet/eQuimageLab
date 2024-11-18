@@ -6,10 +6,12 @@
 
 """eQuimage lab."""
 
-__version__ = "1.0.0"
-
 import os
 os.environ["LANGUAGE"] = "en"
+import inspect
+
+__version__ = "1.0.0"
+__packagepath__ = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
 
 # Import everything.
 

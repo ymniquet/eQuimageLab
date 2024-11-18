@@ -16,7 +16,7 @@ pio.renderers.default = "jupyterlab"
 from . import params
 from .utils import prepare_images
 
-from ..equimage.image import Image
+from ..equimage import Image
 
 def _figure_image_(image, sampling = -1, width = -1, template = "plotly_dark"):
   """Prepare a ploty figure for the input image.
