@@ -4,7 +4,7 @@
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
 
-"""Jupyter-lab interface."""
+"""Jupyter lab interface."""
 
 # Import everything.
 

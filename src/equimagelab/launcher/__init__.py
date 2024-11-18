@@ -20,12 +20,6 @@ from PIL import Image, ImageTk
 def run():
   """Run eQuimageLab."""
 
-  def run_jupyter_lab(notebook):
-    """Run jupyter lab on input notebook."""
-    root.destroy()
-    subprocess.run(["jupyter", "lab", notebook])
-    sys.exit(0)
-
   def open_notebook():
     """Select and open a jupyter notebook."""
     # Open file selection dialog.
@@ -43,11 +37,25 @@ def run():
     # Create notebook.
     try:
       shutil.copyfile(os.path.join(packagepath, "equimagelab.ipynb"), notebook)
-    except:
-      tkinter.messagebox.showerror("Error", f"Failed to create notebook {notebook}.")
+    except Exception as err:
+      tkinter.messagebox.showerror("Error", f"Failed to create notebook {notebook}:\n{str(err)}")
       return
     # Run jupyter lab.
     run_jupyter_lab(notebook)
+
+  def run_jupyter_lab(notebook):
+    """Run jupyter lab on input notebook."""
+    try:
+      subprocess.Popen(["jupyter", "lab", notebook])
+    except Exception as err:
+      tkinter.messagebox.showerror("Error", f"Failed to run jupyter lab:\n{str(err)}")
+      return
+    quit()
+
+  def quit():
+    """Quit launcher."""
+    root.destroy()
+    sys.exit(0)
 
   packagepath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
   # Open Tk window.
@@ -61,6 +69,6 @@ def run():
   menu = tkinter.Menu(root)
   menu.add_command(label = "Open notebook", command = open_notebook)
   menu.add_command(label = "New notebook", command = create_new_notebook)
-  menu.add_command(label = "Quit", command = lambda: sys.exit(0))
+  menu.add_command(label = "Quit", command = quit)
   root.config(menu = menu)
   root.mainloop()
