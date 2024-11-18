@@ -35,7 +35,7 @@ def run():
     if notebook == "": return
     # Create notebook.
     try:
-      shutil.copyfile(os.path.join(packagepath, "equimagelab.ipynb"), notebook)
+      shutil.copyfile(os.path.join(__packagepath__, "equimagelab.ipynb"), notebook)
     except Exception as err:
       tkinter.messagebox.showerror("Error", f"Failed to create notebook {notebook}:\n{str(err)}")
       return
