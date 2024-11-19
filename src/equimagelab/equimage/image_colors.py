@@ -182,7 +182,7 @@ class Mixin:
       t.xm = np.linspace(0., 1., 7)
       t.ym = np.append(psat, psat[0])
       t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
-      t.x = np.linspace(0., 1., params.ntrans)
+      t.x = np.linspace(0., 1., params.ntranslo)
       t.y = interpolate(t.x, psat, interpolation)
       t.ylabel = "\u0394"
       output.trans = t

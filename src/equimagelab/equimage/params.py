@@ -20,9 +20,18 @@ IMGTOL = 1.e-6 if IMGTYPE is np.float32 else 1.e-9
 
 IMAGEIO = False
 
-# Number of x mesh points when plotting transformation functions y = f(x in [0, 1]).
+# Exclude pixels <= 0 or >= 1 from the percentiles in image statistics ?
 
-ntrans = 512
+exclude01 = False
+
+# Maximum number of bins in the histograms.
+
+nbinsmax = 32768
+
+# Number of x mesh points for transformation function plots y = f(x in [0, 1]).
+
+ntranslo = 128 # Low  resolution.
+ntranshi = 256 # High resolution.
 
 # Weights of the RGB components in the luma.
 

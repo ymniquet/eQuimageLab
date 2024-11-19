@@ -18,20 +18,22 @@ from . import helpers
 class Mixin:
   """To be included in the Image class."""
 
-  def histograms(self, channels = "RGBL", nbins = None, recompute = False):
+  def histograms(self, channels = "RGBL", nbins = -128, recompute = False):
     """Compute histograms of selected channels of the image.
 
-    The histograms are both returned and embedded in the object as self.hists. Histograms already
-    registered in self.hists are not recomputed unless required.
+    The histograms are both returned and embedded in the object as self.hists. Histograms already registered in self.hists are
+    not recomputed unless required.
 
     Args:
-      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue),
-        "V" (for HSV value), "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the
-        histograms of the value and saturation can be computed. If channels ends with a "*", it gets
-        appended with the keys already computed and stored in self.hists. Default is "RGBL".
-      nbins (int, optional): Number of bins in the histograms (auto if None, default).
-      recompute (bool, optional): If False (default), the histograms already registered in self.hists
-        are not recomputed. If True, all histograms are recomputed.
+      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue),  "V" (for HSV value),
+        "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the histograms of the value and saturation can be
+        computed. If channels ends with a "*", it gets appended with the keys already computed and stored in self.hists.
+        Default is "RGBL".
+      nbins (int, optional): Number of bins within [0, 1] in the histograms. If negative, the number of bins is automatically
+        computed by placing |nbins| points within the largest of the [minimum, median] and [median, maximum] intervals.
+        In any case, the number of bins can not be greater than params.nbinsmax.
+      recompute (bool, optional): If False (default), the histograms already registered in self.hists are not recomputed.
+        If True, all histograms are recomputed.
 
     Returns:
       dict: hists[key] for key in channels, with:
@@ -40,6 +42,7 @@ class Mixin:
         - hists[key].edges = histogram bins edges.
         - hists[key].counts = histogram bins counts.
     """
+    if nbins == 0: raise ValueError("Error, nbins must be non zero.")
     if not hasattr(self, "hists"): self.hists = {} # Register empty histograms in the object, if none already computed.
     if len(channels) > 0: # Append missing keys if channels ends with a "*".
       if channels[-1] == "*":
@@ -86,16 +89,16 @@ class Mixin:
         raise ValueError(f"Error, unknown channel '{key}'.")
       minimum = np.min(channel)
       maximum = np.max(channel)
-      if nbins is None:
+      if nbins < 0:
         median = np.median(channel)
         span = min(median-minimum, maximum-median)
         span = max(span, 1.e-3)
-        nbinsc = int(round(128/span))
+        nbinsc = int(round(abs(nbins)/span))
       else:
         nbinsc = nbins
       nbinsc = int(round(nbinsc*(maximum-minimum)))
-      if nbinsc > 32768: # Limit the number of bins.
-        nbinsc = 32768
+      if nbinsc > params.nbinsmax: # Limit the number of bins.
+        nbinsc = params.nbinsmax
         print(f"Warning, limiting the number of bins to {nbinsc} for channel '{key}'.")
       hists[key] = helpers.Container()
       hists[key].name = name
@@ -104,19 +107,21 @@ class Mixin:
     self.hists = hists
     return hists
 
-  def statistics(self, channels = "RGBL", recompute = False):
+  def statistics(self, channels = "RGBL", exclude01 = None, recompute = False):
     """Compute statistics of selected channels of the image.
 
-    The statistics are both returned and embedded in the object as self.stats. Statistics already
-    registered in self.stats are not recomputed unless required.
+    The statistics are both returned and embedded in the object as self.stats. Statistics already registered in self.stats are
+    not recomputed unless required.
 
     Args:
-      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue),
-        "V" (for HSV value), "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the
-        statistics of the value and saturation can be computed. If channels ends with a "*", it gets
-        appended with the keys already computed and stored in self.stats. Default is "RGBL".
-      recompute (bool, optional): If False (default), the statistics already registered in self.stats
-        are not recomputed. If True, all statistics are recomputed.
+      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
+        "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the statistics of the value and saturation can be
+        computed. If channels ends with a "*", it gets appended with the keys already computed and stored in self.stats.
+        Default is "RGBL".
+      exclude01 (bool, optional): If True, exclude pixels <= 0 or >= 1 from the median and percentiles.
+        Defaults to params.exclude01 if None.
+      recompute (bool, optional): If False (default), the statistics already registered in self.stats are not recomputed.
+        If True, all statistics are recomputed.
 
     Returns:
       dict: stats[key] for key in channels, with:
@@ -126,11 +131,13 @@ class Mixin:
         - stats[key].npixels = number of image pixels = image width*image height (provided for convenience).
         - stats[key].minimum = minimum level.
         - stats[key].maximum = maximum level.
-        - stats[key].median = pr50 = median level (excluding pixels <= 0 and >= 1).
-        - stats[key].percentiles = (pr25, pr50, pr75) = the 25th, 50th and 75th percentiles (excluding pixels <= 0 and >= 1).
+        - stats[key].percentiles = (pr25, pr50, pr75) = the 25th, 50th and 75th percentiles.
+        - stats[key].median = pr50 = median level.
         - stats[key].zerocount = number of pixels <= 0.
         - stats[key].outcount = number of pixels > 1 (out-of-range).
+        - stats[key].exclude01 = True if pixels >= 0 or <= 1 have been excluded from the median and percentiles, False otherwise.
     """
+    if exclude01 is None: exclude01 = params.exclude01
     if not hasattr(self, "stats"): self.stats = {} # Register empty statistics in the object, if none already computed.
     if len(channels) > 0: # Append missing keys if channels ends with a "*".
       if channels[-1] == "*":
@@ -146,8 +153,9 @@ class Mixin:
         print(f"Warning, channel '{key}' selected twice or more...")
         continue
       if not recompute and key in self.stats: # Already computed.
-        stats[key] = self.stats[key]
-        continue
+        if self.stats[key].exclude01 == exclude01:
+          stats[key] = self.stats[key]
+          continue
       if key == "R":
         self.check_color_model("RGB", "gray")
         name = "Red"
@@ -178,14 +186,14 @@ class Mixin:
       stats[key].npixels = npixels
       stats[key].minimum = np.min(channel)
       stats[key].maximum = np.max(channel)
-      mask = (channel >= params.IMGTOL) & (channel <= 1.-params.IMGTOL)
-      if np.any(mask):
-        stats[key].percentiles = np.percentile(channel[mask], [25., 50., 75.])
-        stats[key].median = stats[key].percentiles[1]
+      if exclude01:
+        mask = (channel >= params.IMGTOL) & (channel <= 1.-params.IMGTOL)
+        stats[key].percentiles = np.percentile(channel[mask], [25., 50., 75.]) if np.any(mask) else None
       else:
-        stats[key].percentiles = None
-        stats[key].median = None
+        stats[key].percentiles = np.percentile(channel, [25., 50., 75.])
+      stats[key].median = stats[key].percentiles[1] if stats[key].percentiles is not None else None
       stats[key].zerocount = np.sum(channel < params.IMGTOL)
       stats[key].outcount = np.sum(channel > 1.+params.IMGTOL)
+      stats[key].exclude01 = exclude01
     self.stats = stats
     return stats

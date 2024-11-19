@@ -460,7 +460,7 @@ class Mixin:
       t.type = "hist"
       t.input = self
       t.channels = channels
-      t.x = np.linspace(xmin, xmax, max(int(round(params.ntrans*(xmax-xmin))), 2*params.ntrans))
+      t.x = np.linspace(xmin, xmax, max(int(round(params.ntranshi*(xmax-xmin))), 2*params.ntranshi))
       t.y = f(t.x)
       t.ylabel = "f"
       return t

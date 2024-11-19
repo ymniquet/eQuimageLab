@@ -183,9 +183,14 @@ def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, templa
   for channel in stats.values():
     columns[0].append(channel.name)
     columns[1].append(f"{channel.minimum:.5f}")
-    columns[2].append(f"{channel.percentiles[0]:.5f}")
-    columns[3].append(f"{channel.percentiles[1]:.5f}")
-    columns[4].append(f"{channel.percentiles[2]:.5f}")
+    if channel.percentiles is not None:
+      columns[2].append(f"{channel.percentiles[0]:.5f}")
+      columns[3].append(f"{channel.percentiles[1]:.5f}")
+      columns[4].append(f"{channel.percentiles[2]:.5f}")
+    else:
+      columns[2].append("None")
+      columns[3].append("None")
+      columns[4].append("None")
     columns[5].append(f"{channel.maximum:.5f}")
     columns[6].append(f"{channel.zerocount} ({100.*channel.zerocount/channel.npixels:.2f}%)")
     columns[7].append(f"{channel.outcount} ({100.*channel.outcount/channel.npixels:.2f}%)")

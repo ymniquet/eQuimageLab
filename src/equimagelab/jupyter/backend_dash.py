@@ -236,14 +236,20 @@ def _table_statistics_(image, channels = ""):
   header = [html.Thead(html.Tr([html.Th("Channel", style = {"text-align": "left"}), html.Th("Minimum"), html.Th("25%"), html.Th("50%"),
                                 html.Th("75%"), html.Th("Maximum"), html.Th("Shadowed"), html.Th("Highlighted")]))]
   rows = []
+  exclude01 = False
   for channel in stats.values():
+    exclude01 = exclude01 or channel.exclude01
+    deco = "\u207d\u2071\u207e" if channel.exclude01 else ""
+    if channel.percentiles is not None:
+      percentiles = [f"{channel.percentiles[0]:.5f}{deco}", f"{channel.percentiles[1]:.5f}{deco}", f"{channel.percentiles[2]:.5f}{deco}"]
+    else:
+      percentiles = 3*[f"None{deco}"]
     rows.append(html.Tr([html.Td(channel.name, style = {"text-align": "left"}), html.Td(f"{channel.minimum:.5f}"),
-                         html.Td(f"{channel.percentiles[0]:.5f}"), html.Td(f"{channel.percentiles[1]:.5f}"),
-                         html.Td(f"{channel.percentiles[2]:.5f}"), html.Td(f"{channel.maximum:.5f}"),
+                         html.Td(percentiles[0]), html.Td(percentiles[1]),
+                         html.Td(percentiles[2]), html.Td(f"{channel.maximum:.5f}"),
                          html.Td(f"{channel.zerocount} ({100.*channel.zerocount/channel.npixels:.2f}%)"),
                          html.Td(f"{channel.outcount} ({100.*channel.outcount/channel.npixels:.2f}%)")]))
   body = [html.Tbody(rows)]
-  table = dbc.Table(header+body, size = "sm", bordered = True, striped = True,
-                    style = {"text-align": "right", "width": f"{params.maxwidth}px",
-                             "margin": f"32px {params.rmargin}px 32px {params.lmargin}px"})
-  return table
+  table = [dbc.Table(header+body, size = "sm", bordered = True, striped = True, style = {"text-align": "right", "width": f"{params.maxwidth}px"})]
+  if exclude01: table.append("\u207d\u2071\u207e Does not include pixels <= 0 or >= 1.")
+  return html.Div(table, style = {"margin": f"32px {params.rmargin}px 32px {params.lmargin}px"})
