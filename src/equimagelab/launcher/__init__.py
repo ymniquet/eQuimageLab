@@ -34,8 +34,10 @@ def run():
                                                     initialdir = Path.home(), initialfile = "eqlab.ipynb", defaultextension = ".ipynb")
     if notebook == "": return
     # Create notebook.
+    template = os.path.join(__packagepath__, "launcher", "equimagelab.ipynb")
+    print(f"Copying {template} as {notebook}...")
     try:
-      shutil.copyfile(os.path.join(__packagepath__, "equimagelab.ipynb"), notebook)
+      shutil.copyfile(template, notebook)
     except Exception as err:
       tkinter.messagebox.showerror("Error", f"Failed to create notebook {notebook}:\n{str(err)}")
       return
@@ -44,6 +46,7 @@ def run():
 
   def run_jupyter_lab(notebook):
     """Run jupyter lab on input notebook."""
+    print(f"Opening {notebook} with jupyter lab...")
     try:
       subprocess.Popen(["jupyter", "lab", notebook])
     except Exception as err:
