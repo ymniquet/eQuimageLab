@@ -65,9 +65,13 @@ def run():
   root.title("eQuimageLab")
   canvas = tkinter.Canvas(root, width = 800, height = 600)
   canvas.pack(side = "top")
-  image = Image.open(os.path.join(__packagepath__, "images", "splash.png")).resize((800, 600))
-  imagetk = ImageTk.PhotoImage(image)
-  canvas.create_image(0, 0, anchor = "nw", image = imagetk)
+  try:
+    image = Image.open(os.path.join(__packagepath__, "images", "splash.png")).resize((800, 600))
+  except:
+    pass
+  else:
+    imagetk = ImageTk.PhotoImage(image)
+    canvas.create_image(0, 0, anchor = "nw", image = imagetk)
   menu = tkinter.Menu(root)
   menu.add_command(label = "Open notebook", command = open_notebook)
   menu.add_command(label = "New notebook", command = create_new_notebook)

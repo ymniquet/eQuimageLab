@@ -52,9 +52,10 @@ class Dashboard():
     # Display splash image.
     try:
       splash, meta = load_image(os.path.join(__packagepath__, "images", "splash.png"), verbose = False)
-      self.show({"Welcome": splash})
     except:
       pass
+    else:
+      self.show({"Welcome": splash})
 
   def __layout_dashboard(self):
     """Lay out dashboard."""

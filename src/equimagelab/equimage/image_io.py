@@ -19,9 +19,7 @@ else:
 import astropy.io.fits as pyfits
 
 def load_image_as_array(filename, verbose = True):
-  """Load an image from a file.
-
-  Note: The color space is assumed to be sRGB and the color model "RGB" or "gray".
+  """Load a RGB or grayscale image from a file.
 
   Args:
     filename (str): The file name.
@@ -33,12 +31,13 @@ def load_image_as_array(filename, verbose = True):
   if verbose: print(f"Loading file {filename}...")
   try:
     header = PILImage.open(filename)
-    fmt = header.format
-    if verbose: print(f"Format = {fmt}.")
   except:
     header = None
     fmt = None
     if verbose: print("Failed to identify image file format; Attempting to load anyway...")
+  else:
+    fmt = header.format
+    if verbose: print(f"Format = {fmt}.")
   if fmt == "PNG": # Load with the FreeImage plugin to enable 16 bits color depth.
     image = iio.imread(filename, plugin = "PNG-FI") if params.IMAGEIO else skio.imread(filename)
   elif fmt == "TIFF":
@@ -88,19 +87,19 @@ def load_image_as_array(filename, verbose = True):
   if nc == 4: image = image[0:3]*image[3] # Assume fourth channel is transparency.
   try:
     exif = header.getexif()
-    if verbose: print("Succesfully read EXIF data...")
   except:
     exif = None
+  else:
+    if verbose: print("Succesfully read EXIF data...")
   meta = {"exif": exif, "colordepth": bpc}
   return np.ascontiguousarray(image), meta
 
-def load_image(filename, verbose = True):
-  """Load an image from a file.
-
-  Note: The color space is assumed to be sRGB and the color model "RGB" or "gray".
+def load_image(filename, colorspace = "sRGB", verbose = True):
+  """Load a RGB or grayscale image from a file.
 
   Args:
     filename (str): The file name.
+    colorspace (str, optional): The colorspace of the image [either "sRGB" (default) or "lRGB" for linear RGB images].
     verbose (bool, optional): If True (default), print information about the image.
 
   Returns:
@@ -108,13 +107,12 @@ def load_image(filename, verbose = True):
   """
   from .image import Image
   image, meta = load_image_as_array(filename, verbose = verbose)
-  return Image(image), meta
+  return Image(image, colorspace = colorspace, colormodel = "RGB"), meta
 
 def save_image(image, filename, depth = 8, verbose = True):
-  """Save image as a file.
+  """Save a RGB or grayscale image as a file.
 
-  Note: The color model must be "RGB" or "gray", but the color space is *not* embedded
-    in the file at present.
+  Note: The color space is *not* embedded in the file at present.
 
   Args:
     image (Image): The image.
