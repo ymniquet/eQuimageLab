@@ -9,6 +9,7 @@
 # TODO:
 #  - Display RGB levels on images.
 #  - Bind zooms across tabs.
+#  - Update tabs only if necessary.
 
 import os
 import numpy as np
