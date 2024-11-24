@@ -140,7 +140,7 @@ class Mixin:
     """
     return skim.restoration.estimate_sigma(self.image, channel_axis = 0, average_sigmas = True)
 
-  def wavelets_filter(self, sigma, wavelet = "coif4", mode = "soft", method = "Bayeshrink", shifts = 0, channels = "L"):
+  def wavelets_filter(self, sigma, wavelet = "coif4", mode = "soft", method = "BayesShrink", shifts = 0, channels = "L"):
     """Wavelets filter for denoising selected channels of the image.
 
     Performs a wavelets transform on the selected channels and filters the wavelets to reduce noise.

@@ -12,6 +12,7 @@
 #  - Update tabs only if necessary.
 
 import os
+import threading
 import numpy as np
 import dash
 from dash import Dash, dcc, html
@@ -35,7 +36,7 @@ class Dashboard():
     separate browser tab or window.
     It fetches updates from the Dash server at given intervals.
 
-    Args:
+    Args:db = eql.Dashboard()
       interval (int, optional): The time interval (ms, default 333) between dashboard updates.
     """
     from .. import __packagepath__
@@ -43,11 +44,14 @@ class Dashboard():
     self.content = []
     self.refresh = False
     self.interval = interval
+    self.updatelock = threading.Lock()
     # Set-up Dash app.
     dbt.load_figure_template("slate")
     self.app = Dash(title = "eQuimageLab dashboard", update_title = None, external_stylesheets = [dbc.themes.SLATE])
     self.app.layout = self.__layout_dashboard
-    self.app.callback(dash.dependencies.Output("dashboard", "children"), dash.dependencies.Input("update-dashboard", "n_intervals"))(self.__update_dashboard)
+    self.app.callback(dash.dependencies.Output("dashboard", "children"),
+                      dash.dependencies.Input("update-dashboard", "n_intervals"),
+                      running = [dash.dependencies.Output("update-dashboard", "disabled"), True, False])(self.__update_dashboard)
     self.app.run_server(debug = False, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
     try:
@@ -66,12 +70,16 @@ class Dashboard():
   def __update_dashboard(self, n):
     """Callback for dashboard updates.
 
+    To do: Prevent re-entrance.
+
     Args:
       n: The number of calls since the start of the application.
     """
     refresh = self.refresh
-    if refresh: self.refresh = False
-    return self.content if refresh else dash.no_update
+    if not refresh: return dash.no_update
+    with self.updatelock: # Lock on update.
+      self.refresh = False
+      return self.content
 
   def show(self, images, histograms = False, statistics = False, sampling = -1, trans = None):
     """Show image(s) on the dashboard.
@@ -122,8 +130,9 @@ class Dashboard():
         table = _table_statistics_(image, channels = statistics)
         if table is not None: tab.append(table)
       tabs.append(dbc.Tab(tab, label = key))
-    self.content = [dbc.Tabs(tabs, active_tab = "tab-0")]
-    self.refresh = True
+    with self.updatelock: # Lock on update.
+      self.content = [dbc.Tabs(tabs, active_tab = "tab-0")]
+      self.refresh = True
 
   def show_t(self, image, channels = "RGBL", sampling = -1):
     """Show the input and output images of an histogram transformation on the dashboard.
@@ -185,8 +194,9 @@ class Dashboard():
       items.append(dict(key = f"{n}", src = prepare_images_as_b64strings(image, sampling = sampling), header = key))
     widget = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
              style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
-    self.content = [dbc.Tabs([dbc.Tab([widget], label = "Carousel")], active_tab = "tab-0")]
-    self.refresh = True
+    with self.updatelock: # Lock on update.
+      self.content = [dbc.Tabs([dbc.Tab([widget], label = "Carousel")], active_tab = "tab-0")]
+      self.refresh = True
 
   def slide(self, image1, image2, label1 = "Image", label2 = "Reference", sampling = -1):
     """Compare two images with a "before/after" slider on the dashboard.
@@ -212,8 +222,9 @@ class Dashboard():
     widget = html.Div([left, center, right],
                       style = {"width": f"{params.maxwidth+params.lmargin+params.rmargin}px",
                                "margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
-    self.content = [dbc.Tabs([dbc.Tab([widget], label = "Compare images")], active_tab = "tab-0")]
-    self.refresh = True
+    with self.updatelock: # Lock on update.
+      self.content = [dbc.Tabs([dbc.Tab([widget], label = "Compare images")], active_tab = "tab-0")]
+      self.refresh = True
 
 def _table_statistics_(image, channels = ""):
   """Prepare a table with the statistics of an image.
