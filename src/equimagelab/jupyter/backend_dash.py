@@ -7,9 +7,9 @@
 """Dash backend for Jupyter-lab interface."""
 
 # TODO:
-#  - Display RGB levels on images.
 #  - Bind zooms across tabs.
 #  - Update tabs only if necessary.
+#  - Shadows/Highlights/Differences.
 
 import os
 import threading
@@ -81,7 +81,7 @@ class Dashboard():
       self.refresh = False
       return self.content
 
-  def show(self, images, histograms = False, statistics = False, sampling = -1, trans = None):
+  def show(self, images, histograms = False, statistics = False, sampling = -1, hoverdata = False, trans = None):
     """Show image(s) on the dashboard.
 
     Args:
@@ -95,7 +95,9 @@ class Dashboard():
       statistics (optional): If True or a string, show the statistics of the image(s). The string lists the
         channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
       sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-        Only images[:, ::sampling, ::sampling] are shown, to speed up operations.
+        Only images[:, ::sampling, ::sampling] are shown, to speed up display.
+      hoverdata (bool, optional): If True, show the image data on hover (default False).
+        Warning: Setting hoverdata = True can slow down display a lot !
       trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on
         top of the histograms of the "Reference" tab (default None).
     """
@@ -119,11 +121,11 @@ class Dashboard():
     tabs = []
     for key, image in imgdict.items():
       tab = []
-      tab.append(dcc.Graph(figure = _figure_image_(image, sampling = sampling, width = params.maxwidth, template = "slate")))
+      tab.append(dcc.Graph(figure = _figure_image_(image, sampling = sampling, width = params.maxwidth, hoverdata = hoverdata, template = "slate")))
       if histograms is not False:
         if histograms is True: histograms = ""
-        figure = _figure_histograms_(image, channels = histograms, log = True, trans = trans if key == "Reference" else None,
-                                     width = params.maxwidth, template = "slate")
+        figure = _figure_histograms_(image, channels = histograms, log = True, width = params.maxwidth,
+                                     trans = trans if key == "Reference" else None, template = "slate")
         if figure is not None: tab.append(dcc.Graph(figure = figure))
       if statistics is not False:
         if statistics is True: statistics = ""
@@ -134,7 +136,7 @@ class Dashboard():
       self.content = [dbc.Tabs(tabs, active_tab = "tab-0")]
       self.refresh = True
 
-  def show_t(self, image, channels = "RGBL", sampling = -1):
+  def show_t(self, image, channels = "RGBL", sampling = -1, hoverdata = False):
     """Show the input and output images of an histogram transformation on the dashboard.
 
     Displays the input image, histograms, statistics, and transformation curve in tab "Reference",
@@ -145,7 +147,9 @@ class Dashboard():
       channels (str, optional): The channels of the histograms and statistics (default "RGBL" for red,
         green, blue, luma). The channels of the transformation are added if needed.
       sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-        Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
+        Only image[:, ::sampling, ::sampling] is shown, to speed up display.
+      hoverdata (bool, optional): If True, show the image data on hover (default False).
+        Warning: Setting hoverdata = True can slow down display a lot !
     """
     if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
     trans = getattr(image, "trans", None)
@@ -157,7 +161,8 @@ class Dashboard():
       for c in trans.channels:
         if c in "RGBVSL" and not c in channels:
           channels += c
-    self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels, trans = trans, sampling = sampling)
+    self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
+              sampling = sampling, hoverdata = hoverdata, trans = trans)
 
   def carousel(self, images, sampling = -1, interval = 2000):
     """Show a carousel of images on the dashboard.
@@ -167,7 +172,7 @@ class Dashboard():
         The images are captioned according to the keys for a dictionary. Otherwise, the images are captioned
         "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
       sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-        Only images[:, ::sampling, ::sampling] are shown, to speed up operations.
+        Only images[:, ::sampling, ::sampling] are shown, to speed up display.
       interval (int, optional): The interval (ms) between image switches in the carousel (default 2000).
     """
     self.refresh = False
@@ -207,7 +212,7 @@ class Dashboard():
       label1 (str, optional): The label of the first image (default "Image").
       label2 (str, optional): The label of the second image (default "Reference").
       sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-        Only image1[:, ::sampling, ::sampling] and image2[:, ::sampling, ::sampling] are shown, to speed up operations.
+        Only image1[:, ::sampling, ::sampling] and image2[:, ::sampling, ::sampling] are shown, to speed up display.
     """
     self.refresh = False
     img1, img2 = prepare_images_as_b64strings(image1, image2, sampling = sampling)

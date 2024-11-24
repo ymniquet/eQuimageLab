@@ -18,14 +18,16 @@ from .utils import prepare_images
 
 from ..equimage import Image
 
-def _figure_image_(image, sampling = -1, width = -1, template = "plotly_dark"):
+def _figure_image_(image, sampling = -1, width = -1, hoverdata = False, template = "plotly_dark"):
   """Prepare a ploty figure for the input image.
 
   Args:
     image: The image (Image object or numpy.ndarray).
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-      Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
+      Only image[:, ::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
+    hoverdata (bool, optional): If True, show the image data on hover (default False).
+      Warning: Setting hoverdata = True can slow down display a lot !
     template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
@@ -39,27 +41,26 @@ def _figure_image_(image, sampling = -1, width = -1, template = "plotly_dark"):
   else:
     img = np.moveaxis(img, 0, -1)
   # Plot image.
-  raster = px.imshow(img, zmin = 0., zmax = 1., aspect = "equal", binary_string = True)
-  figure = go.Figure(data = raster)
+  imshow = px.imshow(img, zmin = 0., zmax = 1., aspect = "equal", binary_string = not hoverdata)
+  imshow.update_traces(name = "", hovertemplate = "(%{x}, %{y}): %{z}" if hoverdata else "(%{x}, %{y})")
+  figure = go.Figure(data = imshow)
   layout = go.Layout(template = template,
                      width = width+params.lmargin+params.rmargin, height = width*img.shape[0]/img.shape[1]+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
-  #figure.update_xaxes(title_text = "x (pixels)")
-  #figure.update_yaxes(title_text = "y (pixels)")
   figure.update_layout(layout)
   return figure
 
-def _figure_histograms_(image, channels = "", log = True, trans = None, xlabel = "Level", width = -1, template = "plotly_dark"):
+def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "Level", trans = None, template = "plotly_dark"):
   """Prepare a plotly figure with the histograms of an image.
 
   Args:
     image (Image): The image.
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
     log (bool, optional): If True (default), plot the histogram counts in log scale.
+    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
+    xlabel (str, optional): The x axis label of the plot (default "Level").
     trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on top
       of the histograms (default None).
-    xlabel (str, optional): The x axis label of the plot (default "Level").
-    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
@@ -206,7 +207,7 @@ def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, templa
   figure.update_layout(layout)
   return figure
 
-def show(image, histograms = False, statistics = False, sampling = -1, width = -1, renderer = None):
+def show(image, histograms = False, statistics = False, sampling = -1, width = -1, hoverdata = False, renderer = None):
   """Show an image using plotly.
 
   Args:
@@ -216,11 +217,13 @@ def show(image, histograms = False, statistics = False, sampling = -1, width = -
     statistics (optional): If True or a string, show the statistics of the image. The string lists the
       channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-      Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
+      Only image[:, ::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
+    hoverdata (bool, optional): If True, show the image data on hover (default False).
+      Warning: Setting hoverdata = True can slow down display a lot !
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
-  figure = _figure_image_(image, sampling = sampling, width = width)
+  figure = _figure_image_(image, sampling = sampling, width = width, hoverdata = hoverdata)
   figure.show(renderer)
   if histograms is not False:
     if histograms is True: histograms = ""
@@ -229,20 +232,20 @@ def show(image, histograms = False, statistics = False, sampling = -1, width = -
     if statistics is True: statistics = ""
     show_statistics(image, channels = statistics, width = width, renderer = renderer)
 
-def show_histograms(image, channels = "", log = True, trans = None, xlabel = "Level", width = -1, renderer = None):
+def show_histograms(image, channels = "", log = True, width = -1, xlabel = "Level", trans = None, renderer = None):
   """Plot the histograms of an image using plotly.
 
   Args:
     image (Image): The image.
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
     log (bool, optional): If True (default), plot the histogram counts in log scale.
+    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
+    xlabel (str, optional): The x axis label of the plot (default "Level").
     trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on top
       of the histograms (default None).
-    xlabel (str, optional): The x axis label of the plot (default "Level").
-    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
-  figure = _figure_histograms_(image, channels = channels, log = log, trans = trans, xlabel = xlabel, width = width)
+  figure = _figure_histograms_(image, channels = channels, log = log, width = width, xlabel = xlabel, trans = trans)
   if figure is not None: figure.show(renderer)
 
 def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer = None):
@@ -258,7 +261,7 @@ def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer =
   figure = _figure_statistics_(image, channels = channels, width = width, rowheight = rowheight)
   if figure is not None: figure.show(renderer)
 
-def show_t(image, channels = "RGBL", sampling = -1, width = -1, renderer = None):
+def show_t(image, channels = "RGBL", sampling = -1, width = -1, hoverdata = False, renderer = None):
   """Show an image embedding an histogram transformation using plotly.
 
   Displays the input histograms with the transformation curve, the output histograms, and the output image.
@@ -268,8 +271,10 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, renderer = None)
     channels (str, optional): The channels of the histograms (default "RGBL" for red, green, blue, luma).
       The channels of the transformation are added if needed.
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-      Only image[:, ::sampling, ::sampling] is shown, to speed up operations.
+      Only image[:, ::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
+    hoverdata (bool, optional): If True, show the image data on hover (default False).
+      Warning: Setting hoverdata = True can slow down display a lot !
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
   if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
@@ -282,6 +287,6 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, renderer = None)
     for c in trans.channels:
       if c in "RGBVSL" and not c in channels:
         channels += c
-  show_histograms(reference, channels = channels, log = True, trans = trans, xlabel = "Input level", width = width, renderer = renderer)
-  show_histograms(image, channels = channels, log = True, xlabel = "Output level", width = width, renderer = renderer)
-  show(image, histograms = False, statistics = False, sampling = sampling, width = width, renderer = renderer)
+  show_histograms(reference, channels = channels, log = True, width = width, xlabel = "Input level", trans = trans, renderer = renderer)
+  show_histograms(image, channels = channels, log = True, width = width, xlabel = "Output level", renderer = renderer)
+  show(image, histograms = False, statistics = False, sampling = sampling, width = width, hoverdata = hoverdata, renderer = renderer)
