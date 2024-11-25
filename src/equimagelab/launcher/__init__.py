@@ -19,20 +19,12 @@ from PIL import Image, ImageTk
 def run():
   """Run eQuimageLab."""
 
-  def open_notebook():
-    """Select and open a jupyter notebook."""
-    # Open file selection dialog.
-    notebook = tkinter.filedialog.askopenfilename(title = "Open notebook", filetypes = [("Jupyter notebooks", "*.ipynb")], initialdir = Path.home())
-    if notebook == "": return
-    # Run jupyter lab.
-    run_jupyter_lab(notebook)
-
-  def create_new_notebook():
+  def new_notebook():
     """Create and open a new jupyter notebook."""
     # Open file selection dialog.
     notebook = tkinter.filedialog.asksaveasfilename(title = "Save new notebook as", filetypes = [("Jupyter notebooks", "*.ipynb")],
                                                     initialdir = Path.home(), initialfile = "eqlab.ipynb", defaultextension = ".ipynb")
-    if notebook == "": return
+    if not notebook: return
     # Create notebook.
     template = os.path.join(__packagepath__, "launcher", "equimagelab.ipynb")
     print(f"Copying {template} as {notebook}...")
@@ -44,11 +36,31 @@ def run():
     # Run jupyter lab.
     run_jupyter_lab(notebook)
 
-  def run_jupyter_lab(notebook):
-    """Run jupyter lab on input notebook."""
-    print(f"Opening {notebook} with jupyter lab...")
+  def open_notebook():
+    """Select and open a jupyter notebook."""
+    # Open file selection dialog.
+    notebook = tkinter.filedialog.askopenfilename(title = "Open notebook", filetypes = [("Jupyter notebooks", "*.ipynb")], initialdir = Path.home())
+    if not notebook: return
+    # Run jupyter lab.
+    run_jupyter_lab(notebook)
+
+  def open_directory():
+    """Run jupyter lab in a selected directory."""
+    # Open directory selection dialog.
+    directory = tkinter.filedialog.askdirectory(title = "Open directory", initialdir = Path.home())
+    if not directory: return
+    # Run jupyter lab.
+    run_jupyter_lab(f"--notebook-dir={directory}")
+
+  def run_jupyter_lab(options = ""):
+    """Run jupyter lab.
+
+    Args:
+      options (str): Options for the jupyter lab command (default "").
+    """
+    print(f"Running jupyter lab {options}...")
     try:
-      subprocess.Popen(["jupyter", "lab", notebook])
+      subprocess.Popen(["jupyter", "lab", options])
     except Exception as err:
       tkinter.messagebox.showerror("Error", f"Failed to run jupyter lab:\n{str(err)}")
       return
@@ -60,9 +72,17 @@ def run():
     sys.exit(0)
 
   from .. import __packagepath__
-  # Open Tk window.
+  # Open root Tk window.
   root = tkinter.Tk()
   root.title("eQuimageLab")
+  # Configure menu.
+  menu = tkinter.Menu(root)
+  menu.add_command(label = "New notebook", command = new_notebook)
+  menu.add_command(label = "Open notebook", command = open_notebook)
+  menu.add_command(label = "Open directory", command = open_directory)
+  menu.add_command(label = "Quit", command = quit)
+  root.config(menu = menu)
+  # Display splash screen.
   canvas = tkinter.Canvas(root, width = 800, height = 600)
   canvas.pack(side = "top")
   try:
@@ -72,9 +92,5 @@ def run():
   else:
     imagetk = ImageTk.PhotoImage(image)
     canvas.create_image(0, 0, anchor = "nw", image = imagetk)
-  menu = tkinter.Menu(root)
-  menu.add_command(label = "Open notebook", command = open_notebook)
-  menu.add_command(label = "New notebook", command = create_new_notebook)
-  menu.add_command(label = "Quit", command = quit)
-  root.config(menu = menu)
+  # Start Tk main loop.
   root.mainloop()
