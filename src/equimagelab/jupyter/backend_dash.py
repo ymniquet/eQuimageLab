@@ -21,7 +21,7 @@ import dash_extensions as dxt
 
 from . import params
 from .utils import get_image_size, prepare_images, prepare_images_as_b64strings
-from .backend_plotly import _figure_image_, _figure_histograms_
+from .backend_plotly import _figure_prepared_image_, _figure_histograms_
 
 from ..equimage import Image, load_image
 
@@ -42,6 +42,7 @@ class Dashboard():
     from dash.dependencies import Input, Output, State, ALL, MATCH
     # Initialize object data.
     self.content = []
+    self.images = None
     self.refresh = False
     self.interval = interval
     self.updatelock = threading.Lock()
@@ -49,11 +50,11 @@ class Dashboard():
     dbt.load_figure_template("slate")
     self.app = Dash(title = "eQuimageLab dashboard", update_title = None, external_stylesheets = [dbc.themes.SLATE])
     self.app.layout = self.__layout_dashboard
-    # Register callbacks...
-    # ...dashboard update:
+    # Register callbacks:
+    # Dashboard update.
     self.app.callback(Output("dashboard", "children"), Input("update-dashboard", "n_intervals"),
                       running = [Output("update-dashboard", "disabled"), True, False])(self.__update_dashboard)
-    # ...zoom synchronization:
+    # Zoom synchronization.
     self.app.callback(Output({"type": "synczooms", "index": ALL}, "relayoutData"), Output({"type": "synczooms", "index": ALL}, "figure"),
                       Input({"type": "synczooms", "index": ALL}, "relayoutData"), State({"type": "synczooms", "index": ALL}, "figure"))(self.__sync_zooms)
     # Launch Dash server.
@@ -97,10 +98,10 @@ class Dashboard():
     trigger = ctx.triggered_id # Get figure id which triggered the callback.
     if not trigger: return relayout_data, figure_states
     trigger_data = relayout_data[trigger["index"]]
-    xauto = trigger_data.get("xaxis.autorange")
+    xauto = trigger_data.get("xaxis.autorange", False)
     if not xauto:
       x1 = trigger_data["xaxis.range[0]"] ; x2 = trigger_data["xaxis.range[1]"]
-    yauto = trigger_data.get("yaxis.autorange")
+    yauto = trigger_data.get("yaxis.autorange", False)
     if not yauto:
       y1 = trigger_data["yaxis.range[0]"] ; y2 = trigger_data["yaxis.range[1]"]
     for figure_state in figure_states:
@@ -112,7 +113,7 @@ class Dashboard():
         figure_state["layout"]["yaxis"]["range"] = [y1, y2]
     return [trigger_data]*len(relayout_data), figure_states
 
-  def show(self, images, histograms = False, statistics = False, sampling = -1, hoverdata = False, synczooms = True, trans = None):
+  def show(self, images, histograms = False, statistics = False, sampling = -1, hover = False, click = True, synczooms = True, trans = None):
     """Show image(s) on the dashboard.
 
     Args:
@@ -127,8 +128,9 @@ class Dashboard():
         channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
       sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
         Only images[:, ::sampling, ::sampling] are shown, to speed up display.
-      hoverdata (bool, optional): If True, show the images data on hover (default False).
-        Warning: Setting hoverdata = True can slow down display a lot !
+      hover (bool, optional): If True, show the images data on hover (default False).
+        Warning: Setting hover = True can slow down display a lot !
+      click (bool, optional): If True, show the images data on click (default True).
       synczooms (bool, optional): If True (default), synchronize zooms over the images (default False).
         Zooms can be synchronized only if all images have the same size.
       trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on
@@ -139,46 +141,52 @@ class Dashboard():
     if isinstance(images, (tuple, list)):
       nimages = len(images)
       if nimages == 1:
-        imgdict = {"Image": images[0]}
+        keys = ["Image"]
       elif nimages == 2:
-        imgdict = {"Image": images[0], "Reference": images[1]}
+        keys = ["Image", "Reference"]
       else:
-        imgdict = {f"Image #{n}": image for n, image in enumerate(images)}
+        keys = [f"Image #{n}" for n in range(nimages)]
     elif isinstance(images, dict):
-      imgdict = images
+      nimages = len(images)
+      keys = list(images.keys())
+      images = list(images.values())
     else:
-      imgdict = {"Image": images}
+      nimages = 1
+      keys = ["Image"]
+      images = [images]
+    # Prepare images.
+    self.images = prepare_images(images, sampling = sampling)
     # Check if zooms can be synchronized.
-    synczooms = synczooms and len(imgdict) > 1
+    synczooms = synczooms and nimages > 1
     if synczooms:
-      imglist = list(imgdict.values())
-      size = get_image_size(imglist[0])
-      for image in imglist[1:]:
-        synczooms = (get_image_size(image) == size)
+      size = self.images[0].shape[1:3]
+      for image in self.images[1:]:
+        synczooms = (image.shape[1:3] == size)
         if not synczooms: break
     idtype = "synczooms" if synczooms else "nosynczooms"
     # Set-up tabs.
     tabs = []
-    for n, (key, image) in enumerate(imgdict.items()):
+    for n in range(nimages):
       tab = []
       tab.append(dcc.Graph(id = {"type": idtype, "index": n},
-                 figure = _figure_image_(image, sampling = sampling, width = params.maxwidth, hoverdata = hoverdata, template = "slate")))
+                 figure = _figure_prepared_image_(self.images[n], width = params.maxwidth, hover = hover, template = "slate")))
       if histograms is not False:
         if histograms is True: histograms = ""
-        figure = _figure_histograms_(image, channels = histograms, log = True, width = params.maxwidth,
-                                     trans = trans if key == "Reference" else None, template = "slate")
+        figure = _figure_histograms_(images[n], channels = histograms, log = True, width = params.maxwidth,
+                                     trans = trans if keys[n] == "Reference" else None, template = "slate")
         if figure is not None: tab.append(dcc.Graph(figure = figure))
       if statistics is not False:
         if statistics is True: statistics = ""
-        table = _table_statistics_(image, channels = statistics)
+        table = _table_statistics_(images[n], channels = statistics)
         if table is not None: tab.append(table)
-      tabs.append(dbc.Tab(tab, label = key))
+      tabs.append(dbc.Tab(tab, label = keys[n]))
     # Update dashboard.
+    if not click: self.images = None # No need to register images for the callbacks.
     with self.updatelock: # Lock on update.
       self.content = [dbc.Tabs(tabs, active_tab = "tab-0")]
       self.refresh = True
 
-  def show_t(self, image, channels = "RGBL", sampling = -1, hoverdata = False, synczooms = True):
+  def show_t(self, image, channels = "RGBL", sampling = -1, hover = False, synczooms = True):
     """Show the input and output images of an histogram transformation on the dashboard.
 
     Displays the input image, histograms, statistics, and transformation curve in tab "Reference",
@@ -190,8 +198,8 @@ class Dashboard():
         green, blue, luma). The channels of the transformation are added if needed.
       sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
         Only image[:, ::sampling, ::sampling] is shown, to speed up display.
-      hoverdata (bool, optional): If True, show the images data on hover (default False).
-        Warning: Setting hoverdata = True can slow down display a lot !
+      hover (bool, optional): If True, show the images data on hover (default False).
+        Warning: Setting hover = True can slow down display a lot !
       synczooms (bool, optional): If True (default), synchronize zooms over the images (default False).
     """
     if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
@@ -205,7 +213,7 @@ class Dashboard():
         if c in "RGBVSL" and not c in channels:
           channels += c
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
-              sampling = sampling, hoverdata = hoverdata, synczooms = synczooms, trans = trans)
+              sampling = sampling, hover = hover, synczooms = synczooms, trans = trans)
 
   def carousel(self, images, sampling = -1, interval = 2000):
     """Show a carousel of images on the dashboard.
@@ -223,22 +231,27 @@ class Dashboard():
     if isinstance(images, (tuple, list)):
       nimages = len(images)
       if nimages == 1:
-        imgdict = {"Image": images[0]}
+        keys = ["Image"]
       elif nimages == 2:
-        imgdict = {"Image": images[0], "Reference": images[1]}
+        keys = ["Image", "Reference"]
       else:
-        imgdict = {f"Image #{n}": image for n, image in enumerate(images)}
+        keys = [f"Image #{n}" for n in range(nimages)]
     elif isinstance(images, dict):
-      imgdict = images
+      nimages = len(images)
+      keys = list(images.keys())
+      images = list(images.values())
     else:
-      imgdict = {"Image": images}
+      nimages = 1
+      keys = ["Image"]
+      images = [images]
     # Set-up carousel.
     items = []
-    for n, (key, image) in enumerate(imgdict.items()):
-      items.append(dict(key = f"{n}", src = prepare_images_as_b64strings(image, sampling = sampling), header = key))
+    for n in range(nimages):
+      items.append(dict(key = f"{n}", src = prepare_images_as_b64strings(images[n], sampling = sampling), header = keys[n]))
     widget = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
              style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
     # Update dashboard.
+    self.images = None # No need to register images for the callbacks.
     with self.updatelock: # Lock on update.
       self.content = [dbc.Tabs([dbc.Tab([widget], label = "Carousel")], active_tab = "tab-0")]
       self.refresh = True
@@ -256,11 +269,11 @@ class Dashboard():
     """
     self.refresh = False
     # Set-up before/after widget.
-    img1, img2 = prepare_images_as_b64strings(image1, image2, sampling = sampling)
+    image1, image2 = prepare_images_as_b64strings((image1, image2), sampling = sampling)
     left   = html.Div([label2],
                       style = {"width": f"{params.lmargin}px", "margin": "0px", "float": "left",
                                "padding": "4px", "writing-mode": "vertical-rl"})
-    center = html.Div([dxt.BeforeAfter(before = dict(src = img1), after = dict(src = img2), width = f"{params.maxwidth}")],
+    center = html.Div([dxt.BeforeAfter(before = dict(src = image1), after = dict(src = image2), width = f"{params.maxwidth}")],
                       style = {"width": f"{params.maxwidth}px", "margin": "0px", "float": "left"})
     right  = html.Div([label1],
                       style = {"margin": "0px", "float": "left",
@@ -269,6 +282,7 @@ class Dashboard():
                       style = {"width": f"{params.maxwidth+params.lmargin+params.rmargin}px",
                                "margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
     # Update dashboard.
+    self.images = None # No need to register images for the callbacks.
     with self.updatelock: # Lock on update.
       self.content = [dbc.Tabs([dbc.Tab([widget], label = "Compare images")], active_tab = "tab-0")]
       self.refresh = True

@@ -18,7 +18,32 @@ from .utils import prepare_images
 
 from ..equimage import Image
 
-def _figure_image_(image, sampling = -1, width = -1, hoverdata = False, template = "plotly_dark"):
+def _figure_prepared_image_(image, width = -1, hover = False, template = "plotly_dark"):
+  """Prepare a ploty figure for the input (prepared) image.
+
+  Args:
+    image (numpy.ndarray): The prepared image (processed by utils.prepare_images).
+    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
+    hover (bool, optional): If True, show the image data on hover (default False).
+      Warning: Setting hover = True can slow down display a lot !
+    template (str, optional): The template for the figure (default "plotly_dark").
+
+  Returns:
+    go.Figure: A plotly figure with the image.
+  """
+  if width <= 0: width = params.maxwidth
+  # Plot image.
+  imshow = px.imshow(image[0] if image.shape[0] == 1 else np.moveaxis(image, 0, -1),
+                     zmin = 0., zmax = 1., aspect = "equal", binary_string = not hover)
+  imshow.update_traces(name = "", hovertemplate = "(%{x}, %{y}): %{z}" if hover else "(%{x}, %{y})")
+  figure = go.Figure(data = imshow)
+  layout = go.Layout(template = template,
+                     width = width+params.lmargin+params.rmargin, height = width*image.shape[1]/image.shape[2]+params.bmargin+params.tmargin,
+                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
+  figure.update_layout(layout)
+  return figure
+
+def _figure_image_(image, sampling = -1, width = -1, hover = False, template = "plotly_dark"):
   """Prepare a ploty figure for the input image.
 
   Args:
@@ -26,29 +51,14 @@ def _figure_image_(image, sampling = -1, width = -1, hoverdata = False, template
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
       Only image[:, ::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
-    hoverdata (bool, optional): If True, show the image data on hover (default False).
-      Warning: Setting hoverdata = True can slow down display a lot !
+    hover (bool, optional): If True, show the image data on hover (default False).
+      Warning: Setting hover = True can slow down display a lot !
     template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
     go.Figure: A plotly figure with the image.
   """
-  if width <= 0: width = params.maxwidth
-  # Prepare image.
-  img = prepare_images(image, sampling = sampling)
-  if img.shape[0] == 1:
-    img = img[0]
-  else:
-    img = np.moveaxis(img, 0, -1)
-  # Plot image.
-  imshow = px.imshow(img, zmin = 0., zmax = 1., aspect = "equal", binary_string = not hoverdata)
-  imshow.update_traces(name = "", hovertemplate = "(%{x}, %{y}): %{z}" if hoverdata else "(%{x}, %{y})")
-  figure = go.Figure(data = imshow)
-  layout = go.Layout(template = template,
-                     width = width+params.lmargin+params.rmargin, height = width*img.shape[0]/img.shape[1]+params.bmargin+params.tmargin,
-                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
-  figure.update_layout(layout)
-  return figure
+  return _figure_prepared_image_(prepare_images(image, sampling = sampling), width = width, hover = hover, template = template)
 
 def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "Level", trans = None, template = "plotly_dark"):
   """Prepare a plotly figure with the histograms of an image.
@@ -207,7 +217,7 @@ def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, templa
   figure.update_layout(layout)
   return figure
 
-def show(image, histograms = False, statistics = False, sampling = -1, width = -1, hoverdata = False, renderer = None):
+def show(image, histograms = False, statistics = False, sampling = -1, width = -1, hover = False, renderer = None):
   """Show an image using plotly.
 
   Args:
@@ -219,11 +229,11 @@ def show(image, histograms = False, statistics = False, sampling = -1, width = -
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
       Only image[:, ::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
-    hoverdata (bool, optional): If True, show the image data on hover (default False).
-      Warning: Setting hoverdata = True can slow down display a lot !
+    hover (bool, optional): If True, show the image data on hover (default False).
+      Warning: Setting hover = True can slow down display a lot !
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
-  figure = _figure_image_(image, sampling = sampling, width = width, hoverdata = hoverdata)
+  figure = _figure_image_(image, sampling = sampling, width = width, hover = hover)
   figure.show(renderer)
   if histograms is not False:
     if histograms is True: histograms = ""
@@ -261,7 +271,7 @@ def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer =
   figure = _figure_statistics_(image, channels = channels, width = width, rowheight = rowheight)
   if figure is not None: figure.show(renderer)
 
-def show_t(image, channels = "RGBL", sampling = -1, width = -1, hoverdata = False, renderer = None):
+def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, renderer = None):
   """Show an image embedding an histogram transformation using plotly.
 
   Displays the input histograms with the transformation curve, the output histograms, and the output image.
@@ -273,8 +283,8 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hoverdata = Fals
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
       Only image[:, ::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
-    hoverdata (bool, optional): If True, show the image data on hover (default False).
-      Warning: Setting hoverdata = True can slow down display a lot !
+    hover (bool, optional): If True, show the image data on hover (default False).
+      Warning: Setting hover = True can slow down display a lot !
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
   if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
@@ -289,4 +299,4 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hoverdata = Fals
         channels += c
   show_histograms(reference, channels = channels, log = True, width = width, xlabel = "Input level", trans = trans, renderer = renderer)
   show_histograms(image, channels = channels, log = True, width = width, xlabel = "Output level", renderer = renderer)
-  show(image, histograms = False, statistics = False, sampling = sampling, width = width, hoverdata = hoverdata, renderer = renderer)
+  show(image, histograms = False, statistics = False, sampling = sampling, width = width, hover = hover, renderer = renderer)

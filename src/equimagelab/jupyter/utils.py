@@ -32,78 +32,78 @@ def get_image_size(image):
     if image.ndim in [2, 3]: return image.shape[-1], image.shape[-2]
   raise ValueError(f"Error, {image} is not a valid image.")
 
-def prepare_images(*args, sampling = -1):
+def prepare_images(images, sampling = -1):
   """Prepare images for plotly and Dash.
 
   Returns all images as numpy.ndarrays with dimensions (3, height, width) (for color images)
   or (1, height, width) (for grayscale images).
 
   Args:
-    args: A set of Image object(s) or numpy.ndarrays with dimensions (3, height, width) (for
-      color images), (1, height, width) or (height, width) (for grayscale images).
+    images: A single/tuple/list of Image object(s) or numpy.ndarrays with dimensions (3, height, width)
+      (for color images), (1, height, width) or (height, width) (for grayscale images).
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-      Only args[:, ::sampling, ::sampling] are shown, to speed up operations.
+      Only images[:, ::sampling, ::sampling] are processed, to speed up operations.
 
   Returns:
-    All args as float numpy.ndarrays with dimensions (3, height/sampling, width/sampling) (for color images)
+    All images as float numpy.ndarrays with dimensions (3, height/sampling, width/sampling) (for color images)
       or (1, height/sampling, width/sampling) (for grayscale images). These arrays are references (not
       copies) of the original images when possible.
   """
-  if sampling <= 0: sampling = params.sampling
-  output = ()
-  for arg in args:
-    valid = False
-    if issubclass(type(arg), Image):
-      img = arg.get_image()
-      valid = True
-    elif issubclass(type(arg), np.ndarray):
-      img = arg
-      valid = img.ndim in [2, 3]
-      if img.ndim == 3: valid = img.shape[0] in [1, 3]
-      valid = valid and img.dtype in [np.float32, np.float64]
-    if not valid: raise ValueError(f"Error, arg {arg} is not a valid image.")
-    if img.ndim == 2: img = np.expand_dims(img, axis = 0)
-    if sampling > 1: img = img[:, ::sampling, ::sampling]
-    output += (img, )
-  return output[0] if len(output) == 1 else output
 
-def prepare_images_as_b64strings(*args, sampling = -1):
+  def prepare(image):
+    """Prepare input image."""
+    if issubclass(type(image), Image):
+      image = image.get_image()
+    elif issubclass(type(image), np.ndarray):
+      valid = image.ndim in [2, 3]
+      if image.ndim == 3: valid = image.shape[0] in [1, 3]
+      valid = valid and image.dtype in [np.float32, np.float64]
+      if not valid: raise ValueError(f"Error, image {image} is not a valid image.")
+    if image.ndim == 2: image = np.expand_dims(image, axis = 0)
+    if sampling > 1: image = image[:, ::sampling, ::sampling]
+    return image
+
+  if sampling <= 0: sampling = params.sampling
+  if not isinstance(images, (tuple, list)): return prepare(images)
+  return type(images)(prepare(image) for image in images)
+
+def prepare_images_as_b64strings(images, sampling = -1):
   """Prepare images as PNGs encoded in base64 strings.
 
   Returns all images as PNGs encoded in base64 strings.
 
   Args:
-    args: A set of Image object(s) or numpy.ndarray with dimensions (3, height, width) (for
-      color images), (1, height, width) or (height, width) (for grayscale images).
+    images: A single/tuple/list of Image object(s) or numpy.ndarrays with dimensions (3, height, width)
+      (for color images), (1, height, width) or (height, width) (for grayscale images).
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-      Only args[:, ::sampling, ::sampling] are shown, to speed up operations.
+      Only images[:, ::sampling, ::sampling] are processed, to speed up operations.
 
   Returns:
     All args as PNGs encoded in base64 strings.
   """
-  if sampling <= 0: sampling = params.sampling
-  output = ()
-  for arg in args:
-    valid = False
-    if issubclass(type(arg), Image):
-      img = arg.get_image()
-      valid = True
-    elif issubclass(type(arg), np.ndarray):
-      img = arg
-      valid = img.ndim in [2, 3]
-      if img.ndim == 3: valid = img.shape[0] in [1, 3]
-      valid = valid and img.dtype in [np.float32, np.float64]
-    if not valid: raise ValueError(f"Error, arg {arg} is not a valid image.")
-    if img.ndim == 2: img = np.expand_dims(img, axis = 0)
-    data = np.rint(np.clip(img[:, ::sampling, ::sampling]*255, 0, 255)).astype("uint8")
+
+  def prepare(image):
+    """Prepare input image."""
+    if issubclass(type(image), Image):
+      image = image.get_image()
+    elif issubclass(type(image), np.ndarray):
+      valid = image.ndim in [2, 3]
+      if image.ndim == 3: valid = image.shape[0] in [1, 3]
+      valid = valid and image.dtype in [np.float32, np.float64]
+      if not valid: raise ValueError(f"Error, image {image} is not a valid image.")
+    if image.ndim == 2: image = np.expand_dims(image, axis = 0)
+    data = np.rint(np.clip(image[:, ::sampling, ::sampling]*255, 0, 255)).astype("uint8")
     if data.shape[0] == 1:
       PILimg = PILImage.fromarray(data[0, :, :])
     else:
       PILimg = PILImage.fromarray(np.moveaxis(data, 0, -1))
     buffer = BytesIO()
     PILimg.save(buffer, format = "PNG")
-    output += ("data:image/png;base64,"+base64.b64encode(buffer.getvalue()).decode("utf-8"),)
-  return output[0] if len(output) == 1 else output
+    return "data:image/png;base64,"+base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+  if sampling <= 0: sampling = params.sampling
+  if not isinstance(images, (tuple, list)): return prepare(images)
+  return type(images)(prepare(image) for image in images)
 
 def filter(image, channels):
   """Filter the channels of an image.
@@ -129,9 +129,9 @@ def filter(image, channels):
       selected[2] = True
     else:
       raise ValueError(f"Error, unknown channel {c}.")
-  img = prepare_images(image)
-  if img.shape[0] != 3: raise ValueError("Error, the input must be a RGB (not grayscale) image.""")
-  output = img.copy()
+  image = prepare_images(image)
+  if image.shape[0] != 3: raise ValueError("Error, the input must be a RGB (not grayscale) image.""")
+  output = image.copy()
   output[~selected] = 0.
   return output
 
@@ -150,15 +150,13 @@ def shadowed(image, reference = None):
     A copy of the image as an array with dimensions (3, height, width)
       and the black pixels highlighted with color params.shadowcolor.
   """
-  if reference is None:
-    img = prepare_images(image)
-  else:
-    img, ref = prepare_images(image, reference)
-  output = img.copy()
-  imgmask = np.all(img < eqparams.IMGTOL, axis = 0)
+  image = prepare_images(image)
+  imgmask = np.all(image < eqparams.IMGTOL, axis = 0)
+  output = image.copy()
   output[:, imgmask] = params.shadowcolor
   if reference is not None:
-    refmask = np.all(ref < eqparams.IMGTOL, axis = 0)
+    reference = prepare_images(reference)
+    refmask = np.all(reference < eqparams.IMGTOL, axis = 0)
     output[:, imgmask & refmask] = .5*params.shadowcolor
   return output
 
@@ -178,15 +176,13 @@ def highlighted(image, reference = None):
     A copy of the image as an array with dimensions (3, height, width)
       and the saturated pixels highlighted with color params.highlightcolor.
   """
-  if reference is None:
-    img = prepare_images(image)
-  else:
-    img, ref = prepare_images(image, reference)
-  output = img.copy()
-  imgmask = np.any(img > 1.-eqparams.IMGTOL, axis = 0)
+  image = prepare_images(image)
+  imgmask = np.any(image > 1.-eqparams.IMGTOL, axis = 0)
+  output = image.copy()
   output[:, imgmask] = params.highlightcolor
   if reference is not None:
-    refmask = np.any(ref > 1.-eqparams.IMGTOL, axis = 0)
+    reference = prepare_images(reference)
+    refmask = np.any(reference > 1.-eqparams.IMGTOL, axis = 0)
     output[:, imgmask & refmask] = .5*params.highlightcolor
   return output
 
@@ -201,8 +197,8 @@ def differences(image, reference):
     A copy of the image as an array with dimensions (3, height, width)
       and the differences with the reference highlighted with color params.diffcolor.
   """
-  img, ref = prepare_images(image, reference)
+  image, reference = prepare_images((image, reference))
+  mask = np.any(image != reference, axis = 0)
   output = img.copy()
-  mask = np.any(img != ref, axis = 0)
   output[:, mask] = params.diffcolor
   return output
