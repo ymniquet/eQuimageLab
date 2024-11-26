@@ -16,6 +16,22 @@ from . import params
 from ..equimage import Image
 from ..equimage import params as eqparams
 
+def get_image_size(image):
+  """Return the width and height of the input image.
+
+  Args:
+    image: An Image object or a numpy.ndarray with dimensions (3, height, width) (for
+      color images), (1, height, width) or (height, width) (for grayscale images).
+
+  Returns:
+    A tuple (width, height) of the image in pixels.
+  """
+  if issubclass(type(image), Image):
+    return image.get_size()
+  elif issubclass(type(image), np.ndarray):
+    if image.ndim in [2, 3]: return image.shape[-1], image.shape[-2]
+  raise ValueError(f"Error, {image} is not a valid image.")
+
 def prepare_images(*args, sampling = -1):
   """Prepare images for plotly and Dash.
 

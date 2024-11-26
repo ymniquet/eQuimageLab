@@ -14,13 +14,13 @@ import os
 import threading
 import numpy as np
 import dash
-from dash import Dash, dcc, html
+from dash import Dash, dcc, html, ctx
 import dash_bootstrap_templates as dbt
 import dash_bootstrap_components as dbc
 import dash_extensions as dxt
 
 from . import params
-from .utils import prepare_images, prepare_images_as_b64strings
+from .utils import get_image_size, prepare_images, prepare_images_as_b64strings
 from .backend_plotly import _figure_image_, _figure_histograms_
 
 from ..equimage import Image, load_image
@@ -39,7 +39,7 @@ class Dashboard():
       interval (int, optional): The time interval (ms, default 333) between dashboard updates.
     """
     from .. import __packagepath__
-    from dash.dependencies import Input, Output, State, ALL
+    from dash.dependencies import Input, Output, State, ALL, MATCH
     # Initialize object data.
     self.content = []
     self.refresh = False
@@ -49,9 +49,11 @@ class Dashboard():
     dbt.load_figure_template("slate")
     self.app = Dash(title = "eQuimageLab dashboard", update_title = None, external_stylesheets = [dbc.themes.SLATE])
     self.app.layout = self.__layout_dashboard
-    # Register callbacks.
+    # Register callbacks...
+    # ...dashboard update:
     self.app.callback(Output("dashboard", "children"), Input("update-dashboard", "n_intervals"),
                       running = [Output("update-dashboard", "disabled"), True, False])(self.__update_dashboard)
+    # ...zoom synchronization:
     self.app.callback(Output({"type": "synczooms", "index": ALL}, "relayoutData"), Output({"type": "synczooms", "index": ALL}, "figure"),
                       Input({"type": "synczooms", "index": ALL}, "relayoutData"), State({"type": "synczooms", "index": ALL}, "figure"))(self.__sync_zooms)
     # Launch Dash server.
@@ -74,7 +76,7 @@ class Dashboard():
     """Callback for dashboard updates.
 
     Args:
-      n: The number of calls since the start of the application.
+      n: Number of calls since the start of the application.
     """
     refresh = self.refresh
     if not refresh: return dash.no_update
@@ -92,23 +94,23 @@ class Dashboard():
     Returns:
       Output relayout data and figure states.
     """
-    unique_data = None
-    for data in relayout_data:
-      if relayout_data.count(data) == 1:
-        unique_data = data
-        break
-    if unique_data:
-      for figure_state in figure_states:
-        if unique_data.get("xaxis.autorange"):
-          figure_state["layout"]["xaxis"]["autorange"] = True
-          figure_state["layout"]["yaxis"]["autorange"] = True
-        else:
-          figure_state["layout"]["xaxis"]["range"] = [unique_data["xaxis.range[0]"], unique_data["xaxis.range[1]"]]
-          figure_state["layout"]["xaxis"]["autorange"] = False
-          figure_state["layout"]["yaxis"]["range"] = [unique_data["yaxis.range[0]"], unique_data["yaxis.range[1]"]]
-          figure_state["layout"]["yaxis"]["autorange"] = False
-      return [unique_data]*len(relayout_data), figure_states
-    return relayout_data, figure_states
+    trigger = ctx.triggered_id # Get figure id which triggered the callback.
+    if not trigger: return relayout_data, figure_states
+    trigger_data = relayout_data[trigger["index"]]
+    xauto = trigger_data.get("xaxis.autorange")
+    if not xauto:
+      x1 = trigger_data["xaxis.range[0]"] ; x2 = trigger_data["xaxis.range[1]"]
+    yauto = trigger_data.get("yaxis.autorange")
+    if not yauto:
+      y1 = trigger_data["yaxis.range[0]"] ; y2 = trigger_data["yaxis.range[1]"]
+    for figure_state in figure_states:
+      figure_state["layout"]["xaxis"]["autorange"] = xauto
+      if not xauto:
+        figure_state["layout"]["xaxis"]["range"] = [x1, x2]
+      figure_state["layout"]["yaxis"]["autorange"] = yauto
+      if not yauto:
+        figure_state["layout"]["yaxis"]["range"] = [y1, y2]
+    return [trigger_data]*len(relayout_data), figure_states
 
   def show(self, images, histograms = False, statistics = False, sampling = -1, hoverdata = False, synczooms = True, trans = None):
     """Show image(s) on the dashboard.
@@ -141,24 +143,25 @@ class Dashboard():
       elif nimages == 2:
         imgdict = {"Image": images[0], "Reference": images[1]}
       else:
-        n = 0
-        imgdict = {}
-        for image in images:
-          n += 1
-          imgdict[f"Image #{n}"] = image
+        imgdict = {f"Image #{n}": image for n, image in enumerate(images)}
     elif isinstance(images, dict):
       imgdict = images
     else:
       imgdict = {"Image": images}
     # Check if zooms can be synchronized.
-    #if synczooms:
-    #
+    synczooms = synczooms and len(imgdict) > 1
+    if synczooms:
+      imglist = list(imgdict.values())
+      size = get_image_size(imglist[0])
+      for image in imglist[1:]:
+        synczooms = (get_image_size(image) == size)
+        if not synczooms: break
+    idtype = "synczooms" if synczooms else "nosynczooms"
     # Set-up tabs.
     tabs = []
-    idtype = "synczooms" if synczooms else "nosynczooms"
-    for key, image in imgdict.items():
+    for n, (key, image) in enumerate(imgdict.items()):
       tab = []
-      tab.append(dcc.Graph(id = {"type": idtype, "index": key},
+      tab.append(dcc.Graph(id = {"type": idtype, "index": n},
                  figure = _figure_image_(image, sampling = sampling, width = params.maxwidth, hoverdata = hoverdata, template = "slate")))
       if histograms is not False:
         if histograms is True: histograms = ""
@@ -224,20 +227,14 @@ class Dashboard():
       elif nimages == 2:
         imgdict = {"Image": images[0], "Reference": images[1]}
       else:
-        n = 0
-        imgdict = {}
-        for image in images:
-          n += 1
-          imgdict[f"Image #{n}"] = image
+        imgdict = {f"Image #{n}": image for n, image in enumerate(images)}
     elif isinstance(images, dict):
       imgdict = images
     else:
       imgdict = {"Image": images}
     # Set-up carousel.
-    n = 0
     items = []
-    for key, image in imgdict.items():
-      n += 1
+    for n, (key, image) in enumerate(imgdict.items()):
       items.append(dict(key = f"{n}", src = prepare_images_as_b64strings(image, sampling = sampling), header = key))
     widget = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
              style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
