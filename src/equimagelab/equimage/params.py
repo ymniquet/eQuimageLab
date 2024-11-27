@@ -24,14 +24,23 @@ IMAGEIO = False
 
 exclude01 = False
 
-# Maximum number of bins in the histograms.
-
-nbinsmax = 32768
-
 # Number of x mesh points for transformation function plots y = f(x in [0, 1]).
 
 ntranslo = 128 # Low  resolution.
 ntranshi = 256 # High resolution.
+
+# Default number of bins within [0, 1] in the histograms.
+
+histbins = 8192
+
+def set_hist_bins(n):
+  """Set the default number of bins within [0, 1] in the histograms.
+
+  Args:
+    n: The default number of bins within [0, 1].
+  """
+  global histbins
+  histbins = n
 
 # Weights of the RGB components in the luma.
 

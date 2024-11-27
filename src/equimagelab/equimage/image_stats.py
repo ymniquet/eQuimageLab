@@ -18,7 +18,7 @@ from . import helpers
 class Mixin:
   """To be included in the Image class."""
 
-  def histograms(self, channels = "RGBL", nbins = -128, recompute = False):
+  def histograms(self, channels = "RGBL", nbins = -1, recompute = False):
     """Compute histograms of selected channels of the image.
 
     The histograms are both returned and embedded in the object as self.hists. Histograms already registered in self.hists are
@@ -29,20 +29,21 @@ class Mixin:
         "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the histograms of the value and saturation can be
         computed. If channels ends with a "*", it gets appended with the keys already computed and stored in self.hists.
         Default is "RGBL".
-      nbins (int, optional): Number of bins within [0, 1] in the histograms. If negative, the number of bins is automatically
-        computed by placing |nbins| points within the largest of the [minimum, median] and [median, maximum] intervals.
-        In any case, the number of bins can not be greater than params.nbinsmax.
-      recompute (bool, optional): If False (default), the histograms already registered in self.hists are not recomputed.
-        If True, all histograms are recomputed.
+      nbins (int, optional): Number of bins within [0, 1] in the histograms (defaults to params.histbins if negative).
+      recompute (bool, optional): If False (default), the histograms already registered in self.hists are not recomputed
+        (provided they match nbins). If True, all histograms are recomputed.
 
     Returns:
       dict: hists[key] for key in channels, with:
         - hists[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
-        - hists[key].color = suggested line color for plots.
+        - hists[key].nbins = number of bins within [0, 1]
         - hists[key].edges = histogram bins edges.
         - hists[key].counts = histogram bins counts.
+        - hists[key].color = suggested line color for plots.
+
     """
     if nbins == 0: raise ValueError("Error, nbins must be non zero.")
+    if nbins < 0: nbins = params.histbins
     if not hasattr(self, "hists"): self.hists = {} # Register empty histograms in the object, if none already computed.
     if len(channels) > 0: # Append missing keys if channels ends with a "*".
       if channels[-1] == "*":
@@ -56,8 +57,9 @@ class Mixin:
         print(f"Warning, channel '{key}' selected twice or more...")
         continue
       if not recompute and key in self.hists: # Already computed.
-        hists[key] = self.hists[key]
-        continue
+        if self.hists[key].nbins == nbins:
+          hists[key] = self.hists[key]
+          continue
       if key == "R":
         self.check_color_model("RGB", "gray")
         name = "Red"
@@ -87,23 +89,14 @@ class Mixin:
         channel = self.luma()
       else:
         raise ValueError(f"Error, unknown channel '{key}'.")
-      minimum = np.min(channel)
-      maximum = np.max(channel)
-      if nbins < 0:
-        median = np.median(channel)
-        span = min(median-minimum, maximum-median)
-        span = max(span, 1.e-3)
-        nbinsc = int(round(abs(nbins)/span))
-      else:
-        nbinsc = nbins
-      nbinsc = int(round(nbinsc*(maximum-minimum)))
-      if nbinsc > params.nbinsmax: # Limit the number of bins.
-        nbinsc = params.nbinsmax
-        print(f"Warning, limiting the number of bins to {nbinsc} for channel '{key}'.")
+      mmin = np.floor(np.min(channel)*nbins)
+      mmax = np.ceil (np.max(channel)*nbins)
+      mbins = int(round(mmax-mmin))
       hists[key] = helpers.Container()
       hists[key].name = name
+      hists[key].nbins = nbins
+      hists[key].counts, hists[key].edges = np.histogram(channel, bins = mbins, range = (mmin/nbins, mmax/nbins), density = False)
       hists[key].color = color
-      hists[key].counts, hists[key].edges = np.histogram(channel, bins = nbinsc, range = (minimum, maximum), density = False)
     self.hists = hists
     return hists
 
