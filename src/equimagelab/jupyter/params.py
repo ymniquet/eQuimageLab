@@ -13,7 +13,7 @@ import numpy as np
 
 sampling = 1
 
-# Figure size and margins.
+# Figure size and margins (pixels).
 
 maxwidth = 1024 # Maximum width of the displayed image.
 
@@ -23,6 +23,10 @@ bmargin = 48  # Bottom margin.
 tmargin = 48  # Top margin.
 
 rowheight = 25 # Height of the table rows.
+
+# Tab border width (pixels).
+
+border = 1
 
 # Colors for shadows, highlights and differences.
 
