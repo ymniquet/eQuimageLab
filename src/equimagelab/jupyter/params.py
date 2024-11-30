@@ -24,9 +24,10 @@ tmargin = 48  # Top margin.
 
 rowheight = 25 # Height of the table rows.
 
-# Tab border width (pixels).
+# Tab border width (pixels) and color.
 
-border = 1
+borderwidth = 1
+bordercolor = "black"
 
 # Colors for shadows, highlights and differences.
 

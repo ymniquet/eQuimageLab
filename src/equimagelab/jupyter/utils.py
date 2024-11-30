@@ -32,7 +32,7 @@ def get_image_size(image):
     if image.ndim in [2, 3]: return image.shape[-1], image.shape[-2]
   raise ValueError(f"Error, {image} is not a valid image.")
 
-def prepare_images(images, sampling = -1):
+def prepare_images(images, sampling = -1, copy = False):
   """Prepare images for plotly and Dash.
 
   Returns all images as numpy.ndarrays with dimensions (3, height, width) (for color images)
@@ -43,14 +43,15 @@ def prepare_images(images, sampling = -1):
       (for color images), (1, height, width) or (height, width) (for grayscale images).
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
       Only images[:, ::sampling, ::sampling] are processed, to speed up operations.
+    copy (bool, optional): If False (default), the output images are (when possible) views of the
+      original images; If True, they are always copies.
 
   Returns:
     All images as float numpy.ndarrays with dimensions (3, height/sampling, width/sampling) (for color images)
-      or (1, height/sampling, width/sampling) (for grayscale images). These arrays are references (not
-      copies) of the original images when possible.
+      or (1, height/sampling, width/sampling) (for grayscale images).
   """
 
-  def prepare(image):
+  def prepare(image, copy):
     """Prepare input image."""
     if issubclass(type(image), Image):
       image = image.get_image()
@@ -61,11 +62,11 @@ def prepare_images(images, sampling = -1):
       if not valid: raise ValueError(f"Error, image {image} is not a valid image.")
     if image.ndim == 2: image = np.expand_dims(image, axis = 0)
     if sampling > 1: image = image[:, ::sampling, ::sampling]
-    return image
+    return image.copy() if copy else image
 
   if sampling <= 0: sampling = params.sampling
-  if not isinstance(images, (tuple, list)): return prepare(images)
-  return type(images)(prepare(image) for image in images)
+  if not isinstance(images, (tuple, list)): return prepare(images, copy)
+  return type(images)(prepare(image, copy) for image in images)
 
 def prepare_images_as_b64strings(images, sampling = -1):
   """Prepare images as PNGs encoded in base64 strings.
@@ -106,9 +107,9 @@ def prepare_images_as_b64strings(images, sampling = -1):
   return type(images)(prepare(image) for image in images)
 
 def filter(image, channels):
-  """Filter the channels of an image.
+  """Filter the channels of a RGB image.
 
-  Returns a copy of the image with unselected red/green/blue channels set to zero.
+  Returns a copy of the image with the non-selected red/green/blue channels set to zero.
 
   Args:
     image: The image (Image object or numpy.ndarray).
@@ -116,8 +117,8 @@ def filter(image, channels):
       "G" (green), and "B" (blue).
 
   Returns:
-    np.ndarray: A copy of the image as an array with dimensions (3, height, width)
-      and the unselected channels set to zero.
+    np.ndarray: A copy of the image as an array with dimensions (3, height, width) and the
+      non-selected channels set to zero.
   """
   selected = np.array([False, False, False])
   for c in channels:
@@ -129,16 +130,15 @@ def filter(image, channels):
       selected[2] = True
     else:
       raise ValueError(f"Error, unknown channel {c}.")
-  image = prepare_images(image)
-  if image.shape[0] != 3: raise ValueError("Error, the input must be a RGB (not grayscale) image.""")
-  output = image.copy()
-  output[~selected] = 0.
-  return output
+  image = prepare_images(image, sampling = 1, copy = True)
+  if image.shape[0] != 3: raise ValueError("Error, the input must be a RGB (not a grayscale) image.""")
+  image[~selected] = 0.
+  return image
 
 def shadowed(image, reference = None):
   """Highlight black pixels in an image.
 
-  Highlight pixels black on the input image with color params.shadowcolor.
+  Highlight black pixels on the input image with color params.shadowcolor.
   If a reference image is provided, highlight pixels black on both input and reference images
   with color 0.5*params.shadowcolor.
 
@@ -147,18 +147,22 @@ def shadowed(image, reference = None):
     reference (optional): The reference image (Image object or numpy.ndarray, default None).
 
   Returns:
-    A copy of the image as an array with dimensions (3, height, width)
-      and the black pixels highlighted with color params.shadowcolor.
+    A copy of the image as an array with dimensions (3, height, width) and the black pixels
+      highlighted with color params.shadowcolor.
   """
-  image = prepare_images(image)
+  image = prepare_images(image, sampling = 1, copy = True)
   imgmask = np.all(image < eqparams.IMGTOL, axis = 0)
-  output = image.copy()
-  output[:, imgmask] = params.shadowcolor
+  imgshape = image.shape
+  if imgshape[0] == 1: image = np.repeat(image, 3, axis = 0)
+  image[:, imgmask] = params.shadowcolor
   if reference is not None:
-    reference = prepare_images(reference)
+    reference = prepare_images(reference, sampling = 1)
+    if reference.shape != imgshape:
+      print("Warning, image and reference have different sizes/number of channels !")
+      return image
     refmask = np.all(reference < eqparams.IMGTOL, axis = 0)
-    output[:, imgmask & refmask] = .5*params.shadowcolor
-  return output
+    image[:, imgmask & refmask] = .5*params.shadowcolor
+  return image
 
 def highlighted(image, reference = None):
   """Highlight saturated pixels in an image.
@@ -173,18 +177,22 @@ def highlighted(image, reference = None):
     reference (optional): The reference image (Image object or numpy.ndarray, default None).
 
   Returns:
-    A copy of the image as an array with dimensions (3, height, width)
-      and the saturated pixels highlighted with color params.highlightcolor.
+    A copy of the image as an array with dimensions (3, height, width) and the saturated pixels
+      highlighted with color params.highlightcolor.
   """
-  image = prepare_images(image)
+  image = prepare_images(image, sampling = 1, copy = True)
   imgmask = np.any(image > 1.-eqparams.IMGTOL, axis = 0)
-  output = image.copy()
-  output[:, imgmask] = params.highlightcolor
+  imgshape = image.shape
+  if imgshape[0] == 1: image = np.repeat(image, 3, axis = 0)
+  image[:, imgmask] = params.highlightcolor
   if reference is not None:
-    reference = prepare_images(reference)
+    reference = prepare_images(reference, sampling = 1)
+    if reference.shape != imgshape:
+      print("Warning, image and reference have different sizes/number of channels !")
+      return image
     refmask = np.any(reference > 1.-eqparams.IMGTOL, axis = 0)
-    output[:, imgmask & refmask] = .5*params.highlightcolor
-  return output
+    image[:, imgmask & refmask] = .5*params.highlightcolor
+  return image
 
 def differences(image, reference):
   """Highlight differences between an image and a reference.
@@ -197,8 +205,11 @@ def differences(image, reference):
     A copy of the image as an array with dimensions (3, height, width)
       and the differences with the reference highlighted with color params.diffcolor.
   """
-  image, reference = prepare_images((image, reference))
+  image = prepare_images(image, sampling = 1, copy = True)
+  reference = prepare_images(reference, sampling = 1)
+  if image.shape != reference.shape:
+    raise ValueError("Error, image and reference have different sizes/number of channels !")
   mask = np.any(image != reference, axis = 0)
-  output = img.copy()
-  output[:, mask] = params.diffcolor
-  return output
+  if image.shape[0] == 1: image = np.repeat(image, 3, axis = 0)
+  image[:, mask] = params.diffcolor
+  return image

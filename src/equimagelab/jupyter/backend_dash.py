@@ -7,7 +7,8 @@
 """Dash backend for Jupyter-lab interface."""
 
 # TODO:
-#  - Shadows/Highlights/Differences.
+#  - Shape of images (3, :, :) -> (:, :, 3)
+#  - Patches.
 #  - Update tabs only if necessary.
 
 import os
@@ -20,15 +21,15 @@ import dash_bootstrap_components as dbc
 import dash_extensions as dxt
 
 from . import params
-from .utils import get_image_size, prepare_images, prepare_images_as_b64strings
+from .utils import prepare_images, prepare_images_as_b64strings, shadowed, highlighted, differences
 from .backend_plotly import _figure_prepared_image_, _figure_histograms_
 
-from ..equimage import Image, load_image, get_RGB_luma
+from ..equimage import Image, load_image, get_RGB_luma, luma
 
 class Dashboard():
   """Dashboad class."""
 
-  def __init__(self, interval = 333):
+  def __init__(self, interval = 500):
     """Initialize dashboard.
 
     This dashboard uses Dash to displays image, histograms, statistics, etc... in a
@@ -36,15 +37,17 @@ class Dashboard():
     It fetches updates from the Dash server at given intervals.
 
     Args:
-      interval (int, optional): The time interval (ms, default 333) between dashboard updates.
+      interval (int, optional): The time interval (ms, default 500) between dashboard updates.
     """
     from .. import __packagepath__
     from dash.dependencies import Input, Output, State, ALL, MATCH
     # Initialize object data.
     self.content = []
-    self.images = None
     self.nupdates = 0
+    self.images = None
     self.refresh = False
+    self.hover = False
+    self.click = True
     self.synczoom = False
     self.interval = interval
     self.updatelock = threading.Lock()
@@ -55,27 +58,28 @@ class Dashboard():
     # Register callbacks:
     #   - Dashboard update:
     self.app.callback(Output("dashboard", "children"), Output("updateid", "data"), Input("updateinterval", "n_intervals"),
-                      running = [Output("updateinterval", "disabled"), True, False])(self.__update_dashboard)
-    #   - Image filters:
-    self.app.callback(Output({"type": "filters", "index": MATCH}, "value"), Output({"type": "selectedfilters", "index": MATCH}, "data"),
-                      Input({"type": "filters", "index": MATCH}, "value"), Input({"type": "selectedfilters", "index": MATCH}, "data"),
-                      Input("updateid", "data"), prevent_initial_call = True)(self.__filter_image)
+                      running = [Output("updateinterval", "disabled"), True, False], prevent_initial_call = True)(self.__update_dashboard)
     #   - Image click:
     self.app.callback(Output({"type": "datadiv", "index": MATCH}, "children"), Input({"type": "image", "index": MATCH}, "clickData"),
-                      Input("updateid", "data"), prevent_initial_call = True)(self.__click_image)
+                      State("updateid", "data"), prevent_initial_call = True)(self.__click_image)
+    #   - Image filters:
+    self.app.callback(Output({"type": "filters", "index": MATCH}, "value"), Output({"type": "selectedfilters", "index": MATCH}, "data"),
+                      Output({"type": "image", "index": MATCH}, "figure", allow_duplicate = True),
+                      Input({"type": "filters", "index": MATCH}, "value"), State({"type": "selectedfilters", "index": MATCH}, "data"),
+                      State({"type": "image", "index": MATCH}, "figure"), State("updateid", "data"), prevent_initial_call = True)(self.__filter_image)
     #   - Zoom synchronization:
     self.app.callback(Output({"type": "image", "index": ALL}, "relayoutData"), Output({"type": "image", "index": ALL}, "figure"),
                       Input({"type": "image", "index": ALL}, "relayoutData"), State({"type": "image", "index": ALL}, "figure"),
                       prevent_initial_call = True)(self.__sync_zoom)
     # Launch Dash server.
-    self.app.run_server(debug = False, use_reloader = False, jupyter_mode = "external")
+    self.app.run_server(debug = True, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
     try:
       splash, meta = load_image(os.path.join(__packagepath__, "images", "splash.png"), verbose = False)
     except:
       pass
     else:
-      self.show({"Welcome": splash}, modifiers = False, hover = False, click = False)
+      self.show({"Welcome": splash}, filters = False, hover = False, click = False)
 
   def __layout_dashboard(self):
     """Lay out dashboard."""
@@ -91,30 +95,13 @@ class Dashboard():
       n: Number of calls since the start of the application.
 
     Returns:
-      The updated dashboard and the updateid.
+      The updated dashboard and the unique ID of the update.
     """
     refresh = self.refresh
     if not refresh: return dash.no_update, dash.no_update
     with self.updatelock: # Lock on update.
       self.refresh = False
       return self.content, self.nupdates
-
-  def __filter_image(self, values, selected, updateid):
-    """Callback for image filters.
-
-    Args:
-      values (list):
-      selected (list):
-      updateid (integer): The unique ID of the dashboard update.
-
-    Returns:
-    """
-    print(values, selected)
-    trigger = ctx.triggered_id # Get the figure that triggered the callback.
-    if not trigger: return selected, selected
-    if self.images is None or updateid != self.nupdates: return [], [] # The dashboard is out of sync.
-    n = trigger["index"] # Image index.
-    return values, selected
 
   def __click_image(self, click, updateid):
     """Callback for image click.
@@ -123,7 +110,7 @@ class Dashboard():
 
     Args:
       click (dict): The click event dictionary.
-      updateid (integer): The unique ID of the dashboard update.
+      updateid (integer): The unique ID of the displayed dashboard update.
 
     Returns:
       The content of the "datadiv" div element with the image coordinates and data at click point.
@@ -142,12 +129,80 @@ class Dashboard():
       luma = rgbluma[0]*levels[0]+rgbluma[1]*levels[1]+rgbluma[2]*levels[2]
       return [f"Data at ({x}, {y}): R = {levels[0]:.5f}, G = {levels[1]:.5f}, B = {levels[2]:.5f}, L = {luma:.5f}"]
 
+  def __filter_image(self, current, previous, figure, updateid):
+    """Callback for image filters.
+
+    Args:
+      current (list): The currently selected filters.
+      previous (list): The previously selected filters.
+      updateid (integer): The unique ID of the displayed dashboard update.
+
+    Returns:
+      The curated selected filters (twice, as currently selected and new previous), and the filtered figure.
+    """
+
+    def filter_channels(image, channels):
+      """Apply channel filters to the input image."""
+      if image.shape[0] > 1:
+        if "L" in channels:
+          output = np.expand_dims(luma(image), axis = 0)
+        else:
+          output = image.copy()
+          if "R" not in channels: output[0] = 0.
+          if "G" not in channels: output[1] = 0.
+          if "B" not in channels: output[2] = 0.
+        return output
+      else:
+        return image
+
+    trigger = ctx.triggered_id # Get the figure that triggered the callback.
+    if not trigger: return previous, previous, dash.no_update
+    if self.images is None or updateid != self.nupdates: return [], [], dash.no_update # The dashboard is out of sync.
+    # Update filters list.
+    current = set(current)
+    previous = set(previous)
+    toggled = current^previous
+    for t in toggled: # There shall be only one checkbox toggled, actually.
+      if t == "L":
+        if "L" in current:
+          current.difference_update({"R", "G", "B"})
+        else:
+          current.update({"R", "G", "B"})
+      elif t in ["R", "G", "B"]:
+        if not current & {"R", "G", "B"}:
+          current.update("L")
+        else:
+          current.difference_update({"L"})
+      elif t == "Shadowed":
+        current.difference_update({"Highlighted", "Differences"})
+      elif t == "Highlighted":
+        current.difference_update({"Shadowed", "Differences"})
+      elif t == "Differences":
+        current.difference_update({"Shadowed", "Highlighted"})
+      else:
+        raise ValueError(f"Error, unknown filter {t}.")
+    # Apply selected filters to the image.
+    n = trigger["index"] # Image index.
+    image = filter_channels(self.images[n], current)
+    if current & {"Shadowed", "Highlighted", "Differences"}:
+      reference = filter_channels(self.images[self.reference], current) if self.reference is not None else None
+      if "Shadowed" in current:
+        image = shadowed(image, reference)
+      elif "Highlighted" in current:
+        image = highlighted(image, reference)
+      else:
+        image = differences(image, reference)
+    figure  = _figure_prepared_image_(image, width = params.maxwidth, hover = self.hover, template = "slate")
+    if self.click: figure.update_layout(clickmode = "event+select")
+    current = list(current)
+    return current, current, figure
+
   def __sync_zoom(self, fig_relayouts, fig_states):
     """Callback for zoom synchronization.
 
     Args:
-      fig_relayouts: Input figure relayouts.
-      fig_states: Input figure states.
+      fig_relayouts (dict): Input figure relayouts.
+      fig_states (dict): Input figure states.
 
     Returns:
       Output figure relayouts and figure states.
@@ -172,7 +227,7 @@ class Dashboard():
         fig_state["layout"]["yaxis"]["range"] = [y1, y2]
     return [relayout]*len(fig_relayouts), fig_states
 
-  def show(self, images, histograms = False, statistics = False, sampling = -1, modifiers = True, hover = False, click = True, synczoom = True, trans = None):
+  def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True, hover = False, click = True, synczoom = True, trans = None):
     """Show image(s) on the dashboard.
 
     Args:
@@ -187,8 +242,8 @@ class Dashboard():
         channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
       sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
         Only images[:, ::sampling, ::sampling] are shown, to speed up display.
-      modifiers (bool, optional): If True (default), add image modifiers menu (R, G, B, L channel
-        filters, shadowed/highlighted pixels, images differences).
+      filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
+        shadowed/highlighted pixels, images differences).
       hover (bool, optional): If True, show the images data on hover (default False).
         Warning: Setting hover = True can slow down display a lot !
       click (bool, optional): If True, show the images data on click (default True).
@@ -236,14 +291,14 @@ class Dashboard():
       figure = _figure_prepared_image_(pimages[n], width = params.maxwidth, hover = hover, template = "slate")
       if click: figure.update_layout(clickmode = "event+select")
       tab.append(dcc.Graph(figure = figure, id = {"type": "image", "index": n}))
-      if modifiers:
+      if filters:
         options = []
         values = []
         if pimages[n].shape[0] > 1: # Color image.
           options.extend(["R", "G", "B", "L"])
           values.extend(["R", "G", "B"])
         options.extend(["Shadowed", "Highlighted"])
-        if reference: options.extend(["Differences"])
+        if reference and pimages[n].shape == pimages[reference].shape: options.extend(["Differences"])
         checklist = dcc.Checklist(options = options, value = values, id = {"type": "filters", "index": n},
                                   inline = True, labelStyle = {"margin-right": "16px"})
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
@@ -262,11 +317,13 @@ class Dashboard():
         if statistics is True: statistics = ""
         table = _table_statistics_(images[n], channels = statistics)
         if table is not None: tab.append(table)
-      tabs.append(dbc.Tab(tab, label = keys[n], style = {"border": f"solid {params.border}px black"}))
+      tabs.append(dbc.Tab(tab, label = keys[n], style = {"border": f"solid {params.borderwidth}px {params.bordercolor}"}))
     # Update dashboard.
     with self.updatelock: # Lock on update.
       # BEWARE TO SIDE EFFECTS: SELF.IMAGES MAY REFERENCE THE ORIGINAL IMAGES.
       self.nupdates += 1
+      self.hover = hover
+      self.click = click
       self.synczoom = synczoom
       self.reference = reference
       self.images = pimages if click else None # No need to register images for the callbacks if click is False.
@@ -335,11 +392,12 @@ class Dashboard():
     items = [dict(key = f"{n}", src = prepare_images_as_b64strings(images[n], sampling = sampling), header = keys[n]) for n in range(nimages)]
     widget = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
              style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
+    tab = dbc.Tab([widget], label = "Carousel", style = {"border": f"solid {params.borderwidth}px {params.bordercolor}"})
     # Update dashboard.
     with self.updatelock: # Lock on update.
       self.nupdates += 1
       self.images = None # No need to register images for the callbacks.
-      self.content = [dbc.Tabs([dbc.Tab([widget], label = "Carousel", style = {"border": f"solid {params.border}px black"})], active_tab = "tab-0")]
+      self.content = [dbc.Tabs([tab], active_tab = "tab-0")]
       self.refresh = True
 
   def slide(self, image1, image2, label1 = "Image", label2 = "Reference", sampling = -1):
@@ -368,11 +426,12 @@ class Dashboard():
     widget = html.Div([left, center, right],
                       style = {"display": "inline-block", "width": f"{params.maxwidth+params.lmargin+params.rmargin}px",
                                "margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
+    tab = dbc.Tab([widget], label = "Compare images", style = {"border": f"solid {params.borderwidth}px {params.bordercolor}"})
     # Update dashboard.
     with self.updatelock: # Lock on update.
       self.nupdates += 1
       self.images = None # No need to register images for the callbacks.
-      self.content = [dbc.Tabs([dbc.Tab([widget], label = "Compare images", style = {"border": f"solid {params.border}px black"})], active_tab = "tab-0")]
+      self.content = [dbc.Tabs([tab], active_tab = "tab-0")]
       self.refresh = True
 
 def _table_statistics_(image, channels = ""):
