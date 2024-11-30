@@ -7,7 +7,6 @@
 """Dash backend for Jupyter-lab interface."""
 
 # TODO:
-#  - Shape of images (3, :, :) -> (:, :, 3)
 #  - Patches.
 #  - Update tabs only if necessary.
 
@@ -24,7 +23,7 @@ from . import params
 from .utils import prepare_images, prepare_images_as_b64strings, shadowed, highlighted, differences
 from .backend_plotly import _figure_prepared_image_, _figure_histograms_
 
-from ..equimage import Image, load_image, get_RGB_luma, luma
+from ..equimage import Image, load_image, get_RGB_luma
 
 class Dashboard():
   """Dashboad class."""
@@ -121,7 +120,7 @@ class Dashboard():
     n = trigger["index"] # Image index.
     x = click["points"][0]["x"]
     y = click["points"][0]["y"]
-    levels = self.images[n][:, y, x]
+    levels = self.images[n][y, x, :]
     if levels.size == 1:
       return [f"Data at ({x}, {y}): L = {levels[0]:.5f}"]
     else:
@@ -143,14 +142,15 @@ class Dashboard():
 
     def filter_channels(image, channels):
       """Apply channel filters to the input image."""
-      if image.shape[0] > 1:
+      if image.ndim > 1:
         if "L" in channels:
-          output = np.expand_dims(luma(image), axis = 0)
+          rgbluma = get_RGB_luma()
+          return rgbluma[0]*image[:, : , 0]+rgbluma[1]*image[:, : , 1]+rgbluma[2]*image[:, : , 2]
         else:
           output = image.copy()
-          if "R" not in channels: output[0] = 0.
-          if "G" not in channels: output[1] = 0.
-          if "B" not in channels: output[2] = 0.
+          if "R" not in channels: output[:, :, 0] = 0.
+          if "G" not in channels: output[:, :, 1] = 0.
+          if "B" not in channels: output[:, :, 2] = 0.
         return output
       else:
         return image
@@ -280,9 +280,9 @@ class Dashboard():
     # Check if zooms can be synchronized.
     synczoom = synczoom and nimages > 1
     if synczoom:
-      size = pimages[0].shape[1:3]
+      size = pimages[0].shape[0:2]
       for image in pimages[1:]:
-        synczoom = (image.shape[1:3] == size)
+        synczoom = (image.shape[0:2] == size)
         if not synczoom: break
     # Set-up tabs.
     tabs = []
@@ -294,7 +294,7 @@ class Dashboard():
       if filters:
         options = []
         values = []
-        if pimages[n].shape[0] > 1: # Color image.
+        if pimages[n].ndim > 1: # Color image.
           options.extend(["R", "G", "B", "L"])
           values.extend(["R", "G", "B"])
         options.extend(["Shadowed", "Highlighted"])
@@ -417,7 +417,7 @@ class Dashboard():
     left   = html.Div([label2],
                       style = {"display": "inline-block", "width": f"{params.lmargin}px",
                                "margin": "0px", "padding": "4px", "vertical-align": "middle", "writing-mode": "vertical-rl"})
-    center = html.Div([dxt.BeforeAfter(before = dict(src = image1), after = dict(src = image2), width = params.maxwidth)],
+    center = html.Div([dxt.BeforeAfter(before = dict(src = image1), after = dict(src = image2), width = str(params.maxwidth))],
                       style = {"display": "inline-block", "width": f"{params.maxwidth}px",
                                "margin": "0px", "vertical-align": "middle"})
     right  = html.Div([label1],

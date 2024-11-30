@@ -33,12 +33,11 @@ def _figure_prepared_image_(image, width = -1, hover = False, template = "plotly
   """
   if width <= 0: width = params.maxwidth
   # Plot image.
-  imshow = px.imshow(image[0] if image.shape[0] == 1 else np.moveaxis(image, 0, -1),
-                     zmin = 0., zmax = 1., aspect = "equal", binary_string = not hover)
+  imshow = px.imshow(image, zmin = 0., zmax = 1., aspect = "equal", binary_string = not hover)
   imshow.update_traces(name = "", hovertemplate = "(%{x}, %{y}): %{z}" if hover else "(%{x}, %{y})")
   figure = go.Figure(data = imshow)
   layout = go.Layout(template = template,
-                     width = width+params.lmargin+params.rmargin, height = width*image.shape[1]/image.shape[2]+params.bmargin+params.tmargin,
+                     width = width+params.lmargin+params.rmargin, height = width*image.shape[0]/image.shape[1]+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
   figure.update_layout(layout)
   return figure

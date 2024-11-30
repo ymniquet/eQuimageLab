@@ -31,9 +31,9 @@ bordercolor = "black"
 
 # Colors for shadows, highlights and differences.
 
-shadowcolor = np.array([[1.], [.5], [0.]])
-highlightcolor = np.array([[1.], [1.], [0.]])
-diffcolor = np.array([[1.], [1.], [0.]])
+shadowcolor = np.array([1., .5, 0.])
+highlightcolor = np.array([1., 1., 0.])
+diffcolor = np.array([1., 1., 0.])
 
 # Setters.
 
