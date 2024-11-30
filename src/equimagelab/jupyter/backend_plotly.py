@@ -48,7 +48,7 @@ def _figure_image_(image, sampling = -1, width = -1, hover = False, template = "
   Args:
     image: The image (Image object or numpy.ndarray).
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-      Only image[:, ::sampling, ::sampling] is shown, to speed up display.
+      Only image[::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
       Warning: Setting hover = True can slow down display a lot !
@@ -226,7 +226,7 @@ def show(image, histograms = False, statistics = False, sampling = -1, width = -
     statistics (optional): If True or a string, show the statistics of the image. The string lists the
       channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-      Only image[:, ::sampling, ::sampling] is shown, to speed up display.
+      Only image[::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
       Warning: Setting hover = True can slow down display a lot !
@@ -280,7 +280,7 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, r
     channels (str, optional): The channels of the histograms (default "RGBL" for red, green, blue, luma).
       The channels of the transformation are added if needed.
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-      Only image[:, ::sampling, ::sampling] is shown, to speed up display.
+      Only image[::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
       Warning: Setting hover = True can slow down display a lot !

@@ -68,7 +68,7 @@ def prepare_images(images, sampling = -1, copy = False):
   if not isinstance(images, (tuple, list)): return prepare(images, copy)
   return type(images)(prepare(image, copy) for image in images)
 
-def prepare_images_as_b64strings(images, sampling = -1):
+def prepare_images_as_b64strings(images, sampling = -1, compression = 4):
   """Prepare images as PNGs encoded in base64 strings.
 
   Returns all images as PNGs encoded in base64 strings.
@@ -78,6 +78,7 @@ def prepare_images_as_b64strings(images, sampling = -1):
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
     sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
       Only images[::sampling, ::sampling] are processed, to speed up operations.
+    compression (int, optional): PNG compression level (default 4).
 
   Returns:
     All args as PNGs encoded in base64 strings.
@@ -95,7 +96,7 @@ def prepare_images_as_b64strings(images, sampling = -1):
     if image.ndim == 3 and image.shape[2] == 1: image = np.squeeze(image, axis = 2)
     PILimg = PILImage.fromarray(np.clip(image[::sampling, ::sampling]*255, 0, 255).astype("uint8"))
     buffer = BytesIO()
-    PILimg.save(buffer, format = "PNG")
+    PILimg.save(buffer, format = "PNG", compress_level = compression)
     return "data:image/png;base64,"+base64.b64encode(buffer.getvalue()).decode("utf-8")
 
   if sampling <= 0: sampling = params.sampling

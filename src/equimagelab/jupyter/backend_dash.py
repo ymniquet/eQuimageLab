@@ -7,7 +7,7 @@
 """Dash backend for Jupyter-lab interface."""
 
 # TODO:
-#  - Patches.
+#  - Zoom statistics.
 #  - Update tabs only if necessary.
 
 import os
@@ -45,8 +45,6 @@ class Dashboard():
     self.nupdates = 0
     self.images = None
     self.refresh = False
-    self.hover = False
-    self.click = True
     self.synczoom = False
     self.interval = interval
     self.updatelock = threading.Lock()
@@ -65,11 +63,10 @@ class Dashboard():
     self.app.callback(Output({"type": "filters", "index": MATCH}, "value"), Output({"type": "selectedfilters", "index": MATCH}, "data"),
                       Output({"type": "image", "index": MATCH}, "figure", allow_duplicate = True),
                       Input({"type": "filters", "index": MATCH}, "value"), State({"type": "selectedfilters", "index": MATCH}, "data"),
-                      State({"type": "image", "index": MATCH}, "figure"), State("updateid", "data"), prevent_initial_call = True)(self.__filter_image)
+                      State("updateid", "data"), prevent_initial_call = True)(self.__filter_image)
     #   - Zoom synchronization:
     self.app.callback(Output({"type": "image", "index": ALL}, "relayoutData"), Output({"type": "image", "index": ALL}, "figure"),
-                      Input({"type": "image", "index": ALL}, "relayoutData"), State({"type": "image", "index": ALL}, "figure"),
-                      prevent_initial_call = True)(self.__sync_zoom)
+                      Input({"type": "image", "index": ALL}, "relayoutData"), prevent_initial_call = True)(self.__sync_zoom)
     # Launch Dash server.
     self.app.run_server(debug = True, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
@@ -78,7 +75,7 @@ class Dashboard():
     except:
       pass
     else:
-      self.show({"Welcome": splash}, filters = False, hover = False, click = False)
+      self.show({"Welcome": splash}, filters = False, click = False)
 
   def __layout_dashboard(self):
     """Lay out dashboard."""
@@ -128,7 +125,7 @@ class Dashboard():
       luma = rgbluma[0]*levels[0]+rgbluma[1]*levels[1]+rgbluma[2]*levels[2]
       return [f"Data at ({x}, {y}): R = {levels[0]:.5f}, G = {levels[1]:.5f}, B = {levels[2]:.5f}, L = {luma:.5f}"]
 
-  def __filter_image(self, current, previous, figure, updateid):
+  def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
 
     Args:
@@ -192,42 +189,38 @@ class Dashboard():
         image = highlighted(image, reference)
       else:
         image = differences(image, reference)
-    figure  = _figure_prepared_image_(image, width = params.maxwidth, hover = self.hover, template = "slate")
-    if self.click: figure.update_layout(clickmode = "event+select")
+    figure_patch = dash.Patch()
+    figure_patch["data"][0]["source"] = prepare_images_as_b64strings(image, sampling = 1)
     current = list(current)
-    return current, current, figure
+    return current, current, figure_patch
 
-  def __sync_zoom(self, fig_relayouts, fig_states):
+  def __sync_zoom(self, relayouts):
     """Callback for zoom synchronization.
 
     Args:
-      fig_relayouts (dict): Input figure relayouts.
-      fig_states (dict): Input figure states.
+      relayouts (list): Input figures relayouts.
 
     Returns:
-      Output figure relayouts and figure states.
+      Output figures relayouts and figures patches.
     """
-    if not self.synczoom: return fig_relayouts, fig_states
+    nrls = len(relayouts)
+    if not self.synczoom: return [dash.no_update]*nrls, [dash.no_update]*nrls
     trigger = ctx.triggered_id # Get the figure that triggered the callback.
-    if not trigger: return fig_relayouts, fig_states
+    if not trigger: return [dash.no_update]*nrls, [dash.no_update]*nrls
     n = trigger["index"] # Image index.
-    relayout = fig_relayouts[n]
+    relayout = relayouts[n]
+    figure_patch = dash.Patch()
     xauto = relayout.get("xaxis.autorange", False)
+    figure_patch["layout"]["xaxis"]["autorange"] = xauto
     if not xauto:
-      x1 = relayout["xaxis.range[0]"] ; x2 = relayout["xaxis.range[1]"]
+      figure_patch["layout"]["xaxis"]["range"] = [relayout["xaxis.range[0]"], relayout["xaxis.range[1]"]]
     yauto = relayout.get("yaxis.autorange", False)
+    figure_patch["layout"]["yaxis"]["autorange"] = yauto
     if not yauto:
-      y1 = relayout["yaxis.range[0]"] ; y2 = relayout["yaxis.range[1]"]
-    for fig_state in fig_states:
-      fig_state["layout"]["xaxis"]["autorange"] = xauto
-      if not xauto:
-        fig_state["layout"]["xaxis"]["range"] = [x1, x2]
-      fig_state["layout"]["yaxis"]["autorange"] = yauto
-      if not yauto:
-        fig_state["layout"]["yaxis"]["range"] = [y1, y2]
-    return [relayout]*len(fig_relayouts), fig_states
+      figure_patch["layout"]["yaxis"]["range"] = [relayout["yaxis.range[0]"], relayout["yaxis.range[1]"]]
+    return [relayout]*nrls, [figure_patch]*nrls
 
-  def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True, hover = False, click = True, synczoom = True, trans = None):
+  def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True, click = True, synczoom = True, trans = None):
     """Show image(s) on the dashboard.
 
     Args:
@@ -244,8 +237,6 @@ class Dashboard():
         Only images[:, ::sampling, ::sampling] are shown, to speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences).
-      hover (bool, optional): If True, show the images data on hover (default False).
-        Warning: Setting hover = True can slow down display a lot !
       click (bool, optional): If True, show the images data on click (default True).
       synczoom (bool, optional): If True (default), synchronize zooms over the images (default False).
         Zooms can be synchronized only if all images have the same size.
@@ -288,7 +279,7 @@ class Dashboard():
     tabs = []
     for n in range(nimages):
       tab = []
-      figure = _figure_prepared_image_(pimages[n], width = params.maxwidth, hover = hover, template = "slate")
+      figure = _figure_prepared_image_(pimages[n], width = params.maxwidth, hover = False, template = "slate")
       if click: figure.update_layout(clickmode = "event+select")
       tab.append(dcc.Graph(figure = figure, id = {"type": "image", "index": n}))
       if filters:
@@ -322,15 +313,13 @@ class Dashboard():
     with self.updatelock: # Lock on update.
       # BEWARE TO SIDE EFFECTS: SELF.IMAGES MAY REFERENCE THE ORIGINAL IMAGES.
       self.nupdates += 1
-      self.hover = hover
-      self.click = click
       self.synczoom = synczoom
       self.reference = reference
       self.images = pimages if click else None # No need to register images for the callbacks if click is False.
       self.content = [dbc.Tabs(tabs, active_tab = "tab-0")]
       self.refresh = True
 
-  def show_t(self, image, channels = "RGBL", sampling = -1, hover = False, synczoom = True):
+  def show_t(self, image, channels = "RGBL", sampling = -1, filters = True, click = True, synczoom = True):
     """Show the input and output images of an histogram transformation on the dashboard.
 
     Displays the input image, histograms, statistics, and transformation curve in tab "Reference",
@@ -341,9 +330,10 @@ class Dashboard():
       channels (str, optional): The channels of the histograms and statistics (default "RGBL" for red,
         green, blue, luma). The channels of the transformation are added if needed.
       sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-        Only image[:, ::sampling, ::sampling] is shown, to speed up display.
-      hover (bool, optional): If True, show the images data on hover (default False).
-        Warning: Setting hover = True can slow down display a lot !
+        Only image[::sampling, ::sampling] is shown, to speed up display.
+      filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
+        shadowed/highlighted pixels, images differences).
+      click (bool, optional): If True, show the images data on click (default True).
       synczoom (bool, optional): If True (default), synchronize zooms over the images (default False).
     """
     if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
@@ -357,7 +347,7 @@ class Dashboard():
         if c in "RGBVSL" and not c in channels:
           channels += c
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
-              sampling = sampling, hover = hover, synczoom = synczoom, trans = trans)
+              sampling = sampling, filters = filters, click = click, synczoom = synczoom, trans = trans)
 
   def carousel(self, images, sampling = -1, interval = 2000):
     """Show a carousel of images on the dashboard.
