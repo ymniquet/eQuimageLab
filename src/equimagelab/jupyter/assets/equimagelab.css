@@ -1,0 +1,47 @@
+/* Main blocks & elements. */
+
+.dashboard-outer { display: inline-block }
+.dashboard-inner { margin: 8px }
+
+.tab { border: solid 1px black }
+
+/* Before/After slider. */
+
+.baslider {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.baslider-label {
+  padding: 4px;
+  display: inline-block;
+  vertical-align: middle;
+  writing-mode: vertical-rl;
+}
+
+/* Alignments. */
+
+.inline { display: inline-block }
+
+/* Margins. */
+
+.lm1 { margin-left: 4px }
+.lm2 { margin-left: 8px }
+.lm4 { margin-left: 16px }
+
+.rm1 { margin-right: 4px }
+.rm2 { margin-right: 8px }
+.rm4 { margin-right: 16px }
+
+/* Text. */
+
+.bold { font-weight: bold }
+.left { text-align: left }
+.right { text-align: right }
+
+/* Channel colors. */
+
+.red { color: red }
+.green { color: green }
+.blue { color: blue }
+.luma { color: lightslategray }

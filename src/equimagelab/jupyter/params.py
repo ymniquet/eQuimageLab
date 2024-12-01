@@ -24,11 +24,6 @@ tmargin = 48  # Top margin.
 
 rowheight = 25 # Height of the table rows.
 
-# Tab border width (pixels) and color.
-
-borderwidth = 1
-bordercolor = "black"
-
 # Colors for shadows, highlights and differences.
 
 shadowcolor = np.array([1., .5, 0.])

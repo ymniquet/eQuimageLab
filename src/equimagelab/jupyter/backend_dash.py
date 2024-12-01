@@ -7,7 +7,6 @@
 """Dash backend for Jupyter-lab interface."""
 
 # TODO:
-#  - Move CSS.
 #  - Zoom statistics.
 #  - Update tabs only if necessary.
 
@@ -51,7 +50,7 @@ class Dashboard():
     self.updatelock = threading.Lock()
     # Set-up Dash app.
     dbt.load_figure_template("slate")
-    self.app = Dash(title = "eQuimageLab dashboard", update_title = None, external_stylesheets = [dbc.themes.SLATE])
+    self.app = Dash(__name__, title = "eQuimageLab dashboard", update_title = None, external_stylesheets = [dbc.themes.SLATE])
     self.app.layout = self.__layout_dashboard
     # Register callbacks:
     #   - Dashboard update:
@@ -80,10 +79,10 @@ class Dashboard():
 
   def __layout_dashboard(self):
     """Lay out dashboard."""
-    dashboard = html.Div(self.content, id = "dashboard", style = {"display": "inline-block"})
+    dashboard = html.Div(self.content, id = "dashboard", className = "dashboard-outer")
     updateid = dcc.Store(data = self.nupdates, id = "updateid")
     interval = dcc.Interval(interval = self.interval, n_intervals = 0, id = "updateinterval")
-    return html.Div([dashboard, updateid, interval], style = {"margin": "8px"})
+    return html.Div([dashboard, updateid, interval], className = "dashboard-inner")
 
   def __update_dashboard(self, n):
     """Callback for dashboard updates.
@@ -120,14 +119,14 @@ class Dashboard():
     y = click["points"][0]["y"]
     levels = self.images[n][y, x, :]
     if levels.size == 1:
-      return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {levels[0]:.5f}", style = {"color": "lightslategray"}), "."]
+      return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {levels[0]:.5f}", className = "luma"), "."]
     else:
       rgbluma = get_RGB_luma()
       luma = rgbluma[0]*levels[0]+rgbluma[1]*levels[1]+rgbluma[2]*levels[2]
-      return [f"Data at (x = {x}, y = {y}): ", html.Span(f"R = {levels[0]:.5f}", style = {"color": "red"}), ", ",
-                                               html.Span(f"G = {levels[1]:.5f}", style = {"color": "green"}), ", ",
-                                               html.Span(f"B = {levels[2]:.5f}", style = {"color": "blue"}), ", ",
-                                               html.Span(f"L = {luma:.5f}", style = {"color": "lightslategray"}), "."]
+      return [f"Data at (x = {x}, y = {y}): ", html.Span(f"R = {levels[0]:.5f}", className = "red"), ", ",
+                                               html.Span(f"G = {levels[1]:.5f}", className = "green"), ", ",
+                                               html.Span(f"B = {levels[2]:.5f}", className = "blue"), ", ",
+                                               html.Span(f"L = {luma:.5f}", className = "luma"), "."]
 
   def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
@@ -290,20 +289,20 @@ class Dashboard():
         options = []
         values = []
         if pimages[n].ndim > 1: # Color image.
-          options.extend([{"label": html.Span("R", style = {"color": "red", "margin-left": "4px"}), "value": "R"},
-                          {"label": html.Span("G", style = {"color": "green", "margin-left": "4px"}), "value": "G"},
-                          {"label": html.Span("B", style = {"color": "blue", "margin-left": "4px"}), "value": "B"},
-                          {"label": html.Span("L", style = {"color": "lightslategray", "margin-left": "4px", "margin-right": "16px"}), "value": "L"}])
+          options.extend([{"label": html.Span("R", className = "red lm1"), "value": "R"},
+                          {"label": html.Span("G", className = "green lm1"), "value": "G"},
+                          {"label": html.Span("B", className = "blue lm1"), "value": "B"},
+                          {"label": html.Span("L", className = "luma lm1 rm4"), "value": "L"}])
           values.extend(["R", "G", "B"])
-        options.extend([{"label": html.Span("Shadowed", style = {"margin-left": "4px"}), "value": "S"},
-                        {"label": html.Span("Highlighted", style = {"margin-left": "4px"}), "value": "H"}])
+        options.extend([{"label": html.Span("Shadowed", className = "lm1"), "value": "S"},
+                        {"label": html.Span("Highlighted", className = "lm1"), "value": "H"}])
         if reference and pimages[n].shape == pimages[reference].shape:
-          options.extend([{"label": html.Span("Differences", style = {"margin-left": "4px"}), "value": "D"}])
+          options.extend([{"label": html.Span("Differences", className = "lm1"), "value": "D"}])
         checklist = dcc.Checklist(options = options, value = values, id = {"type": "filters", "index": n},
-                                  inline = True, labelStyle = {"margin-right": "16px"})
+                                  inline = True, labelClassName = "rm4")
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
-        tab.append(html.Div([html.Div(["Filters:"], style = {"display": "inline-block", "margin-right": "16px"}),
-                             html.Div([checklist], style = {"display": "inline-block"}), selected],
+        tab.append(html.Div([html.Div(["Filters:"], className = "inline rm4"),
+                             html.Div([checklist], className = "inline rm4"), selected],
                              style = {"width": f"{params.maxwidth}px", "margin": f"0px {params.rmargin}px 0px {params.lmargin}px"}))
       if click:
         tab.append(html.Div([], id = {"type": "datadiv", "index": n},
@@ -317,7 +316,7 @@ class Dashboard():
         if statistics is True: statistics = ""
         table = _table_statistics_(images[n], channels = statistics)
         if table is not None: tab.append(table)
-      tabs.append(dbc.Tab(tab, label = keys[n], style = {"border": f"solid {params.borderwidth}px {params.bordercolor}"}))
+      tabs.append(dbc.Tab(tab, label = keys[n], className = "tab"))
     # Update dashboard.
     with self.updatelock: # Lock on update.
       # BEWARE TO SIDE EFFECTS: SELF.IMAGES MAY REFERENCE THE ORIGINAL IMAGES.
@@ -391,7 +390,7 @@ class Dashboard():
     items = [dict(key = f"{n}", src = prepare_images_as_b64strings(images[n], sampling = sampling), header = keys[n]) for n in range(nimages)]
     widget = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
              style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
-    tab = dbc.Tab([widget], label = "Carousel", style = {"border": f"solid {params.borderwidth}px {params.bordercolor}"})
+    tab = dbc.Tab([widget], label = "Carousel", className = "tab")
     # Update dashboard.
     with self.updatelock: # Lock on update.
       self.nupdates += 1
@@ -413,19 +412,14 @@ class Dashboard():
     self.refresh = False # Stop refreshing dashboard.
     # Set-up before/after widget.
     image1, image2 = prepare_images_as_b64strings((image1, image2), sampling = sampling)
-    left   = html.Div([label2],
-                      style = {"display": "inline-block", "width": f"{params.lmargin}px",
-                               "margin": "0px", "padding": "4px", "vertical-align": "middle", "writing-mode": "vertical-rl"})
-    center = html.Div([dxt.BeforeAfter(before = dict(src = image1), after = dict(src = image2), width = str(params.maxwidth))],
-                      style = {"display": "inline-block", "width": f"{params.maxwidth}px",
-                               "margin": "0px", "vertical-align": "middle"})
-    right  = html.Div([label1],
-                      style = {"display": "inline-block",
-                               "margin": "0px", "padding": "4px", "vertical-align": "middle", "writing-mode": "vertical-rl"})
-    widget = html.Div([left, center, right],
-                      style = {"display": "inline-block", "width": f"{params.maxwidth+params.lmargin+params.rmargin}px",
+    baslider = dxt.BeforeAfter(before = dict(src = image1), after = dict(src = image2), width = str(params.maxwidth))
+    left   = html.Div([label2], className = "baslider-label", style = {"width": f"{params.lmargin}px"})
+    center = html.Div([baslider], className = "baslider", style = {"width": f"{params.maxwidth}px"})
+    right  = html.Div([label1], className = "baslider-label")
+    widget = html.Div([left, center, right], className = "inline",
+                      style = {"width": f"{params.maxwidth+params.lmargin+params.rmargin}px",
                                "margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
-    tab = dbc.Tab([widget], label = "Compare images", style = {"border": f"solid {params.borderwidth}px {params.bordercolor}"})
+    tab = dbc.Tab([widget], label = "Compare images", className = "tab")
     # Update dashboard.
     with self.updatelock: # Lock on update.
       self.nupdates += 1
@@ -453,7 +447,7 @@ def _table_statistics_(image, channels = ""):
   else:
     stats = image.statistics(channels = channels)
   # Create table.
-  header = [html.Thead(html.Tr([html.Th("Channel", style = {"text-align": "left"}), html.Th("Minimum"), html.Th("25%"), html.Th("50%"),
+  header = [html.Thead(html.Tr([html.Th("Channel", className = "left"), html.Th("Minimum"), html.Th("25%"), html.Th("50%"),
                                 html.Th("75%"), html.Th("Maximum"), html.Th("Shadowed"), html.Th("Highlighted")]))]
   rows = []
   exclude01 = False
@@ -464,12 +458,11 @@ def _table_statistics_(image, channels = ""):
       percentiles = [f"{channel.percentiles[0]:.5f}{deco}", f"{channel.percentiles[1]:.5f}{deco}", f"{channel.percentiles[2]:.5f}{deco}"]
     else:
       percentiles = 3*[f"None{deco}"]
-    rows.append(html.Tr([html.Td(channel.name, style = {"color": f"{channel.color}", "font-weight": "bold", "text-align": "left"}), html.Td(f"{channel.minimum:.5f}"),
-                         html.Td(percentiles[0]), html.Td(percentiles[1]),
-                         html.Td(percentiles[2]), html.Td(f"{channel.maximum:.5f}"),
+    rows.append(html.Tr([html.Td(channel.name, className = "bold left", style = {"color": f"{channel.color}"}), html.Td(f"{channel.minimum:.5f}"),
+                         html.Td(percentiles[0]), html.Td(percentiles[1]), html.Td(percentiles[2]), html.Td(f"{channel.maximum:.5f}"),
                          html.Td(f"{channel.zerocount} ({100.*channel.zerocount/channel.npixels:.2f}%)"),
                          html.Td(f"{channel.outcount} ({100.*channel.outcount/channel.npixels:.2f}%)")]))
   body = [html.Tbody(rows)]
-  table = [dbc.Table(header+body, size = "sm", bordered = True, striped = True, style = {"width": f"{params.maxwidth}px", "text-align": "right"})]
+  table = [dbc.Table(header+body, size = "sm", bordered = True, striped = True, className = "right", style = {"width": f"{params.maxwidth}px"})]
   if exclude01: table.append("\u207d\u2071\u207e Does not include pixels <= 0 or >= 1.")
   return html.Div(table, style = {"margin": f"32px {params.rmargin}px 32px {params.lmargin}px"})
