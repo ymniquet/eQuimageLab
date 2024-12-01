@@ -129,6 +129,7 @@ class Mixin:
         - stats[key].zerocount = number of pixels <= 0.
         - stats[key].outcount = number of pixels > 1 (out-of-range).
         - stats[key].exclude01 = True if pixels >= 0 or <= 1 have been excluded from the median and percentiles, False otherwise.
+        - stats[key].color = suggested text color for display.
     """
     if exclude01 is None: exclude01 = params.exclude01
     if not hasattr(self, "stats"): self.stats = {} # Register empty statistics in the object, if none already computed.
@@ -152,23 +153,29 @@ class Mixin:
       if key == "R":
         self.check_color_model("RGB", "gray")
         name = "Red"
+        color = "red"
         channel = self.image[0]
       elif key == "G":
         self.check_color_model("RGB", "gray")
         name = "Green"
+        color = "green"
         channel = self.image[1] if self.colormodel == "RGB" else self.image[0]
       elif key == "B":
         self.check_color_model("RGB", "gray")
         name = "Blue"
+        color = "blue"
         channel = self.image[2] if self.colormodel == "RGB" else self.image[0]
       elif key == "V":
         name = "Value"
+        color = "darkslategray"
         channel = self.value()
       elif key == "S":
         name = "Saturation"
+        color = "orange"
         channel = self.saturation()
       elif key == "L":
         name = "Luma"
+        color = "lightslategray"
         channel = self.luma()
       else:
         raise ValueError(f"Error, unknown channel '{key}'.")
@@ -188,5 +195,6 @@ class Mixin:
       stats[key].zerocount = np.sum(channel < params.IMGTOL)
       stats[key].outcount = np.sum(channel > 1.+params.IMGTOL)
       stats[key].exclude01 = exclude01
+      stats[key].color = color
     self.stats = stats
     return stats

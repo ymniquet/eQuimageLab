@@ -7,6 +7,7 @@
 """Dash backend for Jupyter-lab interface."""
 
 # TODO:
+#  - Move CSS.
 #  - Zoom statistics.
 #  - Update tabs only if necessary.
 
@@ -119,11 +120,14 @@ class Dashboard():
     y = click["points"][0]["y"]
     levels = self.images[n][y, x, :]
     if levels.size == 1:
-      return [f"Data at ({x}, {y}): L = {levels[0]:.5f}"]
+      return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {levels[0]:.5f}", style = {"color": "lightslategray"}), "."]
     else:
       rgbluma = get_RGB_luma()
       luma = rgbluma[0]*levels[0]+rgbluma[1]*levels[1]+rgbluma[2]*levels[2]
-      return [f"Data at ({x}, {y}): R = {levels[0]:.5f}, G = {levels[1]:.5f}, B = {levels[2]:.5f}, L = {luma:.5f}"]
+      return [f"Data at (x = {x}, y = {y}): ", html.Span(f"R = {levels[0]:.5f}", style = {"color": "red"}), ", ",
+                                               html.Span(f"G = {levels[1]:.5f}", style = {"color": "green"}), ", ",
+                                               html.Span(f"B = {levels[2]:.5f}", style = {"color": "blue"}), ", ",
+                                               html.Span(f"L = {luma:.5f}", style = {"color": "lightslategray"}), "."]
 
   def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
@@ -170,22 +174,22 @@ class Dashboard():
           current.update("L")
         else:
           current.difference_update({"L"})
-      elif t == "Shadowed":
-        current.difference_update({"Highlighted", "Differences"})
-      elif t == "Highlighted":
-        current.difference_update({"Shadowed", "Differences"})
-      elif t == "Differences":
-        current.difference_update({"Shadowed", "Highlighted"})
+      elif t == "S":
+        current.difference_update({"H", "D"})
+      elif t == "H":
+        current.difference_update({"S", "D"})
+      elif t == "D":
+        current.difference_update({"S", "H"})
       else:
         raise ValueError(f"Error, unknown filter {t}.")
     # Apply selected filters to the image.
     n = trigger["index"] # Image index.
     image = filter_channels(self.images[n], current)
-    if current & {"Shadowed", "Highlighted", "Differences"}:
+    if current & {"S", "H", "D"}:
       reference = filter_channels(self.images[self.reference], current) if self.reference is not None else None
-      if "Shadowed" in current:
+      if "S" in current:
         image = shadowed(image, reference)
-      elif "Highlighted" in current:
+      elif "H" in current:
         image = highlighted(image, reference)
       else:
         image = differences(image, reference)
@@ -286,10 +290,15 @@ class Dashboard():
         options = []
         values = []
         if pimages[n].ndim > 1: # Color image.
-          options.extend(["R", "G", "B", "L"])
+          options.extend([{"label": html.Span("R", style = {"color": "red", "margin-left": "4px"}), "value": "R"},
+                          {"label": html.Span("G", style = {"color": "green", "margin-left": "4px"}), "value": "G"},
+                          {"label": html.Span("B", style = {"color": "blue", "margin-left": "4px"}), "value": "B"},
+                          {"label": html.Span("L", style = {"color": "lightslategray", "margin-left": "4px", "margin-right": "16px"}), "value": "L"}])
           values.extend(["R", "G", "B"])
-        options.extend(["Shadowed", "Highlighted"])
-        if reference and pimages[n].shape == pimages[reference].shape: options.extend(["Differences"])
+        options.extend([{"label": html.Span("Shadowed", style = {"margin-left": "4px"}), "value": "S"},
+                        {"label": html.Span("Highlighted", style = {"margin-left": "4px"}), "value": "H"}])
+        if reference and pimages[n].shape == pimages[reference].shape:
+          options.extend([{"label": html.Span("Differences", style = {"margin-left": "4px"}), "value": "D"}])
         checklist = dcc.Checklist(options = options, value = values, id = {"type": "filters", "index": n},
                                   inline = True, labelStyle = {"margin-right": "16px"})
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
@@ -432,7 +441,7 @@ def _table_statistics_(image, channels = ""):
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
 
   Returns:
-    dbc.Table: A dash bootstrap components table with the statistics of the image.
+    # dbc.Table: A dash bootstrap components table with the statistics of the image.
   """
   # Prepare statistics.
   if not issubclass(type(image), Image):
@@ -455,7 +464,7 @@ def _table_statistics_(image, channels = ""):
       percentiles = [f"{channel.percentiles[0]:.5f}{deco}", f"{channel.percentiles[1]:.5f}{deco}", f"{channel.percentiles[2]:.5f}{deco}"]
     else:
       percentiles = 3*[f"None{deco}"]
-    rows.append(html.Tr([html.Td(channel.name, style = {"text-align": "left"}), html.Td(f"{channel.minimum:.5f}"),
+    rows.append(html.Tr([html.Td(channel.name, style = {"color": f"{channel.color}", "font-weight": "bold", "text-align": "left"}), html.Td(f"{channel.minimum:.5f}"),
                          html.Td(percentiles[0]), html.Td(percentiles[1]),
                          html.Td(percentiles[2]), html.Td(f"{channel.maximum:.5f}"),
                          html.Td(f"{channel.zerocount} ({100.*channel.zerocount/channel.npixels:.2f}%)"),
