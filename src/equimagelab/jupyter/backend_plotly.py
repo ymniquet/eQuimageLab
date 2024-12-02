@@ -169,7 +169,7 @@ def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, templa
 
   Args:
     image (Image): The image.
-    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
+    channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
     width (int, optional): The width of the table (defaults to params.maxwidth if negative).
     rowheight (int, optional): The height of the rows (default to params.rowheight if negative).
     template (str, optional): The template for the figure (default "plotly_dark").

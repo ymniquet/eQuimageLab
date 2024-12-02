@@ -30,7 +30,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
   The image is stored as self.image, a numpy.ndarray with dtype params.IMGTYPE = np.float32 or np.float64.
   Color images are stored as arrays with shape (3, height, width) and grayscale images as arrays with
-  shape (1, height, width). The leading axis spans the color channels, and the next two the height
+  shape (1, height, width). The leading axis spans the color channels, and the last two the height
   and width of the image.
 
   The class embeds colorspace and colormodel attributes for the color space and model of the image.
@@ -51,16 +51,16 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   # Constructor. #
   ################
 
-  def __init__(self, image, channels = 0, colorspace = "sRGB", colormodel = "RGB"):
+  def __init__(self, image, colorspace = "sRGB", colormodel = "RGB", channels = 0):
     """Initialize a new Image object with the input image.
 
     Args:
       image: The input image (numpy.ndarray or Image).
-      channels (int, optional): The position of the channel axis for color images (default 0).
       colorspace (str, optional): The image color space (default "sRGB").
         Can be "lRGB" (linear RGB color space) or "sRGB" (sRGB color space).
       colormodel (str, optional): The image color model (default "RGB").
         Can be "RGB" (RGB image), "HSV" (HSV image) or "gray (grayscale image).
+      channels (int, optional): The position of the channel axis for color images (default 0).
     """
     # Check color space and model.
     if colorspace not in ["lRGB", "sRGB"]:
@@ -151,7 +151,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
         return output[()]
       else:
         if not mixed and output.shape == reference.image.shape:
-          return Image(output, reference.colorspace, reference.colormodel)
+          return Image(output, colorspace = reference.colorspace, colormodel = reference.colormodel)
         else:
           return output
     else:
@@ -179,7 +179,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
         return output[()]
       else:
         if not mixed and output.shape == reference.image.shape:
-          return Image(output, reference.colorspace, reference.colormodel)
+          return Image(output, colorspace = reference.colorspace, colormodel = reference.colormodel)
         else:
           return output
     else:

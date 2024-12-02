@@ -42,6 +42,7 @@ class Dashboard():
     # Initialize object data.
     self.content = []
     self.nupdates = 0
+    self.layout = None
     self.images = None
     self.refresh = False
     self.synczoom = False
@@ -85,7 +86,7 @@ class Dashboard():
     except:
       pass
     else:
-      self.show({"Welcome": splash}, filters = False, click = False)
+      self.show({"Welcome": splash}, filters = False, click = False, synczoom = False)
 
   def __layout_dashboard(self):
     """Lay out dashboard."""
@@ -238,8 +239,7 @@ class Dashboard():
     # Compute image histograms using equimage.
     n = trigger["index"] # Image index.
     image = Image(self.images[n], channels = -1).crop(xmin, xmax, ymin, ymax)
-    stats = image.histograms(channels = "RGBL")
-    figure = _figure_histograms_(image)
+    figure = _figure_histograms_(image, channels = "RGBL", log = True, width = params.maxwidth, template = "slate")
     content = [dcc.Graph(figure = figure)]
     return True, content
 
@@ -262,11 +262,17 @@ class Dashboard():
     xauto = relayout.get("xaxis.autorange", False)
     figure_patch["layout"]["xaxis"]["autorange"] = xauto
     if not xauto:
-      figure_patch["layout"]["xaxis"]["range"] = [relayout["xaxis.range[0]"], relayout["xaxis.range[1]"]]
+      self.xrange = [relayout["xaxis.range[0]"], relayout["xaxis.range[1]"]]
+      figure_patch["layout"]["xaxis"]["range"] = self.xrange
+    else:
+      self.xrange = None
     yauto = relayout.get("yaxis.autorange", False)
     figure_patch["layout"]["yaxis"]["autorange"] = yauto
     if not yauto:
-      figure_patch["layout"]["yaxis"]["range"] = [relayout["yaxis.range[0]"], relayout["yaxis.range[1]"]]
+      self.yrange = [relayout["yaxis.range[0]"], relayout["yaxis.range[1]"]]
+      figure_patch["layout"]["yaxis"]["range"] = self.yrange
+    else:
+      self.yrange = None
     return [relayout]*nimages, [figure_patch]*nimages
 
   def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True, click = True, synczoom = True, trans = None):
@@ -318,17 +324,26 @@ class Dashboard():
     # Prepare images.
     pimages = prepare_images(images, sampling = sampling)
     # Check if zooms can be synchronized.
-    synczoom = synczoom and nimages > 1
     if synczoom:
-      size = pimages[0].shape[0:2]
+      imagesize = pimages[0].shape[0:2]
       for image in pimages[1:]:
-        synczoom = (image.shape[0:2] == size)
+        synczoom = (image.shape[0:2] == imagesize)
         if not synczoom: break
+    if not synczoom: imagesize = None
+    # Try to preserve existing axes ranges if already in tabs layout and synczoom is consistently True.
+    if synczoom and self.layout == "tabs" and self.synczoom and self.imagesize == imagesize:
+      xrange = self.xrange
+      yrange = self.yrange
+    else:
+      xrange = None
+      yrange = None
     # Set-up tabs.
     tabs = []
     for n in range(nimages):
       tab = []
       figure = _figure_prepared_image_(pimages[n], width = params.maxwidth, hover = False, template = "slate")
+      if xrange is not None: figure.update_layout(xaxis_range = xrange)
+      if yrange is not None: figure.update_layout(yaxis_range = yrange)
       if click: figure.update_layout(clickmode = "event+select")
       tab.append(dcc.Graph(figure = figure, id = {"type": "image", "index": n}))
       if filters:
@@ -370,7 +385,11 @@ class Dashboard():
     with self.updatelock: # Lock on update.
       # BEWARE TO SIDE EFFECTS: SELF.IMAGES MAY REFERENCE THE ORIGINAL IMAGES.
       self.nupdates += 1
+      self.layout = "tabs"
+      self.xrange = xrange
+      self.yrange = yrange
       self.synczoom = synczoom
+      self.imagesize = imagesize
       self.reference = reference
       self.images = pimages if click or filters else None # No need to register images for the callbacks if click and filters are False.
       self.content = [dbc.Tabs(tabs, active_tab = "tab-0")]
@@ -443,6 +462,7 @@ class Dashboard():
     # Update dashboard.
     with self.updatelock: # Lock on update.
       self.nupdates += 1
+      self.layout = "carousel"
       self.images = None # No need to register images for the callbacks.
       self.content = [dbc.Tabs([tab], active_tab = "tab-0")]
       self.refresh = True
@@ -471,6 +491,7 @@ class Dashboard():
     # Update dashboard.
     with self.updatelock: # Lock on update.
       self.nupdates += 1
+      self.layout = "slider"
       self.images = None # No need to register images for the callbacks.
       self.content = [dbc.Tabs([tab], active_tab = "tab-0")]
       self.refresh = True
