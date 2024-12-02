@@ -51,11 +51,12 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   # Constructor. #
   ################
 
-  def __init__(self, image, colorspace = "sRGB", colormodel = "RGB"):
+  def __init__(self, image, channels = 0, colorspace = "sRGB", colormodel = "RGB"):
     """Initialize a new Image object with the input image.
 
     Args:
       image: The input image (numpy.ndarray or Image).
+      channels (int, optional): The position of the channel axis for color images (default 0).
       colorspace (str, optional): The image color space (default "sRGB").
         Can be "lRGB" (linear RGB color space) or "sRGB" (sRGB color space).
       colormodel (str, optional): The image color model (default "RGB").
@@ -73,6 +74,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
       colormodel = "gray"  # Enforce colormodel = "gray".
       image = np.expand_dims(image, axis = 0)
     elif image.ndim == 3:
+      if channels != 0: image = np.moveaxis(image, channels, 0)
       nc = image.shape[0]
       if nc == 1:
         colormodel = "gray" # Enforce colormodel = "gray".
@@ -104,7 +106,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     colorspace = kwargs.pop("colorspace", self.colorspace)
     colormodel = kwargs.pop("colormodel", self.colormodel)
     if kwargs: print("Discarding extra keyword arguments in Image.newImage...")
-    return Image(image, colorspace, colormodel)
+    return Image(image, colorspace = colorspace, colormodel = colormodel)
 
   def copy(self):
     """Return a copy of the object.
@@ -191,15 +193,16 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     """Return the image data.
 
     Args:
-      channels (int, optional): Position of the channel axis (default 0).
+      channels (int, optional): The position of the channel axis (default 0).
       copy (bool, optional): If True, return a copy of the image data;
                              If false (default), return a view.
 
     Returns:
       numpy.ndarray: The image data.
     """
-    output = np.moveaxis(self.image, 0, channels)
-    return output.copy() if copy else output
+    image = self.image
+    if channels != 0: image = np.moveaxis(image, 0, channels)
+    return image.copy() if copy else image
 
   def get_shape(self):
     """Return the shape of the image data.

@@ -1,37 +1,67 @@
-/* Main blocks & elements. */
+/* Dashboard layout. */
 
-.dashboard-outer { display: inline-block }
-.dashboard-inner { margin: 8px }
+.dashboard-outer { margin: 15px }
+.dashboard-inner { display: inline-block }
+
+/* Tabs. */
 
 .tab { border: solid 1px black }
 
 /* Before/After slider. */
 
-.baslider {
+.ba-left {
+  display: inline-block;
+  vertical-align: middle;
+  padding: 4px;
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+}
+
+.ba-middle {
   display: inline-block;
   vertical-align: middle;
 }
 
-.baslider-label {
-  padding: 4px;
+.ba-right {
   display: inline-block;
   vertical-align: middle;
+  padding: 4px;
   writing-mode: vertical-rl;
+  transform: rotate(180deg);
 }
 
 /* Alignments. */
 
 .inline { display: inline-block }
 
+.floatleft { float : left }
+.floatright { float : right }
+
+.flex { display: flex }
+.center { align-items: center }
+.flushright { margin-left: auto }
+
 /* Margins. */
 
 .lm1 { margin-left: 4px }
 .lm2 { margin-left: 8px }
 .lm4 { margin-left: 16px }
+.lm8 { margin-left: 32px }
 
 .rm1 { margin-right: 4px }
 .rm2 { margin-right: 8px }
 .rm4 { margin-right: 16px }
+.rm8 { margin-right: 32px }
+
+.tm1 { margin-top: 4px }
+.tm2 { margin-top: 8px }
+.tm4 { margin-top: 16px }
+.tm8 { margin-top: 32px }
+
+.bm1 { margin-bottom: 4px }
+.bm2 { margin-bottom: 8px }
+.bm4 { margin-bottom: 16px }
+.bm8 { margin-bottom: 32px }
 
 /* Text. */
 
