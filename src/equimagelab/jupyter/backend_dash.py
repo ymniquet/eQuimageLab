@@ -90,10 +90,11 @@ class Dashboard():
 
   def __layout_dashboard(self):
     """Lay out dashboard."""
-    dashboard = html.Div(self.content, id = "dashboard", className = "dashboard-inner")
-    updateid = dcc.Store(data = self.nupdates, id = "updateid")
-    interval = dcc.Interval(interval = self.interval, n_intervals = 0, id = "updateinterval")
-    return html.Div([dashboard, updateid, interval], className = "dashboard-outer")
+    with self.updatelock: # Lock while preparin layout.
+      dashboard = html.Div(self.content, id = "dashboard", className = "dashboard-inner")
+      updateid = dcc.Store(data = self.nupdates, id = "updateid")
+      interval = dcc.Interval(interval = self.interval, n_intervals = 0, id = "updateinterval")
+      return html.Div([dashboard, updateid, interval], className = "dashboard-outer")
 
   def __update_dashboard(self, n_intervals):
     """Callback for dashboard updates.
@@ -105,7 +106,7 @@ class Dashboard():
       The updated dashboard and the unique ID of the update.
     """
     if not self.refresh or n_intervals <= 0: return dash.no_update, dash.no_update
-    with self.updatelock: # Lock on update.
+    with self.updatelock: # Lock on callback.
       self.refresh = False
       return self.content, self.nupdates
 
@@ -123,20 +124,21 @@ class Dashboard():
     """
     trigger = ctx.triggered_id # Get the figure that triggered the callback.
     if not trigger: return []
-    if self.images is None or updateid != self.nupdates: return [] # The dashboard is out of sync.
-    n = trigger["index"] # Image index.
-    x = click["points"][0]["x"]
-    y = click["points"][0]["y"]
-    data = self.images[n][y, x, :]
-    if data.size == 1:
-      return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {data[0]:.5f}", className = "luma"), "."]
-    else:
-      rgbluma = get_RGB_luma()
-      luma = rgbluma[0]*data[0]+rgbluma[1]*data[1]+rgbluma[2]*data[2]
-      return [f"Data at (x = {x}, y = {y}): ", html.Span(f"R = {data[0]:.5f}", className = "red"), ", ",
-                                               html.Span(f"G = {data[1]:.5f}", className = "green"), ", ",
-                                               html.Span(f"B = {data[2]:.5f}", className = "blue"), ", ",
-                                               html.Span(f"L = {luma:.5f}", className = "luma"), "."]
+    with self.updatelock: # Lock on callback.
+      if self.images is None or updateid != self.nupdates: return [] # The dashboard is out of sync.
+      n = trigger["index"] # Image index.
+      x = click["points"][0]["x"]
+      y = click["points"][0]["y"]
+      data = self.images[n][y, x, :]
+      if data.size == 1:
+        return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {data[0]:.5f}", className = "luma"), "."]
+      else:
+        rgbluma = get_RGB_luma()
+        luma = rgbluma[0]*data[0]+rgbluma[1]*data[1]+rgbluma[2]*data[2]
+        return [f"Data at (x = {x}, y = {y}): ", html.Span(f"R = {data[0]:.5f}", className = "red"), ", ",
+                                                html.Span(f"G = {data[1]:.5f}", className = "green"), ", ",
+                                                html.Span(f"B = {data[2]:.5f}", className = "blue"), ", ",
+                                                html.Span(f"L = {luma:.5f}", className = "luma"), "."]
 
   def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
@@ -170,46 +172,47 @@ class Dashboard():
 
     trigger = ctx.triggered_id # Get the figure that triggered the callback.
     if not trigger: return previous, previous, dash.no_update
-    if self.images is None or updateid != self.nupdates: return [], [], dash.no_update # The dashboard is out of sync.
-    # Update filters list.
-    current = set(current)
-    previous = set(previous)
-    toggled = current^previous
-    for t in toggled: # There shall be only one checkbox toggled, actually.
-      if t == "L":
-        if "L" in current:
-          current.difference_update({"R", "G", "B"})
+    with self.updatelock: # Lock on callback.
+      if self.images is None or updateid != self.nupdates: return [], [], dash.no_update # The dashboard is out of sync.
+      # Update filters list.
+      current = set(current)
+      previous = set(previous)
+      toggled = current^previous
+      for t in toggled: # There shall be only one checkbox toggled, actually.
+        if t == "L":
+          if "L" in current:
+            current.difference_update({"R", "G", "B"})
+          else:
+            current.update({"R", "G", "B"})
+        elif t in ["R", "G", "B"]:
+          if not current & {"R", "G", "B"}:
+            current.update("L")
+          else:
+            current.difference_update({"L"})
+        elif t == "S":
+          current.difference_update({"H", "D"})
+        elif t == "H":
+          current.difference_update({"S", "D"})
+        elif t == "D":
+          current.difference_update({"S", "H"})
         else:
-          current.update({"R", "G", "B"})
-      elif t in ["R", "G", "B"]:
-        if not current & {"R", "G", "B"}:
-          current.update("L")
+          raise ValueError(f"Error, unknown filter {t}.")
+      # Apply selected filters to the image.
+      n = trigger["index"] # Image index.
+      image = filter_channels(self.images[n], current)
+      if current & {"S", "H", "D"}:
+        reference = filter_channels(self.images[self.reference], current) if self.reference is not None else None
+        if "S" in current:
+          image = shadowed(image, reference)
+        elif "H" in current:
+          image = highlighted(image, reference)
         else:
-          current.difference_update({"L"})
-      elif t == "S":
-        current.difference_update({"H", "D"})
-      elif t == "H":
-        current.difference_update({"S", "D"})
-      elif t == "D":
-        current.difference_update({"S", "H"})
-      else:
-        raise ValueError(f"Error, unknown filter {t}.")
-    # Apply selected filters to the image.
-    n = trigger["index"] # Image index.
-    image = filter_channels(self.images[n], current)
-    if current & {"S", "H", "D"}:
-      reference = filter_channels(self.images[self.reference], current) if self.reference is not None else None
-      if "S" in current:
-        image = shadowed(image, reference)
-      elif "H" in current:
-        image = highlighted(image, reference)
-      else:
-        image = differences(image, reference)
-    # Return filtered image as a patch.
-    figure_patch = dash.Patch()
-    figure_patch["data"][0]["source"] = prepare_images_as_b64strings(image, sampling = 1)
-    current = list(current)
-    return current, current, figure_patch
+          image = differences(image, reference)
+      # Return filtered image as a patch.
+      figure_patch = dash.Patch()
+      figure_patch["data"][0]["source"] = prepare_images_as_b64strings(image, sampling = 1)
+      current = list(current)
+      return current, current, figure_patch
 
   def __histograms(self, n_clicks, is_open, figure, updateid):
     """Callback for local histograms.
@@ -229,19 +232,20 @@ class Dashboard():
     if n_clicks <= 0: return False, []
     trigger = ctx.triggered_id # Get the figure that triggered the callback.
     if not trigger: return False, []
-    if self.images is None or updateid != self.nupdates: return False, [] # The dashboard is out of sync.
-    # Get x and y axes range.
-    xmin, xmax = figure["layout"]["xaxis"]["range"]
-    xmin = np.ceil(xmin) ; xmax = np.floor(xmax)
-    ymax, ymin = figure["layout"]["yaxis"]["range"]
-    ymin = np.ceil(ymin) ; ymax = np.floor(ymax)
-    if (xmax-xmin)*(ymax-ymin) < 256: return False, [] # Area too small for histograms.
-    # Compute image histograms using equimage.
-    n = trigger["index"] # Image index.
-    image = Image(self.images[n], channels = -1).crop(xmin, xmax, ymin, ymax)
-    figure = _figure_histograms_(image, channels = "RGBL", log = True, width = params.maxwidth, template = "slate")
-    content = [dcc.Graph(figure = figure)]
-    return True, content
+    with self.updatelock: # Lock on callback.
+      if self.images is None or updateid != self.nupdates: return False, [] # The dashboard is out of sync.
+      # Get x and y axes range.
+      xmin, xmax = figure["layout"]["xaxis"]["range"]
+      xmin = np.ceil(xmin) ; xmax = np.floor(xmax)
+      ymax, ymin = figure["layout"]["yaxis"]["range"]
+      ymin = np.ceil(ymin) ; ymax = np.floor(ymax)
+      if (xmax-xmin)*(ymax-ymin) < 256: return False, [] # Area too small for histograms.
+      # Compute image histograms using equimage.
+      n = trigger["index"] # Image index.
+      image = Image(self.images[n], channels = -1).crop(xmin, xmax, ymin, ymax)
+      figure = _figure_histograms_(image, channels = "RGBL", log = True, width = params.maxwidth, template = "slate")
+      content = [dcc.Graph(figure = figure)]
+      return True, content
 
   def __sync_zoom(self, relayouts):
     """Callback for zoom synchronization.
@@ -256,24 +260,25 @@ class Dashboard():
     if not self.synczoom: return [dash.no_update]*nimages, [dash.no_update]*nimages
     trigger = ctx.triggered_id # Get the figure that triggered the callback.
     if not trigger: return [dash.no_update]*nimages, [dash.no_update]*nimages
-    n = trigger["index"] # Image index.
-    relayout = relayouts[n]
-    figure_patch = dash.Patch()
-    xauto = relayout.get("xaxis.autorange", False)
-    figure_patch["layout"]["xaxis"]["autorange"] = xauto
-    if not xauto:
-      self.xrange = [relayout["xaxis.range[0]"], relayout["xaxis.range[1]"]]
-      figure_patch["layout"]["xaxis"]["range"] = self.xrange
-    else:
-      self.xrange = None
-    yauto = relayout.get("yaxis.autorange", False)
-    figure_patch["layout"]["yaxis"]["autorange"] = yauto
-    if not yauto:
-      self.yrange = [relayout["yaxis.range[0]"], relayout["yaxis.range[1]"]]
-      figure_patch["layout"]["yaxis"]["range"] = self.yrange
-    else:
-      self.yrange = None
-    return [relayout]*nimages, [figure_patch]*nimages
+    with self.updatelock: # Lock on callback.
+      n = trigger["index"] # Image index.
+      relayout = relayouts[n]
+      figure_patch = dash.Patch()
+      xauto = relayout.get("xaxis.autorange", False)
+      figure_patch["layout"]["xaxis"]["autorange"] = xauto
+      if not xauto:
+        self.xrange = [relayout["xaxis.range[0]"], relayout["xaxis.range[1]"]]
+        figure_patch["layout"]["xaxis"]["range"] = self.xrange
+      else:
+        self.xrange = None
+      yauto = relayout.get("yaxis.autorange", False)
+      figure_patch["layout"]["yaxis"]["autorange"] = yauto
+      if not yauto:
+        self.yrange = [relayout["yaxis.range[0]"], relayout["yaxis.range[1]"]]
+        figure_patch["layout"]["yaxis"]["range"] = self.yrange
+      else:
+        self.yrange = None
+      return [relayout]*nimages, [figure_patch]*nimages
 
   def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True, click = True, synczoom = True, trans = None):
     """Show image(s) on the dashboard.

@@ -33,9 +33,8 @@ def _figure_prepared_image_(image, width = -1, hover = False, template = "plotly
   """
   if width <= 0: width = params.maxwidth
   # Plot image.
-  imshow = px.imshow(image, zmin = 0., zmax = 1., aspect = "equal", binary_string = not hover)
-  imshow.update_traces(name = "", hovertemplate = "(%{x}, %{y}): %{z}" if hover else "(%{x}, %{y})")
-  figure = go.Figure(data = imshow)
+  figure = px.imshow(image, zmin = 0., zmax = 1., aspect = "equal", binary_string = not hover)
+  figure.update_traces(name = "", hovertemplate = "(%{x}, %{y}): %{z}" if hover else "(%{x}, %{y})")
   layout = go.Layout(template = template,
                      width = width+params.lmargin+params.rmargin, height = width*image.shape[0]/image.shape[1]+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
@@ -85,13 +84,12 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
     if hists is None: hists = image.histograms()
   else:
     hists = image.histograms(channels = channels)
-  # Set-up colors.
+  # Set-up lines.
   msblue = dict(color = "mediumslateblue")
   msblue2 = dict(color = "mediumslateblue", width = 2)
   msbluedot1 = dict(color = "mediumslateblue", dash = "dot", width = 1)
   msbluedash1 = dict(color = "mediumslateblue", dash = "dash", width = 1)
   msbluedashdot1 = dict(color = "mediumslateblue", dash = "dashdot", width = 1)
-  msbluedashdot1 = dict(color = "slateblue", dash = "dashdot", width = 1)
   # Plot histograms.
   figure = make_subplots(specs = [[dict(secondary_y = trans is not None, r = -0.06)]])
   updatemenus = []
@@ -299,3 +297,43 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, r
   show_histograms(reference, channels = channels, log = True, width = width, xlabel = "Input level", trans = trans, renderer = renderer)
   show_histograms(image, channels = channels, log = True, width = width, xlabel = "Output level", renderer = renderer)
   show(image, histograms = False, statistics = False, sampling = sampling, width = width, hover = hover, renderer = renderer)
+
+def light_curve(image, reference, maxpoints = 32768, width = -1, renderer = None):
+  """Plot light curve (scatter plot of an output image vs an input reference channel).
+
+  Args:
+    image (numpy.ndarray): The output image channel (luma, ...) as an array with shape (height, width).
+    reference (numpy.ndarray): The input reference channel as an array with shape (height, width).
+    maxpoints (int, optional): The maximum number of points in the scatter plot. The image and reference will be
+      sampled accordingly.
+    width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
+    renderer (optional): The plotly renderer (default None = "jupyterlab").
+  """
+  if width <= 0: width = params.maxwidth
+  # Prepare light curve.
+  if image.ndim != 2 or reference.ndim != 2:
+    raise ValueError("Error, image and reference must be 2D arrays.")
+  if image.shape != reference.shape:
+    raise ValueError("Error, image and reference must have the same shape.")
+  input = reference.ravel()
+  output = image.ravel()
+  step = int(np.ceil(len(input)/maxpoints))
+  # Set-up lines.
+  msbluedot1 = dict(color = "mediumslateblue", dash = "dot", width = 1)
+  msbluedashdot1 = dict(color = "mediumslateblue", dash = "dashdot", width = 1)
+  # Plot light curve.
+  figure = go.Figure()
+  figure.add_trace(go.Scatter(x = input[::step], y = output[::step],
+                              name = "Light curve", mode = "markers", marker = dict(size = 4, color = "lightslategray"), showlegend = False))
+  figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False))
+  figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False))
+  figure.add_trace(go.Scatter(x = [0., 0.], y = [0., 1.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False))
+  figure.add_trace(go.Scatter(x = [1., 1.], y = [0., 1.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False))
+  figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], name = "", mode = "lines", line = msbluedot1, showlegend = False))
+  figure.update_xaxes(title_text = "Input level", ticks = "inside", rangemode = "tozero")
+  figure.update_yaxes(title_text = "Output level", ticks = "inside", rangemode = "tozero")
+  layout = go.Layout(template = "plotly_dark",
+                     width = width+params.lmargin+params.rmargin, height = width+params.bmargin+params.tmargin,
+                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
+  figure.update_layout(layout)
+  figure.show(renderer)
