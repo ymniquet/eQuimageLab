@@ -24,6 +24,10 @@ tmargin = 48  # Top margin.
 
 rowheight = 25 # Height of the table rows.
 
+# Color of marker lines.
+
+mlinecolor = "mediumslateblue"
+
 # Colors for shadows, highlights and differences.
 
 shadowcolor = np.array([1., .5, 0.])

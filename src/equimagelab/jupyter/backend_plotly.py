@@ -22,7 +22,7 @@ def _figure_prepared_image_(image, width = -1, hover = False, template = "plotly
   """Prepare a ploty figure for the input (prepared) image.
 
   Args:
-    image (numpy.ndarray): The prepared image (processed by utils.prepare_images).
+    image (numpy.ndarray): The prepared image (processed by utils.prepare_images).3
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
       Warning: Setting hover = True can slow down display a lot !
@@ -85,11 +85,11 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
   else:
     hists = image.histograms(channels = channels)
   # Set-up lines.
-  msblue = dict(color = "mediumslateblue")
-  msblue2 = dict(color = "mediumslateblue", width = 2)
-  msbluedot1 = dict(color = "mediumslateblue", dash = "dot", width = 1)
-  msbluedash1 = dict(color = "mediumslateblue", dash = "dash", width = 1)
-  msbluedashdot1 = dict(color = "mediumslateblue", dash = "dashdot", width = 1)
+  mline = dict(color = params.mlinecolor)
+  mline2 = dict(color = params.mlinecolor, width = 2)
+  mlinedot1 = dict(color = params.mlinecolor, dash = "dot", width = 1)
+  mlinedash1 = dict(color = params.mlinecolor, dash = "dash", width = 1)
+  mlinedashdot1 = dict(color = params.mlinecolor, dash = "dashdot", width = 1)
   # Plot histograms.
   figure = make_subplots(specs = [[dict(secondary_y = trans is not None, r = -0.06)]])
   updatemenus = []
@@ -99,8 +99,8 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
     midpoints = (channel.edges[1:]+channel.edges[:-1])/2.
     figure.add_trace(go.Scatter(x = midpoints, y = channel.counts, name = channel.name, mode = "lines", line = dict(color = channel.color, width = 2)),
                      secondary_y = False)
-  figure.add_vline(x = 0., line = msbluedashdot1, secondary_y = False)
-  figure.add_vline(x = 1., line = msbluedashdot1, secondary_y = False)
+  figure.add_vline(x = 0., line = mlinedashdot1, secondary_y = False)
+  figure.add_vline(x = 1., line = mlinedashdot1, secondary_y = False)
   figure.update_xaxes(title_text = xlabel, ticks = "inside", rangemode = "tozero")
   figure.update_yaxes(title_text = "Count", ticks = "inside", rangemode = "tozero", secondary_y = False)
   if log:
@@ -117,23 +117,23 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
   if trans is not None:
     if trans.type == "hist":
       cef = np.log(np.maximum(np.gradient(trans.y, trans.x), 1.e-12))
-      figure.add_trace(go.Scatter(x = trans.x, y = trans.y, name = trans.ylabel, mode = "lines", line = msblue2, showlegend = False),
+      figure.add_trace(go.Scatter(x = trans.x, y = trans.y, name = trans.ylabel, mode = "lines", line = mline2, showlegend = False),
                        secondary_y = True)
-      figure.add_trace(go.Scatter(x = trans.x, y = cef, name = f"log {trans.ylabel}'", mode = "lines", line = msblue2, showlegend = False, visible = False),
+      figure.add_trace(go.Scatter(x = trans.x, y = cef, name = f"log {trans.ylabel}'", mode = "lines", line = mline2, showlegend = False, visible = False),
                        secondary_y = True)
-      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False),
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = mlinedashdot1, showlegend = False),
                        secondary_y = True)
-      figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False),
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], name = "", mode = "lines", line = mlinedashdot1, showlegend = False),
                        secondary_y = True)
-      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], name = "", mode = "lines", line = msbluedot1, showlegend = False),
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], name = "", mode = "lines", line = mlinedot1, showlegend = False),
                        secondary_y = True)
       xticks = getattr(trans, "xticks", None)
       if xticks is not None:
         for xtick in xticks:
-          figure.add_vline(x = xtick, line = msbluedash1, secondary_y = True)
+          figure.add_vline(x = xtick, line = mlinedash1, secondary_y = True)
       ftitle = f"{trans.ylabel}({trans.channels})"
       ceftitle = f"log {trans.ylabel}'({trans.channels})"
-      figure.update_yaxes(title_text = ftitle, titlefont = msblue, ticks = "inside", tickfont = msblue, showgrid = False, rangemode = "tozero", secondary_y = True)
+      figure.update_yaxes(title_text = ftitle, titlefont = mline, ticks = "inside", tickfont = mline, showgrid = False, rangemode = "tozero", secondary_y = True)
       # Add f/log f' toggle button.
       keepvisible = ntraces*[True]
       buttons = [dict(label = "f/log f'", method = "update",
@@ -143,14 +143,14 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
       updatemenus.append(dict(type = "buttons", buttons = buttons, active = -1, showactive = False,
                               xanchor = "left", x = xbutton, yanchor = "bottom", y = ybutton))
     elif trans.type == "hue":
-      figure.add_trace(go.Scatter(x = trans.x, y = trans.y, name = trans.ylabel, mode = "lines", line = msblue2, showlegend = False),
+      figure.add_trace(go.Scatter(x = trans.x, y = trans.y, name = trans.ylabel, mode = "lines", line = mline2, showlegend = False),
                        secondary_y = True)
       figure.add_trace(go.Scatter(x = trans.xm, y = trans.ym, name = trans.ylabel, mode = "markers", marker = dict(size = 16, color = trans.cm), showlegend = False),
                        secondary_y = True)
-      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False),
+      figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = mlinedashdot1, showlegend = False),
                        secondary_y = True)
       figure.update_xaxes(range = [0., 1.])
-      figure.update_yaxes(title_text = trans.ylabel, titlefont = msblue, ticks = "inside", tickfont = msblue, showgrid = False, rangemode = "tozero", secondary_y = True)
+      figure.update_yaxes(title_text = trans.ylabel, titlefont = mline, ticks = "inside", tickfont = mline, showgrid = False, rangemode = "tozero", secondary_y = True)
     else:
       print(f"Can not handle transformations of type '{trans.type}'.")
   # Finalize layout.
@@ -305,7 +305,7 @@ def light_curve(image, reference, maxpoints = 32768, width = -1, renderer = None
     image (numpy.ndarray): The output image channel (luma, ...) as an array with shape (height, width).
     reference (numpy.ndarray): The input reference channel as an array with shape (height, width).
     maxpoints (int, optional): The maximum number of points in the scatter plot. The image and reference will be
-      sampled accordingly.
+      sampled accordingly (default 32768).
     width (int, optional): The width of the figure (defaults to params.maxwidth if negative).
     renderer (optional): The plotly renderer (default None = "jupyterlab").
   """
@@ -319,17 +319,17 @@ def light_curve(image, reference, maxpoints = 32768, width = -1, renderer = None
   output = image.ravel()
   step = int(np.ceil(len(input)/maxpoints))
   # Set-up lines.
-  msbluedot1 = dict(color = "mediumslateblue", dash = "dot", width = 1)
-  msbluedashdot1 = dict(color = "mediumslateblue", dash = "dashdot", width = 1)
+  mlinedot1 = dict(color = params.mlinecolor, dash = "dot", width = 1)
+  mlinedashdot1 = dict(color = params.mlinecolor, dash = "dashdot", width = 1)
   # Plot light curve.
   figure = go.Figure()
   figure.add_trace(go.Scatter(x = input[::step], y = output[::step],
                               name = "Light curve", mode = "markers", marker = dict(size = 4, color = "lightslategray"), showlegend = False))
-  figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False))
-  figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False))
-  figure.add_trace(go.Scatter(x = [0., 0.], y = [0., 1.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False))
-  figure.add_trace(go.Scatter(x = [1., 1.], y = [0., 1.], name = "", mode = "lines", line = msbluedashdot1, showlegend = False))
-  figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], name = "", mode = "lines", line = msbluedot1, showlegend = False))
+  figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = mlinedashdot1, showlegend = False))
+  figure.add_trace(go.Scatter(x = [0., 1.], y = [1., 1.], name = "", mode = "lines", line = mlinedashdot1, showlegend = False))
+  figure.add_trace(go.Scatter(x = [0., 0.], y = [0., 1.], name = "", mode = "lines", line = mlinedashdot1, showlegend = False))
+  figure.add_trace(go.Scatter(x = [1., 1.], y = [0., 1.], name = "", mode = "lines", line = mlinedashdot1, showlegend = False))
+  figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], name = "", mode = "lines", line = mlinedot1, showlegend = False))
   figure.update_xaxes(title_text = "Input level", ticks = "inside", rangemode = "tozero")
   figure.update_yaxes(title_text = "Output level", ticks = "inside", rangemode = "tozero")
   layout = go.Layout(template = "plotly_dark",
