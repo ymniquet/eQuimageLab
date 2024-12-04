@@ -52,3 +52,5 @@ where = ["src"]
 "equimagelab.images" = ["splash.png"]
 "equimagelab.launcher" = ["*.ipynb"]
 "equimagelab.examples" = ["*.ipynb"]
+"equimagelab.jupyter.assets" = ["equimagelab.css"]
+
