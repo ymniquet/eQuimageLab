@@ -158,7 +158,7 @@ class Dashboard():
 
     def filter_channels(image, channels):
       """Apply channel filters to the input image."""
-      if image.ndim > 1:
+      if image.ndim > 2:
         if "L" in channels: # Return luma.
           rgbluma = get_RGB_luma()
           return rgbluma[0]*image[:, : , 0]+rgbluma[1]*image[:, : , 1]+rgbluma[2]*image[:, : , 2]
@@ -365,7 +365,7 @@ class Dashboard():
       if filters:
         options = []
         values = []
-        if pimages[n].ndim > 1: # Color image.
+        if pimages[n].ndim > 2: # Color image.
           options.extend([{"label": html.Span("R", className = "red lm1"), "value": "R"},
                           {"label": html.Span("G", className = "green lm1"), "value": "G"},
                           {"label": html.Span("B", className = "blue lm1"), "value": "B"},
