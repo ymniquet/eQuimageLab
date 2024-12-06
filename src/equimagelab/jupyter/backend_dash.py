@@ -27,7 +27,7 @@ from ..equimage import Image, load_image, get_RGB_luma
 class Dashboard():
   """Dashboad class."""
 
-  def __init__(self, interval = 500):
+  def __init__(self, interval = 500, debug = False):
     """Initialize dashboard.
 
     This dashboard uses Dash to display images, histograms, statistics, etc... in a
@@ -36,6 +36,7 @@ class Dashboard():
 
     Args:
       interval (int, optional): The time interval (ms) between dashboard updates (default 500).
+      debug (bool, optional): If True, run Dash in debug mode (default False).
     """
     from .. import __packagepath__
     from dash.dependencies import Input, Output, State, ALL, MATCH
@@ -79,7 +80,7 @@ class Dashboard():
                       Input({"type": "image", "index": ALL}, "relayoutData"),
                       prevent_initial_call = True)(self.__sync_zoom)
     # Launch Dash server.
-    self.app.run_server(debug = True, use_reloader = False, jupyter_mode = "external")
+    self.app.run_server(debug = debug, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
     try:
       splash, meta = load_image(os.path.join(__packagepath__, "images", "splash.png"), verbose = False)
@@ -90,7 +91,7 @@ class Dashboard():
 
   def __layout_dashboard(self):
     """Lay out dashboard."""
-    with self.updatelock: # Lock while preparin layout.
+    with self.updatelock: # Lock while preparing layout.
       dashboard = html.Div(self.content, id = "dashboard", className = "dashboard-inner")
       updateid = dcc.Store(data = self.nupdates, id = "updateid")
       interval = dcc.Interval(interval = self.interval, n_intervals = 0, id = "updateinterval")
@@ -136,9 +137,9 @@ class Dashboard():
         rgbluma = get_RGB_luma()
         luma = rgbluma[0]*data[0]+rgbluma[1]*data[1]+rgbluma[2]*data[2]
         return [f"Data at (x = {x}, y = {y}): ", html.Span(f"R = {data[0]:.5f}", className = "red"), ", ",
-                                                html.Span(f"G = {data[1]:.5f}", className = "green"), ", ",
-                                                html.Span(f"B = {data[2]:.5f}", className = "blue"), ", ",
-                                                html.Span(f"L = {luma:.5f}", className = "luma"), "."]
+                                                 html.Span(f"G = {data[1]:.5f}", className = "green"), ", ",
+                                                 html.Span(f"B = {data[2]:.5f}", className = "blue"), ", ",
+                                                 html.Span(f"L = {luma:.5f}", className = "luma"), "."]
 
   def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
@@ -263,21 +264,31 @@ class Dashboard():
     with self.updatelock: # Lock on callback.
       n = trigger["index"] # Image index.
       relayout = relayouts[n]
-      figure_patch = dash.Patch()
       xauto = relayout.get("xaxis.autorange", False)
-      figure_patch["layout"]["xaxis"]["autorange"] = xauto
       if not xauto:
-        self.xrange = [relayout["xaxis.range[0]"], relayout["xaxis.range[1]"]]
-        figure_patch["layout"]["xaxis"]["range"] = self.xrange
-      else:
-        self.xrange = None
+        xmin = relayout.get("xaxis.range[0]", None)
+        xmax = relayout.get("xaxis.range[1]", None)
+        if xmin is None or xmax is None:
+          return [dash.no_update]*nimages, [dash.no_update]*nimages # Unexpected relayout structure; Discard event.
       yauto = relayout.get("yaxis.autorange", False)
-      figure_patch["layout"]["yaxis"]["autorange"] = yauto
       if not yauto:
-        self.yrange = [relayout["yaxis.range[0]"], relayout["yaxis.range[1]"]]
-        figure_patch["layout"]["yaxis"]["range"] = self.yrange
+        ymin = relayout.get("yaxis.range[0]", None)
+        ymax = relayout.get("yaxis.range[1]", None)
+        if ymin is None or ymax is None:
+          return [dash.no_update]*nimages, [dash.no_update]*nimages # Unexpected relayout structure; Discard event.
+      figure_patch = dash.Patch()
+      figure_patch["layout"]["xaxis"]["autorange"] = xauto
+      figure_patch["layout"]["yaxis"]["autorange"] = yauto
+      if xauto:
+        self.xrange = None
       else:
+        self.xrange = [xmin, xmax]
+        figure_patch["layout"]["xaxis"]["range"] = self.xrange
+      if yauto:
         self.yrange = None
+      else:
+        self.yrange = [ymin, ymax]
+        figure_patch["layout"]["yaxis"]["range"] = self.yrange
       return [relayout]*nimages, [figure_patch]*nimages
 
   def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True, click = True, synczoom = True, trans = None):
@@ -312,7 +323,7 @@ class Dashboard():
       elif nimages == 2:
         keys = ["Image", "Reference"]
       else:
-        keys = [f"Image #{n}" for n in range(nimages)]
+        keys = [f"Image #{n+1}" for n in range(nimages)]
     elif isinstance(images, dict):
       nimages = len(images)
       keys = list(images.keys())
@@ -450,7 +461,7 @@ class Dashboard():
       elif nimages == 2:
         keys = ["Image", "Reference"]
       else:
-        keys = [f"Image #{n}" for n in range(nimages)]
+        keys = [f"Image #{n+1}" for n in range(nimages)]
     elif isinstance(images, dict):
       nimages = len(images)
       keys = list(images.keys())
