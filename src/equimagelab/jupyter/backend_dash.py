@@ -130,16 +130,16 @@ class Dashboard():
       n = trigger["index"] # Image index.
       x = click["points"][0]["x"]
       y = click["points"][0]["y"]
-      data = self.images[n][y, x, :]
-      if data.size == 1:
-        return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {data[0]:.5f}", className = "luma"), "."]
-      else:
+      data = self.images[n][y, x]
+      if data.size > 1:
         rgbluma = get_RGB_luma()
         luma = rgbluma[0]*data[0]+rgbluma[1]*data[1]+rgbluma[2]*data[2]
         return [f"Data at (x = {x}, y = {y}): ", html.Span(f"R = {data[0]:.5f}", className = "red"), ", ",
                                                  html.Span(f"G = {data[1]:.5f}", className = "green"), ", ",
                                                  html.Span(f"B = {data[2]:.5f}", className = "blue"), ", ",
                                                  html.Span(f"L = {luma:.5f}", className = "luma"), "."]
+      else:
+        return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {data:.5f}", className = "luma"), "."]
 
   def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
