@@ -126,7 +126,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
   def __array__(self, dtype = None, copy = None):
     """Expose the object as an numpy.ndarray."""
-    return np.array(self.image, dtype, copy)
+    return np.array(self.image, dtype = dtype, copy = copy)
 
   def __array_ufunc__(self, ufunc, method, *args, **kwargs):
     """Apply numpy ufuncs to the object."""
