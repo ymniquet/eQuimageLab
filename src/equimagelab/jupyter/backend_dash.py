@@ -79,6 +79,8 @@ class Dashboard():
     self.app.callback(Output({"type": "image", "index": ALL}, "relayoutData"), Output({"type": "image", "index": ALL}, "figure"),
                       Input({"type": "image", "index": ALL}, "relayoutData"),
                       prevent_initial_call = True)(self.__sync_zoom)
+    #   - Tab switch.
+    self.app.callback(Input("image-tabs", "active_tab"), prevent_initial_call = True)(self.__switch_tab)
     # Launch Dash server.
     self.app.run_server(debug = debug, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
@@ -291,6 +293,16 @@ class Dashboard():
         figure_patch["layout"]["yaxis"]["range"] = self.yrange
       return [relayout]*nimages, [figure_patch]*nimages
 
+  def __switch_tab(self, tab):
+    """Callback for tab switches.
+
+    This callback just stores the current tab name.
+
+    Args:
+      tab (string): The name of the current tab.
+    """
+    self.tab = tab
+
   def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True, click = True, synczoom = True, trans = None):
     """Show image(s) on the dashboard.
 
@@ -396,7 +408,9 @@ class Dashboard():
         if statistics is True: statistics = ""
         table = _table_statistics_(images[n], channels = statistics)
         if table is not None: tab.append(table)
-      tabs.append(dbc.Tab(tab, label = keys[n], className = "tab"))
+      tabs.append(dbc.Tab(tab, label = keys[n], tab_id = keys[n], className = "tab"))
+    # Set active tab. Keep current tab open if possible.
+    active = self.tab if self.layout == "tabs" and self.tab in keys else keys[0]
     # Update dashboard.
     with self.updatelock: # Lock on update.
       # BEWARE TO SIDE EFFECTS: SELF.IMAGES MAY REFERENCE THE ORIGINAL IMAGES.
@@ -407,8 +421,9 @@ class Dashboard():
       self.synczoom = synczoom
       self.imagesize = imagesize
       self.reference = reference
+      self.tab = active
       self.images = pimages if click or filters else None # No need to register images for the callbacks if click and filters are False.
-      self.content = [dbc.Tabs(tabs, active_tab = "tab-0")]
+      self.content = [dbc.Tabs(tabs, active_tab = active, id = "image-tabs")]
       self.refresh = True
 
   def show_t(self, image, channels = "RGBL", sampling = -1, filters = True, click = True, synczoom = True):
