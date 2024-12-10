@@ -51,7 +51,8 @@ class Dashboard():
     self.updatelock = threading.Lock()
     # Set-up Dash app.
     dbt.load_figure_template("slate")
-    self.app = Dash(__name__, title = "eQuimageLab dashboard", update_title = None, external_stylesheets = [dbc.themes.SLATE])
+    self.app = Dash(name = __name__, title = "eQuimageLab dashboard", update_title = None,
+                    external_stylesheets = [dbc.themes.SLATE], suppress_callback_exceptions = True)
     self.app.layout = self.__layout_dashboard
     # Register callbacks:
     #   - Dashboard update:
@@ -71,14 +72,16 @@ class Dashboard():
                       prevent_initial_call = True)(self.__filter_image)
     #   - Image histograms:
     self.app.callback(Output({"type": "offcanvas", "index": MATCH}, "is_open"), Output({"type": "offcanvas", "index": MATCH}, "children"),
-                      Input({"type": "histograms", "index": MATCH}, "n_clicks"),
+                      Input({"type": "histogramsbutton", "index": MATCH}, "n_clicks"),
                       State({"type": "offcanvas", "index": MATCH}, "is_open"), State({"type": "image", "index": MATCH}, "figure"),
                       State("updateid", "data"),
                       prevent_initial_call = True)(self.__histograms)
-    #   - Zoom synchronization:
+    #   - Images zoom synchronization:
     self.app.callback(Output({"type": "image", "index": ALL}, "relayoutData"), Output({"type": "image", "index": ALL}, "figure"),
                       Input({"type": "image", "index": ALL}, "relayoutData"),
-                      prevent_initial_call = True)(self.__sync_zoom)
+                      prevent_initial_call = True)(self.__sync_image_zoom)
+    #   - Histograms zoom tracking:
+    self.app.callback(Input({"type": "histograms", "index": ALL}, "relayoutData"), prevent_initial_call = True)(self.__track_histograms_zoom)
     #   - Tab switch.
     self.app.callback(Input("image-tabs", "active_tab"), prevent_initial_call = True)(self.__switch_tab)
     # Launch Dash server.
@@ -93,7 +96,7 @@ class Dashboard():
 
   def __layout_dashboard(self):
     """Lay out dashboard."""
-    with self.updatelock: # Lock while preparing layout.
+    with self.updatelock: # Lock while updating layout.
       dashboard = html.Div(self.content, id = "dashboard", className = "dashboard-inner")
       updateid = dcc.Store(data = self.nupdates, id = "updateid")
       interval = dcc.Interval(interval = self.interval, n_intervals = 0, id = "updateinterval")
@@ -103,7 +106,7 @@ class Dashboard():
     """Callback for dashboard updates.
 
     Args:
-      n_intervals: The number of update calls since the start of the application.
+      n_intervals: The number of update intervals elapsed since the start of the application.
 
     Returns:
       The updated dashboard and the unique ID of the update.
@@ -125,7 +128,7 @@ class Dashboard():
     Returns:
       The content of the "datadiv" div element with the image coordinates and data at click point.
     """
-    trigger = ctx.triggered_id # Get the figure that triggered the callback.
+    trigger = ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return []
     with self.updatelock: # Lock on callback.
       if self.images is None or updateid != self.nupdates: return [] # The dashboard is out of sync.
@@ -173,7 +176,7 @@ class Dashboard():
       else: # Return luma.
         return image
 
-    trigger = ctx.triggered_id # Get the figure that triggered the callback.
+    trigger = ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return previous, previous, dash.no_update
     with self.updatelock: # Lock on callback.
       if self.images is None or updateid != self.nupdates: return [], [], dash.no_update # The dashboard is out of sync.
@@ -220,20 +223,20 @@ class Dashboard():
   def __histograms(self, n_clicks, is_open, figure, updateid):
     """Callback for local histograms.
 
-    Displays the histograms of the displayed area of the current image.
+    Shows the histograms of the displayed area of the current image.
 
     Args:
       n_clicks (list): The number of clicks on the histograms button.
-      is_open (bool): The status of the off-canvas displaying the local histograms.
-      figure (list): The figure associated to the histograms button.
+      is_open (bool): The status of the off-canvas showing the local histograms.
+      figure (dict): The figure associated with the histograms button.
       updateid (integer): The unique ID of the displayed dashboard update.
 
     Returns:
-      The status and content of the off-canvas displaying the local histograms.
+      The status and content of the off-canvas showing the local histograms.
     """
     if is_open: return False, [] # Close the off-canvas.
     if n_clicks <= 0: return False, []
-    trigger = ctx.triggered_id # Get the figure that triggered the callback.
+    trigger = ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return False, []
     with self.updatelock: # Lock on callback.
       if self.images is None or updateid != self.nupdates: return False, [] # The dashboard is out of sync.
@@ -243,15 +246,15 @@ class Dashboard():
       ymax, ymin = figure["layout"]["yaxis"]["range"]
       ymin = np.ceil(ymin) ; ymax = np.floor(ymax)
       if (xmax-xmin)*(ymax-ymin) < 256: return False, [] # Area too small for histograms.
-      # Compute image histograms using equimage.
+      # Compute local histograms using eQuimage.
       n = trigger["index"] # Image index.
       image = Image(self.images[n], channels = -1).crop(xmin, xmax, ymin, ymax)
       figure = _figure_histograms_(image, channels = "RGBL", log = True, width = params.maxwidth, template = "slate")
       content = [dcc.Graph(figure = figure)]
       return True, content
 
-  def __sync_zoom(self, relayouts):
-    """Callback for zoom synchronization.
+  def __sync_image_zoom(self, relayouts):
+    """Callback for images zoom synchronization.
 
     Args:
       relayouts (list): Input relayouts of all images.
@@ -261,7 +264,7 @@ class Dashboard():
     """
     nimages = len(relayouts)
     if not self.synczoom: return [dash.no_update]*nimages, [dash.no_update]*nimages
-    trigger = ctx.triggered_id # Get the figure that triggered the callback.
+    trigger = ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return [dash.no_update]*nimages, [dash.no_update]*nimages
     with self.updatelock: # Lock on callback.
       n = trigger["index"] # Image index.
@@ -293,6 +296,29 @@ class Dashboard():
         figure_patch["layout"]["yaxis"]["range"] = self.yrange
       return [relayout]*nimages, [figure_patch]*nimages
 
+  def __track_histograms_zoom(self, relayouts):
+    """Callback for histograms zoom tracking.
+
+    Tracks x axis changes on histograms.
+
+    Args:
+      relayouts (dict): Input relayouts of all histograms.
+    """
+    if not self.synczoom: return # This comes along with image zoom synchronization.
+    trigger = ctx.triggered_id # Get the component that triggered the callback.
+    if not trigger: return
+    with self.updatelock: # Lock on callback.
+      n = trigger["index"] # Image index.
+      relayout = relayouts[n]
+      xauto = relayout.get("xaxis.autorange", False)
+      if xauto:
+        self.hrange[n] = None
+      else:
+        xmin = relayout.get("xaxis.range[0]", None)
+        xmax = relayout.get("xaxis.range[1]", None)
+        if xmin is None or xmax is None: return # Unexpected relayout structure; Discard event.
+        self.hrange[n] = [xmin, xmax]
+
   def __switch_tab(self, tab):
     """Callback for tab switches.
 
@@ -301,7 +327,8 @@ class Dashboard():
     Args:
       tab (string): The name of the current tab.
     """
-    self.tab = tab
+    with self.updatelock: # Lock on callback.
+      self.activetab = tab
 
   def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True, click = True, synczoom = True, trans = None):
     """Show image(s) on the dashboard.
@@ -321,7 +348,7 @@ class Dashboard():
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, local histograms).
       click (bool, optional): If True, show image data on click (default True).
-      synczoom (bool, optional): If True (default), synchronize zooms over images (default False).
+      synczoom (bool, optional): If True (default), synchronize zooms over images.
         Zooms will be synchronized only if all images have the same size.
       trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on
         top of the histograms of the "Reference" tab (default None).
@@ -358,13 +385,15 @@ class Dashboard():
         synczoom = (image.shape[0:2] == imagesize)
         if not synczoom: break
     if not synczoom: imagesize = None
-    # Try to preserve existing axes ranges if already in tabs layout and synczoom is consistently True.
-    if synczoom and self.layout == "tabs" and self.synczoom and self.imagesize == imagesize:
+    # Try to preserve existing axes if already in tabs layout and synczoom is consistently True.
+    preserveaxes = synczoom and self.layout == "tabs" and self.synczoom and self.imagesize == imagesize
+    if preserveaxes:
       xrange = self.xrange
       yrange = self.yrange
     else:
       xrange = None
       yrange = None
+    hrange = [None]*nimages
     # Set-up tabs.
     tabs = []
     for n in range(nimages):
@@ -390,7 +419,7 @@ class Dashboard():
         checklist = dcc.Checklist(options = options, value = values, id = {"type": "filters", "index": n},
                                   inline = True, labelClassName = "rm4")
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
-        button = dbc.Button("Local histograms", color = "primary", size = "sm", n_clicks = 0, id = {"type": "histograms", "index": n})
+        button = dbc.Button("Local histograms", color = "primary", size = "sm", n_clicks = 0, id = {"type": "histogramsbutton", "index": n})
         offcanvas = dbc.Offcanvas([], title = "Histograms of the displayed area of the image:", placement = "top", close_button = True, keyboard = True,
                                   id = {"type": "offcanvas", "index": n}, style = {"height": "auto", "bottom": "initial"}, is_open = False)
         tab.append(html.Div([html.Div(["Filters:"], className = "rm4"), html.Div([checklist]),  html.Div([button], className = "flushright"),
@@ -403,27 +432,33 @@ class Dashboard():
         if histograms is True: histograms = ""
         figure = _figure_histograms_(images[n], channels = histograms, log = True, width = params.maxwidth,
                                      trans = trans if keys[n] == "Reference" else None, template = "slate")
-        if figure is not None: tab.append(dcc.Graph(figure = figure))
+        if figure is not None:
+          if preserveaxes and keys[n] in self.keys:
+            hrange[n] = self.hrange[self.keys.index(keys[n])]
+            if hrange[n] is not None: figure.update_layout(xaxis_range = hrange[n])
+          tab.append(dcc.Graph(figure = figure, id = {"type": "histograms", "index": n}))
       if statistics is not False:
         if statistics is True: statistics = ""
         table = _table_statistics_(images[n], channels = statistics)
         if table is not None: tab.append(table)
       tabs.append(dbc.Tab(tab, label = keys[n], tab_id = keys[n], className = "tab"))
     # Set active tab. Keep current tab open if possible.
-    active = self.tab if self.layout == "tabs" and self.tab in keys else keys[0]
+    activetab = self.activetab if self.layout == "tabs" and self.activetab in keys else keys[0]
     # Update dashboard.
     with self.updatelock: # Lock on update.
       # BEWARE TO SIDE EFFECTS: SELF.IMAGES MAY REFERENCE THE ORIGINAL IMAGES.
       self.nupdates += 1
       self.layout = "tabs"
+      self.keys = keys
       self.xrange = xrange
       self.yrange = yrange
+      self.hrange = hrange
       self.synczoom = synczoom
       self.imagesize = imagesize
       self.reference = reference
-      self.tab = active
+      self.activetab = activetab
       self.images = pimages if click or filters else None # No need to register images for the callbacks if click and filters are False.
-      self.content = [dbc.Tabs(tabs, active_tab = active, id = "image-tabs")]
+      self.content = [dbc.Tabs(tabs, active_tab = activetab, id = "image-tabs")]
       self.refresh = True
 
   def show_t(self, image, channels = "RGBL", sampling = -1, filters = True, click = True, synczoom = True):
@@ -441,7 +476,7 @@ class Dashboard():
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, local histograms).
       click (bool, optional): If True, show image data on click (default True).
-      synczoom (bool, optional): If True (default), synchronize zooms over images (default False).
+      synczoom (bool, optional): If True (default), synchronize zooms over images.
     """
     if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
     trans = getattr(image, "trans", None)
@@ -464,7 +499,7 @@ class Dashboard():
         The images are labelled according to the keys for a dictionary. Otherwise, the images are labelled
         "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
       sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-        Only images[:, ::sampling, ::sampling] are shown, to speed up display.
+        Only images[::sampling, ::sampling] are shown, to speed up display.
       interval (int, optional): The interval (ms) between image switches in the carousel (default 2000).
     """
     self.refresh = False # Stop refreshing dashboard.
@@ -507,7 +542,7 @@ class Dashboard():
       label1 (str, optional): The label of the first image (default "Image").
       label2 (str, optional): The label of the second image (default "Reference").
       sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
-        Only image1[:, ::sampling, ::sampling] and image2[:, ::sampling, ::sampling] are shown, to speed up display.
+        Only image1[::sampling, ::sampling] and image2[::sampling, ::sampling] are shown, to speed up display.
     """
     self.refresh = False # Stop refreshing dashboard.
     # Set-up before/after widget.
