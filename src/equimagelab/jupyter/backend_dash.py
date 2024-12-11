@@ -27,6 +27,10 @@ from ..equimage import Image, load_image, get_RGB_luma
 class Dashboard():
   """Dashboad class."""
 
+  ################
+  # Constructor. #
+  ################
+
   def __init__(self, interval = 500, debug = False):
     """Initialize dashboard.
 
@@ -93,6 +97,10 @@ class Dashboard():
       pass
     else:
       self.show({"Welcome": splash}, filters = False, click = False, synczoom = False)
+
+  ##############
+  # Callbacks. #
+  ##############
 
   def __layout_dashboard(self):
     """Lay out dashboard."""
@@ -330,6 +338,12 @@ class Dashboard():
     with self.updatelock: # Lock on callback.
       self.activetab = tab
 
+  ############
+  # Layouts. #
+  ############
+
+  ### Tabs layout.
+
   def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True, click = True, synczoom = True, trans = None):
     """Show image(s) on the dashboard.
 
@@ -388,12 +402,12 @@ class Dashboard():
     # Try to preserve existing axes if already in tabs layout and synczoom is consistently True.
     preserveaxes = synczoom and self.layout == "tabs" and self.synczoom and self.imagesize == imagesize
     if preserveaxes:
-      xrange = self.xrange
+      xrange = self.xrange # Image x & y ranges.
       yrange = self.yrange
     else:
       xrange = None
       yrange = None
-    hrange = [None]*nimages
+    hrange = [None]*nimages # Histograms x ranges.
     # Set-up tabs.
     tabs = []
     for n in range(nimages):
@@ -414,7 +428,7 @@ class Dashboard():
           values.extend(["R", "G", "B"])
         options.extend([{"label": html.Span("Shadowed", className = "lm1"), "value": "S"},
                         {"label": html.Span("Highlighted", className = "lm1"), "value": "H"}])
-        if reference and pimages[n].shape == pimages[reference].shape:
+        if reference is not None and pimages[n].shape == pimages[reference].shape:
           options.extend([{"label": html.Span("Differences", className = "lm1"), "value": "D"}])
         checklist = dcc.Checklist(options = options, value = values, id = {"type": "filters", "index": n},
                                   inline = True, labelClassName = "rm4")
@@ -491,6 +505,8 @@ class Dashboard():
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
               sampling = sampling, filters = filters, click = click, synczoom = synczoom, trans = trans)
 
+  ### Carousel layout.
+
   def carousel(self, images, sampling = -1, interval = 2000):
     """Show a carousel of images on the dashboard.
 
@@ -533,6 +549,8 @@ class Dashboard():
       self.content = [dbc.Tabs([tab], active_tab = "tab-0")]
       self.refresh = True
 
+  ### Before/After layout.
+
   def slide(self, image1, image2, label1 = "Image", label2 = "Reference", sampling = -1):
     """Compare two images with a "before/after" slider on the dashboard.
 
@@ -561,6 +579,10 @@ class Dashboard():
       self.images = None # No need to register images for the callbacks.
       self.content = [dbc.Tabs([tab], active_tab = "tab-0")]
       self.refresh = True
+
+#####################
+# Helper functions. #
+#####################
 
 def _table_statistics_(image, channels = ""):
   """Prepare a table with the statistics of an image.

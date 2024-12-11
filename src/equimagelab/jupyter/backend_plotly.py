@@ -18,6 +18,10 @@ from .utils import prepare_images
 
 from ..equimage import Image
 
+#####################
+# Helper functions. #
+#####################
+
 def _figure_prepared_image_(image, width = -1, hover = False, template = "plotly_dark"):
   """Prepare a ploty figure for the input (prepared) image.
 
@@ -213,6 +217,10 @@ def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, templa
                      margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = 32, t = 32, autoexpand = True))
   figure.update_layout(layout)
   return figure
+
+#####################
+# Plotly interface. #
+#####################
 
 def show(image, histograms = False, statistics = False, sampling = -1, width = -1, hover = False, renderer = None):
   """Show an image using plotly.

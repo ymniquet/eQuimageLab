@@ -345,7 +345,7 @@ class Mixin:
               (after the operation, the out-of-range pixels are desaturated at constant luma).
       - "Lb": Apply the operation to the luma, with highlights protection by blending.
               (after the operation, the out-of-range pixels are blended with channels = "RGB").
-    However, CLAHE is only used, in principle, for the "V" (default) and "L(s, m)" channels.
+    However, CLAHE is only used, in principle, for the "V" (default) and "L(s, b)" channels.
 
     Returns:
       Image: The processed image.

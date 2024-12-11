@@ -17,7 +17,7 @@ from pathlib import Path
 from PIL import Image, ImageTk
 
 def run():
-  """Run eQuimageLab."""
+  """Run eQuimageLab launcher."""
 
   def new_notebook():
     """Create and open a new jupyter notebook."""
