@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Image I/O management."""
 
@@ -173,7 +174,7 @@ class Mixin:
     """Save image as a file.
 
     Note: The color model must be "RGB" or "gray", but the color space is *not* embedded
-      in the file at present.
+    in the file at present.
 
     Args:
       filename (str): The file name. The file format is chosen according to the extension:

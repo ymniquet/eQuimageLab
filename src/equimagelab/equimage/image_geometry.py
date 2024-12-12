@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Image geometry management."""
 
@@ -49,6 +50,7 @@ class Mixin:
       width (int): New image width (pixels).
       height (int): New image height (pixels).
       method (str, optional): Resampling method:
+
         - "nearest": Nearest neighbor interpolation.
         - "bilinear": Linear interpolation.
         - "bicubic": Cubic spline interpolation.
@@ -89,6 +91,7 @@ class Mixin:
     Args:
       scale (float): Scaling factor.
       method (str, optional): Resampling method:
+
         - "nearest": Nearest neighbor interpolation.
         - "bilinear": Linear interpolation.
         - "bicubic": Cubic spline interpolation.
@@ -108,7 +111,7 @@ class Mixin:
     """Crop the image.
 
     Args:
-      xmin, xmax, ymin, ymax: Crop from x = xmin to x = xmax and from y = ymin to y = ymax (can be integers or floats).
+      xmin, xmax, ymin, ymax (integer or float): Crop from x = xmin to x = xmax and from y = ymin to y = ymax.
 
     Returns:
       Image: The cropped image.

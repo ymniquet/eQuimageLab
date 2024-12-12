@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Image processing helpers."""
 
@@ -11,7 +12,7 @@ import numpy as np
 from . import params
 
 class Container:
-  """An empty container class"""
+  """An empty container class."""
   pass # An empty container class.
 
 def failsafe_divide(A, B):

@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Image processing parameters."""
 
@@ -50,6 +51,7 @@ def get_RGB_luma():
   """Return the RGB weights rgbluma of the luma.
 
   The luma L of an image is the average of the RGB components weighted by rgbluma:
+
     L = rgbluma[0]*image[0]+rgbluma[1]*image[1]+rgbluma[2]*image[2]
 
   Returns:
@@ -62,6 +64,7 @@ def set_RGB_luma(rgb):
 
   Args:
     rgb: The RGB weights of the luma as:
+
       - a tuple, list or array of the (red, green, blue) weights. They will be normalized so that their sum is 1.
       - the string "uniform": the RGB weights are set to (1/3, 1/3, 1/3).
       - the string "human": the RGB weights are set to (.299, .587, .114). The luma is then the luminance for lRGB images,

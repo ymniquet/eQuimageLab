@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Image filters."""
 
@@ -23,21 +24,25 @@ class Mixin:
 
     Args:
       channels (str, optional): The selected channels:
+
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, with highlights protection by blending
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+
       mode (str, optional): How to extend the image across its boundaries:
+
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
         - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
         - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
         - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
+
     Returns:
       Image: The sharpened image.
     """
@@ -57,17 +62,16 @@ class Mixin:
     Args:
       ratio (float): The threshold for hot pixels detection.
       channels (str, optional): The selected channels:
+
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
+
       mode (str, optional): How to extend the image across its boundaries:
+
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
         - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
         - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).

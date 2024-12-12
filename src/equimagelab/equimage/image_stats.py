@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Image statistics & histograms."""
 
@@ -21,26 +22,26 @@ class Mixin:
   def histograms(self, channels = "RGBL", nbins = -1, recompute = False):
     """Compute histograms of selected channels of the image.
 
-    The histograms are both returned and embedded in the object as self.hists. Histograms already registered in self.hists are
-    not recomputed unless required.
+    The histograms are both returned and embedded in the object as self.hists. Histograms already registered in self.hists
+    are not recomputed unless required.
 
     Args:
       channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue),  "V" (for HSV value),
         "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the histograms of the value and saturation can be
         computed. If channels ends with a "*", it gets appended with the keys already computed and stored in self.hists.
         Default is "RGBL".
-      nbins (int, optional): Number of bins within [0, 1] in the histograms (defaults to params.histbins if negative).
+      nbins (int, optional): Number of bins within [0, 1] in the histograms (defaults to `params.histbins` if negative).
       recompute (bool, optional): If False (default), the histograms already registered in self.hists are not recomputed
         (provided they match nbins). If True, all histograms are recomputed.
 
     Returns:
       dict: hists[key] for key in channels, with:
+
         - hists[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
-        - hists[key].nbins = number of bins within [0, 1]
+        - hists[key].nbins = number of bins within [0, 1].
         - hists[key].edges = histogram bins edges.
         - hists[key].counts = histogram bins counts.
         - hists[key].color = suggested line color for plots.
-
     """
     if nbins == 0: raise ValueError("Error, nbins must be non zero.")
     if nbins < 0: nbins = params.histbins
@@ -118,6 +119,7 @@ class Mixin:
 
     Returns:
       dict: stats[key] for key in channels, with:
+
         - stats[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
         - stats[key].width = image width (provided for convenience).
         - stats[key].height = image height (provided for convenience).

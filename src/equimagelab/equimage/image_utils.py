@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Image utils."""
 
@@ -56,7 +57,7 @@ def blend(image1, image2, mixing):
   Args:
     image1 (numpy.ndarray): The first image.
     image2 (numpy.ndarray): The second image.
-    mixing: The mixing coefficient(s) (float or numpy.ndarray for pixel-dependent mixing).
+    mixing (float or numpy.ndarray for pixel-dependent mixing): The mixing coefficient(s).
 
   Returns:
     numpy.ndarray: The blended image image1*(1-mixing)+image2*mixing.
@@ -78,7 +79,7 @@ class Mixin:
     """Return True if the image is out-of-range (data < 0 or > 1 in any channel), False otherwise.
 
     Returns:
-      bool: True if the image is out-of-range.
+      bool: True if the image is out-of-range, False otherwise.
     """
     return np.any(self.image < -params.IMGTOL) or np.any(self.image > 1.+params.IMGTOL)
 
@@ -87,7 +88,7 @@ class Mixin:
   ##############
 
   def empty(self):
-    """Return an empty image with same size.
+    """Return an empty image with same size as the object.
 
     Returns:
       Image: An empty image with the same size as self.
@@ -95,7 +96,7 @@ class Mixin:
     return np.empty_like(self)
 
   def black(self):
-    """Return a black image with same size.
+    """Return a black image with same size as the object.
 
     Returns:
       Image: An black image with the same size as self.
@@ -143,7 +144,7 @@ class Mixin:
 
     Args:
       image (Image): The image to blend with.
-      mixing: The mixing coefficient(s) (float or numpy.ndarray for pixel-dependent mixing).
+      mixing (float or numpy.ndarray for pixel-dependent mixing): The mixing coefficient(s).
 
     Returns:
       Image: The blended image self*(1-mixing)+image*mixing.

@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Histogram stretch functions."""
 
@@ -47,12 +48,12 @@ def dynamic_range_stretch_function(x, fr, to):
   """Return the linear dynamic range stretch function f(x).
 
   The input data x is linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]],
-  and clipped in the [to[0], to[1]] range.
+  then clipped in the [to[0], to[1]] range.
 
   Args:
     x (numpy.ndarray): The input data.
-    fr: The input range (a tuple or list of two floats).
-    to: The output range (a tuple or list of two floats).
+    fr (a tuple or list of two floats): The input range.
+    to (a tuple or list of two floats): The output range.
 
   Returns:
     numpy.ndarray: The stretched data.
@@ -63,6 +64,7 @@ def asinh_stretch_function(x, stretch):
   """Return the arcsinh stretch function f(x).
 
   The arcsinh stretch function is defined as:
+
     f(x) = arcsinh(stretch*x)/arcsinh(stretch)
 
   Args:
@@ -80,11 +82,11 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
   This function clips the input data x in the [0, 1] range before stretching.
 
-  Notes:
+  Note:
   Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js.
 
   Todo:
-  Do not clip the input data and extend the transformation outside [0, 1] !
+  Do not clip the input data and extend the transformation outside [0, 1] ?
 
   Args:
     x (numpy.ndarray): The input data.
@@ -266,12 +268,14 @@ def midtone_stretch_function(x, midtone):
   """Return the midtone stretch function f(x).
 
   The midtone stretch function is defined as:
+
     f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
+
   In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
 
   Args:
     x (numpy.ndarray): The input data.
-    midtone (float): The midtone level (expected in [0, 1]).
+    midtone (float): The midtone level (expected in ]0, 1[]).
 
   Returns:
     numpy.ndarray: The stretched data.
@@ -282,7 +286,9 @@ def gamma_stretch_function(x, gamma):
   """Return the gamma stretch function f(x).
 
   The gamma stretch function is defined as:
+
     f(x) = x**gamma
+
   This function clips the input data x below 0 before stretching.
 
   Args:
@@ -295,19 +301,21 @@ def gamma_stretch_function(x, gamma):
   x = np.clip(x, 0., None)
   return x**gamma
 
-def midtone_levels_function(x, shadow, midtone, highlight, low, high):
+def midtone_levels_stretch_function(x, shadow, midtone, highlight, low, high):
   """Return the shadow/midtone/highlight/low/high levels adjustment function f(x).
 
   This function:
+
     1) Clips the input data in the [shadow, highlight] range and maps [shadow, highlight] to [0, 1].
-    2) Applies the midtone stretch function f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone).
+    2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
+       with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
     3) Maps [low, high] to [0, 1] and clips the output data in the [0, 1] range.
 
   Args:
     x (numpy.ndarray): The input data.
-    midtone (float): The input midtone level (expected in [0, 1]).
-    shadow (float): The input shadow level (expected in [0, midtone]).
-    highlight (float): The input highlight level (expected in [midtone, 1]).
+    midtone (float): The input midtone level (expected in ]0, 1[).
+    shadow (float): The input shadow level (expected < midtone).
+    highlight (float): The input highlight level (expected > midtone).
     low (float): The "low" output level (expected <= 0).
     high (float): The "high" output level (expected >= 1).
 

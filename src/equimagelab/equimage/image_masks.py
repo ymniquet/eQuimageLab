@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Image masks."""
 
@@ -16,6 +17,9 @@ def threshold_mask(filtered, threshold, extend = 0, smooth = 0):
   """Set-up a threshold mask.
 
   Returns the pixels such that filtered >= threshold.
+
+  See also:
+    Image.filter
 
   Args:
     filtered (numpy.ndarray): The output of a filter (local average, ...) applied to an image (see Image.filter).
@@ -50,21 +54,29 @@ class Mixin:
 
     The main purpose of this method is to prepare masks for image processing.
 
+    See also:
+      threshold_mask
+
     Args:
       channel (str): The selected channel:
+
         - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the filter to the first/second/third channel (RGB, HSV and grayscale images).
+          Apply the filter to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the filter to the HSV value (RGB, HSV and and grayscale images).
         - "L": Apply the filter to the luma (RGB and grayscale images).
         - "L*": Apply the filter to the CIE lightness (RGB and grayscale images).
-                Warning: The CIE lightness is normalized within [0, 1] instead of [0, 100] !
+          Warning: The CIE lightness is normalized within [0, 1] instead of [0, 100] !
+
       filter (str): The filter:
+
         - "mean": Return the average of the channel within a disk around each pixel.
         - "median": Return the median of the channel within a disk around each pixel.
         - "gaussian": Return the gaussian average of the channel around each pixel.
         - "maximum": Return the maximum of the channel within a disk around each pixel.
-.     radius (float): The radius of the disk in pixels. The standard deviation for gaussian average is radius/3.
+
+      radius (float): The radius of the disk in pixels. The standard deviation for gaussian average is radius/3.
       mode (str, optional): How to extend the image across its boundaries:
+
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
         - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
         - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
@@ -72,7 +84,7 @@ class Mixin:
 
     Returns:
       numpy.ndarray: A (image height, image width) array with the output of the filter,
-        *not* converted to a grayscale Image object.
+      *not* converted to a grayscale Image object.
     """
     if mode == "zero": mode = "constant" # Translate modes.
     if channel == "1":
