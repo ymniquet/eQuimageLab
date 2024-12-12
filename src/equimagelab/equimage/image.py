@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Image class."""
 
@@ -36,10 +37,12 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   The class embeds colorspace and colormodel attributes for the color space and model of the image.
 
   The colorspace attribute can be:
+
     - "lRGB" for the linear RGB color space.
     - "sRGB" for the sRGB color space.
 
   The colormodel attribute can be:
+
     - "RGB": the 3 channels of the image are the red, blue, and green values within [0, 1].
     - "HSV": the 3 channels of the image are the hue, value, and saturation within [0, 1].
     - "gray": grayscale image with one single channel within [0, 1].
@@ -195,7 +198,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     Args:
       channels (int, optional): The position of the channel axis (default 0).
       copy (bool, optional): If True, return a copy of the image data;
-                             If false (default), return a view.
+                             If False (default), return a view.
 
     Returns:
       numpy.ndarray: The image data.
@@ -208,7 +211,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     """Return the shape of the image data.
 
     Returns:
-      A tuple (number of channels, height of the image in pixels, width of the image in pixels).
+      tuple: (number of channels, height of the image in pixels, width of the image in pixels).
     """
     return self.image.shape
 
@@ -216,7 +219,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     """Return the width and height of the image.
 
     Returns:
-      A tuple (width, height) of the image in pixels.
+      tuple: (width, height) of the image in pixels.
     """
     return self.image.shape[2], self.image.shape[1]
 

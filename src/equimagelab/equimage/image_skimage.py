@@ -26,21 +26,24 @@ class Mixin:
     Args:
       sigma (float): The standard deviation of the gaussian (pixels).
       mode (str, optional): How to extend the image across its boundaries:
+
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
         - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
         - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
         - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
+
       channels (str, optional): The selected channels:
+
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -67,16 +70,17 @@ class Mixin:
       padding (int, optional): Number of pixels to pad the image with (default 0; increase if the filter leaves visible
         artifacts on the edges).
       channels (str, optional): The selected channels:
+
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -103,16 +107,17 @@ class Mixin:
       sigma (float): The standard deviation of the gaussian (pixels).
       strength (float): The mixing strength.
       channels (str, optional): The selected channels:
+
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -150,9 +155,11 @@ class Mixin:
         The larger sigma, the smoother the output image.
       wavelet (str, optional): The wavelets used to decompose the image (default "coif4").
         Can be any of the orthogonal wavelets of `pywt.wavelist`. Recommended wavelets are:
+
           - Daubechies wavelets ("db1"..."db8"),
           - Symlets ("sym2"..."sym8"),
           - Coiflets ("coif1"..."coif8").
+
       mode (str, optional): Denoising method [either "soft" (default) or "hard"].
       method (str, optional): Thresholding method [either "BayesShrink" (default) or "VisuShrink"].
         Separate thresholds are applied to the wavelets bands for "BayesShrink", whereas a
@@ -163,16 +170,17 @@ class Mixin:
         is an average of the original image shifted shifts times in each direction, filtered, then
         shifted back to the original position.
       channels (str, optional): The selected channels:
+
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -201,21 +209,24 @@ class Mixin:
       sigma_space (float): The standard deviation of the gaussian in real space (pixels).
       sigma_color (float, optional): The standard deviation of the gaussian in color space (default 0.1).
       mode (str, optional): How to extend the image across its boundaries:
+
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
         - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
         - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
         - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
+
       channels (str, optional): The selected channels:
+
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -250,16 +261,18 @@ class Mixin:
       algorithm (str, optional): Either "Chambolle" (default) for the Chambolle algorithm
                                  or "Bregman" for the split Bregman algorithm.
       channels (str, optional): The selected channels:
+
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+
     Returns:
       Image: The processed image.
 
@@ -299,16 +312,17 @@ class Mixin:
       fast (bool, optional): If true (default), the pixels within the patch are averaged uniformly.
         If false, they are weighted by a gaussian (better yet slower).
       channels (str, optional): The selected channels:
+
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The processed image.
@@ -334,18 +348,20 @@ class Mixin:
         If None (default), the tile size defaults to 1/8 of the image width and height.
       clip (float, optional): The clip limit used to control contrast enhancement (default 0.01).
       nbins (int, optional): The number of bins in the local histograms (default 256).
-    channels (str, optional): The selected channels:
-      - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-      - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+      channels (str, optional): The selected channels:
+
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
           Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
-      - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-      - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-      - "L": Apply the operation to the luma (RGB and grayscale images).
-      - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-              (after the operation, the out-of-range pixels are desaturated at constant luma).
-      - "Lb": Apply the operation to the luma, with highlights protection by blending.
-              (after the operation, the out-of-range pixels are blended with channels = "RGB").
-    However, CLAHE is only used, in principle, for the "V" (default) and "L(s, b)" channels.
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+
+        However, CLAHE is only used, in principle, for the "V" (default) and "L(s, b)" channels.
 
     Returns:
       Image: The processed image.

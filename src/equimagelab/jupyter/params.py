@@ -3,13 +3,14 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Jupyter-lab interface parameters."""
 
 import numpy as np
 
 # Images downsampling rate for display.
-# Only images[:, ::sampling, ::sampling] are shown to speed up operations.
+# Only images[::sampling, ::sampling] are shown to speed up operations.
 
 sampling = 1
 
@@ -22,7 +23,7 @@ rmargin = 160 # Right margin.
 bmargin = 48  # Bottom margin.
 tmargin = 48  # Top margin.
 
-rowheight = 25 # Height of the table rows.
+rowheight = 25 # Height of table rows.
 
 # Color of marker lines.
 

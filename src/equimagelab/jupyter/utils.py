@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Utils for Jupyter-lab interface."""
 
@@ -36,19 +37,19 @@ def prepare_images(images, sampling = -1, copy = False):
   """Prepare images for plotly and Dash.
 
   Returns all images as numpy.ndarrays with dimensions (height, width, 3) (for color images),
-    or (height, width) (for grayscale images).
+  or (height, width) (for grayscale images).
 
   Args:
     images: A single/tuple/list of Image object(s) or numpy.ndarrays with dimensions (height, width, 3)
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
-    sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
+    sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
       Only images[::sampling, ::sampling] are processed, to speed up operations.
     copy (bool, optional): If False (default), the output images are (when possible) views of the
       original images; If True, they are always copies.
 
   Returns:
-    All images as float numpy.ndarrays with dimensions (height/sampling, width/sampling, 3) (for color images)
-      or (height/sampling, width/sampling) (for grayscale images).
+    A single/tuple/list of float numpy.ndarrays with dimensions (height/sampling, width/sampling, 3) (for
+    color images) or (height/sampling, width/sampling) (for grayscale images).
   """
 
   def prepare(image, copy):
@@ -69,19 +70,19 @@ def prepare_images(images, sampling = -1, copy = False):
   return type(images)(prepare(image, copy) for image in images)
 
 def prepare_images_as_b64strings(images, sampling = -1, compression = 4):
-  """Prepare images as PNGs encoded in base64 strings.
+  """Prepare images for plotly and Dash as PNGs encoded in base64 strings.
 
   Returns all images as PNGs encoded in base64 strings.
 
   Args:
     images: A single/tuple/list of Image object(s) or numpy.ndarrays with dimensions (height, width, 3)
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
-    sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
+    sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
       Only images[::sampling, ::sampling] are processed, to speed up operations.
     compression (int, optional): PNG compression level (default 4).
 
   Returns:
-    All args as PNGs encoded in base64 strings.
+    A single/tuple/list of images as PNGs encoded in base64 strings.
   """
 
   def prepare(image):
@@ -106,16 +107,16 @@ def prepare_images_as_b64strings(images, sampling = -1, compression = 4):
 def filter(image, channels):
   """Filter the channels of a RGB image.
 
-  Returns a copy of the image with the non-selected red/green/blue channels set to zero.
+  Returns a copy of the image with selected red/green/blue channels set to zero.
 
   Args:
     image: The image (Image object or numpy.ndarray with dimension (height, width, 3)).
-    channels (str): The selected channels. A combination of the letters "R" (red),
+    channels (str): The *displayed* channels. A combination of the letters "R" (red),
       "G" (green), and "B" (blue).
 
   Returns:
-    np.ndarray: A copy of the image as an array with dimensions (height, width, 3) and the
-      non-selected channels set to zero.
+    numpy.ndarray: A copy of the image as an array with dimensions (height, width, 3) and the
+    non-displayed channels set to zero.
   """
   selected = np.array([False, False, False])
   for c in channels:
@@ -135,17 +136,17 @@ def filter(image, channels):
 def shadowed(image, reference = None):
   """Highlight black pixels in an image.
 
-  Highlight black pixels on the input image with color params.shadowcolor.
+  Highlight black pixels on the input image with color `params.shadowcolor`.
   If a reference image is provided, highlight pixels black on both input and reference images
-  with color 0.5*params.shadowcolor.
+  with color 0.5 * `params.shadowcolor`.
 
   Args:
     image: The image (Image object or numpy.ndarray).
     reference (optional): The reference image (Image object or numpy.ndarray, default None).
 
   Returns:
-    A copy of the image as an array with dimensions (height, width, 3) and the black pixels
-      highlighted with color params.shadowcolor.
+    numpy.ndarray: A copy of the image as an array with dimensions (height, width, 3) and the
+    black pixels highlighted with color `params.shadowcolor`.
   """
   image = prepare_images(image, sampling = 1, copy = True)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
@@ -166,17 +167,17 @@ def highlighted(image, reference = None):
   """Highlight saturated pixels in an image.
 
   A pixel is saturated if at least one channel is >= 1.
-  Show pixels saturated on the input image with color params.highlightcolor.
+  Show pixels saturated on the input image with color `params.highlightcolor`.
   If a reference image is provided, show pixels saturated on both input and reference images
-  with color 0.5*params.highlightcolor.
+  with color 0.5 * `params.highlightcolor`.
 
   Args:
     image: The image (Image object or numpy.ndarray).
     reference (optional): The reference image (Image object or numpy.ndarray, default None).
 
   Returns:
-    A copy of the image as an array with dimensions (height, width, 3) and the saturated pixels
-      highlighted with color params.highlightcolor.
+    numpy.ndarray: A copy of the image as an array with dimensions (height, width, 3) and the saturated
+    pixels highlighted with color `params.highlightcolor`.
   """
   image = prepare_images(image, sampling = 1, copy = True)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
@@ -201,8 +202,8 @@ def differences(image, reference):
     reference: The reference image (Image object or numpy.ndarray).
 
   Returns:
-    A copy of the image as an array with dimensions (height, width, 3)
-      and the differences with the reference highlighted with color params.diffcolor.
+    numpy.ndarray: A copy of the image as an array with dimensions (height, width, 3)
+    and the differences with the reference highlighted with color `params.diffcolor`.
   """
   image = prepare_images(image, sampling = 1, copy = True)
   reference = prepare_images(reference, sampling = 1)

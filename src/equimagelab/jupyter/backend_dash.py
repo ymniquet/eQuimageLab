@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """Dash backend for Jupyter-lab interface."""
 
@@ -357,7 +358,7 @@ class Dashboard():
         channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
       statistics (optional): If True or a string, show the statistics of the image(s). The string lists the
         channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
-      sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
+      sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
         Only images[::sampling, ::sampling] are shown, to speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, local histograms).
@@ -485,7 +486,7 @@ class Dashboard():
       image (Image): The output image (must embed a transformation image.trans - see Image.apply_channels).
       channels (str, optional): The channels of the histograms and statistics (default "RGBL" for red,
         green, blue, luma). The channels of the transformation are added if needed.
-      sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
+      sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
         Only image[::sampling, ::sampling] is shown, to speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, local histograms).
@@ -514,7 +515,7 @@ class Dashboard():
       images: The images as a tuple/list/dictionary of Image object(s) or numpy.ndarray.
         The images are labelled according to the keys for a dictionary. Otherwise, the images are labelled
         "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
-      sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
+      sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
         Only images[::sampling, ::sampling] are shown, to speed up display.
       interval (int, optional): The interval (ms) between image switches in the carousel (default 2000).
     """
@@ -559,7 +560,7 @@ class Dashboard():
       image2: The second image as an Image object or numpy.ndarray.
       label1 (str, optional): The label of the first image (default "Image").
       label2 (str, optional): The label of the second image (default "Reference").
-      sampling (int, optional): Downsampling rate (defaults to params.sampling if negative).
+      sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
         Only image1[::sampling, ::sampling] and image2[::sampling, ::sampling] are shown, to speed up display.
     """
     self.refresh = False # Stop refreshing dashboard.
