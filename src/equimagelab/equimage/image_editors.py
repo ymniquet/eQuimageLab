@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
+# Sphinx OK.
 
 """External image editors."""
 
@@ -34,9 +35,11 @@ class Mixin:
       command (str): The command to be run (e.g., "gimp -n $"). Any "$" is replaced by the name of the image
         file to be opened by the editor.
       export (str, optional): The format used to export the image. Can be:
+
         - "png": PNG file with depth = 8 or 16 bits integer per channel.
         - "tiff" (default): TIFF file with depth = 8, 16 or 32 bits integer per channel.
         - "fits": FITS file width depth = 32 bits float per channel.
+
       depth (int, optional): The color depth (bits per channel) used to export the image (see above; default 16).
       editor (str, optional): The name of the editor (for pretty-print purposes; default "<Editor>").
 
@@ -89,9 +92,11 @@ class Mixin:
 
     Args:
       export (str, optional): The format used to export the image. Can be:
+
         - "png": PNG file with depth = 8 or 16 bits integer per channel.
         - "tiff" (default): TIFF file with depth = 8, 16 or 32 bits integer per channel.
         - "fits": FITS file width depth = 32 bits float per channel.
+
       depth (int, optional): The color depth (bits per channel) used to export the image (see above; default 16).
 
     Returns:

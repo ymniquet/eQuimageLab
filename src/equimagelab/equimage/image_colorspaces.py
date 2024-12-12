@@ -3,7 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.0.0 / 2024.10.01
-# DOC+MCI.
+# Sphinx OK.
 
 """Color spaces and models management."""
 
@@ -20,6 +20,9 @@ from . import helpers
 def sRGB_to_lRGB(image):
   """Convert the input sRGB image into a linear RGB image.
 
+  See also:
+    The reciprocal lRGB_to_sRGB function.
+
   Args:
     image (numpy.ndarray): The input sRGB image.
 
@@ -31,6 +34,9 @@ def sRGB_to_lRGB(image):
 
 def lRGB_to_sRGB(image):
   """Convert the input linear RGB image into a sRGB image.
+
+  See also:
+    The reciprocal sRGB_to_lRGB function.
 
   Args:
     image (numpy.ndarray): The input lRGB image.
@@ -48,6 +54,9 @@ def lRGB_to_sRGB(image):
 def RGB_to_HSV(image):
   """Convert the input RGB image into a HSV image.
 
+  See also:
+    The reciprocal HSV_to_RGB function.
+
   Args:
     image (numpy.ndarray): The input RGB image.
 
@@ -58,6 +67,9 @@ def RGB_to_HSV(image):
 
 def HSV_to_RGB(image):
   """Convert the input HSV image into a RGB image.
+
+  See also:
+    The reciprocal RGB_to_HSV function.
 
   Args:
     image (numpy.ndarray): The input HSV image.
@@ -101,6 +113,7 @@ def luma(image):
   """Return the luma L of the input RGB image.
 
   The luma L is the average of the RGB components weighted by rgbluma = get_RGB_luma():
+
     L = rgbluma[0]*image[0]+rgbluma[1]*image[1]+rgbluma[2]*image[2].
 
   Note: Compatible with single channel grayscale images.
@@ -122,21 +135,25 @@ def lRGB_luminance(image):
   """Return the luminance Y of the input linear RGB image.
 
   The luminance Y of a lRGB image is defined as:
+
     Y = 0.2126*R+0.7152*G+0.0722*B
+
   It is equivalently the luma of the lRGB image for RGB weights (0.2126, 0.7152, 0.0722),
   and is the basic ingredient of the perceptual lightness L*.
 
   Note: Compatible with single channel grayscale images.
+
+  See also:
+    lRGB_lightness,
+    sRGB_luminance,
+    sRGB_lightness,
+    luma
 
   Args:
     image (numpy.ndarray): The input lRGB image.
 
   Returns:
     numpy.ndarray: The luminance Y.
-
-  See also:
-    luma,
-    lRGB_lightness
   """
   return .2126*image[0]+.7152*image[1]+.0722*image[2] if image.shape[0] > 1 else image[0]
 
@@ -144,12 +161,20 @@ def lRGB_lightness(image):
   """Return the CIE lightness L* of the input linear RGB image.
 
   The CIE lightness L* is defined from the lRGB luminance Y as:
+
     L* = 116*Y**(1/3)-16 if Y > 0.008856 and L* = 903.3*Y if Y < 0.008856.
+
   It is a measure of the perceptual lightness of the image.
 
   Warning: L* is defined within [0, 100] instead of [0, 1].
 
   Note: Compatible with single channel grayscale images.
+
+  See also:
+    lRGB_luminance,
+    sRGB_luminance,
+    sRGB_lightness,
+    luma
 
   Args:
     image (numpy.ndarray): The input lRGB image.
@@ -173,15 +198,17 @@ def sRGB_luminance(image):
 
   Note: Compatible with single channel grayscale images.
 
+  See also:
+    sRGB_lightness,
+    lRGB_luminance,
+    lRGB_lightness,
+    luma
+
   Args:
     image (numpy.ndarray): The input sRGB image.
 
   Returns:
     numpy.ndarray: The luminance Y.
-
-  See also:
-    luma,
-    sRGB_lightness
   """
   return lRGB_luminance(sRGB_to_lRGB(image))
 
@@ -194,6 +221,12 @@ def sRGB_lightness(image):
   Warning: L* is defined within [0, 100] instead of [0, 1].
 
   Note: Compatible with single channel grayscale images.
+
+  See also:
+    sRGB_luminance,
+    lRGB_luminance,
+    lRGB_lightness,
+    luma
 
   Args:
     image (numpy.ndarray): The input sRGB image.
@@ -310,7 +343,8 @@ class Mixin:
   def HSV(self):
     """Convert the image to the HSV color model.
 
-    Note: The conversion from a gray scale to a HSV image is ill-defined (no hue).
+    Warning:
+      The conversion from a gray scale to a HSV image is ill-defined (no hue).
 
     Returns:
       Image: The converted HSV image (a copy of the original image if already HSV).
@@ -356,9 +390,11 @@ class Mixin:
     """Return the luma L of the image.
 
     The luma L is the average of the RGB components weighted by rgbluma = get_RGB_luma():
+
       L = rgbluma[0]*image[0]+rgbluma[1]*image[1]+rgbluma[2]*image[2].
 
-    Warning: The luma is available only for RGB and grayscale images.
+    Warning:
+      The luma is available only for RGB and grayscale images.
 
     Returns:
       numpy.ndarray: The luma L.
@@ -371,7 +407,8 @@ class Mixin:
   def luminance(self):
     """Return the luminance Y of the image.
 
-    Warning: The luminance is available only for RGB and grayscale images.
+    Warning:
+      The luminance is available only for RGB and grayscale images.
 
     Returns:
       numpy.ndarray: The luminance Y.
@@ -387,7 +424,11 @@ class Mixin:
   def lightness(self):
     """Return the CIE lightness L* of the image.
 
-    Warning: The lightness is available only for RGB and grayscale images.
+    Warning:
+      The lightness is available only for RGB and grayscale images.
+
+    Warning:
+      L* is defined within [0, 100] instead of [0, 1].
 
     Returns:
       numpy.ndarray: The lightness L*.
@@ -410,35 +451,41 @@ class Mixin:
     Note: When applying an operation to the luma, the RGB components of the image are rescaled
     by the ratio f(luma)/luma. This preserves the hue, but may bring some RGB components
     out-of-range even though f(luma) is within [0, 1]. These out-of-range components can be
-    regularized with two highlight protection methods:
+    regularized with two highlights protection methods:
+
       - "saturation": The out-of-range pixels are desaturated at constant luma (namely, the
         out-of-range components are decreased while the in-range components are increased so
         that the luma is conserved). This tends to whiten the out-of-range pixels.
-        f(luma) must be within [0, 1] to make use of this highlight protection method.
+        f(luma) must be within [0, 1] to make use of this highlights protection method.
       - "mixing": The out-of-range pixels are blended with f(RGB) (the operation applied to the
         RGB channels). This usually tends to whiten the out-of-range pixels too.
-        f(RGB) must be within [0, 1] to make use of this highlight protection method.
+        f(RGB) must be within [0, 1] to make use of this highlights protection method.
+
     Alternatively, applying the operation to the HSV value V also preserves the hue and can not
     produce out-of-range pixels if f([0, 1]) is within [0, 1]. However, this may strongly affect
-    the balance of the image, the HSV value being a poor approximation to the perceptual lightness.
+    the balance of the image, the HSV value being a very poor approximation to the perceptual
+    lightness.
 
     Args:
-      f: The function f(numpy.ndarray) -> np.array applied to the selected channels.
+      f (function): The function f(numpy.ndarray) → numpy.ndarray applied to the selected channels.
       channels (str): The selected channels:
+
         - An empty string: Apply the operation to all channels (RGB, HSV and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with f(RGB)).
+          (after the operation, the out-of-range pixels are blended with f(RGB)).
+
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
-                              if False, the operation must be applied one channel at a time.
+        if False, the operation must be applied one channel at a time.
       trans (bool, optional): If True (default False), embeds the transformation y = f(x in [0, 1]) in the
         output image as output.trans, where:
+
           - output.trans.type = "hist".
           - output.trans.input is a reference to the input image (self).
           - output.trans.channels are the channels selected for the transformation.
@@ -446,6 +493,7 @@ class Mixin:
           - output.trans.y = f(output.trans.x)
           - output.trans.ylabel is a label for output.trans.y.
           - output.trans.xticks is a list of remarkable x values for this transformation (if any).
+
         trans shall be set True only for *local* histogram transformations f.
 
     Returns:
@@ -567,16 +615,17 @@ class Mixin:
 
     Args:
       channels (str): The selected channels:
+
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-            Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
-               (after the operation, the out-of-range pixels are desaturated at constant luma).
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
-               (after the operation, the out-of-range pixels are blended with channels = "RGB").
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
     Returns:
       Image: The clipped image.
@@ -591,7 +640,8 @@ class Mixin:
     components.
     This aims at protecting the highlights from overflowing when stretching the luma.
 
-    Warning: The luma must be <= 1 even though some pixels have HSV value > 1.
+    Warning:
+      The luma must be <= 1 even though some pixels have HSV value > 1.
 
     Returns:
       Image: The processed image.

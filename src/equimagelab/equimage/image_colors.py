@@ -106,13 +106,15 @@ class Mixin:
     """Adjust color saturation.
 
     The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model' kwarg:
-      - "deltasat": Shift the saturation S <- S+delta.
-      - "midsat": Apply a midtone stretch function S <- f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
-                  This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1.
+
+      - "deltasat": Shift the saturation S ← S+delta.
+      - "midsat": Apply a midtone stretch function S ← f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
+        This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1.
+
     The image is converted back to the original color model ("RGB" or "HSV") after this operation.
     delta is expected in the [-1, 1] range, with delta = 0 leaving the image unchanged. delta > 0 saturates the colors,
-    while delta < 0 turn the image into a a grayscale.
-    delta is first set for all hues (with the 'A' kwarg), then is updated for the red ('R'), yellow ('Y'), green ('G'),
+    while delta < 0 turn the image into a a gray scale.
+    delta is first set for all hues (with the 'A' kwarg), then can be updated for the red ('R'), yellow ('Y'), green ('G'),
     cyan ('C'), blue ('B') and magenta ('M') hues, if these kwargs are provided.
     delta is interpolated for arbitrary HSV hues using nearest neighbor, linear or cubic spline interpolation, according
     to the 'interpolation' kwarg.
@@ -127,9 +129,11 @@ class Mixin:
       M (float, optional): The magenta delta (default A).
       model (str, optional): The saturation model ["deltasat" or "midsat" (default)]
       interpolation (str, optional): The hue interpolation model:
+
         - "nearest": Nearest neighbor interpolation.
         - "linear": Linear spline interpolation.
         - "cubic": Cubic spline interpolation (default).
+
       trans (boolean, optional): If True, embeds the transformation delta(hue) in the output
         image as output.trans.
 
@@ -196,19 +200,21 @@ class Mixin:
     """Selective color noise reduction of a given hue of a RGB image.
 
     The input hue is reduced according to the 'protection' kwarg. For the green hue for example,
-      - G <- min(G, C) with C = (R+B)/2 for average neutral protection (protection = "avgneutral").
-      - G <- min(G, C) with C = max(R, B) for maximum neutral protection (protection = "maxneutral").
-      - G <- G*[(1-a)+C*a] with C = (R+B)/2 for additive mask protection (protection = "addmask").
-      - G <- G*[(1-a)+C*a] with C = max(R, B) for maximum mask protection (protection = "maxmask").
-    The parameter a in [0, 1] controls the strength of the mask protection.
+
+      - G ← min(G, C) with C = (R+B)/2 for average neutral protection (protection = "avgneutral").
+      - G ← min(G, C) with C = max(R, B) for maximum neutral protection (protection = "maxneutral").
+      - G ← G*[(1-A)+C*A] with C = (R+B)/2 for additive mask protection (protection = "addmask").
+      - G ← G*[(1-A)+C*A] with C = max(R, B) for maximum mask protection (protection = "maxmask").
+
+    The parameter A in [0, 1] controls the strength of the mask protection.
 
     Args:
       hue (str, optional): The hue to be reduced ["red" alias "R", "yellow" alias "Y", "green" alias "G" (default),
         "cyan" alias "C", "blue" alias "B", or "magenta" alias "M"].
       protection (str, optional): The protection mode ["avgneutral" (default), "maxneutral", "addmask" or "maxmask"].
-      amount (float, optional): The a parameter for mask protection (protection = "addmask" or "maxmask", default 1).
-      lightness (bool, optional): If True (default), rescale the output pixels to preserve the CIE lightness L* of the
-        original image.
+      amount (float, optional): The parameter A for mask protection (protection = "addmask" or "maxmask", default 1).
+      lightness (bool, optional): If True (default), rescale the output pixels to preserve the CIE lightness L* of
+        the original image.
 
     Returns:
       Image: The processed image.
