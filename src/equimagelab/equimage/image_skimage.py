@@ -59,7 +59,8 @@ class Mixin:
 
     The Butterworh filter reads in the frequency domain:
 
-      H(f) = 1/(1+(f/fc)^(2n))
+    .. math::
+      H(f) = 1/(1+(f/f_c)^{2n})
 
     where n is the order of the filter and fc the cut-off frequency.
     The data are Fast-Fourier Transformed back and forth to apply the filter.
@@ -94,12 +95,12 @@ class Mixin:
   def unsharp_mask(sigma, strength, channels = ""):
     """Apply an unsharp mask to selected channels of the image.
 
-    Given a channel CIN, returns
+    Given a channel Cin, returns
 
-      COUT = CIN + strength*(CIN-BLUR(CIN))
+      Cout = Cin + strength*(Cin-BLUR(Cin))
 
-    where BLUR(CIN) is the convolution of CIN with a gaussian of standard deviation sigma.
-    As BLUR(CIN) is a low-pass filter, CIN-BLUR(CIN) is a high-pass filter whose output is
+    where BLUR(Cin) is the convolution of Cin with a gaussian of standard deviation sigma.
+    As BLUR(Cin) is a low-pass filter, Cin-BLUR(Cin) is a high-pass filter whose output is
     admixed in the original image. This enhances details; the larger the mixing strength,
     the sharper the image, at the expense of noise and fidelity.
 
@@ -195,12 +196,13 @@ class Mixin:
                                func = skim.restoration.denoise_wavelet, func_kw = kwargs, num_workers = None), channels)
 
   def bilateral_filter(self, sigma_space, sigma_color = .1, mode = "reflect", channels = ""):
-    """Bilateral filter for denoising selected channels of the image.
+    r"""Bilateral filter for denoising selected channels of the image.
 
-    The bilateral filter convolves the selected channel(s) CIN with a gaussian gs of standard deviation
+    The bilateral filter convolves the selected channel(s) Cin with a gaussian gs of standard deviation
     sigma_space weighted by a gaussian gc in color space (with standard deviation sigma_color):
 
-      COUT(r) ~ Sum_{r'} CIN(r') * gs(|r-r'|) * gc(|CIN(r)-CIN(r')|)
+    .. math::
+      C_{out}(\mathbf{r}) \sim \sum_{\mathbf{r}'} C_{in}(\mathbf{r}') g_s(|\mathbf{r}-\mathbf{r}'|) g_c(|C_{in}(\mathbf{r})-C_{in}(\mathbf{r}')|)
 
     Therefore, the bilateral filter averages the neighboring pixels whose colors are sufficiently similar.
     The bilateral filter may tend to produce cartoon-like (piecewise-constant) images.
@@ -244,13 +246,14 @@ class Mixin:
                                sigma_color = sigma_color, mode = mode, cval = 0.), channels)
 
   def total_variation(self, weight = .1, algorithm = "Chambolle", channels = ""):
-    """Total variation denoising of selected channels of the image.
+    r"""Total variation denoising of selected channels of the image.
 
-    Given a noisy channel CIN, the total variation filter finds an image COUT with less total variation than CIN
-    under the constraint that COUT remains similar to CIN. This can be expressed as the Rudin–Osher–Fatemi (ROF)
+    Given a noisy channel Cin, the total variation filter finds an image Cout with less total variation than Cin
+    under the constraint that Cout remains similar to Cin. This can be expressed as the Rudin–Osher–Fatemi (ROF)
     minimization problem:
 
-      minmize Sum_{r} |grad COUT(r)| + (lambda/2)*[CIN(r)-COUT(r)]²
+    .. math::
+      \text{Minimize} \sum_{\mathbf{r}} |\nabla C_{out}(\mathbf{r})| + (\lambda/2)[C_{out}(\mathbf{r})-C_{in}(\mathbf{r})]^2
 
     where the weight 1/lambda controls denoising (the larger the weight, the stronger the denoising at the expense
     of image fidelity). The minimization can either be performed with the Chambolle or split Bregman algorithm.
@@ -288,24 +291,26 @@ class Mixin:
       raise ValueError(f"Error, unknown algorithm {algorithm} (must be 'Chambolle' or 'Bregman').")
 
   def non_local_means(self, size = 7, dist = 11, h = .01, sigma = 0., fast = True, channels = ""):
-    """Non-local means filter for denoising selected channels of the image.
+    r"""Non-local means filter for denoising selected channels of the image.
 
-    Given a channel CIN, returns
+    Given a channel Cin, returns
 
-      COUT(r) ~ Sum_{r'} f(r, r') * CIN(r')
+    .. math::
+      C_{out}(\mathbf{r}) \sim \sum_{\mathbf{r}'} f(\mathbf{r},\mathbf{r}') C_{in}(\mathbf{r}')
 
     where:
 
-      f(r, r') = exp[-(M(r)-M(r'))²/h²] for |r-r'| < dist
+    .. math::
+      f(\mathbf{r},\mathbf{r}') = \exp[-(M(\mathbf{r})-M(\mathbf{r}'))^2/h^2]\text{ for }|\mathbf{r}-\mathbf{r}'| < d
 
-    and M(r) is an average of CIN in a patch around r.
+    and M(r) is an average of Cin in a patch around r.
     Therefore, the non-local means filter averages the neighboring pixels whose patches (texture) are
     sufficiently similar. The non-local means filter can restore textures that would be blurred by
     other denoising algorithms such as the bilateral and total variation filters.
 
     Args:
       size (int, optional): The size of the (square) patch used to compute M(r) (default 7).
-      dist (int, optional): The maximal distance between the patches (default 11).
+      dist (int, optional): The maximal distance d between the patches (default 11).
       h (float, optional): The cut-off in gray levels (default 0.01; the filter is applied to all channels independently).
       sigma (float, optional): The standard deviation of the noise (if known), subtracted out when computing f(r, r').
         This can lead to a modest improvement in image quality (keep default 0 if unknown).
