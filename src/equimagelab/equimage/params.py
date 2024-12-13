@@ -30,18 +30,18 @@ exclude01 = False
 ntranslo = 128 # Low  resolution.
 ntranshi = 256 # High resolution.
 
-# Default number of bins within [0, 1] in the histograms.
+# Maximum number of bins in the histograms.
 
-histbins = 8192
+maxhistbins = 8192
 
-def set_hist_bins(n):
-  """Set the default number of bins within [0, 1] in the histograms.
+def set_max_hist_bins(n):
+  """Set the maximum number of bins in the histograms.
 
   Args:
-    n: The default number of bins within [0, 1].
+    n: The maximum number of bins within [0, 1].
   """
-  global histbins
-  histbins = n
+  global maxhistbins
+  maxhistbins = n
 
 # Weights of the RGB components in the luma.
 

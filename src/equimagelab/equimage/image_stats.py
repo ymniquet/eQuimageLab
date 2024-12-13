@@ -19,7 +19,7 @@ from . import helpers
 class Mixin:
   """To be included in the Image class."""
 
-  def histograms(self, channels = "RGBL", nbins = -1, recompute = False):
+  def histograms(self, channels = "RGBL", nbins = 0, recompute = False):
     """Compute histograms of selected channels of the image.
 
     The histograms are both returned and embedded in the object as self.hists. Histograms already registered in self.hists
@@ -30,7 +30,8 @@ class Mixin:
         "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the histograms of the value and saturation can be
         computed. If channels ends with a "*", it gets appended with the keys already computed and stored in self.hists.
         Default is "RGBL".
-      nbins (int, optional): Number of bins within [0, 1] in the histograms (defaults to `params.histbins` if negative).
+      nbins (int, optional): Number of bins within [0, 1] in the histograms (defaults to `params.maxhistbins` if negative,
+        and computed from Scott's rule if zero).
       recompute (bool, optional): If False (default), the histograms already registered in self.hists are not recomputed
         (provided they match nbins). If True, all histograms are recomputed.
 
@@ -43,8 +44,24 @@ class Mixin:
         - hists[key].counts = histogram bins counts.
         - hists[key].color = suggested line color for plots.
     """
-    if nbins == 0: raise ValueError("Error, nbins must be non zero.")
-    if nbins < 0: nbins = params.histbins
+    if nbins == 0:
+      if not recompute and hasattr(self, "hists"): # Retrieve the number of bins from previous histograms.
+        nbins = list(self.hists.values())[0].nbins
+      else: # Compute the number of bins with Scott's rule.
+        width, height = self.get_size()
+        npixels = width*height
+        if self.colormodel == "RGB":
+          channel = (self.image[0]+self.image[1]+self.image[2])/3.
+        elif self.colormodel == "HSV":
+          channel = self.image[2]
+        elif self.colormodel == "gray":
+          channel = self.image[0]
+        else:
+          self.color_model_error()
+        nbins = int(np.ceil(npixels**(1./3.)/(3.5*np.std(channel))))
+    elif nbins < 0:
+      nbins = params.maxhistbins
+    nbins = min(max(nbins, 16), params.maxhistbins)
     if not hasattr(self, "hists"): self.hists = {} # Register empty histograms in the object, if none already computed.
     if len(channels) > 0: # Append missing keys if channels ends with a "*".
       if channels[-1] == "*":
