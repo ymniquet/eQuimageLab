@@ -26,8 +26,8 @@ def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
     logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
     b (float): The local stretch factor.
     SYP (float): The symmetry point (expected in [0, 1]).
-    SPP (float): The shadow protection point (expected in [0, SYP]).
-    HPP (float): The highlight protection point (expected in [SYP, 1]).
+    SPP (float, optional): The shadow protection point (default 0; expected in [0, SYP]).
+    HPP (float, optional): The highlight protection point (default 1; expected in [SYP, 1]).
     inverse (bool): Return the inverse stretch function if True.
 
   Returns:
@@ -51,7 +51,7 @@ def mts(image, midtone):
   Returns:
     numpy.ndarray: The stretched image.
   """
-  return stf.midtone_stretch_function(image, midtone)
+  return stf.midtone_stretch_function(image, midtone, False)
 
 #####################################
 # For inclusion in the Image class. #
@@ -81,6 +81,9 @@ class Mixin:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+      
     Returns:
       Image: The processed image.
     """
@@ -112,6 +115,9 @@ class Mixin:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+        
     Returns:
       Image: The processed image.
     """
@@ -143,6 +149,9 @@ class Mixin:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+        
     Returns:
       Image: The processed image.
     """
@@ -172,6 +181,9 @@ class Mixin:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+        
     Returns:
       Image: The stretched image.
     """
@@ -188,9 +200,9 @@ class Mixin:
       logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
       b (float): The local stretch factor.
       SYP (float): The symmetry point (will be clipped in the [0, 1] range).
-      SPP (float): The shadow protection point (will be clipped in the [0, SYP] range).
-      HPP (float): The highlight protection point (will be clipped in the [SYP, 1] range).
-      inverse (bool): Return the inverse stretch if True.
+      SPP (float, optional): The shadow protection point (default 0, will be clipped in the [0, SYP] range).
+      HPP (float, optional): The highlight protection point (default 1, will be clipped in the [SYP, 1] range).
+      inverse (bool, optional): Return the inverse stretch if True (default False).
       channels (str, optional): The selected channels:
 
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
@@ -204,6 +216,9 @@ class Mixin:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+        
     Returns:
       numpy.ndarray: The stretched image.
     """
@@ -230,7 +245,7 @@ class Mixin:
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
 
-  def midtone_stretch(self, midtone, channels = "", trans = True):
+  def midtone_stretch(self, midtone, inverse = False, channels = "", trans = True):
     """Apply a midtone stretch to selected channels of the image.
 
     The midtone stretch function f is applied to the selected channels:
@@ -241,6 +256,7 @@ class Mixin:
 
     Args:
       midtone (float): The midtone level (expected in ]0, 1[).
+      inverse (bool, optional): Return the inverse stretch if True (default False).
       channels (str, optional): The selected channels:
 
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
@@ -254,11 +270,14 @@ class Mixin:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+        
     Returns:
       Image: The stretched image.
     """
     if midtone < .0001 or midtone >= .9999: raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")
-    output = self.apply_channels(lambda channel: stf.midtone_stretch_function(channel, midtone), channels, trans = trans)
+    output = self.apply_channels(lambda channel: stf.midtone_stretch_function(channel, midtone, inverse), channels, trans = trans)
     if trans: output.trans.xticks = [midtone]
     return output
 
@@ -286,6 +305,9 @@ class Mixin:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+        
     Returns:
       Image: The stretched image.
     """
@@ -303,10 +325,10 @@ class Mixin:
 
     Args:
       midtone (float): The input midtone level (expected in ]0, 1[).
-      shadow (float): The input shadow level (expected < midtone).
-      highlight (float): The input highlight level (expected > midtone).
-      low (float): The "low" output level (expected <= 0).
-      high (float): The "high" output level (expected >= 1).
+      shadow (float, optional): The input shadow level (default 0; expected < midtone).
+      highlight (float, optional): The input highlight level (default 1; expected > midtone).
+      low (float, optional): The "low" output level (default 0; expected <= 0).
+      high (float, optional): The "high" output level (default 1; expected >= 1).
       channels (str, optional): The selected channels:
 
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
@@ -320,6 +342,9 @@ class Mixin:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
 
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+        
     Returns:
       Image: The stretched image.
     """

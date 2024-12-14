@@ -264,7 +264,7 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
         y[mask] = (x[mask]-a4)/b4
     return y
 
-def midtone_stretch_function(x, midtone):
+def midtone_stretch_function(x, midtone, inverse):
   """Return the midtone stretch function f(x).
 
   The midtone stretch function is defined as:
@@ -276,11 +276,12 @@ def midtone_stretch_function(x, midtone):
   Args:
     x (numpy.ndarray): The input data.
     midtone (float): The midtone level (expected in ]0, 1[]).
+    inverse (bool): Return the inverse stretch function if True.
 
   Returns:
     numpy.ndarray: The stretched data.
   """
-  return (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
+  return midtone*x/((2.*midtone-1.)*x-midtone+1.) if inverse else (midtone-1.)*x/((2.*midtone-1.)*x-midtone) 
 
 def gamma_stretch_function(x, gamma):
   """Return the gamma stretch function f(x).

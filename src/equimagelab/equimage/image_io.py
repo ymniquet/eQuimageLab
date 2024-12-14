@@ -110,7 +110,7 @@ def load_image(filename, colorspace = "sRGB", verbose = True):
   image, meta = load_image_as_array(filename, verbose = verbose)
   return Image(image, colorspace = colorspace, colormodel = "RGB"), meta
 
-def save_image(image, filename, depth = 8, verbose = True):
+def save_image(image, filename, depth = 8, compress = 5, verbose = True):
   """Save a RGB or grayscale image as a file.
 
   Note: The color space is *not* embedded in the file at present.
@@ -122,6 +122,9 @@ def save_image(image, filename, depth = 8, verbose = True):
       - .tif, .tiff: TIFF file with depth = 8, 16 bit integers per channel, or 32 bit floats per channel.
       - .fit, .fits, .fts: FITS file with 32 bit floats per channel (irrespective of depth).
     depth (int, optional): The color depth of the file in bits per channel (default 8).
+    compress (int, optional): The compression level for TIFF files (Default 5; 0 = no compression; 
+      actual compression if >0 depends whether ImageIO or scikit-image is used as I/O library - 
+      see `params.IMAGEIO`).
     verbose (bool, optional): If True (default), print information about the file.
   """
   image.check_color_model("RGB", "gray")
@@ -151,9 +154,9 @@ def save_image(image, filename, depth = 8, verbose = True):
         skio.imsave(filename, image, check_contrast = False)
     elif ext == ".tif" or ext == ".tiff":
       if params.IMAGEIO:
-        iio.imwrite(filename, image, plugin = "TIFF", metadata = {"compress": 5})
+        iio.imwrite(filename, image, plugin = "TIFF", metadata = {"compress": compress})
       else:
-        skio.imsave(filename, image, plugin = "tifffile", check_contrast = False, compression = "zlib")
+        skio.imsave(filename, image, plugin = "tifffile", check_contrast = False, compression = "zlib" if compress > 0 else None)
   elif ext in [".fit", ".fits", ".fts"]:
     if verbose: print(f"Color depth = {np.finfo(image.dtype).bits} bits float per channel.")
     image = image.flip_height().get_image() # Flip image upside down.
@@ -170,7 +173,7 @@ def save_image(image, filename, depth = 8, verbose = True):
 class Mixin:
   """To be included in the Image class."""
 
-  def save(self, filename, depth = 8, verbose = True):
+  def save(self, filename, depth = 8, compress = 5, verbose = True):
     """Save image as a file.
 
     Note: The color model must be "RGB" or "gray", but the color space is *not* embedded
@@ -182,6 +185,9 @@ class Mixin:
         - .tif, .tiff: TIFF file with depth = 8, 16 bits integer per channel, or 32 bits float per channel.
         - .fit, .fits, .fts: FITS file with 32 bits float per channel (irrespective of depth).
       depth (int, optional): The color depth of the file in bits per channel (default 8).
+      compress (int, optional): The compression level for TIFF files (Default 5; 0 = no compression; 
+        actual compression if >0 depends whether ImageIO or scikit-image is used as I/O library - 
+        see `params.IMAGEIO`).
       verbose (bool, optional): If True (default), print information about the file.
     """
-    save_image(self, filename, depth = depth, verbose = verbose)
+    save_image(self, filename, depth = depth, compress = compress, verbose = verbose)
