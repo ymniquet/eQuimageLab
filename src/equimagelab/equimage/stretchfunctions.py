@@ -281,7 +281,7 @@ def midtone_stretch_function(x, midtone, inverse):
   Returns:
     numpy.ndarray: The stretched data.
   """
-  return midtone*x/((2.*midtone-1.)*x-midtone+1.) if inverse else (midtone-1.)*x/((2.*midtone-1.)*x-midtone) 
+  return midtone*x/((2.*midtone-1.)*x-midtone+1.) if inverse else (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
 
 def gamma_stretch_function(x, gamma):
   """Return the gamma stretch function f(x).

@@ -33,7 +33,7 @@ class Mixin:
     The user/editor must simply overwrite the edited file when leaving.
 
     Args:
-      command (str): The command to be run (e.g., "gimp -n $"). 
+      command (str): The command to be run (e.g., "gimp -n $").
         Any "$" is replaced by the name of the image file to be opened by the editor.
       export (str, optional): The format used to export the image. Can be:
 
@@ -44,8 +44,8 @@ class Mixin:
       depth (int, optional): The color depth (bits per channel) used to export the image (see above; default 16).
       editor (str, optional): The name of the editor (for pretty-print purposes; default "<Editor>").
       interactive (bool, optional): If True (default), the editor is interactive (awaits commands from the user);
-        if False, the editor processes the image autonomously and does not require inputs from the user. 
-      cwd (str, optional): If not None (default), change working directory to cwd before running the editor. 
+        if False, the editor processes the image autonomously and does not require inputs from the user.
+      cwd (str, optional): If not None (default), change working directory to cwd before running the editor.
 
     Returns:
       Image: The edited image.
@@ -122,29 +122,29 @@ class Mixin:
       Image: The edited image.
     """
     return self.edit_with("siril $", export = "fits", depth = 32, editor = "Siril", interactive = True)
-    
+
   def starnet(self, midtone = .5, starmask = False):
     """Remove the stars from the image with StarNet++.
-    
+
     See: https://www.starnetastro.com/
 
     The image is saved as a TIFF file (16 bits integer per channel) on disk; the stars on this
-    TIFF file are remove with StarNet++, and the starless image is finally reloaded in eQuimageLab 
+    TIFF file are remove with StarNet++, and the starless image is finally reloaded in eQuimageLab
     and returned.
 
     The command "starnet++" must be in the PATH.
 
     Args:
       midtone (float, optional): If different from 0.5 (default), apply a midtone stretch to the
-        image before running StarNet++, then apply the inverse stretch to the output starless. 
-        This can help StarNet++ find stars on low contrast, linear RGB images. 
+        image before running StarNet++, then apply the inverse stretch to the output starless.
+        This can help StarNet++ find stars on low contrast, linear RGB images.
         See Image.midtone_stretch; midtone is expected in ]0, 1[.
       starmask (bool, optional): If True, return both the starless image and the star mask.
         If False (default), only return the starless image [the star mask being the difference
         between the original image (self) and the starless].
-      
+
     Returns:
-      Image: The starless image if starmask is False, and a tuple (starless image, star mask) 
+      Image: The starless image if starmask is False, and a tuple (starless image, star mask)
       if starmask is True.
     """
     # We need to cwd to the starnet++ directory to process the image.

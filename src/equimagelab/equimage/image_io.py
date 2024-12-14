@@ -122,8 +122,8 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
       - .tif, .tiff: TIFF file with depth = 8, 16 bit integers per channel, or 32 bit floats per channel.
       - .fit, .fits, .fts: FITS file with 32 bit floats per channel (irrespective of depth).
     depth (int, optional): The color depth of the file in bits per channel (default 8).
-    compress (int, optional): The compression level for TIFF files (Default 5; 0 = no compression; 
-      actual compression if >0 depends whether ImageIO or scikit-image is used as I/O library - 
+    compress (int, optional): The compression level for TIFF files (Default 5; 0 = no compression;
+      actual compression if >0 depends whether ImageIO or scikit-image is used as I/O library -
       see `params.IMAGEIO`).
     verbose (bool, optional): If True (default), print information about the file.
   """
@@ -185,8 +185,8 @@ class Mixin:
         - .tif, .tiff: TIFF file with depth = 8, 16 bits integer per channel, or 32 bits float per channel.
         - .fit, .fits, .fts: FITS file with 32 bits float per channel (irrespective of depth).
       depth (int, optional): The color depth of the file in bits per channel (default 8).
-      compress (int, optional): The compression level for TIFF files (Default 5; 0 = no compression; 
-        actual compression if >0 depends whether ImageIO or scikit-image is used as I/O library - 
+      compress (int, optional): The compression level for TIFF files (Default 5; 0 = no compression;
+        actual compression if >0 depends whether ImageIO or scikit-image is used as I/O library -
         see `params.IMAGEIO`).
       verbose (bool, optional): If True (default), print information about the file.
     """

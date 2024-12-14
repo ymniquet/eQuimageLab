@@ -83,7 +83,7 @@ class Mixin:
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
-      
+
     Returns:
       Image: The processed image.
     """
@@ -117,7 +117,7 @@ class Mixin:
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
-        
+
     Returns:
       Image: The processed image.
     """
@@ -151,7 +151,7 @@ class Mixin:
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
-        
+
     Returns:
       Image: The processed image.
     """
@@ -183,7 +183,7 @@ class Mixin:
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
-        
+
     Returns:
       Image: The stretched image.
     """
@@ -218,7 +218,7 @@ class Mixin:
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
-        
+
     Returns:
       numpy.ndarray: The stretched image.
     """
@@ -272,7 +272,7 @@ class Mixin:
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
-        
+
     Returns:
       Image: The stretched image.
     """
@@ -307,7 +307,7 @@ class Mixin:
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
-        
+
     Returns:
       Image: The stretched image.
     """
@@ -344,7 +344,7 @@ class Mixin:
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
-        
+
     Returns:
       Image: The stretched image.
     """
