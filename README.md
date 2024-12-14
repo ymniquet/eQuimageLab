@@ -16,7 +16,7 @@ in this same terminal. You can also create a link to eQuimageLab from your deskt
 
 ### Usage
 
-**UNDER DEVELOPMENT: NOT READY FOR USE !!**
+Preliminary documentation available at: https://astro.ymniquet.fr/codes/equimagelab/docs/
 
 ### Known bugs
 
