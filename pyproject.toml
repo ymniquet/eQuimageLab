@@ -38,6 +38,7 @@ dependencies = [
 
 [project.urls]
 homepage = "https://astro.ymniquet.fr/"
+documentation = "https://astro.ymniquet.fr/codes/equimagelab/docs/"
 repository = "https://github.com/ymniquet/eQuimageLab"
 
 [project.gui-scripts]
@@ -53,4 +54,4 @@ where = ["src"]
 "equimagelab.examples" = ["*.ipynb"]
 "equimagelab.launcher" = ["*.ipynb"]
 "equimagelab.jupyter" = ["assets/*"]
-#"equimagelab.docs.build" = ["html/*", "html/_static/*", "html/_static/*/*", "html/_static/*/*/*"]
+
