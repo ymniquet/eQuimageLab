@@ -2,6 +2,8 @@
 
 Author: Yann-Michel Niquet (https://astro.ymniquet.fr)
 
+# eQuimageLab is still under development and not ready for use
+
 ### Installation
 
 eQuimageLab is developed in Python 3. To install the latest version of eQuimageLab, open a linux terminal/windows command prompt and run:
