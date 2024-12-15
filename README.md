@@ -1,4 +1,4 @@
-### eQuimageLab is a tool to postprocess astronomical images with JupyterLab notebooks
+### eQuimageLab is a package to postprocess astronomical images with JupyterLab notebooks
 
 Author: Yann-Michel Niquet (https://astro.ymniquet.fr)
 
@@ -8,7 +8,7 @@ eQuimageLab is developed in Python 3. To install the latest version of eQuimageL
 
   `pip install --user eQuimageLab`
 
-pip will automatically download eQuimageLab and the missing python modules if necessary (matplotlib, etc...). You can then launch eQuimageLab by typing:
+pip will automatically download eQuimageLab and the missing python modules if necessary (dash, plotly, etc...). You can then launch eQuimageLab by typing:
 
   `eQuimagelab`
 
