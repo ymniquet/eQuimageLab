@@ -29,7 +29,7 @@ dependencies = [
     "dask",
     "jupyterlab",
     "plotly",
-    "dash",
+    "dash >= 2.18",
     "dash-bootstrap-components",
     "dash_bootstrap_templates",
     "dash_extensions",
