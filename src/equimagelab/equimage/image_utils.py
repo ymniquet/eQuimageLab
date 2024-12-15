@@ -125,7 +125,7 @@ class Mixin:
     Args:
       source (np.arrray): The source values for scaling (must be the same size as the image).
       target (np.arrray): The target values for scaling (must be the same size as the image).
-      cutoff (float, optional): Threshold for scaling. Defaults to `params.IMGTOL`.
+      cutoff (float, optional): Threshold for scaling. Defaults to `equimage.params.IMGTOL`.
 
     Returns:
       Image: The scaled image.

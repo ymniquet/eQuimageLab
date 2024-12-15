@@ -42,7 +42,7 @@ def prepare_images(images, sampling = -1, copy = False):
   Args:
     images: A single/tuple/list of Image object(s) or numpy.ndarrays with dimensions (height, width, 3)
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
-    sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
+    sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only images[::sampling, ::sampling] are processed, to speed up operations.
     copy (bool, optional): If False (default), the output images are (when possible) views of the
       original images; If True, they are always copies.
@@ -77,7 +77,7 @@ def prepare_images_as_b64strings(images, sampling = -1, compression = 4):
   Args:
     images: A single/tuple/list of Image object(s) or numpy.ndarrays with dimensions (height, width, 3)
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
-    sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
+    sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only images[::sampling, ::sampling] are processed, to speed up operations.
     compression (int, optional): PNG compression level (default 4).
 
@@ -136,9 +136,9 @@ def filter(image, channels):
 def shadowed(image, reference = None):
   """Highlight black pixels in an image.
 
-  Highlight black pixels on the input image with color `params.shadowcolor`.
+  Highlight black pixels on the input image with color `jupyter.params.shadowcolor`.
   If a reference image is provided, highlight pixels black on both input and reference images
-  with color 0.5 * `params.shadowcolor`.
+  with color 0.5 * `jupyter.params.shadowcolor`.
 
   Args:
     image: The image (Image object or numpy.ndarray).
@@ -146,7 +146,7 @@ def shadowed(image, reference = None):
 
   Returns:
     numpy.ndarray: A copy of the image as an array with dimensions (height, width, 3) and the
-    black pixels highlighted with color `params.shadowcolor`.
+    black pixels highlighted with color `jupyter.params.shadowcolor`.
   """
   image = prepare_images(image, sampling = 1, copy = True)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
@@ -167,9 +167,9 @@ def highlighted(image, reference = None):
   """Highlight saturated pixels in an image.
 
   A pixel is saturated if at least one channel is >= 1.
-  Show pixels saturated on the input image with color `params.highlightcolor`.
+  Show pixels saturated on the input image with color `jupyter.params.highlightcolor`.
   If a reference image is provided, show pixels saturated on both input and reference images
-  with color 0.5 * `params.highlightcolor`.
+  with color 0.5 * `jupyter.params.highlightcolor`.
 
   Args:
     image: The image (Image object or numpy.ndarray).
@@ -177,7 +177,7 @@ def highlighted(image, reference = None):
 
   Returns:
     numpy.ndarray: A copy of the image as an array with dimensions (height, width, 3) and the saturated
-    pixels highlighted with color `params.highlightcolor`.
+    pixels highlighted with color `jupyter.params.highlightcolor`.
   """
   image = prepare_images(image, sampling = 1, copy = True)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
@@ -203,7 +203,7 @@ def differences(image, reference):
 
   Returns:
     numpy.ndarray: A copy of the image as an array with dimensions (height, width, 3)
-    and the differences with the reference highlighted with color `params.diffcolor`.
+    and the differences with the reference highlighted with color `jupyter.params.diffcolor`.
   """
   image = prepare_images(image, sampling = 1, copy = True)
   reference = prepare_images(reference, sampling = 1)

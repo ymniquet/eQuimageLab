@@ -37,7 +37,7 @@ def scale_pixels(image, source, target, cutoff = params.IMGTOL):
     image (numpy.ndarray): The input image.
     source (numpy.ndarray): The source values for scaling (must be the same size as the input image).
     target (numpy.ndarray): The target values for scaling (must be the same size as the input image).
-    cutoff (float, optional): Threshold for scaling. Defaults to `params.IMGTOL`.
+    cutoff (float, optional): Threshold for scaling. Defaults to `equimage.params.IMGTOL`.
 
   Returns:
     numpy.ndarray: The scaled image.

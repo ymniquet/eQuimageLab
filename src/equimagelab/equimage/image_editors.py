@@ -153,13 +153,13 @@ class Mixin:
     path, cmd = os.path.split(cmdpath)
     # Stretch the image if needed.
     if midtone != .5:
-      image = self.midtone_stretch(midtone = midtone, channels = "")
+      image = self.midtone_stretch(midtone)
     else:
       image = self
     # Run starnet++.
     starless = image.edit_with("starnet++ $ $", export = "tiff", depth = 16, editor = "StarNet++", interactive = False, cwd = path)
     # "Unstretch" the starless if needed.
     if midtone != .5:
-      starless = starless.midtone_stretch(midtone = midtone, inverse = True, channels = "")
+      starless = starless.midtone_stretch(midtone, inverse = True)
     # Return starless/star masks as appropriate.
     return (starless, self-starless) if starmask else starless

@@ -28,7 +28,7 @@ def _figure_prepared_image_(image, width = -1, hover = False, template = "plotly
 
   Args:
     image (numpy.ndarray): The prepared image (processed by utils.prepare_images).3
-    width (int, optional): The width of the figure (defaults to `params.maxwidth` if negative).
+    width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
       Warning: Setting hover = True can slow down display a lot !
     template (str, optional): The template for the figure (default "plotly_dark").
@@ -51,9 +51,9 @@ def _figure_image_(image, sampling = -1, width = -1, hover = False, template = "
 
   Args:
     image: The image (Image object or numpy.ndarray).
-    sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
+    sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only image[::sampling, ::sampling] is shown, to speed up display.
-    width (int, optional): The width of the figure (defaults to `params.maxwidth` if negative).
+    width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
       Warning: Setting hover = True can slow down display a lot !
     template (str, optional): The template for the figure (default "plotly_dark").
@@ -70,7 +70,7 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
     image (Image): The image.
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
     log (bool, optional): If True (default), plot the histogram counts in log scale.
-    width (int, optional): The width of the figure (defaults to `params.maxwidth` if negative).
+    width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     xlabel (str, optional): The x axis label of the plot (default "Level").
     trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on top
       of the histograms (default None).
@@ -173,8 +173,8 @@ def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, templa
   Args:
     image (Image): The image.
     channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
-    width (int, optional): The width of the table (defaults to `params.maxwidth` if negative).
-    rowheight (int, optional): The height of the rows (default to params.rowheight if negative).
+    width (int, optional): The width of the table (defaults to `jupyter.params.maxwidth` if negative).
+    rowheight (int, optional): The height of the rows (default to jupyter.params.rowheight if negative).
     template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
@@ -232,9 +232,9 @@ def show(image, histograms = False, statistics = False, sampling = -1, width = -
       channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
     statistics (optional): If True or a string, show the statistics of the image. The string lists the
       channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
-    sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
+    sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only image[::sampling, ::sampling] is shown, to speed up display.
-    width (int, optional): The width of the figure (defaults to `params.maxwidth` if negative).
+    width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
       Warning: Setting hover = True can slow down display a lot !
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
@@ -255,7 +255,7 @@ def show_histograms(image, channels = "", log = True, width = -1, xlabel = "Leve
     image (Image): The image.
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
     log (bool, optional): If True (default), plot the histogram counts in log scale.
-    width (int, optional): The width of the figure (defaults to `params.maxwidth` if negative).
+    width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     xlabel (str, optional): The x axis label of the plot (default "Level").
     trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on top
       of the histograms (default None).
@@ -270,8 +270,8 @@ def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer =
   Args:
     image (Image): The image.
     channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
-    width (int, optional): The width of the table (defaults to `params.maxwidth` if negative).
-    rowheight (int, optional): The height of the rows (default to params.rowheight if negative).
+    width (int, optional): The width of the table (defaults to `jupyter.params.maxwidth` if negative).
+    rowheight (int, optional): The height of the rows (default to `jupyter.params.rowheight` if negative).
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """
   figure = _figure_statistics_(image, channels = channels, width = width, rowheight = rowheight)
@@ -286,9 +286,9 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, r
     image (Image): The output image (must embed a transformation image.trans - see Image.apply_channels).
     channels (str, optional): The channels of the histograms (default "RGBL" for red, green, blue, luma).
       The channels of the transformation are added if needed.
-    sampling (int, optional): Downsampling rate (defaults to `params.sampling` if negative).
+    sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only image[::sampling, ::sampling] is shown, to speed up display.
-    width (int, optional): The width of the figure (defaults to `params.maxwidth` if negative).
+    width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
       Warning: Setting hover = True can slow down display a lot !
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
@@ -315,7 +315,7 @@ def light_curve(image, reference, maxpoints = 32768, width = -1, renderer = None
     reference (numpy.ndarray): The input reference channel as an array with shape (height, width).
     maxpoints (int, optional): The maximum number of points in the scatter plot. The image and reference will be
       sampled accordingly (default 32768).
-    width (int, optional): The width of the figure (defaults to `params.maxwidth` if negative).
+    width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """
   if width <= 0: width = params.maxwidth

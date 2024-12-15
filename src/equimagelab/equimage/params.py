@@ -49,9 +49,9 @@ def set_default_hist_bins(n):
 
   Args:
     n (int): If strictly positive, the default number of bins within [0, 1].
-      (practically limited to `params.maxhistbins`). If zero, the number of
-      bins is computed according to the statistics of each image. If strictly
-      negative, the number of bins is set to `params.maxhistbins`.
+      (practically limited to `equimage.params.maxhistbins`). If zero, the number
+      of bins is computed according to the statistics of each image. If strictly
+      negative, the number of bins is set to `equimage.params.maxhistbins`.
   """
   global defhistbins
   defhistbins = n if n >= 0 else maxhistbins

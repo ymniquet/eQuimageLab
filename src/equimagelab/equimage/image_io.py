@@ -124,7 +124,7 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
     depth (int, optional): The color depth of the file in bits per channel (default 8).
     compress (int, optional): The compression level for TIFF files (Default 5; 0 = no compression;
       actual compression if >0 depends whether ImageIO or scikit-image is used as I/O library -
-      see `params.IMAGEIO`).
+      see `equimage.params.IMAGEIO`).
     verbose (bool, optional): If True (default), print information about the file.
   """
   image.check_color_model("RGB", "gray")
@@ -187,7 +187,7 @@ class Mixin:
       depth (int, optional): The color depth of the file in bits per channel (default 8).
       compress (int, optional): The compression level for TIFF files (Default 5; 0 = no compression;
         actual compression if >0 depends whether ImageIO or scikit-image is used as I/O library -
-        see `params.IMAGEIO`).
+        see `equimage.params.IMAGEIO`).
       verbose (bool, optional): If True (default), print information about the file.
     """
     save_image(self, filename, depth = depth, compress = compress, verbose = verbose)

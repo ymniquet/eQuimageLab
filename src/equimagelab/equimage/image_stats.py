@@ -30,8 +30,8 @@ class Mixin:
         "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the histograms of the value and saturation can be
         computed. If channels ends with a "*", it gets appended with the keys already computed and stored in self.hists.
         Default is "RGBL".
-      nbins (int, optional): Number of bins within [0, 1] in the histograms. Set to `params.maxhistbins` if negative,
-        and computed from the image statistics using Scott's rule if zero. If None, defaults to `params.defhistbins`.
+      nbins (int, optional): Number of bins within [0, 1] in the histograms. Set to `equimage.params.maxhistbins` if negative,
+        and computed from the image statistics using Scott's rule if zero. If None, defaults to `equimage.params.defhistbins`.
       recompute (bool, optional): If False (default), the histograms already registered in self.hists are not recomputed
         (provided they match nbins). If True, all histograms are recomputed.
 
@@ -131,7 +131,7 @@ class Mixin:
         computed. If channels ends with a "*", it gets appended with the keys already computed and stored in self.stats.
         Default is "RGBL".
       exclude01 (bool, optional): If True, exclude pixels <= 0 or >= 1 from the median and percentiles.
-        Defaults to params.exclude01 if None.
+        Defaults to `equimage.params.exclude01` if None.
       recompute (bool, optional): If False (default), the statistics already registered in self.stats are not recomputed.
         If True, all statistics are recomputed.
 
