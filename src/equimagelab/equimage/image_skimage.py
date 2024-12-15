@@ -14,7 +14,7 @@ import skimage as skim
 # For inclusion in the Image class. #
 #####################################
 
-class Mixin:
+class Image:
   """To be included in the Image class."""
 
   ###########

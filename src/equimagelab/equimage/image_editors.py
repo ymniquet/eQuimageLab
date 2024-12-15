@@ -21,7 +21,7 @@ from .image_io import load_image_as_array
 # For inclusion in the Image class. #
 #####################################
 
-class Mixin:
+class Image:
   """To be included in the Image class."""
 
   def edit_with(self, command, export = "tiff", depth = 16, editor = "<Editor>", interactive = True, cwd = None):

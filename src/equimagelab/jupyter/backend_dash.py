@@ -349,11 +349,11 @@ class Dashboard():
     """Show image(s) on the dashboard.
 
     Args:
-      images: The image(s) as a single/tuple/list/dictionary of Image object(s) or numpy.ndarray.
+      images: The image(s) as a single/tuple/list/dictionary of equimage.Image object(s) or numpy.ndarray.
         Each image is displayed in a separate tab. The tabs are labelled according to the keys for
         a dictionary. Otherwise, the tabs are labelled "Image" & "Reference" if there are one or two images,
         and "Image #1", "Image #2"... if there are more.
-        The images must all be Image objects if histograms or statistics is True.
+        The images must all be equimage.Image objects if histograms or statistics is True.
       histograms (optional): If True or a string, show the histograms of the image(s). The string lists the
         channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
       statistics (optional): If True or a string, show the statistics of the image(s). The string lists the
@@ -365,8 +365,8 @@ class Dashboard():
       click (bool, optional): If True, show image data on click (default True).
       synczoom (bool, optional): If True (default), synchronize zooms over images.
         Zooms will be synchronized only if all images have the same size.
-      trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on
-        top of the histograms of the "Reference" tab (default None).
+      trans (optional): A container with an histogram transformation (see equimage.Image.apply_channels),
+        plotted on top of the histograms of the "Reference" tab (default None).
     """
     self.refresh = False # Stop refreshing dashboard.
     # Build the dictionary of images.
@@ -483,7 +483,8 @@ class Dashboard():
     and the output image, histograms, and statistics in tab "Image".
 
     Args:
-      image (Image): The output image (must embed a transformation image.trans - see Image.apply_channels).
+      image (equimage.Image): The output image (must embed a transformation image.trans -
+        see equimage.Image.apply_channels).
       channels (str, optional): The channels of the histograms and statistics (default "RGBL" for red,
         green, blue, luma). The channels of the transformation are added if needed.
       sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
@@ -512,7 +513,7 @@ class Dashboard():
     """Show a carousel of images on the dashboard.
 
     Args:
-      images: The images as a tuple/list/dictionary of Image object(s) or numpy.ndarray.
+      images: The images as a tuple/list/dictionary of equimage.Image object(s) or numpy.ndarray.
         The images are labelled according to the keys for a dictionary. Otherwise, the images are labelled
         "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
       sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
@@ -556,8 +557,8 @@ class Dashboard():
     """Compare two images with a "before/after" slider on the dashboard.
 
     Args:
-      image1: The first image as an Image object or numpy.ndarray.
-      image2: The second image as an Image object or numpy.ndarray.
+      image1: The first image as an equimage.Image object or numpy.ndarray.
+      image2: The second image as an equimage.Image object or numpy.ndarray.
       label1 (str, optional): The label of the first image (default "Image").
       label2 (str, optional): The label of the second image (default "Reference").
       sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
@@ -589,7 +590,7 @@ def _table_statistics_(image, channels = ""):
   """Prepare a table with the statistics of an image.
 
   Args:
-    image (Image): The image.
+    image (equimage.Image): The image.
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
 
   Returns:

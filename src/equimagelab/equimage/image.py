@@ -24,9 +24,9 @@ from . import image_editors
 from . import image_io
 
 class Image(np.lib.mixins.NDArrayOperatorsMixin,
-            image_colorspaces.Mixin, image_utils.Mixin, image_geometry.Mixin,
-            image_colors.Mixin, image_stretch.Mixin, image_filters.Mixin, image_skimage.Mixin,
-            image_masks.Mixin, image_stats.Mixin, image_editors.Mixin, image_io.Mixin):
+            image_colorspaces.Image, image_utils.Image, image_geometry.Image,
+            image_colors.Image, image_stretch.Image, image_filters.Image, image_skimage.Image,
+            image_masks.Image, image_stats.Image, image_editors.Image, image_io.Image):
   """Image class.
 
   The image is stored as self.image, a numpy.ndarray with dtype params.IMGTYPE = np.float32 or np.float64.

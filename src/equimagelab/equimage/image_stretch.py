@@ -57,7 +57,7 @@ def mts(image, midtone):
 # For inclusion in the Image class. #
 #####################################
 
-class Mixin:
+class Image:
   """To be included in the Image class."""
 
   def set_black_point(self, shadow, channels = "", trans = True):

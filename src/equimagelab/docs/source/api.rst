@@ -1,16 +1,29 @@
 eQuimageLab API reference
 =========================
 
-.. automodule:: equimagelab
-   :members:
-   :undoc-members:
-   :show-inheritance:
+eQuimageLab includes two subpackages:
 
-Subpackages
------------
+  - :ref:`equimage <equimage>`, the image processing module.
+  - :ref:`jupyter <jupyter>`, the Jupyter Lab interface.
+
+The ``import equimagelab`` command imports a relevant subset of these two subpackages in the ``equimagelab`` namespace.
+
+.. _equimage:
+
+The equimage subpackage
+-----------------------
 
 .. toctree::
    :maxdepth: 4
 
    equimagelab.equimage
+
+.. _jupyter:
+
+The jupyter subpackage
+----------------------
+
+.. toctree::
+   :maxdepth: 4
+
    equimagelab.jupyter

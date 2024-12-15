@@ -16,7 +16,7 @@ from . import helpers
 # For inclusion in the Image class. #
 #####################################
 
-class Mixin:
+class Image:
   """To be included in the Image class."""
 
   def histograms(self, channels = "RGBL", nbins = None, recompute = False):

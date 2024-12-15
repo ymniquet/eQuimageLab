@@ -50,7 +50,7 @@ def _figure_image_(image, sampling = -1, width = -1, hover = False, template = "
   """Prepare a ploty figure for the input image.
 
   Args:
-    image: The image (Image object or numpy.ndarray).
+    image: The image (equimage.Image object or numpy.ndarray).
     sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only image[::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
@@ -67,13 +67,13 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
   """Prepare a plotly figure with the histograms of an image.
 
   Args:
-    image (Image): The image.
+    image (equimage.Image): The image.
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
     log (bool, optional): If True (default), plot the histogram counts in log scale.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     xlabel (str, optional): The x axis label of the plot (default "Level").
-    trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on top
-      of the histograms (default None).
+    trans (optional): A container with an histogram transformation (see equimage.Image.apply_channels),
+      plotted on top of the histograms (default None).
     template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
@@ -171,7 +171,7 @@ def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, templa
   """Prepare a plotly table with the statistics of an image.
 
   Args:
-    image (Image): The image.
+    image (equimage.Image): The image.
     channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
     width (int, optional): The width of the table (defaults to `jupyter.params.maxwidth` if negative).
     rowheight (int, optional): The height of the rows (default to jupyter.params.rowheight if negative).
@@ -227,7 +227,8 @@ def show(image, histograms = False, statistics = False, sampling = -1, width = -
   """Show an image using plotly.
 
   Args:
-    image: The image (Image object or numpy.ndarray; must be an Image object if histograms or statistics is True).
+    image: The image (equimage.Image object or numpy.ndarray; must be an equimage.Image object if
+      histograms or statistics is True).
     histograms (optional): If True or a string, show the histograms of the image. The string lists the
       channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
     statistics (optional): If True or a string, show the statistics of the image. The string lists the
@@ -252,13 +253,13 @@ def show_histograms(image, channels = "", log = True, width = -1, xlabel = "Leve
   """Plot the histograms of an image using plotly.
 
   Args:
-    image (Image): The image.
+    image (equimage.Image): The image.
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
     log (bool, optional): If True (default), plot the histogram counts in log scale.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     xlabel (str, optional): The x axis label of the plot (default "Level").
-    trans (optional): A container with an histogram transformation (see Image.apply_channels), plotted on top
-      of the histograms (default None).
+    trans (optional): A container with an histogram transformation (see equimage.Image.apply_channels),
+      plotted on top of the histograms (default None).
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """
   figure = _figure_histograms_(image, channels = channels, log = log, width = width, xlabel = xlabel, trans = trans)
@@ -268,7 +269,7 @@ def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer =
   """Display a table with the statistics of an image using plotly.
 
   Args:
-    image (Image): The image.
+    image (equimage.Image): The image.
     channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
     width (int, optional): The width of the table (defaults to `jupyter.params.maxwidth` if negative).
     rowheight (int, optional): The height of the rows (default to `jupyter.params.rowheight` if negative).
@@ -283,7 +284,8 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, r
   Displays the input histograms with the transformation curve, the output histograms, and the output image.
 
   Args:
-    image (Image): The output image (must embed a transformation image.trans - see Image.apply_channels).
+    image (equimage.Image): The output image (must embed a transformation image.trans -
+      see equimage.Image.apply_channels).
     channels (str, optional): The channels of the histograms (default "RGBL" for red, green, blue, luma).
       The channels of the transformation are added if needed.
     sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).

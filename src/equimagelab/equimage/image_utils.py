@@ -68,7 +68,7 @@ def blend(image1, image2, mixing):
 # For inclusion in the Image class. #
 #####################################
 
-class Mixin:
+class Image:
   """To be included in the Image class."""
 
   ##################

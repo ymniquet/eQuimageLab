@@ -1,14 +1,16 @@
 eQuimageLab user guide
 ======================
 
-eQuimageLab is a python package to process astronomical images in `Jupyter Lab <https://jupyter.org/>`_ notebooks.
+eQuimageLab is a Python package to process astronomical images in `Jupyter Lab <https://jupyter.org/>`_ notebooks.
 
 Installation
 ------------
 
-eQuimageLab is developed for python 3 kernels.
+eQuimageLab is developed for Python 3 kernels.
 
-The python package is available on `PyPI <https://https://pypi.org/project/eQuimageLab/>`_ (last stable release) and on `GitHub <https://github.com/ymniquet/eQuimage>`_ (development version).
+This guide assumes that you are familiar with the Python programming language and that Python 3 is installed on your machine.
+
+The eQuimageLab package is available on `PyPI <https://https://pypi.org/project/eQuimageLab/>`_ (last stable release) and on `GitHub <https://github.com/ymniquet/eQuimage>`_ (development version).
 
 To install the latest stable release, open a linux or windows shell and type:
 
@@ -16,7 +18,7 @@ To install the latest stable release, open a linux or windows shell and type:
 
   pip install --user eQuimageLab
 
-pip will download and install the eQuimageLab package from PyPI, as well as all dependencies (Jupiter Lab, plotly, dash...).
+pip will download and install the eQuimageLab package from PyPI, as well as all dependencies (Jupiter Lab, plotly, dash...). If you run Python in a virtual environment, you can remove the --user option.
 
 Running eQuimageLab
 --------------------
@@ -29,7 +31,7 @@ To use eQuimageLab, you can simply start a Jupyter Lab server from a shell:
 
 and import eQuimageLab:
 
-.. code-block:: python
+.. code-block:: Python
 
   import equimagelab as eql
 
