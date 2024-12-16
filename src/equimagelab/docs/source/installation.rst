@@ -13,4 +13,4 @@ To install the latest stable release, open a linux or windows shell and type:
 
   pip install --user eQuimageLab
 
-pip will download and install the eQuimageLab package from PyPI, as well as all dependencies (JupiterLab, plotly, dash...). If you run Python in a virtual environment, you can remove the --user option.
+pip will download and install the eQuimageLab package from PyPI, as well as all dependencies (JupiterLab, Plotly, Dash...). If you run Python in a virtual environment, you can remove the --user option.
