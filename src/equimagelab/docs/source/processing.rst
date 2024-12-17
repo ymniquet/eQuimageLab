@@ -3,22 +3,6 @@ Processing images with eQuimageLab
 
 This section provides an overview of the capabilities of eQuimageLab.
 
-Image I/O
-^^^^^^^^^
-
-Images can be read from/saved on disk with the commands:
-
-.. currentmodule:: equimagelab.equimage.image_io
-
-.. autosummary::
-
-   load_image
-   save_image
-
-eQuimageLab can handle png, tiff and fits files.
-
-The image in an :py:class:`Image <equimagelab.equimage.image.Image>` object can also be saved with the method :py:class:`Image.save <equimagelab.equimage.image_io.MixinImage.save>`.
-
 Image geometry
 ^^^^^^^^^^^^^^
 
@@ -48,21 +32,6 @@ The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>
    color_balance
    color_saturation
    SCNR
-
-Histograms and statistics
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The histograms and statistics of an image can be computed with the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
-
-.. currentmodule:: equimagelab.equimage.image_stats.MixinImage
-
-.. autosummary::
-
-   histograms
-   statistics
-
-They can be displayed in JupyterLab cells or on the dashboard with the relevant commands (see :doc:`firststeps` and :doc:`dashboard`).
-
 
 Histogram stretching
 ^^^^^^^^^^^^^^^^^^^^
@@ -148,6 +117,42 @@ From `Scikit-Image <https://scikit-image.org/>`_:
    bilateral_filter
    total_variation
    non_local_means
+
+Miscellaneous operations
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :py:class:`Image <equimagelab.equimage.image.Image>` class also provides the following methods that perform miscellaneous operations (clipping, blending images, ...):
+
+.. currentmodule:: equimagelab.equimage.image_utils.MixinImage
+
+.. autosummary::
+
+   clip
+   blend
+   scale_pixels
+
+The :py:meth:`scale_pixels` can, in particular, be used to stretch the image without changing the hues (the R/G/B ratios) - but it may result in some out-of-range components. Actually, the :py:class:`Image <equimagelab.equimage.image.Image>` class also provides some useful tests:
+
+.. autosummary::
+
+   is_out_of_range
+
+Also, you can instantiate a new black or empty image with the same size as an :py:class:`Image <equimagelab.equimage.image.Image>` object with the methods:
+
+.. autosummary::
+
+   black
+   empty
+
+You may also clip or blend images with the following functions, which can be applied either to an :py:class:`Image <equimagelab.equimage.image.Image>` object or to a :py:class:`numpy.ndarray`:
+
+.. currentmodule:: equimagelab.equimage.image_utils
+
+.. autosummary::
+
+   clip
+   blend
+
 
 Edition with external softwares
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

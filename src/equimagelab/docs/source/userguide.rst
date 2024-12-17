@@ -13,5 +13,6 @@ Enjoy the power of Python to process your images !
    usage
    firststeps
    dashboard
+   image
    processing
    examples
