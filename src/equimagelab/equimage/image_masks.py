@@ -46,7 +46,7 @@ def threshold_mask(filtered, threshold, extend = 0, smooth = 0):
 # For inclusion in the Image class. #
 #####################################
 
-class Image:
+class MixinImage:
   """To be included in the Image class."""
 
   def filter(self, channel, filter, radius, mode = "reflect"):

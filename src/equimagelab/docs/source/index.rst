@@ -6,10 +6,17 @@
 eQuimageLab documentation
 =========================
 
-eQuimageLab is a python package to process astronomical images in `JupyterLab <https://jupyter.org/>`_ notebooks.
+eQuimageLab is a Python package to process astronomical images in `JupyterLab <https://jupyter.org/>`_ notebooks.
+
+Why use JupyterLab notebooks to process your images ?
+
+  - You can easily modify/add/delete/move any operation in your workflow without the need to manually undo/redo all subsequent tasks.
+  - You can tweak your notebook any time (shall you have new ideas to deal with an image) and reprocess in a few minutes.
+  - You benefit from the full Python ecosystem to help you make the most out of your images (Numpy, Scikit-image, etc...).
+  - ...
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Contents:
 
    userguide

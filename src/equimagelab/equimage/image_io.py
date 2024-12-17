@@ -170,7 +170,7 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
 # For inclusion in the Image class. #
 #####################################
 
-class Image:
+class MixinImage:
   """To be included in the Image class."""
 
   def save(self, filename, depth = 8, compress = 5, verbose = True):
