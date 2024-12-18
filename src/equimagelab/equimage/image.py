@@ -30,9 +30,9 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   """Image class.
 
   The image is stored as self.image, a numpy.ndarray with dtype params.IMGTYPE = np.float32 or np.float64.
-  Color images are stored as arrays with shape (3, height, width) and grayscale images as arrays with
-  shape (1, height, width). The leading axis spans the color channels, and the last two the height
-  and width of the image.
+  Color images are represented as arrays with shape (3, height, width) and grayscale images as arrays with
+  shape (1, height, width). The leading axis spans the color channels, and the last two the height and
+  width of the image.
 
   The class embeds colorspace and colormodel attributes for the color space and model of the image.
 
@@ -43,9 +43,9 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
   The colormodel attribute can be:
 
-    - "RGB": the 3 channels of the image are the red, blue, and green values within [0, 1].
-    - "HSV": the 3 channels of the image are the hue, value, and saturation within [0, 1].
     - "gray": grayscale image with one single channel within [0, 1].
+    - "RGB": the 3 channels of the image are the red, blue, and green levels within [0, 1].
+    - "HSV": the 3 channels of the image are the hue, value, and saturation within [0, 1].
 
   The default color space is sRGB and the default color model is RGB.
   """

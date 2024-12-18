@@ -121,7 +121,7 @@ From `Scikit-Image <https://scikit-image.org/>`_:
 Miscellaneous operations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:class:`Image <equimagelab.equimage.image.Image>` class also provides the following methods that perform miscellaneous operations (clipping, blending images, ...):
+The :py:class:`Image <equimagelab.equimage.image.Image>` class also features the following methods that perform miscellaneous operations (clipping, blending images, ...):
 
 .. currentmodule:: equimagelab.equimage.image_utils.MixinImage
 
@@ -131,13 +131,13 @@ The :py:class:`Image <equimagelab.equimage.image.Image>` class also provides the
    blend
    scale_pixels
 
-The :py:meth:`scale_pixels` can, in particular, be used to stretch the image without changing the hues (the R/G/B ratios) - but it may result in some out-of-range components. Actually, the :py:class:`Image <equimagelab.equimage.image.Image>` class also provides some useful tests:
+The :py:meth:`scale_pixels` method can, in particular, be used to stretch the image without changing the hues (the R/G/B ratios) - but this may result in some out-of-range components. Actually, the :py:class:`Image <equimagelab.equimage.image.Image>` class also provides some useful tests:
 
 .. autosummary::
 
    is_out_of_range
 
-Also, you can instantiate a new black or empty image with the same size as an :py:class:`Image <equimagelab.equimage.image.Image>` object with the methods:
+Moreover, you can instantiate a new black or empty image with the same size as an :py:class:`Image <equimagelab.equimage.image.Image>` object with the methods:
 
 .. autosummary::
 
@@ -153,13 +153,35 @@ You may also clip or blend images with the following functions, which can be app
    clip
    blend
 
+Image masks
+^^^^^^^^^^^
+
+Masks can be used to apply operations to selected parts of an image. In the simplest form, a mask is a 2D :py:class:`numpy.ndarray` with the same width and height as the image, and only 0's and 1's. Then the instruction ``output = (1-mask)*input+mask*transform(input)`` (or equivalently ``output = input.blend(transform(input), mask)``) returns an output image which is the transform of the input image wherever mask is 1, and the original input image wherever it is 0. The edges of the mask may be smoothed (vary gradually from 0 to 1) for a soft transition between the two images.
+
+At present, eQuimageLab can construct "threshold" masks that are 1 whereever some function ``filter(image)`` is greater than a threshold:
+
+.. currentmodule:: equimagelab.equimage.image_masks
+
+.. autosummary::
+
+   threshold_mask
+
+The input "filtered" argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimagelab.equimage.image.Image>` class provides the following useful filters:
+
+.. currentmodule:: equimagelab.equimage.image_masks.MixinImage
+
+.. autosummary::
+
+   filter
+
+See the :doc:`examples` for use cases. "Lasso selection" of regions of interest will come soon.
 
 Edition with external softwares
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-External softwares (Gimp, Siril, Starnet++) can be run from eQuimageLab to perform specialized operations.
+External softwares (Gimp, Siril, Starnet++, ...) can be run from eQuimageLab to perform specialized operations.
 
-The generic method to edit an :py:class:`Image <equimagelab.equimage.image.Image>` object with external software is :py:meth:`Image.edit_with <equimagelab.equimage.image_editors.MixinImage.edit_with>`. This method is implemented for `Gimp <https://www.gimp.org/>`_, `Siril <https://siril.org/>`_ and `Starnet++ <https://www.starnetastro.com/>`_:
+The generic method to edit an :py:class:`Image <equimagelab.equimage.image.Image>` object with an external software is :py:meth:`Image.edit_with <equimagelab.equimage.image_editors.MixinImage.edit_with>`. This method is implemented for `Gimp <https://www.gimp.org/>`_, `Siril <https://siril.org/>`_ and `Starnet++ <https://www.starnetastro.com/>`_:
 
 .. currentmodule:: equimagelab.equimage.image_editors.MixinImage
 

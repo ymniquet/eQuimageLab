@@ -21,3 +21,8 @@ Why use JupyterLab notebooks to process your images ?
 
    userguide
    api
+
+Latest news:
+------------
+
+  - December 15, 2024: Version 1.0.0.
