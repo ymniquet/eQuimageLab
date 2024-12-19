@@ -14,5 +14,6 @@ Enjoy the power of Python to process your images !
    firststeps
    dashboard
    image
+   composite
    processing
    examples

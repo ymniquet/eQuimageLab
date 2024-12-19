@@ -231,6 +231,22 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     """
     return self.image.shape[0]
 
+  def get_color_space(self):
+    """Return the color space of the image.
+
+    Returns:
+      str: The color space of the image.
+    """
+    return self.colorspace
+
+  def get_color_model(self):
+    """Return the color model of the image.
+
+    Returns:
+      str: The color model of the image.
+    """
+    return self.colormodel
+
   ######################
   # Image conversions. #
   ######################

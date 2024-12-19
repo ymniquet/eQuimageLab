@@ -156,7 +156,7 @@ You may also clip or blend images with the following functions, which can be app
 Image masks
 ^^^^^^^^^^^
 
-Masks can be used to apply operations to selected parts of an image. In the simplest form, a mask is a 2D :py:class:`numpy.ndarray` with the same width and height as the image, and only 0's and 1's. Then the instruction ``output = (1-mask)*input+mask*transform(input)`` (or equivalently ``output = input.blend(transform(input), mask)``) returns an output image which is the transform of the input image wherever mask is 1, and the original input image wherever it is 0. The edges of the mask may be smoothed (vary gradually from 0 to 1) for a soft transition between the two images.
+Masks can be used to apply operations to selected parts of an image. In the simplest form, a mask is a 2D :py:class:`numpy.ndarray` with the same width and height as the image, and only 0's and 1's. Then the instruction ``output = (1-mask)*input+mask*transform(input)`` (or equivalently ``output = input.blend(transform(input), mask)``) returns an `output` image which is the transform of the `input` image wherever `mask` is 1, and the original `input` image wherever it is 0. The edges of the mask may be smoothed (vary gradually from 0 to 1) for a soft transition between the two images.
 
 At present, eQuimageLab can construct "threshold" masks that are 1 whereever some function ``filter(image)`` is greater than a threshold:
 
@@ -166,7 +166,7 @@ At present, eQuimageLab can construct "threshold" masks that are 1 whereever som
 
    threshold_mask
 
-The input "filtered" argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimagelab.equimage.image.Image>` class provides the following useful filters:
+The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimagelab.equimage.image.Image>` class provides the following useful filters:
 
 .. currentmodule:: equimagelab.equimage.image_masks.MixinImage
 
