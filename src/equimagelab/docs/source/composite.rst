@@ -87,4 +87,26 @@ Also see the following functions of eQuimageLab about histograms:
 Working with composite channels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Many operations (e.g., histograms stretching) can be applied separately to the R, G, B channels of a color image (see the generic :py:meth:`Image.apply_channels <equimagelab.equimage.image_colorspaces.MixinImage.apply_channels>` method).
+Some operations (e.g., histograms stretches) can be applied separately to the R, G, B channels of a color image, or to a composite channel (see the generic :py:meth:`Image.apply_channels <equimagelab.equimage.image_colorspaces.MixinImage.apply_channels>` method).
+
+**In particular, operations on the value V and luma L of an image are designed to preserve the ratios between the RGB components, hence to preserve the hue and saturation (the "apparent" color).**
+
+Therefore, stretching the luma protects the colors of the image, whereas stretching the RGB components separately usually tends to "bleach" the image. Stretching the value also protects the colors, but tends to mess up the lightness (see :doc:`image` section).
+
+However, acting on the luma L can bring some RGB components out of the [0, 1] range.
+
+Let us take the midtone transformation T(x) = 0.761x/(0.522x+0.239) as an example (see the :py:meth:`Image.midtone_stretch <equimagelab.equimage.image_stretch.MixinImage.midtone_stretch>` method). The transformation T(x) maps [0, 1] onto [0, 1] and does not, therefore, produce out-of-range pixels when applied to the R, G, B channels separately.
+
+Let us now consider a pixel with components (R = 0.4, G = 0.2, B = 0.6) and luma L = 0.2126R + 0.7152G + 0.0722B = 0.2714. Under transformation T, the luma of this pixel doubles and becomes L' = T(L) = 0.5428. Accordingly, the new RGB components of the pixel are (R' = 0.8, G' = 0.4, B' = 1.2). While L' is still within bounds, B' is not.
+
+Such out-of-range pixels are cut-off when displayed or saved in png and tiff files.
+
+There are three options to deal with the out-of-range pixels:
+
+  1. Leave "as is": If you are confident that further processing will bring back these pixels in the [0, 1] range (or are satisfied with the look of the image), you can simply... do nothing about them.
+
+  2. Desaturate at constant luma: decrease the saturation S of the out-of-range pixels while keeping the luma constant until all components fall back in the [0, 1] range. This preserves the intent of the stretch (the luma is unchanged) but tends to bleach the out-of-range pixels.
+
+  3. Blend each out-of-range pixel with the corresponding (T(R), T(G), T(B)) pixel (which is in-range), so that all components fall back in the [0, 1] range. This does not preserve the luma, and also tends to bleach the pixels.
+
+In eQuimageLab, these three options correspond to different choices for the kwarg `channels` of the transformation: 1) `channels` = "L", 2) `channels` = "Ls" and 3) `channels` = "Lb".
