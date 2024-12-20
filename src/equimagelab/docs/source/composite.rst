@@ -1,7 +1,7 @@
 Composite channels
 ------------------
 
-The "composite" channels are functions of the RGB components that bring specific informations about the image. This includes the luminance, lightness, luma, value and saturation (the latter two being actually channels of the HSV color model).
+The "composite" channels are functions of the RGB components that bring specific informations about the image. This includes the luminance, lightness, luma, value and saturation (the latter two being actually borrowed to the HSV color model).
 
 See the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class for a complete overview of the available composite channels:
 
@@ -28,7 +28,7 @@ as well as the following functions of eQuimageLab, which can be applied either t
 Luminance, lightness, luma and value
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Our eyes catch the "brightness" or "lightness" of an image more precisely than its colors. Therefore, it can be beneficial, for example, to reduce noise on the lightness agressively, even if this slightly degrades color rendering.
+Our eyes catch the "brightness" or "lightness" of an image more precisely than its colors. Therefore, it can be beneficial, for example, to reduce noise on the lightness agressively even if this slightly degrades color rendering.
 
 Yet how bright does an image or pixel look ?
 
@@ -46,20 +46,30 @@ where Y is the luminance:
 
 and lR, lG, lB are the linear RGB components of the image. The definitions of Y and :math:`L^*` account for the non-linear and non-homogeneous response of the eyes. They highlight, for example, that we are far more sentitive to green than to red and blue light. Note that :math:`L^*` conventionally ranges within [0, 100] instead of [0, 1].
 
-The method :py:meth:`Image.lightness <equimagelab.equimage.image_colorspaces.MixinImage.lightness>` returns the lightness :math:`L^*` of all pixels of an image (in both lRGB and sRGB color spaces; the sRGB components are converted to lRGB in the latter case).
+The method :py:meth:`Image.lightness <equimagelab.equimage.image_colorspaces.MixinImage.lightness>` returns the lightness :math:`L^*` of all pixels of a lRGB or sRGB image (the sRGB components being converted to lRGB for that purpose).
 
 While :math:`L^*` is the best measure of the brightness of a pixel, it is expensive to compute (since our images usually live in the sRGB color space, whereas :math:`L^*` is defined in the lRGB color space). Therefore, alternate, *approximate* measures of the brightness have been introduced:
 
   - The *luma* of a pixel L = 0.2126R+0.7152G+0.0722B. In the lRGB color space, the luma is the luminance L = Y (but has nothing to do with the lightness !). In the sRGB color space, the luma (that somehow accounts for the non-linear and non-homogeneous response of the eye) is often used as a convenient substitute for the lightness :math:`L\equiv L^*/100` (but is not as accurate). The method :py:meth:`Image.luma <equimagelab.equimage.image_colorspaces.MixinImage.luma>` returns the luma L of all pixels of an image (calculated from the lRGB or sRGB components depending on the color space). Also, the RGB coefficients of the luma can be tweaked with the :py:func:`set_RGB_luma <equimagelab.equimage.params.set_RGB_luma>` function (and inquired with :py:func:`get_RGB_luma <equimagelab.equimage.params.get_RGB_luma>`). Depending on your purposes, it may be more convenient to work with L = (R+G+B)/3.
 
-  - The *value* of a pixel V = max(R, G, B). This is a basic ingredient of the HSV color model, but a really poor measure of the lightness ! The method :py:meth:`Image.value <equimagelab.equimage.image_colorspaces.MixinImage.value>` returns the value V of all pixels of an image (available for both RGB and HSV images).
+  - The *value* of a pixel V = max(R, G, B). This is a key component of the HSV color model, but a really poor measure of the lightness ! The method :py:meth:`Image.value <equimagelab.equimage.image_colorspaces.MixinImage.value>` returns the value V of all pixels of an image (available for both RGB and HSV images).
 
 Saturation
 ^^^^^^^^^^
 
-The saturation is also an ingredient of the HSV color model. It is defined as S = 1-min(R, G, B)/max(R, G, B), where min(R, G, B) is the minimum RGB component, and max(R, G, B) the maximum RGB component of a pixel.
+The saturation is also a component of the HSV color model. It is defined as S = 1-min(R, G, B)/max(R, G, B), where min(R, G, B) is the minimum RGB component, and max(R, G, B) the maximum RGB component of a pixel.
 
-Therefore, S = 0 for a black, gray or white pixel (RGB = XXX), and S = 1 for pure red (RGB = 100), yellow (RGB = 110), green (RGB = 010), cyan (RGB = 011), blue (RGB = 001), and magenta (RGB = 101) pixels (as well as for all colors interpolating between two successive ones). It is a measure of the "purity" or "strength" of the color. Decreasing the saturation of a pixel makes it look more grayish, while increasing the saturation makes it look more vivid.
+Therefore, S = 0 for a black, gray or white pixel (RGB = XXX), and S = 1 for pure red (RGB = 100), yellow (RGB = 110), green (RGB = 010), cyan (RGB = 011), blue (RGB = 001), and magenta (RGB = 101) pixels (as well as for all colors interpolating between two successive ones). This is best shown on the "HSV wheel of colors" below, where saturation increases from the center (S = 0) to the edges (S = 1).
+
+.. figure:: images/HSVwheel.png
+   :figwidth: 40%
+   :width: 100%
+   :align: center
+   :alt: The "HSV wheel".
+
+   The "HSV wheel" of colors. Saturation increases from the center to the edge of the wheel.
+
+The saturation is, therefore, a measure of the "purity" or "strength" of the color. Decreasing the saturation of a pixel makes it look more grayish, while increasing the saturation makes it look more vivid.
 
 Histograms and statistics
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -97,7 +107,7 @@ However, acting on the luma L can bring some RGB components out of the [0, 1] ra
 
 Let us take the midtone transformation T(x) = 0.761x/(0.522x+0.239) as an example (see the :py:meth:`Image.midtone_stretch <equimagelab.equimage.image_stretch.MixinImage.midtone_stretch>` method). The transformation T(x) maps [0, 1] onto [0, 1] and does not, therefore, produce out-of-range pixels when applied to the R, G, B channels separately.
 
-Let us now consider a pixel with components (R = 0.4, G = 0.2, B = 0.6) and luma L = 0.2126R + 0.7152G + 0.0722B = 0.2714. Under transformation T, the luma of this pixel doubles and becomes L' = T(L) = 0.5428. Accordingly, the new RGB components of the pixel are (R' = 0.8, G' = 0.4, B' = 1.2). While L' is still within bounds, B' is not.
+Let us now consider a pixel with components (R = 0.4, G = 0.2, B = 0.6) and luma L = 0.2126R + 0.7152G + 0.0722B = 0.271. Under transformation T, the luma of this pixel doubles and becomes L' = T(L) = 0.543. Accordingly, the new RGB components of the pixel are (R' = 0.8, G' = 0.4, B' = 1.2). While L' is still within bounds, B' is not.
 
 Such out-of-range pixels are cut-off when displayed or saved in png and tiff files.
 
@@ -105,8 +115,8 @@ There are three options to deal with the out-of-range pixels:
 
   1. Leave "as is": If you are confident that further processing will bring back these pixels in the [0, 1] range (or are satisfied with the look of the image), you can simply... do nothing about them.
 
-  2. Desaturate at constant luma: decrease the saturation S of the out-of-range pixels while keeping the luma constant until all components fall back in the [0, 1] range. This preserves the intent of the stretch (the luma is unchanged) but tends to bleach the out-of-range pixels.
+  2. Desaturate at constant luma: decrease the saturation of the out-of-range pixels while keeping the luma constant until all components fall back in the [0, 1] range. This preserves the intent of the stretch (the luma is unchanged) but tends to bleach the out-of-range pixels. In the present case, the transformed pixel becomes (R' = 0.722, G' = 0.443, B' = 1) and the saturation decreases from S' = 0.667 to S' = 0.557.
 
-  3. Blend each out-of-range pixel with the corresponding (T(R), T(G), T(B)) pixel (which is in-range), so that all components fall back in the [0, 1] range. This does not preserve the luma, and also tends to bleach the pixels.
+  3. Blend each out-of-range pixel with the transformed (T(R), T(G), T(B)) pixel (which is in-range), so that all components fall back in the [0, 1] range. This does neither preserve the luma nor the hue, and also tends to bleach the pixels. In the present case, (T(R), T(G), T(B)) = (0.680, 0.443, 0.827) and the transformed pixel becomes (R' = 0.736, G' = 0.423, B' = 1). The output luma is L' = 0.531 and the output saturation is S' = 0.577.
 
 In eQuimageLab, these three options correspond to different choices for the kwarg `channels` of the transformation: 1) `channels` = "L", 2) `channels` = "Ls" and 3) `channels` = "Lb".

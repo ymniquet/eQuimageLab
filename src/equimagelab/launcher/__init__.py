@@ -71,7 +71,26 @@ def run():
     root.destroy()
     sys.exit(0)
 
+  def open_notebook_cli():
+    """Open jupyter lab notebook from the command line."""
+    if len(sys.argv) != 2:
+      print("---")
+      print("eQuimageLab launcher.")
+      print("Usage: equimagelab [notebook]")
+      print("Starts jupyter lab and opens notebook [notebook], if provided.")
+      print("Otherwise, opens a GUI to choose notebook/starting directory.")
+      sys.exit(-1)
+    try:
+      subprocess.Popen(["jupyter", "lab", sys.argv[1]])
+    except Exception as err:
+      print("Failed to run jupyter lab:")
+      print(str(err))
+      sys.exit(-2)
+    sys.exit(0)
+
   from .. import __packagepath__
+  # Check if there are command line arguments.
+  if len(sys.argv) > 1: open_notebook_cli()
   # Open root Tk window.
   root = tkinter.Tk()
   root.title("eQuimageLab")

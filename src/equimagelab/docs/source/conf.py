@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.abspath("../../.."))
 
 extensions = ["sphinx.ext.napoleon", "sphinx.ext.autodoc", "sphinx.ext.autosummary", "nbsphinx"]
 
+html_show_sourcelink = False
 autodoc_member_order = "bysource"
 
 templates_path = ["_templates"]
