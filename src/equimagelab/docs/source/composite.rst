@@ -1,7 +1,7 @@
 Composite channels
 ------------------
 
-The "composite" channels are functions of the RGB components that bring specific informations about the image. This includes the luminance, lightness, luma, value and saturation (the latter two being actually borrowed to the HSV color model).
+The "composite" channels here refer to mixtures of the RGB components that bring specific informations about the image. This includes the luminance, lightness, luma, value and saturation (the latter two being actually borrowed from the HSV color model).
 
 See the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class for a complete overview of the available composite channels:
 
@@ -46,13 +46,13 @@ where Y is the luminance:
 
 and lR, lG, lB are the linear RGB components of the image. The definitions of Y and :math:`L^*` account for the non-linear and non-homogeneous response of the eyes. They highlight, for example, that we are far more sentitive to green than to red and blue light. Note that :math:`L^*` conventionally ranges within [0, 100] instead of [0, 1].
 
-The method :py:meth:`Image.lightness <equimagelab.equimage.image_colorspaces.MixinImage.lightness>` returns the lightness :math:`L^*` of all pixels of a lRGB or sRGB image (the sRGB components being converted to lRGB for that purpose).
+The method :py:meth:`Image.lightness() <equimagelab.equimage.image_colorspaces.MixinImage.lightness>` returns the lightness :math:`L^*` of all pixels of a lRGB or sRGB image (the sRGB components being converted to lRGB for that purpose).
 
 While :math:`L^*` is the best measure of the brightness of a pixel, it is expensive to compute (since our images usually live in the sRGB color space, whereas :math:`L^*` is defined in the lRGB color space). Therefore, alternate, *approximate* measures of the brightness have been introduced:
 
-  - The *luma* of a pixel L = 0.2126R+0.7152G+0.0722B. In the lRGB color space, the luma is the luminance L = Y (but has nothing to do with the lightness !). In the sRGB color space, the luma (that somehow accounts for the non-linear and non-homogeneous response of the eye) is often used as a convenient substitute for the lightness :math:`L\equiv L^*/100` (but is not as accurate). The method :py:meth:`Image.luma <equimagelab.equimage.image_colorspaces.MixinImage.luma>` returns the luma L of all pixels of an image (calculated from the lRGB or sRGB components depending on the color space). Also, the RGB coefficients of the luma can be tweaked with the :py:func:`set_RGB_luma <equimagelab.equimage.params.set_RGB_luma>` function (and inquired with :py:func:`get_RGB_luma <equimagelab.equimage.params.get_RGB_luma>`). Depending on your purposes, it may be more convenient to work with L = (R+G+B)/3.
+  - The *luma* of a pixel L = 0.2126R+0.7152G+0.0722B. In the lRGB color space, the luma is the luminance L = Y (but has nothing to do with the lightness !). In the sRGB color space, the luma (that somehow accounts for the non-linear and non-homogeneous response of the eye) is often used as a convenient substitute for the lightness :math:`L\equiv L^*/100` (but is not as accurate). The method :py:meth:`Image.luma() <equimagelab.equimage.image_colorspaces.MixinImage.luma>` returns the luma L of all pixels of an image (calculated from the lRGB or sRGB components depending on the color space). Also, the RGB coefficients of the luma can be tweaked with the :py:func:`set_RGB_luma() <equimagelab.equimage.params.set_RGB_luma>` function (and inquired with :py:func:`get_RGB_luma() <equimagelab.equimage.params.get_RGB_luma>`). Depending on your purposes, it may be more convenient to work with L = (R+G+B)/3.
 
-  - The *value* of a pixel V = max(R, G, B). This is a key component of the HSV color model, but a really poor measure of the lightness ! The method :py:meth:`Image.value <equimagelab.equimage.image_colorspaces.MixinImage.value>` returns the value V of all pixels of an image (available for both RGB and HSV images).
+  - The *value* of a pixel V = max(R, G, B). This is a key component of the HSV color model, but a really poor measure of the lightness ! The method :py:meth:`Image.value() <equimagelab.equimage.image_colorspaces.MixinImage.value>` returns the value V of all pixels of an image (available for both RGB and HSV images).
 
 Saturation
 ^^^^^^^^^^
@@ -97,7 +97,7 @@ Also see the following functions of eQuimageLab about histograms:
 Working with composite channels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Some operations (e.g., histograms stretches) can be applied separately to the R, G, B channels of a color image, or to a composite channel (see the generic :py:meth:`Image.apply_channels <equimagelab.equimage.image_colorspaces.MixinImage.apply_channels>` method).
+Some operations (e.g., histograms stretches) can be applied separately to the R, G, B channels of a color image, or to a composite channel (see the generic :py:meth:`Image.apply_channels() <equimagelab.equimage.image_colorspaces.MixinImage.apply_channels>` method).
 
 **In particular, operations on the value V and luma L of an image are designed to preserve the ratios between the RGB components, hence to preserve the hue and saturation (the "apparent" color).**
 
@@ -105,7 +105,7 @@ Therefore, stretching the luma protects the colors of the image, whereas stretch
 
 However, acting on the luma L can bring some RGB components out of the [0, 1] range.
 
-Let us take the midtone transformation T(x) = 0.761x/(0.522x+0.239) as an example (see the :py:meth:`Image.midtone_stretch <equimagelab.equimage.image_stretch.MixinImage.midtone_stretch>` method). The transformation T(x) maps [0, 1] onto [0, 1] and does not, therefore, produce out-of-range pixels when applied to the R, G, B channels separately.
+Let us take the midtone transformation T(x) = 0.761x/(0.522x+0.239) as an example (see the :py:meth:`Image.midtone_stretch() <equimagelab.equimage.image_stretch.MixinImage.midtone_stretch>` method). The transformation T(x) maps [0, 1] onto [0, 1] and does not, therefore, produce out-of-range pixels when applied to the R, G, B channels separately.
 
 Let us now consider a pixel with components (R = 0.4, G = 0.2, B = 0.6) and luma L = 0.2126R + 0.7152G + 0.0722B = 0.271. Under transformation T, the luma of this pixel doubles and becomes L' = T(L) = 0.543. Accordingly, the new RGB components of the pixel are (R' = 0.8, G' = 0.4, B' = 1.2). While L' is still within bounds, B' is not.
 

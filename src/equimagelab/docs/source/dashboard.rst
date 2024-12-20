@@ -41,18 +41,26 @@ If possible, the zooms in the images are synchronized across tabs to ease compar
 
 Here is another example of dashboard with two images and the "Reference" tab shown:
 
+.. image:: images/dashboard2.png
+   :width: 100%
+   :align: center
 
-
-This dashboard is the outcome of :py:meth:`dbrd.show_t(stretched) <equimagelab.jupyter.backend_dash.Dashboard.show_t>`, where *stretched* is the output image of a midtone stretch (see :py:meth:`Image.midtone_stretch <equimagelab.equimage.image_stretch.MixinImage.midtone_stretch>`). The dashboard displays the output, stretched image in the "Image" tab, and the original, input image in the "Reference" tab. Moreover, the histograms panel of the "Reference" tab shows the midtone stretch function *f* (the relation between the input and output RGB levels). You can click on the *f/log f'* button to switch between plots of *f* and *log f'*. The latter is a measure of contrast enhancement as a function of the input RGB level (it is positive when contrast is enhanced, negative when contrast is reduced).
+This dashboard is the outcome of :py:meth:`dbrd.show_t(stretched) <equimagelab.jupyter.backend_dash.Dashboard.show_t>`, where *stretched* is the output image of a midtone stretch (see :py:meth:`Image.midtone_stretch() <equimagelab.equimage.image_stretch.MixinImage.midtone_stretch>`). The dashboard displays the output, stretched image in the "Image" tab, and the original, input image in the "Reference" tab. Moreover, the histograms panel of the "Reference" tab shows the midtone stretch function *f* (the relation between the input and output RGB levels, in purple). You can click on the *f/log f'* button to switch between plots of *f* and *log f'*. The latter is a measure of contrast enhancement as a function of the input RGB level (it is positive when contrast is enhanced, negative when contrast is reduced).
 
 The carousel and before/after slider
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can also compare two images with a before/after slider using :py:meth:`dbrd.slide(image1, image2) <equimagelab.jupyter.backend_dash.Dashboard.slide>`:
 
+.. image:: images/slider.png
+   :width: 100%
+   :align: center
 
 You can finally compare multiple images with a carousel using :py:meth:`dbrd.carousel((image1, image2, ...)) <equimagelab.jupyter.backend_dash.Dashboard.slide>`:
 
+.. image:: images/carousel.png
+   :width: 100%
+   :align: center
 
 Troubleshooting
 ^^^^^^^^^^^^^^^

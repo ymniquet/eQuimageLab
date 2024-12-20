@@ -557,8 +557,8 @@ class Dashboard():
     """Compare two images with a "before/after" slider on the dashboard.
 
     Args:
-      image1: The first image as an equimage.Image object or numpy.ndarray.
-      image2: The second image as an equimage.Image object or numpy.ndarray.
+      image1: The "after" image as an equimage.Image object or numpy.ndarray.
+      image2: The "before"" image as an equimage.Image object or numpy.ndarray.
       label1 (str, optional): The label of the first image (default "Image").
       label2 (str, optional): The label of the second image (default "Reference").
       sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
@@ -567,10 +567,10 @@ class Dashboard():
     self.refresh = False # Stop refreshing dashboard.
     # Set-up before/after widget.
     image1, image2 = prepare_images_as_b64strings((image1, image2), sampling = sampling)
-    baslider = dxt.BeforeAfter(before = dict(src = image1), after = dict(src = image2), width = f"{params.maxwidth}")
-    left   = html.Div([label2], className = "ba-left", style = {"width": f"{params.lmargin}px"})
+    baslider = dxt.BeforeAfter(after = dict(src = image1), before = dict(src = image2), width = f"{params.maxwidth}")
+    left   = html.Div([label1], className = "ba-left", style = {"width": f"{params.lmargin}px"})
     middle = html.Div([baslider], className = "ba-middle", style = {"width": f"{params.maxwidth}px"})
-    right  = html.Div([label1], className = "ba-right", style = {"width": f"{params.rmargin}px"})
+    right  = html.Div([label2], className = "ba-right", style = {"width": f"{params.rmargin}px"})
     widget = html.Div([left, middle, right], className = "inline",
                       style = {"margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
     tab = dbc.Tab([widget], label = "Compare images", className = "tab")

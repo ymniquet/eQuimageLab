@@ -181,7 +181,7 @@ Edition with external softwares
 
 External softwares (Gimp, Siril, Starnet++, ...) can be run from eQuimageLab to perform specialized operations.
 
-The generic method to edit an :py:class:`Image <equimagelab.equimage.image.Image>` object with an external software is :py:meth:`Image.edit_with <equimagelab.equimage.image_editors.MixinImage.edit_with>`. This method is implemented for `Gimp <https://www.gimp.org/>`_, `Siril <https://siril.org/>`_ and `Starnet++ <https://www.starnetastro.com/>`_:
+The generic method to edit an :py:class:`Image <equimagelab.equimage.image.Image>` object with an external software is :py:meth:`Image.edit_with() <equimagelab.equimage.image_editors.MixinImage.edit_with>`. This method is implemented for `Gimp <https://www.gimp.org/>`_, `Siril <https://siril.org/>`_ and `Starnet++ <https://www.starnetastro.com/>`_:
 
 .. currentmodule:: equimagelab.equimage.image_editors.MixinImage
 

@@ -27,7 +27,7 @@ The default color space of an image is "sRGB" and the default color model is "RG
 
 .. note::
 
-  The HSV color model is best suited for some color transformations (color saturation, etc...). Most operations can not, however, be applied to HSV images. eQuimageLab does not automatically convert back and forth between HSV and RGB to apply such operations. You need to do it yourself with the :py:meth:`Image.RGB <equimagelab.equimage.image_colorspaces.MixinImage.RGB>` and :py:meth:`Image.HSV <equimagelab.equimage.image_colorspaces.MixinImage.HSV>` methods. HSV images can not, moreover, be displayed in JupyterLab cells and on the dashboard (well, they can, but the outcome is fancy, as they are dealt with as RGB images !). You need, again, to convert them into RGB images to do so.
+  The HSV color model is best suited for some color transformations (color saturation, etc...). Most operations can not, however, be applied to HSV images. eQuimageLab does not automatically convert back and forth between HSV and RGB to apply such operations. You need to do it yourself with the :py:meth:`Image.RGB() <equimagelab.equimage.image_colorspaces.MixinImage.RGB>` and :py:meth:`Image.HSV() <equimagelab.equimage.image_colorspaces.MixinImage.HSV>` methods. HSV images can not, moreover, be displayed in JupyterLab cells and on the dashboard (well, they can, but the outcome is fancy, as they are dealt with as RGB images !). You need, again, to convert them into RGB images to do so.
 
 Creating and accessing images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -42,11 +42,11 @@ The :py:class:`Image <equimagelab.equimage.image.Image>` class behaves as a :py:
   maxRGB = np.max(image, axis = (1, 2)) # Maximum R/G/B levels.
   fancy = np.sin(image) # For fun...
 
-Therefore, you won't need to access the ``Image.image`` data for most purposes. If you need to do so anyway, we recommend that you use the :py:meth:`Image.get_image <equimagelab.equimage.image.Image.get_image>` method, which returns the data as a :py:class:`numpy.ndarray` with shape (H, W, 3) or (3, H, W) (see the `channels` kwarg).
+Therefore, you won't need to access the ``Image.image`` data for most purposes. If you need to do so anyway, we recommend that you use the :py:meth:`Image.get_image() <equimagelab.equimage.image.Image.get_image>` method, which returns the data as a :py:class:`numpy.ndarray` with shape (H, W, 3) or (3, H, W) (see the `channels` kwarg).
 
 .. warning::
 
-  By default the :py:meth:`Image.get_image <equimagelab.equimage.image.Image.get_image>` method returns (if possible) a *view* on the ``Image.image`` data. Therefore, the instructions
+  By default the :py:meth:`Image.get_image() <equimagelab.equimage.image.Image.get_image>` method returns (if possible) a *view* on the ``Image.image`` data. Therefore, the instructions
 
   .. code-block:: ipython3
 
@@ -67,8 +67,8 @@ You can inquire about the size, number of channels, color space and model of an 
    get_color_space
    get_color_model
 
-Image I/O
-^^^^^^^^^
+Loading and saving images
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Images can be loaded from/saved on disk with the functions:
 
@@ -100,11 +100,11 @@ Therefore, screens, printers, etc... make use of a non-linear color space, where
 
 where :math:`l \in [0, 1]` is a linear R, G, or B component and :math:`s` is the corresponding sRGB component.
 
-Linear RGB images can be converted into sRGB images with the :py:meth:`Image.sRGB <equimagelab.equimage.image_colorspaces.MixinImage.sRGB>` method, and sRGB images into lRGB images with the :py:meth:`Image.lRGB <equimagelab.equimage.image_colorspaces.MixinImage.lRGB>` method.
+Linear RGB images can be converted into sRGB images with the :py:meth:`Image.sRGB() <equimagelab.equimage.image_colorspaces.MixinImage.sRGB>` method, and sRGB images into lRGB images with the :py:meth:`Image.lRGB() <equimagelab.equimage.image_colorspaces.MixinImage.lRGB>` method.
 
 .. note::
 
-  In principle, a linear RGB image shall be converted into a sRGB image before processing. As this amounts (roughly) to a power law stretch, which would ultimately be lumped with the midtone or generalized hyperbolic stretches applied later, this conversion is often dropped out, and the lRGB image is direcly "imported" in the sRGB color space of the screen (that is, setting :math:`s\equiv l`). eQuimageLab actually does so, since all files are loaded as sRGB images by default, irrespective of their color profile (see `Image I/O`_ above). This can, however, change the color balance of the image. If you wish to make a proper conversion of a lRGB into a sRGB image, use the :py:meth:`Image.sRGB <equimagelab.equimage.image_colorspaces.MixinImage.sRGB>` method:
+  In principle, a linear RGB image shall be converted into a sRGB image before processing. As this amounts (roughly) to a power law stretch, which would ultimately be lumped with the midtone or generalized hyperbolic stretches applied later, this conversion is often dropped out, and the lRGB image is direcly "imported" in the sRGB color space of the screen (that is, setting :math:`s\equiv l`). eQuimageLab actually does so, since all files are loaded as sRGB images by default, irrespective of their color profile (see `Loading and saving images`_ above). This can, however, change the color balance of the image. If you wish to make a proper conversion of a lRGB into a sRGB image, use the :py:meth:`Image.sRGB() <equimagelab.equimage.image_colorspaces.MixinImage.sRGB>` method:
 
   .. code-block:: ipython3
 
@@ -112,5 +112,5 @@ Linear RGB images can be converted into sRGB images with the :py:meth:`Image.sRG
 
 .. warning::
 
-   Linear RGB images are displayed "as is" in JupyterLab cells and on the dashboard, without conversion to the sRGB color space of the screen. If you need af faithful representation of a lRGB image, you must convert it into a sRGB image with the :py:meth:`Image.sRGB <equimagelab.equimage.image_colorspaces.MixinImage.sRGB>` method before display.
+   Linear RGB images are displayed "as is" in JupyterLab cells and on the dashboard, without conversion to the sRGB color space of the screen. If you need af faithful representation of a lRGB image, you must convert it into a sRGB image with the :py:meth:`Image.sRGB() <equimagelab.equimage.image_colorspaces.MixinImage.sRGB>` method before display.
 
