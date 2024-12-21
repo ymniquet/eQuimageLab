@@ -6,7 +6,7 @@ eQuimageLab is a Python package to process astronomical images in `JupyterLab <h
 Enjoy the power of Python to process your images !
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
    installation

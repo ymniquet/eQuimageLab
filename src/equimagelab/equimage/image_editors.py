@@ -129,7 +129,7 @@ class MixinImage:
     See: https://www.starnetastro.com/
 
     The image is saved as a TIFF file (16 bits integer per channel) on disk; the stars on this
-    TIFF file are remove with StarNet++, and the starless image is finally reloaded in eQuimageLab
+    TIFF file are removed with StarNet++, and the starless image is finally reloaded in eQuimageLab
     and returned.
 
     The command "starnet++" must be in the PATH.
@@ -138,7 +138,8 @@ class MixinImage:
       midtone (float, optional): If different from 0.5 (default), apply a midtone stretch to the
         image before running StarNet++, then apply the inverse stretch to the output starless.
         This can help StarNet++ find stars on low contrast, linear RGB images.
-        See Image.midtone_stretch; midtone is expected in ]0, 1[.
+        See Image.midtone_stretch; midtone can either be "auto" (for automatic stretch) or a
+        float in ]0, 1[.
       starmask (bool, optional): If True, return both the starless image and the star mask.
         If False (default), only return the starless image [the star mask being the difference
         between the original image (self) and the starless].
@@ -152,6 +153,7 @@ class MixinImage:
     if cmdpath is None: raise FileNotFoundError("Error, starnet++ executable not found in the PATH.")
     path, cmd = os.path.split(cmdpath)
     # Stretch the image if needed.
+    if midtone == "auto": midtone = np.median(self.luma())
     if midtone != .5:
       image = self.midtone_stretch(midtone)
     else:

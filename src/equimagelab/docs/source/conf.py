@@ -25,6 +25,7 @@ extensions = ["sphinx.ext.napoleon", "sphinx.ext.autodoc", "sphinx.ext.autosumma
 
 html_show_sourcelink = False
 autodoc_member_order = "bysource"
+nbsphinx_execute = "auto"
 
 templates_path = ["_templates"]
 exclude_patterns = []

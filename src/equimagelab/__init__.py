@@ -25,6 +25,5 @@ print(f"# Welcome to eQuimageLab version {__version__}... #")
 print(ruler)
 # print(f"Documentation available at: file://{__packagepath__}/docs/build/html/")
 print("Documentation available at: https://astro.ymniquet.fr/codes/equimagelab/docs/")
-print("The module numpy is loaded as np.")
 
 set_RGB_luma("human")
