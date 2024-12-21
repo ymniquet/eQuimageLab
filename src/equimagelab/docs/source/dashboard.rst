@@ -77,6 +77,11 @@ Troubleshooting
 
   another Dash application (from a previous or concurrent eQuimageLab session) may be running on your machine.
 
-  On Linux or Mac OSX, you can get the process ID (<PID>) of the application bound to port 8050 with the shell command ``lsof -i:8050``, and kill it (if you know what you're doing) with ``kill <PID>``. On Windows, you can likewise ``netstat -aon | find "8050"`` and ``taskkill /PID <PID>`` in a command prompt.
+  You can then try to start Dash on an other port (8051, 8052...) with ``dbrd = eqlab.Dashboard(port = 8051)``.
+
+  You may also terminate the application bound to port 8050 (if you're sure it is the stale Dash server from a previous session) as follows:
+
+    - On Linux or Mac OSX, get the process ID (<PID>) of the application bound to port 8050 with the shell command ``lsof -i:8050``, and kill it with ``kill <PID>``.
+    - On Windows, you can likewise ``netstat -aon | find "8050"`` and ``taskkill /PID <PID>`` in a command prompt.
 
   **To avoid such issues, always quit JupyterLab through the File/Shutdown menu in order not to leave a stale Dash application running in background.**

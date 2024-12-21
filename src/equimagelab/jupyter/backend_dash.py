@@ -32,14 +32,15 @@ class Dashboard():
   # Constructor. #
   ################
 
-  def __init__(self, interval = 500, debug = False):
+  def __init__(self, port = 8050, interval = 500, debug = False):
     """Initialize dashboard.
 
-    This dashboard uses Dash to display images, histograms, statistics, etc... in a
-    separate browser tab or window.
+    This dashboard uses Dash to display images, histograms, statistics, etc...
+    in a separate browser tab or window.
     It fetches updates from the Dash server at given intervals.
 
     Args:
+      port (int, optional): The port bound to the Dash server (default 8050).
       interval (int, optional): The time interval (ms) between dashboard updates (default 500).
       debug (bool, optional): If True, run Dash in debug mode (default False).
     """
@@ -90,7 +91,7 @@ class Dashboard():
     #   - Tab switch.
     self.app.callback(Input("image-tabs", "active_tab"), prevent_initial_call = True)(self.__switch_tab)
     # Launch Dash server.
-    self.app.run_server(debug = debug, use_reloader = False, jupyter_mode = "external")
+    self.app.run_server(port = port, debug = debug, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
     try:
       splash, meta = load_image(os.path.join(__packagepath__, "images", "splash.png"), verbose = False)
