@@ -9,6 +9,7 @@
 import os
 import sys
 import shutil
+import inspect
 import tkinter
 import tkinter.filedialog
 import tkinter.messagebox
@@ -16,8 +17,25 @@ import subprocess
 from pathlib import Path
 from PIL import Image, ImageTk
 
-def run():
-  """Run eQuimageLab launcher."""
+def run_CLI():
+  """Open a jupyter lab notebook from the command line."""
+  if len(sys.argv) != 2:
+    print("---")
+    print("eQuimageLab launcher.")
+    print("Usage: equimagelab [notebook]")
+    print("Starts jupyter lab and opens notebook, if provided.")
+    print("Otherwise, starts a GUI to choose notebook/starting directory.")
+    sys.exit(-1)
+  try:
+    subprocess.Popen(["jupyter", "lab", sys.argv[1]])
+  except Exception as err:
+    print("Failed to run jupyter lab:")
+    print(str(err))
+    sys.exit(-2)
+  sys.exit(0)
+
+def run_GUI():
+  """Run eQuimageLab launcher GUI."""
 
   def new_notebook():
     """Create and open a new jupyter notebook."""
@@ -26,7 +44,7 @@ def run():
                                                     initialdir = Path.home(), initialfile = "eqlab.ipynb", defaultextension = ".ipynb")
     if not notebook: return
     # Create notebook.
-    template = os.path.join(__packagepath__, "launcher", "equimagelab.ipynb")
+    template = os.path.join(launcherpath, "equimagelab.ipynb")
     print(f"Copying {template} as {notebook}...")
     try:
       shutil.copyfile(template, notebook)
@@ -71,26 +89,8 @@ def run():
     root.destroy()
     sys.exit(0)
 
-  def open_notebook_cli():
-    """Open jupyter lab notebook from the command line."""
-    if len(sys.argv) != 2:
-      print("---")
-      print("eQuimageLab launcher.")
-      print("Usage: equimagelab [notebook]")
-      print("Starts jupyter lab and opens notebook [notebook], if provided.")
-      print("Otherwise, opens a GUI to choose notebook/starting directory.")
-      sys.exit(-1)
-    try:
-      subprocess.Popen(["jupyter", "lab", sys.argv[1]])
-    except Exception as err:
-      print("Failed to run jupyter lab:")
-      print(str(err))
-      sys.exit(-2)
-    sys.exit(0)
-
-  from .. import __packagepath__
-  # Check if there are command line arguments.
-  if len(sys.argv) > 1: open_notebook_cli()
+  # Get launcher path.
+  launcherpath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
   # Open root Tk window.
   root = tkinter.Tk()
   root.title("eQuimageLab")
@@ -105,7 +105,7 @@ def run():
   canvas = tkinter.Canvas(root, width = 800, height = 600)
   canvas.pack(side = "top")
   try:
-    image = Image.open(os.path.join(__packagepath__, "images", "splash.png")).resize((800, 600))
+    image = Image.open(os.path.join(launcherpath, "..", "images", "splash.png")).resize((800, 600))
   except:
     pass
   else:
@@ -113,3 +113,12 @@ def run():
     canvas.create_image(0, 0, anchor = "nw", image = imagetk)
   # Start Tk main loop.
   root.mainloop()
+
+def run():
+  """Run eQuimageLab launcher."""
+  if len(sys.argv) > 1:
+    run_CLI() # Run the CLI if there are command line arguments...
+  else:
+    run_GUI() # ...else the GUI.
+
+if __name__ == "__main__": run()

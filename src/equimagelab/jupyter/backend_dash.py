@@ -76,12 +76,12 @@ class Dashboard():
                       Input({"type": "filters", "index": MATCH}, "value"),
                       State({"type": "selectedfilters", "index": MATCH}, "data"), State("updateid", "data"),
                       prevent_initial_call = True)(self.__filter_image)
-    #   - Image histograms:
+    #   - Local histograms:
     self.app.callback(Output({"type": "offcanvas", "index": MATCH}, "is_open"), Output({"type": "offcanvas", "index": MATCH}, "children"),
                       Input({"type": "histogramsbutton", "index": MATCH}, "n_clicks"),
                       State({"type": "offcanvas", "index": MATCH}, "is_open"), State({"type": "image", "index": MATCH}, "figure"),
                       State("updateid", "data"),
-                      prevent_initial_call = True)(self.__histograms)
+                      prevent_initial_call = True)(self.__local_histograms)
     #   - Images zoom synchronization:
     self.app.callback(Output({"type": "image", "index": ALL}, "relayoutData"), Output({"type": "image", "index": ALL}, "figure"),
                       Input({"type": "image", "index": ALL}, "relayoutData"),
@@ -230,7 +230,7 @@ class Dashboard():
       current = list(current)
       return current, current, figure_patch
 
-  def __histograms(self, n_clicks, is_open, figure, updateid):
+  def __local_histograms(self, n_clicks, is_open, figure, updateid):
     """Callback for local histograms.
 
     Shows the histograms of the displayed area of the current image.

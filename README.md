@@ -4,7 +4,7 @@ Author: Yann-Michel Niquet (https://astro.ymniquet.fr)
 
 Why use JupyterLab notebooks to process your images ?
 
-  - You can easily modify/add/delete/move any operation in your workflow without the need to manually undo/redo all subsequent tasks.
+  - You can easily modify/add/delete/move any operation in your workflow without the need to manually undo/redo the others.
   - You can tweak your notebook any time (shall you have new ideas to deal with an image) and reprocess in a few minutes.
   - You benefit from the full Python ecosystem to help you make the most out of your images (Numpy, Scikit-image, etc...).
   - ...
@@ -25,9 +25,7 @@ in this same terminal. You can also create a link to eQuimageLab from your deskt
 
 ### Usage
 
-Preliminary documentation is available at: https://astro.ymniquet.fr/codes/equimagelab/docs/
-
-Dec. 15, 2024: this project is still under heavy development and not yet ready for general use; a more complete documentation with examples will follow soon.
+The complete documentation is available at: https://astro.ymniquet.fr/codes/equimagelab/docs/
 
 ### Known bugs
 

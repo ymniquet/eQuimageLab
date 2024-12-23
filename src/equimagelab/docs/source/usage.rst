@@ -1,7 +1,7 @@
 Running eQuimageLab
 --------------------
 
-To use eQuimageLab, you can simply start a JupyterLab server from a shell:
+To use eQuimageLab, you can simply run JupyterLab from a shell:
 
 .. code-block:: bash
 
@@ -13,7 +13,7 @@ and import eQuimageLab:
 
   import equimagelab as eql
 
-This is, however, little convenient - in particular, because you may want to run JupyterLab from a given directory in order to have an easy access to its files. Therefore, the eQuimageLab package includes a launcher with a graphical user interface that helps you start JupyterLab according to your needs. You can run this launcher from a shell:
+This is, however, little convenient - in particular, because you may want to start JupyterLab from a given directory in order to have direct access to its content. Therefore, the eQuimageLab package includes a launcher with a graphical user interface that helps you start JupyterLab according to your needs. You can run this launcher from a shell:
 
 .. code-block:: bash
 
