@@ -15,11 +15,22 @@ PACKAGEDIR    = ../../
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-.PHONY: help apidoc Makefile
+.PHONY: help apidoc ga noga Makefile
 
 # Compile API doc.
 apidoc:
-	@$(SPHINXAPIDOC) -M -f -o "$(SOURCEDIR)" "$(PACKAGEDIR)"
+	@echo "Compiling API documentation..."; \
+	$(SPHINXAPIDOC) -M -f -o "$(SOURCEDIR)" "$(PACKAGEDIR)"
+
+# Enable Google analytics.
+ga:
+	@echo "Enabling Google analytics..."; \
+	sed -i "s/googleanalytics_enabled = .*/googleanalytics_enabled = True/" source/conf.py
+
+# Disable Google analytics.
+noga:
+	@echo "Disabling Google analytics..."; \
+	sed -i "s/googleanalytics_enabled = .*/googleanalytics_enabled = False/" source/conf.py
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

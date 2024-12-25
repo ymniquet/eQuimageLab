@@ -16,15 +16,16 @@ from . import params
 def threshold_mask(filtered, threshold, extend = 0, smooth = 0):
   """Set-up a threshold mask.
 
-  Returns the pixels such that filtered >= threshold.
+  Returns the pixels of the image such that filtered >= threshold.
 
   See also:
     Image.filter
 
   Args:
-    filtered (numpy.ndarray): The output of a filter (local average, ...) applied to an image (see Image.filter).
+    filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image (see Image.filter).
     threshold (float): The threshold for the mask. The mask is 1 wherever filtered >= threshold, and 0 elsewhere.
-    extend (int, optional): Once computed, the mask can be extended by extend pixels (default 0).
+    extend (int, optional): Once computed, the mask can be extended/eroded by extend pixels (default 0). The mask
+      is extended if extend > 0, and eroded if extend < 0.
     smooth (int, optional): Once extended, the edges of the mask can be smoothed over smooth pixels (default 0).
 
   Returns:
@@ -33,7 +34,10 @@ def threshold_mask(filtered, threshold, extend = 0, smooth = 0):
   # Threshold the filter.
   mask = (filtered >= threshold)
   # Extend the mask.
-  if extend > 0: mask = skimo.isotropic_dilation(mask, extend)
+  if extend > 0:
+    mask = skimo.isotropic_dilation(mask, extend)
+  elif extend < 0:
+    mask = skimo.isotropic_erosion(mask, -extend)
   # Smooth the mask.
   mask = mask.astype(params.IMGTYPE)
   if smooth > 0:

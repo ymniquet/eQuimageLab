@@ -5,6 +5,7 @@
 
 import os
 import sys
+from equimagelab import __version__
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -12,7 +13,8 @@ import sys
 project = "eQuimageLab"
 copyright = "2024, Yann-Michel Niquet"
 author = "Yann-Michel Niquet"
-release = "1.0.0"
+version = __version__
+release = version
 
 # -- Path to sources ---------------------------------------------------------
 
@@ -21,11 +23,15 @@ sys.path.insert(0, os.path.abspath("../../.."))
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["sphinx.ext.napoleon", "sphinx.ext.autodoc", "sphinx.ext.autosummary", "nbsphinx"]
+extensions = ["sphinx.ext.napoleon", "sphinx.ext.autodoc", "sphinx.ext.autosummary",
+              "nbsphinx", "sphinxcontrib.googleanalytics"]
 
 html_show_sourcelink = False
 autodoc_member_order = "bysource"
 nbsphinx_execute = "auto"
+
+googleanalytics_id = "GTM-TBRJL3X9"
+googleanalytics_enabled = False
 
 templates_path = ["_templates"]
 exclude_patterns = []

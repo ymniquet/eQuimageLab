@@ -3,6 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. image:: images/banner.png
+   :width: 100%
+   :align: center
+
 eQuimageLab
 ===========
 
@@ -18,7 +22,7 @@ Why use JupyterLab notebooks to process your images ?
 | Author: `Yann-Michel Niquet <mailto:ymniquet@ymniquet.fr>`_ (`<https://astro.ymniquet.fr/>`_).
 | Do not hesitate to drop a message !
 
-Version of this documentation : 1.0.1.
+Version of this documentation : |version|.
 
 .. toctree::
    :maxdepth: 2

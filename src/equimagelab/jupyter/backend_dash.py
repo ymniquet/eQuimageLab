@@ -554,7 +554,7 @@ class Dashboard():
 
   ### Before/After layout.
 
-  def slide(self, image1, image2, label1 = "Image", label2 = "Reference", sampling = -1):
+  def slider(self, image1, image2, label1 = "Image", label2 = "Reference", sampling = -1):
     """Compare two images with a "before/after" slider on the dashboard.
 
     Args:
