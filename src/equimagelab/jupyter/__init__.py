@@ -2,10 +2,10 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.0.0 / 2024.12.15
+# Version: 1.0.1 / 2024.12.26
 # Sphinx OK.
 
-"""Jupyter lab interface."""
+"""Jupyter Lab interface."""
 
 # Import everything.
 

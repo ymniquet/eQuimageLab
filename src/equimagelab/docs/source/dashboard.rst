@@ -16,6 +16,7 @@ You shall now see this on the dashboard:
 .. image:: images/dashboard1.png
    :width: 100%
    :align: center
+   :alt: eQuimageLab dashboard
 
 The "Image" tab displays the image, histograms and statistics. You can zoom in the image or histograms with the mouse (double click to zoom out). A single click on a point of the image shows the data at this point (RGB components, ...).
 
@@ -44,6 +45,7 @@ Here is another example of dashboard with two images and the "Reference" tab sho
 .. image:: images/dashboard2.png
    :width: 100%
    :align: center
+   :alt: eQuimageLab dashboard with histograms transformation
 
 This dashboard is the outcome of :py:meth:`dbrd.show_t(stretched) <equimagelab.jupyter.backend_dash.Dashboard.show_t>`, where *stretched* is the output image of a midtone stretch (see :py:meth:`Image.midtone_stretch() <equimagelab.equimage.image_stretch.MixinImage.midtone_stretch>`). The dashboard displays the output, stretched image in the "Image" tab, and the original, input image in the "Reference" tab. Moreover, the histograms panel of the "Reference" tab shows the midtone stretch function *f* (the relation between the input and output luma L, in purple). You can click on the *f/log f'* button to switch between plots of *f* and *log f'*. The latter is a measure of contrast enhancement as a function of the input luma (it is positive when contrast is enhanced, negative when contrast is reduced).
 
@@ -55,12 +57,14 @@ You can also compare two images with a before/after slider using :py:meth:`dbrd.
 .. image:: images/slider.png
    :width: 100%
    :align: center
+   :alt: eQuimageLab before/after slider
 
 You can finally compare multiple images with a carousel using :py:meth:`dbrd.carousel((image1, image2, ...)) <equimagelab.jupyter.backend_dash.Dashboard.carousel>`:
 
 .. image:: images/carousel.png
    :width: 100%
    :align: center
+   :alt: eQuimageLab carousel
 
 Troubleshooting
 ^^^^^^^^^^^^^^^

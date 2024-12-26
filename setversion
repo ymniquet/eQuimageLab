@@ -31,6 +31,9 @@ done
 
 echo "Compiling docs..."
 pushd src/equimagelab/docs
+make clean
+make ga
 make apidoc
 make html
+make noga
 popd

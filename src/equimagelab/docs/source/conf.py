@@ -24,17 +24,22 @@ sys.path.insert(0, os.path.abspath("../../.."))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = ["sphinx.ext.napoleon", "sphinx.ext.autodoc", "sphinx.ext.autosummary",
-              "nbsphinx", "sphinxcontrib.googleanalytics"]
+              "nbsphinx", "sphinx_sitemap", "sphinxcontrib.googleanalytics"]
 
 html_show_sourcelink = False
 autodoc_member_order = "bysource"
 nbsphinx_execute = "auto"
 
+html_baseurl = "https://astro.ymniquet.fr/codes/equimagelab/docs/"
+sitemap_url_scheme = "{link}"
+sitemap_excludes = ["equimagelab.launcher.html", "modules.html",
+                    "search.html", "genindex.html", "py-modindex.html"]
+
 googleanalytics_id = "GTM-TBRJL3X9"
 googleanalytics_enabled = False
 
 templates_path = ["_templates"]
-exclude_patterns = []
+exclude_patterns = ["notebooks/dashboard_layouts.ipynb"]
 
 # -- Include __init__ in the documentation -----------------------------------
 

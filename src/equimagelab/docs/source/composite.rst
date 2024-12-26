@@ -65,7 +65,7 @@ Therefore, S = 0 for a black, gray or white pixel (RGB = XXX), and S = 1 for pur
    :figwidth: 40%
    :width: 100%
    :align: center
-   :alt: The "HSV wheel".
+   :alt: The HSV wheel
 
    The "HSV wheel" of colors. Saturation increases from the center to the edge of the wheel.
 

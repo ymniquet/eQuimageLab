@@ -6,6 +6,7 @@
 .. image:: images/banner.png
    :width: 100%
    :align: center
+   :alt: eQuimageLab banner
 
 eQuimageLab
 ===========
@@ -22,7 +23,7 @@ Why use JupyterLab notebooks to process your images ?
 | Author: `Yann-Michel Niquet <mailto:ymniquet@ymniquet.fr>`_ (`<https://astro.ymniquet.fr/>`_).
 | Do not hesitate to drop a message !
 
-Version of this documentation : |version|.
+Version of this documentation: |version|.
 
 .. toctree::
    :maxdepth: 2
@@ -35,3 +36,6 @@ Latest news:
 ------------
 
   - December 15, 2024: Version 1.0.0.
+  - December 26, 2024: Version 1.0.1.
+
+    - First complete documentation.
