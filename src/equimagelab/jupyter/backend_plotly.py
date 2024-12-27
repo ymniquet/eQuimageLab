@@ -18,6 +18,7 @@ from . import params
 from .utils import prepare_images
 
 from ..equimage import Image
+from ..equimage.image_stats import parse_channels
 
 #####################
 # Helper functions. #
@@ -302,9 +303,9 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, r
     return
   reference = trans.input
   if trans.type == "hist":
-    for c in trans.channels:
-      if c in "RGBVSL" and not c in channels:
-        channels += c
+    keys = parse_channels(channels)
+    for key in parse_channels(trans.channels, errors = False):
+      if not key in keys: channels += key
   show_histograms(reference, channels = channels, log = True, width = width, xlabel = "Input level", trans = trans, renderer = renderer)
   show_histograms(image, channels = channels, log = True, width = width, xlabel = "Output level", renderer = renderer)
   show(image, histograms = False, statistics = False, sampling = sampling, width = width, hover = hover, renderer = renderer)

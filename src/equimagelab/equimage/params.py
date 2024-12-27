@@ -58,7 +58,7 @@ def set_default_hist_bins(n):
 
 # Weights of the RGB components in the luma.
 
-rgbluma = IMGTYPE((.299, .587, .114))
+rgbluma = IMGTYPE((.2126, .7152, .0722))
 
 def get_RGB_luma():
   """Return the RGB weights rgbluma of the luma.
@@ -72,7 +72,7 @@ def get_RGB_luma():
   """
   return rgbluma
 
-def set_RGB_luma(rgb):
+def set_RGB_luma(rgb, verbose = True):
   """Set the RGB weights of the luma.
 
   Args:
@@ -80,14 +80,16 @@ def set_RGB_luma(rgb):
 
       - a tuple, list or array of the (red, green, blue) weights. They will be normalized so that their sum is 1.
       - the string "uniform": the RGB weights are set to (1/3, 1/3, 1/3).
-      - the string "human": the RGB weights are set to (.299, .587, .114). The luma is then the luminance for lRGB images,
+      - the string "human": the RGB weights are set to (.2126, .7152, .0722). The luma is then the luminance for lRGB images,
         and an approximate substitute for the lightness for sRGB images.
+
+    verbose (bool, optional): If True (default), print the updated definition of the luma.
   """
   if isinstance(rgb, str):
     if rgb == "uniform":
       set_RGB_luma((1./3., 1./3., 1./3.))
     elif rgb == "human":
-      set_RGB_luma((.299, .587, .114))
+      set_RGB_luma((.2126, .7152, .0722))
     else:
       raise ValueError("Error, the input rgb weights must be an array with three scalar elements, the string 'uniform' or the string 'human'.")
   else:
@@ -97,4 +99,4 @@ def set_RGB_luma(rgb):
     s = np.sum(w)
     if s == 0.: raise ValueError("Error, the sum of the input rgb weights must be > 0.")
     global rgbluma ; rgbluma = w/s
-    print(f"Luma = {rgbluma[0]:.3f}R+{rgbluma[1]:.3f}G+{rgbluma[2]:.3f}B.")
+    if verbose: print(f"Luma = {rgbluma[0]:.4f}R+{rgbluma[1]:.4f}G+{rgbluma[2]:.4f}B.")

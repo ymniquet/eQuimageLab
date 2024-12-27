@@ -47,7 +47,7 @@ eQuimageLab = "equimagelab.launcher:run"
 [tool.setuptools.packages.find]
 namespaces = true
 where = ["src"]
-exclude = ["equimagelab.docs*"]
+exclude = ["equimagelab.docs*", "conf.py"]
 
 [tool.setuptools.package-data]
 "equimagelab.icons" = ["icon.png", "icon.ico"]

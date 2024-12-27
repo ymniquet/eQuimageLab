@@ -131,6 +131,38 @@ def luma(image):
 # Luminance and lightness. #
 ############################
 
+def luminance_to_lightness(Y):
+  """Compute the CIE lightness L* from the lRGB luminance Y.
+
+  The CIE lightness L* is defined from the lRGB luminance Y as:
+
+    L* = 116*Y**(1/3)-16 if Y > 0.008856 and L* = 903.3*Y if Y < 0.008856.
+
+  Note that L* is conventionally defined within [0, 100]. However, this
+  function returns the scaled lightness L*/100 within [0, 1].
+
+  Args:
+    Y (numpy.ndarray): The luminance Y.
+
+  Returns:
+    numpy.ndarray: The CIE lightness L*/100.
+  """
+  return np.where(Y > .008856, 1.16*Y**(1./3.)-.16, 9.033*Y)
+
+def lightness_to_luminance(L):
+  """Compute the lRGB luminance Y from the CIE lightness L*.
+
+  See also:
+    luminance_to_lightness
+
+  Args:
+    L (numpy.ndarray): The CIE lightness L*/100.
+
+  Returns:
+    numpy.ndarray: The luminance Y.
+  """
+  return np.where(L > .079996, ((L+.16)/1.16)**3, L/9.033)
+
 def lRGB_luminance(image):
   """Return the luminance Y of the input linear RGB image.
 
@@ -164,9 +196,9 @@ def lRGB_lightness(image):
 
     L* = 116*Y**(1/3)-16 if Y > 0.008856 and L* = 903.3*Y if Y < 0.008856.
 
-  It is a measure of the perceptual lightness of the image.
-
-  Warning: L* is defined within [0, 100] instead of [0, 1].
+  It is a measure of the perceptual lightness of the image. Note that L* is
+  conventionally defined within [0, 100]. However, this function returns
+  the scaled lightness L*/100 within [0, 1].
 
   Note: Compatible with single channel grayscale images.
 
@@ -180,10 +212,9 @@ def lRGB_lightness(image):
     image (numpy.ndarray): The input lRGB image.
 
   Returns:
-    numpy.ndarray: The CIE lightness L*.
+    numpy.ndarray: The CIE lightness L*/100.
   """
-  Y = lRGB_luminance(image)
-  return np.where(Y > .008856, 116.*Y**(1./3.)-16., 903.3*Y)
+  return luminance_to_lightness(lRGB_luminance(image))
 
 def sRGB_luminance(image):
   """Return the luminance Y of the input sRGB image.
@@ -216,9 +247,9 @@ def sRGB_lightness(image):
   """Return the CIE lightness L* of the input sRGB image.
 
   The image is converted to the lRGB color space to compute the CIE lightness L*.
-  L* is a measure of the perceptual lightness of the image.
-
-  Warning: L* is defined within [0, 100] instead of [0, 1].
+  L* is a measure of the perceptual lightness of the image. Note that L* is
+  conventionally defined within [0, 100]. However, this function returns
+  the scaled lightness L*/100 within [0, 1].
 
   Note: Compatible with single channel grayscale images.
 
@@ -232,7 +263,7 @@ def sRGB_lightness(image):
     image (numpy.ndarray): The input sRGB image.
 
   Returns:
-    numpy.ndarray: The CIE lightness L*.
+    numpy.ndarray: The CIE lightness L*/100.
   """
   return lRGB_lightness(sRGB_to_lRGB(image))
 
@@ -424,14 +455,15 @@ class MixinImage:
   def lightness(self):
     """Return the CIE lightness L* of the image.
 
+    L* is a measure of the perceptual lightness of the image. Note that L*
+    is conventionally defined within [0, 100]. However, this method returns
+    the scaled lightness L*/100 within [0, 1].
+
     Warning:
       The lightness is available only for RGB and grayscale images.
 
-    Warning:
-      L* is defined within [0, 100] instead of [0, 1].
-
     Returns:
-      numpy.ndarray: The lightness L*.
+      numpy.ndarray: The CIE lightness L*/100.
     """
     self.check_color_model("RGB", "gray")
     if self.colorspace == "lRGB":
@@ -571,6 +603,28 @@ class MixinImage:
         return output
       else:
         self.color_model_error()
+    elif channels == "L*" or channels == "L*s" or channels == "L*b":
+      lRGB = self.lRGB()
+      luminance = lRGB.luminance()
+      lightness = luminance_to_lightness(luminance)
+      flightness = f(lightness)
+      fluminance = lightness_to_luminance(flightness)
+      if is_gray:
+        output = lRGB.newImage(fluminance)
+      elif is_RGB:
+        output = lRGB.scale_pixels(luminance, fluminance)
+        if channels == "Ls":
+          output = output.protect_highlights_sat(rgbluma = (.2126, .7152, .0722))
+        elif channels == "Lb":
+          output = output.protect_highlights_blend(lRGB.apply_channels(f, "RGB", multi))
+      else:
+        self.color_model_error()
+      if self.colorspace == "sRGB":
+        output = output.sRGB()
+      elif self.colorspace != "lRGB":
+        raise self.color_space_error()
+      if trans: output.trans = transformation(f, lightness, "L*")
+      return output
     else:
       nc = self.get_nc()
       selected = nc*[False]
@@ -593,7 +647,7 @@ class MixinImage:
         elif c == "B":
           ic = 2
           ok = is_RGB
-        else:
+        elif c != " ": # Skip spaces.
           ok = False
         if not ok: raise ValueError(f"Error, unknown or incompatible channel '{c}'.")
         if selected[ic]: print(f"Warning, channel '{c}' selected twice or more...")
@@ -632,27 +686,38 @@ class MixinImage:
     """
     return self.apply_channels(lambda channel: np.clip(channel, 0., 1.), channels)
 
-  def protect_highlights_sat(self):
+  def protect_highlights_sat(self, rgbluma = None):
     """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant luma.
 
     The out-of-range RGB components of the pixels are decreased while the in-range RGB components are
-    increased so that the luma is conserved. This desaturates (whitens) the pixels with out-ot-range
+    increased so that the luma is conserved. This desaturates (whitens) the pixels with out-of-range
     components.
-    This aims at protecting the highlights from overflowing when stretching the luma.
+    This aims at protecting the highlights from overflowing when stretching the luma or lightness.
 
     Warning:
       The luma must be <= 1 even though some pixels have HSV value > 1.
+
+    Args:
+      rgbluma (tuple, list or array, optional): The RGB weights of the luma. If None, defaults
+        to `equimage.params.get_RGB_luma()`.
 
     Returns:
       Image: The processed image.
     """
     self.check_color_model("RGB")
-    imgluma = luma(self.image) # Original luma.
+    if rgbluma is None:
+      rgbluma = params.get_RGB_luma()
+    else:
+      rgbluma = np.array(rgbluma, dtype = params.IMGTYPE)
+      if rgbluma.shape != (3,) or np.any(rgbluma < 0.) or np.sum(rgbluma) == 0.:
+        raise ValueError("Error, invalid rgbluma.")
+      rgbluma /= np.sum(rgbluma)
+    imgluma = rgbluma[0]*self.image[0]+rgbluma[1]*self.image[1]+rgbluma[2]*self.image[2] # Original luma.
     if np.any(imgluma > 1.+params.IMGTOL/2):
       print("Warning, can not protect highlights if the luma is out-of-range. Returning original image...")
       return self.copy()
     newimage = self.image/np.maximum(self.image.max(axis = 0), 1.) # Rescale maximum HSV value to 1.
-    newluma = luma(newimage) # Updated luma.
+    newluma = rgbluma[0]*newimage[0]+rgbluma[1]*newimage[1]+rgbluma[2]*newimage[2] # Updated luma.
     # Scale the saturation.
     # Note: The following implementation is failsafe when newluma -> 1 (in which case luma is also 1 in principle),
     # at the cost of a small error.

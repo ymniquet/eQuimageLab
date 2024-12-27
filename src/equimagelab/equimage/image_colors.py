@@ -52,8 +52,9 @@ class MixinImage:
     """Convert the selected channel of a RGB image into a grayscale image.
 
     Args:
-      channel: The converted channel ("V" for the HSV value, "L" for the luma, "Y" for the luminance).
-        Namely, the output grayscale image has the same value/luma/luminance as the original RGB image.
+      channel: The converted channel ("V" for the HSV value, "L" for the luma, "Y" or "L*" for the
+        luminance/lightness). Namely, the output grayscale image has the same value/luma/luminance
+        and lightness as the original RGB image.
       RGB (bool, optional): If True, return the grayscale as a RGB image (with identical R/G/B
         channels). If False (default), return the grayscale as a single channel image.
 
@@ -65,12 +66,12 @@ class MixinImage:
       grayscale = self.value()
     elif channel == "L":
       grayscale = self.luma()
-    elif channel == "Y":
+    elif channel == "Y" or channel == "L*":
       grayscale = self.luminance()
       if self.colorspace == "sRGB":
-        grayscale = colorspaces.lRGB_to_sRGB(grayscale) # Preserve luminance in the sRGB color space.
+        grayscale = colorspaces.lRGB_to_sRGB(grayscale) # Preserve luminance & lightness in the sRGB color space.
     else:
-      raise ValueError(f"Error, invalid channel '{channel}' (must be 'V', 'L' or 'Y').")
+      raise ValueError(f"Error, invalid channel '{channel}' (must be 'V', 'L' or 'Y'/'L*').")
     if RGB:
       return self.newImage(np.repeat(grayscale[np.newaxis, :, :], 3, axis = 0))
     else:

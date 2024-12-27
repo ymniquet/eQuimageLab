@@ -68,8 +68,7 @@ class MixinImage:
           Apply the filter to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the filter to the HSV value (RGB, HSV and and grayscale images).
         - "L": Apply the filter to the luma (RGB and grayscale images).
-        - "L*": Apply the filter to the CIE lightness (RGB and grayscale images).
-          Warning: The CIE lightness is normalized within [0, 1] instead of [0, 100] !
+        - "L*": Apply the filter to the CIE lightness L*/100 (RGB and grayscale images).
 
       filter (str): The filter:
 
@@ -113,7 +112,7 @@ class MixinImage:
     elif channel == "L":
       data = self.luma()
     elif channel == "L*":
-      data = self.lightness()/100.
+      data = self.lightness()
     else:
       raise ValueError(f"Error, unknown or incompatible channel '{channel}'.")
     if filter == "gaussian":

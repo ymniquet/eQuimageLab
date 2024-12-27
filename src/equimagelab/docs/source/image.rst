@@ -108,7 +108,8 @@ Linear RGB images can be converted into sRGB images with the :py:meth:`Image.sRG
 
   .. code-block:: ipython3
 
-    image = eqlab.load_image("NGC6942.fit", colorspace = "lRGB").sRGB()
+    lRGBimage, meta = eqlab.load_image("NGC6942.fit", colorspace = "lRGB")
+    sRGBimage = lRGBimage.sRGB()
 
 .. warning::
 

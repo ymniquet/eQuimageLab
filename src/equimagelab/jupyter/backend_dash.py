@@ -24,6 +24,7 @@ from .utils import prepare_images, prepare_images_as_b64strings, shadowed, highl
 from .backend_plotly import _figure_prepared_image_, _figure_histograms_
 
 from ..equimage import Image, load_image, get_RGB_luma
+from ..equimage.image_stats import parse_channels
 
 class Dashboard():
   """Dashboad class."""
@@ -502,9 +503,9 @@ class Dashboard():
       return
     reference = trans.input
     if trans.type == "hist":
-      for c in trans.channels:
-        if c in "RGBVSL" and not c in channels:
-          channels += c
+      keys = parse_channels(channels)
+      for key in parse_channels(trans.channels, errors = False):
+        if not key in keys: channels += key
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
               sampling = sampling, filters = filters, click = click, synczoom = synczoom, trans = trans)
 

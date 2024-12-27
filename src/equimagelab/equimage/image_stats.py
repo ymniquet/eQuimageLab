@@ -12,6 +12,34 @@ import numpy as np
 from . import params
 from . import helpers
 
+def parse_channels(channels, errors = True):
+  """Parse channel keys.
+
+  Args:
+    channels (str): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
+      "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness/100).
+    errors (bool, optional): If False, discard unknown channel keys; If True (default), raise a ValueError.
+
+  Returns:
+    list: The list of channel keys.
+  """
+  keys = []
+  prevkey = None
+  for key in channels:
+    ok = False
+    if key in ["R", "G", "B", "V", "S", "L"]:
+      keys.append(key)
+      ok = True
+    elif key == "*":
+      if prevkey == "L":
+        keys[-1] += key
+        ok = True
+    elif key == " ":
+      ok = True # Skip spaces.
+    if not ok and errors: raise ValueError(f"Error, unknown channel '{key}'.")
+    prevkey = key
+  return keys
+
 #####################################
 # For inclusion in the Image class. #
 #####################################
@@ -26,10 +54,10 @@ class MixinImage:
     are not recomputed unless required.
 
     Args:
-      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue),  "V" (for HSV value),
-        "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the histograms of the value and saturation can be
-        computed. If channels ends with a "*", it gets appended with the keys already computed and stored in self.hists.
-        Default is "RGBL".
+      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
+        "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness/100). For a HSV image, only the histograms of the
+        value and saturation can be computed. If it ends with a "+", channels gets appended with the keys already computed
+        and stored in self.hists. Default is "RGBL".
       nbins (int, optional): Number of bins within [0, 1] in the histograms. Set to `equimage.params.maxhistbins` if negative,
         and computed from the image statistics using Scott's rule if zero. If None, defaults to `equimage.params.defhistbins`.
       recompute (bool, optional): If False (default), the histograms already registered in self.hists are not recomputed
@@ -38,7 +66,7 @@ class MixinImage:
     Returns:
       dict: hists[key] for key in channels, with:
 
-        - hists[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
+        - hists[key].name = channel name ("Red", "Green", "Blue", "Value", "Saturation", "Luma" or "Lightness", provided for convenience).
         - hists[key].nbins = number of bins within [0, 1].
         - hists[key].edges = histogram bins edges.
         - hists[key].counts = histogram bins counts.
@@ -64,14 +92,14 @@ class MixinImage:
       nbins = params.maxhistbins
     nbins = min(max(nbins, 16), params.maxhistbins)
     if not hasattr(self, "hists"): self.hists = {} # Register empty histograms in the object, if none already computed.
-    if len(channels) > 0: # Append missing keys if channels ends with a "*".
-      if channels[-1] == "*":
-        channels = channels[:-1]
-        for key in self.hists.keys():
-          if not key in channels:
-            channels += key
+    if channels and channels[-1] == "+":
+      keys = parse_channels(channels[:-1])
+      for key in self.hists.keys(): # Add missing keys.
+        if not key in keys: keys.append(key)
+    else:
+      keys = parse_channels(channels)
     hists = {}
-    for key in channels:
+    for key in keys:
       if key in hists: # Already selected.
         print(f"Warning, channel '{key}' selected twice or more...")
         continue
@@ -106,6 +134,10 @@ class MixinImage:
         name = "Luma"
         color = "lightslategray"
         channel = self.luma()
+      elif key == "L*":
+        name = "Lightness"
+        color = "lightsteelblue"
+        channel = self.lightness()
       else:
         raise ValueError(f"Error, unknown channel '{key}'.")
       mmin = np.floor(np.min(channel)*nbins)
@@ -127,9 +159,9 @@ class MixinImage:
 
     Args:
       channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
-        "S" (for HSV saturation), and "L" (for luma). For a HSV image, only the statistics of the value and saturation can be
-        computed. If channels ends with a "*", it gets appended with the keys already computed and stored in self.stats.
-        Default is "RGBL".
+        "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness/100). For a HSV image, only the histograms of the
+        value and saturation can be computed. If it ends with a "+", channels gets appended with the keys already computed
+        and stored in self.hists. Default is "RGBL".
       exclude01 (bool, optional): If True, exclude pixels <= 0 or >= 1 from the median and percentiles.
         Defaults to `equimage.params.exclude01` if None.
       recompute (bool, optional): If False (default), the statistics already registered in self.stats are not recomputed.
@@ -138,7 +170,7 @@ class MixinImage:
     Returns:
       dict: stats[key] for key in channels, with:
 
-        - stats[key].name = channel name ("Red", "Green", "Blue", "Value", "Luma" or "Saturation", provided for convenience).
+        - stats[key].name = channel name ("Red", "Green", "Blue", "Value", "Saturation", "Luma" or "Lightness", provided for convenience).
         - stats[key].width = image width (provided for convenience).
         - stats[key].height = image height (provided for convenience).
         - stats[key].npixels = number of image pixels = image width*image height (provided for convenience).
@@ -153,16 +185,16 @@ class MixinImage:
     """
     if exclude01 is None: exclude01 = params.exclude01
     if not hasattr(self, "stats"): self.stats = {} # Register empty statistics in the object, if none already computed.
-    if len(channels) > 0: # Append missing keys if channels ends with a "*".
-      if channels[-1] == "*":
-        channels = channels[:-1]
-        for key in self.stats.keys():
-          if not key in channels:
-            channels += key
+    if channels and channels[-1] == "+":
+      keys = parse_channels(channels[:-1])
+      for key in self.hists.keys(): # Add missing keys.
+        if not key in keys: keys.append(key)
+    else:
+      keys = parse_channels(channels)
     width, height = self.get_size()
     npixels = width*height
     stats = {}
-    for key in channels:
+    for key in keys:
       if key in stats: # Already selected.
         print(f"Warning, channel '{key}' selected twice or more...")
         continue
@@ -197,6 +229,10 @@ class MixinImage:
         name = "Luma"
         color = "lightslategray"
         channel = self.luma()
+      elif key == "L*":
+        name = "Lightness"
+        color = "lightsteelblue"
+        channel = self.lightness()
       else:
         raise ValueError(f"Error, unknown channel '{key}'.")
       stats[key] = helpers.Container()
