@@ -45,7 +45,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
     Returns:
       Image: The processed image.
@@ -84,7 +84,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
     Returns:
       Image: The processed image.
@@ -122,7 +122,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
     Returns:
       Image: The processed image.
@@ -186,7 +186,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
     Returns:
       Image: The processed image.
@@ -234,7 +234,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
     Returns:
       Image: The processed image.
@@ -281,7 +281,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
     Returns:
       Image: The processed image.
@@ -335,7 +335,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
     Returns:
       Image: The processed image.
@@ -373,7 +373,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
         However, CLAHE is only used, in principle, for the "V" (default), "L(s, b)" and L* channels.
 

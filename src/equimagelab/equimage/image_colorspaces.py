@@ -512,7 +512,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
         if False, the operation must be applied one channel at a time.
@@ -616,7 +616,7 @@ class MixinImage:
         else:
           self.color_space_error()
       elif is_RGB:
-        if self.colorspace == "lRGB": # Convert to L*ab color space.
+        if self.colorspace == "lRGB": # Convert to L*a*b* color space.
           lRGB = self.image
         elif self.colorspace == "sRGB":
           lRGB = sRGB_to_lRGB(self.image)
@@ -626,7 +626,7 @@ class MixinImage:
         lab = skcolor.xyz2lab(xyz, channel_axis = 0)
         lightness = lab[0]/100. # Apply transformation.
         lab[0] = 100.*f(lightness)
-        xyz = skcolor.lab2xyz(lab, channel_axis = 0) # Convert from L*ab color space.
+        xyz = skcolor.lab2xyz(lab, channel_axis = 0) # Convert from L*a*b* color space.
         lRGB = np.tensordot(params.XYZ2RGB, xyz, axes = 1)
         if self.colorspace == "lRGB":
           output = self.newImage(lRGB)
@@ -691,7 +691,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
     Returns:
       Image: The clipped image.

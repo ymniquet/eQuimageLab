@@ -35,7 +35,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -70,7 +70,7 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
+        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
 
       mode (str, optional): How to extend the image across its boundaries:
 
