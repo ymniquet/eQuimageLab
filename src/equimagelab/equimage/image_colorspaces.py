@@ -512,6 +512,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
+        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
 
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
         if False, the operation must be applied one channel at a time.
@@ -603,26 +604,36 @@ class MixinImage:
         return output
       else:
         self.color_model_error()
-    elif channels == "L*" or channels == "L*s" or channels == "L*b":
-      lRGB = self.lRGB()
-      luminance = lRGB.luminance()
-      lightness = luminance_to_lightness(luminance)
-      flightness = f(lightness)
-      fluminance = lightness_to_luminance(flightness)
+    elif channels == "L*":
       if is_gray:
-        output = lRGB.newImage(fluminance)
+        lightness = self.lightness()
+        flightness = f(lightness)
+        fluminance = lightness_to_luminance(flightness)
+        if self.colorspace == "lRGB":
+          output = self.newImage(fluminance)
+        elif self.colorspace == "sRGB":
+          output = self.newImage(lRGB_to_sRGB(fluminance))
+        else:
+          self.color_space_error()
       elif is_RGB:
-        output = lRGB.scale_pixels(luminance, fluminance)
-        if channels == "Ls":
-          output = output.protect_highlights_sat(rgbluma = (.2126, .7152, .0722))
-        elif channels == "Lb":
-          output = output.protect_highlights_blend(lRGB.apply_channels(f, "RGB", multi))
+        if self.colorspace == "lRGB": # Convert to L*ab color space.
+          lRGB = self.image
+        elif self.colorspace == "sRGB":
+          lRGB = sRGB_to_lRGB(self.image)
+        else:
+          self.color_space_error()
+        xyz = np.tensordot(params.RGB2XYZ, lRGB, axes = 1)
+        lab = skcolor.xyz2lab(xyz, channel_axis = 0)
+        lightness = lab[0]/100. # Apply transformation.
+        lab[0] = 100.*f(lightness)
+        xyz = skcolor.lab2xyz(lab, channel_axis = 0) # Convert from L*ab color space.
+        lRGB = np.tensordot(params.XYZ2RGB, xyz, axes = 1)
+        if self.colorspace == "lRGB":
+          output = self.newImage(lRGB)
+        elif self.colorspace == "sRGB":
+          output = self.newImage(lRGB_to_sRGB(lRGB))
       else:
         self.color_model_error()
-      if self.colorspace == "sRGB":
-        output = output.sRGB()
-      elif self.colorspace != "lRGB":
-        raise self.color_space_error()
       if trans: output.trans = transformation(f, lightness, "L*")
       return output
     else:
@@ -680,13 +691,14 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
 
     Returns:
       Image: The clipped image.
     """
     return self.apply_channels(lambda channel: np.clip(channel, 0., 1.), channels)
 
-  def protect_highlights_sat(self, rgbluma = None):
+  def protect_highlights_sat(self):
     """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant luma.
 
     The out-of-range RGB components of the pixels are decreased while the in-range RGB components are
@@ -697,27 +709,16 @@ class MixinImage:
     Warning:
       The luma must be <= 1 even though some pixels have HSV value > 1.
 
-    Args:
-      rgbluma (tuple, list or array, optional): The RGB weights of the luma. If None, defaults
-        to `equimage.params.get_RGB_luma()`.
-
     Returns:
       Image: The processed image.
     """
     self.check_color_model("RGB")
-    if rgbluma is None:
-      rgbluma = params.get_RGB_luma()
-    else:
-      rgbluma = np.array(rgbluma, dtype = params.IMGTYPE)
-      if rgbluma.shape != (3,) or np.any(rgbluma < 0.) or np.sum(rgbluma) == 0.:
-        raise ValueError("Error, invalid rgbluma.")
-      rgbluma /= np.sum(rgbluma)
-    imgluma = rgbluma[0]*self.image[0]+rgbluma[1]*self.image[1]+rgbluma[2]*self.image[2] # Original luma.
+    imgluma = self.luma() # Original luma.
     if np.any(imgluma > 1.+params.IMGTOL/2):
       print("Warning, can not protect highlights if the luma is out-of-range. Returning original image...")
       return self.copy()
     newimage = self.image/np.maximum(self.image.max(axis = 0), 1.) # Rescale maximum HSV value to 1.
-    newluma = rgbluma[0]*newimage[0]+rgbluma[1]*newimage[1]+rgbluma[2]*newimage[2] # Updated luma.
+    newluma = luma(newimage) # Updated luma.
     # Scale the saturation.
     # Note: The following implementation is failsafe when newluma -> 1 (in which case luma is also 1 in principle),
     # at the cost of a small error.

@@ -80,6 +80,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -114,6 +115,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -148,6 +150,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -180,6 +183,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -215,6 +219,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -269,6 +274,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -304,6 +310,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -341,6 +348,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* of the CIE L*ab color model.
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).

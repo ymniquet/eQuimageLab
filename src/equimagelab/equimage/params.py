@@ -21,6 +21,14 @@ IMGTOL = 1.e-6 if IMGTYPE is np.float32 else 1.e-9
 
 IMAGEIO = False
 
+# RGB <-> XYZ conversion matrices.
+
+RGB2XYZ = np.array([[0.412453, 0.357580, 0.180423],
+                    [0.212671, 0.715160, 0.072169],
+                    [0.019334, 0.119193, 0.950227]], dtype = IMGTYPE)
+
+XYZ2RGB = np.linalg.inv(RGB2XYZ)
+
 # Exclude pixels <= 0 or >= 1 from the percentiles in image statistics ?
 
 exclude01 = False

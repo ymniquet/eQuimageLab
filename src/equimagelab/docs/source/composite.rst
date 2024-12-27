@@ -120,3 +120,7 @@ There are three options to deal with the out-of-range pixels:
   3. Blend each out-of-range pixel with (T(R), T(G), T(B)), so that all components fall back in the [0, 1] range. This does preserve neither the luma nor the hue, and also tends to bleach the out-of-range pixels. In the present case, (T(R), T(G), T(B)) = (0.680, 0.443, 0.827) and the transformed pixel becomes (R' = 0.736, G' = 0.423, B' = 1). The output luma is L' = 0.531 and the output saturation is S' = 0.577.
 
 In eQuimageLab, these three options correspond to different choices for the kwarg `channels` of the transformation: 1) `channels` = "L", 2) `channels` = "Ls" and 3) `channels` = "Lb".
+
+.. note::
+
+  eQuimageLab applies operations to the lightness :math:`L^*` in the :math:`L^*a^*b^*` color space & model. This color space & model is only used internally for that purpose, and is not available in the eQuimageLab interface (at present).
