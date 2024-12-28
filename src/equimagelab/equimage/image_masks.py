@@ -68,7 +68,7 @@ class MixinImage:
           Apply the filter to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the filter to the HSV value (RGB, HSV and and grayscale images).
         - "L": Apply the filter to the luma (RGB and grayscale images).
-        - "L*": Apply the filter to the CIE lightness L*/100 (RGB and grayscale images).
+        - "L*": Apply the filter to the CIE lightness L* (RGB and grayscale images).
 
       filter (str): The filter:
 

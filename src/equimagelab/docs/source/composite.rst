@@ -123,4 +123,4 @@ In eQuimageLab, these three options correspond to different choices for the kwar
 
 .. note::
 
-  eQuimageLab applies operations to the lightness :math:`L^*` in the :math:`L^*a^*b^*` color space & model. This color space & model is only used internally for that purpose, and is not available in the eQuimageLab interface (at present).
+  eQuimageLab applies operations to the lightness :math:`L^*` in the :math:`L^*a^*b^*` `color space & model <https://en.wikipedia.org/wiki/CIELAB_color_space>`_. This color space & model is only used internally for that purpose, and is not available in the eQuimageLab interface (at present).

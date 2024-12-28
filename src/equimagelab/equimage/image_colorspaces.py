@@ -512,7 +512,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
 
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
         if False, the operation must be applied one channel at a time.
@@ -691,7 +691,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* of the CIE L*a*b* color model.
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
 
     Returns:
       Image: The clipped image.
