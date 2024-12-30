@@ -43,13 +43,14 @@ The image histograms can be stretched with the following methods of the :py:clas
 .. autosummary::
 
    set_black_point
-   clip_shadow_highlight
+   set_shadow_highlight
    set_dynamic_range
    asinh_stretch
    ghyperbolic_stretch
-   midtone_stretch
    gamma_stretch
-   adjust_midtone_levels
+   midtone_stretch
+   set_midtone_levels
+   rational_stretch
 
 Additionally, the image histograms can be stretched with the following functions, which can be applied either to an :py:class:`Image <equimagelab.equimage.image.Image>` object or to a :py:class:`numpy.ndarray`:
 

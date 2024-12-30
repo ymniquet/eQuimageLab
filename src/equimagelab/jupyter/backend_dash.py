@@ -14,7 +14,7 @@ import os
 import threading
 import numpy as np
 import dash
-from dash import Dash, dcc, html, ctx
+from dash import Dash, dcc, html
 import dash_bootstrap_templates as dbt
 import dash_bootstrap_components as dbc
 import dash_extensions as dxt
@@ -139,7 +139,7 @@ class Dashboard():
     Returns:
       The content of the "datadiv" div element with the image coordinates and data at click point.
     """
-    trigger = ctx.triggered_id # Get the component that triggered the callback.
+    trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return []
     with self.updatelock: # Lock on callback.
       if self.images is None or updateid != self.nupdates: return [] # The dashboard is out of sync.
@@ -187,7 +187,7 @@ class Dashboard():
       else: # Return luma.
         return image
 
-    trigger = ctx.triggered_id # Get the component that triggered the callback.
+    trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return previous, previous, dash.no_update
     with self.updatelock: # Lock on callback.
       if self.images is None or updateid != self.nupdates: return [], [], dash.no_update # The dashboard is out of sync.
@@ -247,7 +247,7 @@ class Dashboard():
     """
     if is_open: return False, [] # Close the off-canvas.
     if n_clicks <= 0: return False, []
-    trigger = ctx.triggered_id # Get the component that triggered the callback.
+    trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return False, []
     with self.updatelock: # Lock on callback.
       if self.images is None or updateid != self.nupdates: return False, [] # The dashboard is out of sync.
@@ -275,7 +275,7 @@ class Dashboard():
     """
     nimages = len(relayouts)
     if not self.synczoom: return [dash.no_update]*nimages, [dash.no_update]*nimages
-    trigger = ctx.triggered_id # Get the component that triggered the callback.
+    trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return [dash.no_update]*nimages, [dash.no_update]*nimages
     with self.updatelock: # Lock on callback.
       n = trigger["index"] # Image index.
@@ -316,7 +316,7 @@ class Dashboard():
       relayouts (dict): Input relayouts of all histograms.
     """
     if not self.synczoom: return # This comes along with image zoom synchronization.
-    trigger = ctx.triggered_id # Get the component that triggered the callback.
+    trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return
     with self.updatelock: # Lock on callback.
       n = trigger["index"] # Image index.

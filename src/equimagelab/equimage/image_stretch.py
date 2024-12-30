@@ -93,8 +93,8 @@ class MixinImage:
     if trans: output.trans.xticks = [shadow]
     return output
 
-  def clip_shadow_highlight(self, shadow, highlight, channels = "", trans = True):
-    """Clip shadows and highlights in selected channels of the image.
+  def set_shadow_highlight(self, shadow, highlight, channels = "", trans = True):
+    """Set shadow and highlight levels in selected channels of the image.
 
     The selected channels are clipped below shadow and above highlight and linearly stretched
     to map [shadow, highlight] onto [0, 1].
@@ -162,15 +162,36 @@ class MixinImage:
     if to[1]-to[0] < 0.0001: raise ValueError("Error, to[1]-to[0] must be >= 0.0001 !")
     return self.apply_channels(lambda channel: stf.dynamic_range_stretch_function(channel, fr, to), channels, trans = trans)
 
-  def asinh_stretch(self, stretch, channels = "", trans = True):
-    """Apply an arcsinh stretch to selected channels of the image.
+  def asinh_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
+    """Apply a (generalized) arcsinh stretch to selected channels of the image.
 
-    The arcsinh stretch function f is applied to the selected channels:
+    The generalized arcsinh stretch function f is applied to the selected channels:
 
-      f(x) = arcsinh(stretch*x)/arcsinh(stretch)
+      - f(x) = b1*x when x <= SPP,
+      - f(x) = a2+b2*arcsinh(-D*(x-SYP)) when SPP <= x <= SYP,
+      - f(x) = a3+b3*arcsinh( D*(x-SYP)) when SYP <= x <= HPP,
+      - f(x) = a4+b4*x when x >= HPP.
+
+    The coefficients a and b are computed so that f is continuous and derivable.
+    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
+    the "highlight protection point". They can tuned to protect contrast in the
+    low and high brightness areas, respectively.
+
+    f(x) falls back to the "standard" arcsinh stretch function:
+
+      f(x) = arcsinh(D*x)/arcsinh(D)
+
+    when SPP = SYP = 0 and HPP = 1.
+
+    For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
+    This function clips the selected channels in the [0, 1] range before stretching.
 
     Args:
-      stretch (float): The stretch factor (must be >= 0).
+      D (float): The stretch factor (must be >= 0).
+      SYP (float): The symmetry point (will be clipped in the [0, 1] range).
+      SPP (float, optional): The shadow protection point (default 0, will be clipped in the [0, SYP] range).
+      HPP (float, optional): The highlight protection point (default 1, will be clipped in the [SYP, 1] range).
+      inverse (bool, optional): Return the inverse stretch if True (default False).
       channels (str, optional): The selected channels:
 
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
@@ -191,8 +212,28 @@ class MixinImage:
     Returns:
       Image: The stretched image.
     """
-    if stretch < 0.: raise ValueError("Error, stretch must be >= 0.")
-    return self.apply_channels(lambda channel: stf.asinh_stretch_function(channel, stretch), channels, trans = trans)
+    if D < 0.: raise ValueError("Error, D must be >= 0.")
+    if SYP < 0.:
+      SYP = 0.
+      print("Warning, changed SYP = 0 !")
+    if SYP > 1.:
+      SYP = 1.
+      print("Warning, changed SYP = 1 !")
+    if SPP < 0.:
+      SPP = 0.
+      print("Warning, changed SPP = 0 !")
+    if SPP > SYP:
+      SPP = SYP
+      print("Warning, changed SPP = SYP !")
+    if HPP < SYP:
+      HPP = SYP
+      print("Warning, changed HPP = SYP !")
+    if HPP > 1.:
+      HPP = 1.
+      print("Warning, changed HPP = 1 !")
+    output =  self.apply_channels(lambda channel: stf.gasinh_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
+    if trans: output.trans.xticks = [SPP, SYP, HPP]
+    return output
 
   def ghyperbolic_stretch(self, lnD1, b, SYP, SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
     """Apply a generalized hyperbolic stretch to selected channels of the image.
@@ -250,6 +291,40 @@ class MixinImage:
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
 
+  def gamma_stretch(self, gamma, channels = "", trans = True):
+    """Apply a power law stretch (gamma correction) to selected channels of the image.
+
+    The gamma stretch function f is applied to the selected channels:
+
+      f(x) = x**gamma
+
+    This function clips the selected channels below 0 before stretching.
+
+    Args:
+      gamma (float): The stretch exponent (must be > 0).
+      channels (str, optional): The selected channels:
+
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, with highlights protection by blending
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+
+    Returns:
+      Image: The stretched image.
+    """
+    if gamma <= 0.: raise ValueError("Error, gamma must be > 0.")
+    return self.apply_channels(lambda channel: stf.gamma_stretch_function(channel, gamma), channels, trans = trans)
+
   def midtone_stretch(self, midtone, inverse = False, channels = "", trans = True):
     """Apply a midtone stretch to selected channels of the image.
 
@@ -287,42 +362,8 @@ class MixinImage:
     if trans: output.trans.xticks = [midtone]
     return output
 
-  def gamma_stretch(self, gamma, channels = "", trans = True):
-    """Apply a power law stretch (gamma correction) to selected channels of the image.
-
-    The gamma stretch function f is applied to the selected channels:
-
-      f(x) = x**gamma
-
-    This function clips the image below 0 before stretching.
-
-    Args:
-      gamma (float): The stretch exponent (must be > 0).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
-
-    Returns:
-      Image: The stretched image.
-    """
-    if gamma <= 0.: raise ValueError("Error, gamma must be > 0.")
-    return self.apply_channels(lambda channel: stf.gamma_stretch_function(channel, gamma), channels, trans = trans)
-
-  def adjust_midtone_levels(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = "", trans = True):
-    """Adjust shadow, midtone, highlight, low and high levels in selected channels of the image.
+  def set_midtone_levels(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = "", trans = True):
+    """Set shadow, midtone, highlight, low and high levels in selected channels of the image.
 
     This method:
       1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight] to [0, 1].
@@ -367,4 +408,77 @@ class MixinImage:
       print("Warning, changed high = 1.")
     output = self.apply_channels(lambda channel: stf.midtone_levels_stretch_function(channel, shadow, midtone, highlight, low, high), channels, trans = trans)
     if trans: output.trans.xticks = [shadow, midtone, highlight]
+    return output
+
+  def rational_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
+    """Apply a rational stretch to selected channels of the image.
+
+    The rational stretch function f is applied to the selected channels:
+
+      - f(x) = b1*x when x <= SPP,
+      - f(x) = a2+(b2*x+c2)/(d2*x+e2) when SPP <= x <= SYP,
+      - f(x) = a3+(b3*x+c3)/(d3*x+e3) when SYP <= x <= HPP,
+      - f(x) = a4+b4*x when x >= HPP.
+
+    The coefficients a, b, c, d and e are computed so that f is continuous and derivable.
+    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
+    the "highlight protection point". They can tuned to protect contrast in the
+    low and high brightness areas, respectively. The strength of the stretch is
+    controlled by the input parameter D that sets the slope at x = SYP.
+
+    f(x) falls back to the midtone stretch function:
+
+      f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone) with midtone = 1/(2*(D+1))
+
+    when SPP = SYP = 0 and HPP = 1.
+
+    This function clips the selected channels in the [0, 1] range before stretching.
+
+    Args:
+      D (float): The stretch factor (must be >= 0).
+      SYP (float): The symmetry point (will be clipped in the [0, 1] range).
+      SPP (float, optional): The shadow protection point (default 0, will be clipped in the [0, SYP] range).
+      HPP (float, optional): The highlight protection point (default 1, will be clipped in the [SYP, 1] range).
+      inverse (bool, optional): Return the inverse stretch if True (default False).
+      channels (str, optional): The selected channels:
+
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, with highlights protection by blending
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+
+    Returns:
+      Image: The stretched image.
+    """
+    if D < 0.: raise ValueError("Error, D must be >= 0.")
+    if SYP < 0.:
+      SYP = 0.
+      print("Warning, changed SYP = 0 !")
+    if SYP > 1.:
+      SYP = 1.
+      print("Warning, changed SYP = 1 !")
+    if SPP < 0.:
+      SPP = 0.
+      print("Warning, changed SPP = 0 !")
+    if SPP > SYP:
+      SPP = SYP
+      print("Warning, changed SPP = SYP !")
+    if HPP < SYP:
+      HPP = SYP
+      print("Warning, changed HPP = SYP !")
+    if HPP > 1.:
+      HPP = 1.
+      print("Warning, changed HPP = 1 !")
+    output = self.apply_channels(lambda channel: stf.rational_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
+    if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output

@@ -19,10 +19,9 @@ __packagepath__ = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
 from .equimage import *
 from .jupyter import *
 
-ruler = "######################################"+len(__version__)*"#"
-print(ruler)
+print("######################################"+len(__version__)*"#")
 print(f"# Welcome to eQuimageLab version {__version__}... #")
-print(ruler)
+print("######################################"+len(__version__)*"#")
 # print(f"Documentation available at: file://{__packagepath__}/docs/build/html/")
 print("Documentation available at: https://astro.ymniquet.fr/codes/equimagelab/docs/")
 

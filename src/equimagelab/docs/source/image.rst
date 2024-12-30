@@ -67,6 +67,12 @@ You can inquire about the size, number of channels, color space and model of an 
    get_color_space
    get_color_model
 
+You can make a copy of an :py:class:`Image <equimagelab.equimage.image.Image>` object with the method:
+
+.. autosummary::
+
+   copy
+
 Loading and saving images
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
