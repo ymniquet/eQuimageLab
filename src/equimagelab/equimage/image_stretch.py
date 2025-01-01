@@ -19,7 +19,6 @@ def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
   """Apply a generalized hyperbolic stretch function to the input image.
 
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
-  This function clips the input image in the [0, 1] range before stretching.
 
   Args:
     image (numpy.ndarray): The input image.
@@ -81,6 +80,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -116,6 +116,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -151,6 +152,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -184,13 +186,12 @@ class MixinImage:
     when SPP = SYP = 0 and HPP = 1.
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
-    This function clips the selected channels in the [0, 1] range before stretching.
 
     Args:
       D (float): The stretch factor (must be >= 0).
-      SYP (float): The symmetry point (will be clipped in the [0, 1] range).
-      SPP (float, optional): The shadow protection point (default 0, will be clipped in the [0, SYP] range).
-      HPP (float, optional): The highlight protection point (default 1, will be clipped in the [SYP, 1] range).
+      SYP (float): The symmetry point (expected in [0, 1]).
+      SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
+      HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
       channels (str, optional): The selected channels:
 
@@ -205,6 +206,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -213,24 +215,12 @@ class MixinImage:
       Image: The stretched image.
     """
     if D < 0.: raise ValueError("Error, D must be >= 0.")
-    if SYP < 0.:
-      SYP = 0.
-      print("Warning, changed SYP = 0 !")
-    if SYP > 1.:
-      SYP = 1.
-      print("Warning, changed SYP = 1 !")
-    if SPP < 0.:
-      SPP = 0.
-      print("Warning, changed SPP = 0 !")
     if SPP > SYP:
       SPP = SYP
       print("Warning, changed SPP = SYP !")
     if HPP < SYP:
       HPP = SYP
       print("Warning, changed HPP = SYP !")
-    if HPP > 1.:
-      HPP = 1.
-      print("Warning, changed HPP = 1 !")
     output =  self.apply_channels(lambda channel: stf.gasinh_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
@@ -239,14 +229,13 @@ class MixinImage:
     """Apply a generalized hyperbolic stretch to selected channels of the image.
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
-    This function clips the selected channels in the [0, 1] range before stretching.
 
     Args:
       logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
       b (float): The local stretch factor.
-      SYP (float): The symmetry point (will be clipped in the [0, 1] range).
-      SPP (float, optional): The shadow protection point (default 0, will be clipped in the [0, SYP] range).
-      HPP (float, optional): The highlight protection point (default 1, will be clipped in the [SYP, 1] range).
+      SYP (float): The symmetry point (expected in [0, 1]).
+      SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
+      HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
       channels (str, optional): The selected channels:
 
@@ -261,6 +250,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -269,24 +259,12 @@ class MixinImage:
       numpy.ndarray: The stretched image.
     """
     if lnD1 < 0.: raise ValueError("Error, lnD1 must be >= 0.")
-    if SYP < 0.:
-      SYP = 0.
-      print("Warning, changed SYP = 0 !")
-    if SYP > 1.:
-      SYP = 1.
-      print("Warning, changed SYP = 1 !")
-    if SPP < 0.:
-      SPP = 0.
-      print("Warning, changed SPP = 0 !")
     if SPP > SYP:
       SPP = SYP
       print("Warning, changed SPP = SYP !")
     if HPP < SYP:
       HPP = SYP
       print("Warning, changed HPP = SYP !")
-    if HPP > 1.:
-      HPP = 1.
-      print("Warning, changed HPP = 1 !")
     output = self.apply_channels(lambda channel: stf.ghyperbolic_stretch_function(channel, lnD1, b, SYP, SPP, HPP, inverse), channels, trans = trans)
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
@@ -315,6 +293,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -350,6 +329,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -390,6 +370,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -432,13 +413,11 @@ class MixinImage:
 
     when SPP = SYP = 0 and HPP = 1.
 
-    This function clips the selected channels in the [0, 1] range before stretching.
-
     Args:
       D (float): The stretch factor (must be >= 0).
-      SYP (float): The symmetry point (will be clipped in the [0, 1] range).
-      SPP (float, optional): The shadow protection point (default 0, will be clipped in the [0, SYP] range).
-      HPP (float, optional): The highlight protection point (default 1, will be clipped in the [SYP, 1] range).
+      SYP (float): The symmetry point (expected in [0, 1]).
+      SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
+      HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
       channels (str, optional): The selected channels:
 
@@ -453,6 +432,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -461,24 +441,12 @@ class MixinImage:
       Image: The stretched image.
     """
     if D < 0.: raise ValueError("Error, D must be >= 0.")
-    if SYP < 0.:
-      SYP = 0.
-      print("Warning, changed SYP = 0 !")
-    if SYP > 1.:
-      SYP = 1.
-      print("Warning, changed SYP = 1 !")
-    if SPP < 0.:
-      SPP = 0.
-      print("Warning, changed SPP = 0 !")
     if SPP > SYP:
       SPP = SYP
       print("Warning, changed SPP = SYP !")
     if HPP < SYP:
       HPP = SYP
       print("Warning, changed HPP = SYP !")
-    if HPP > 1.:
-      HPP = 1.
-      print("Warning, changed HPP = 1 !")
     output = self.apply_channels(lambda channel: stf.rational_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output

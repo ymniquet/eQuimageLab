@@ -39,3 +39,9 @@ Latest news:
   - December 26, 2024: Version 1.0.1.
 
     - First complete documentation.
+
+  - Version 1.0.2.
+
+    - Operations on the lightness :math:`L^*`.
+    - Generalized arcsinh and rational stretches.
+

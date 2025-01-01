@@ -46,6 +46,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
     Returns:
       Image: The processed image.
@@ -85,6 +86,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
     Returns:
       Image: The processed image.
@@ -123,6 +125,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
     Returns:
       Image: The processed image.
@@ -187,6 +190,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
     Returns:
       Image: The processed image.
@@ -235,6 +239,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
     Returns:
       Image: The processed image.
@@ -282,6 +287,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
     Returns:
       Image: The processed image.
@@ -336,6 +342,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
     Returns:
       Image: The processed image.
@@ -374,6 +381,7 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
         However, CLAHE is only used, in principle, for the "V" (default), "L(s, b)" and L* channels.
 

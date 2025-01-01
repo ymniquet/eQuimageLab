@@ -477,6 +477,108 @@ class MixinImage:
   # Channel-selective operations. #
   #################################
 
+  def update_channel(self, data, channel, inplace = False):
+    """Update the selected channel of the image.
+
+    Args:
+      data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height as the image.
+      channel (str): The updated channel:
+
+        - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+          Update the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Update the HSV value (RGB, HSV and and grayscale images).
+        - "S": Update the HSV saturation (RGB and HSV images).
+        - "L": Update the luma (RGB and grayscale images).
+        - "L*": Update the lightness L* in the CIE L*a*b* color space (RGB and grayscale images).
+
+      inplace (bool, optional): If True, update the image "in place"; if False (default), return a new image.
+
+    Returns:
+      Image: The updated image.
+    """
+    data = np.asarray(data, dtype = params.IMGTYPE)
+    if data.shape != self.get_size():
+      raise ValueError("Error, the channel data must be a 2D array with the same with and height as the image.")
+    is_RGB  = (self.colormodel == "RGB")
+    is_HSV  = (self.colormodel == "HSV")
+    is_gray = (self.colormodel == "gray")
+    output = self if inplace else self.copy()
+    channel = channel.strip()
+    if channel in ["R", "G", "B"]:
+      if not is_RGB: self.color_model_error()
+      if channel == "R":
+        output.image[0] = data
+      elif channel == "G":
+        output.image[1] = data
+      else:
+        output.image[2] = data
+      return output
+    elif channel in ["1", "2", "3"]:
+      if channel != "1" and is_gray: self.color_model_error()
+      if channel == "1":
+        output.image[0] = data
+      elif channel == "2":
+        output.image[1] = data
+      else:
+        output.image[2] = data
+      return output
+    elif channel == "V":
+      if is_gray:
+        output.image[0] = data
+      elif is_RGB:
+        output.image[:] = helpers.scale_pixels(output.image, output.value(), data)
+      elif is_HSV:
+        output.image[2] = data
+      else:
+        self.color_model_error()
+      return output
+    elif channel == "S":
+      if is_RGB:
+        hsv = RGB_to_HSV(output.image)
+        hsv[1] = data
+        output.image[:] = HSV_to_RGB(hsv)
+      elif is_HSV:
+        output.image[1] = data
+      else:
+        self.color_model_error()
+      return output
+    elif channel == "L":
+      if is_gray:
+        output.image[0] = data
+      elif is_RGB:
+        output.image[:] = helpers.scale_pixels(output.image, output.luma(), data)
+      else:
+        self.color_model_error()
+      return output
+    elif channel == "L*":
+      if is_gray:
+        luminance = lightness_to_luminance(data)
+        if output.colorspace == "lRGB":
+          output.image[0] = luminance
+        elif self.colorspace == "sRGB":
+          output.image[0] = lRGB_to_sRGB(luminance)
+        else:
+          self.color_space_error()
+      elif is_RGB:
+        if self.colorspace == "lRGB": # Convert to L*a*b* color space.
+          lRGB = output.image
+        elif self.colorspace == "sRGB":
+          lRGB = sRGB_to_lRGB(output.image)
+        else:
+          self.color_space_error()
+        xyz = np.tensordot(params.RGB2XYZ, lRGB, axes = 1)
+        lab = skcolor.xyz2lab(xyz, channel_axis = 0)
+        lab[0] = 100.*data
+        xyz = skcolor.lab2xyz(lab, channel_axis = 0) # Convert from L*a*b* color space.
+        lRGB = np.tensordot(params.XYZ2RGB, xyz, axes = 1)
+        if self.colorspace == "lRGB":
+          output.image[:] = lRGB
+        elif self.colorspace == "sRGB":
+          output.image[:] = lRGB_to_sRGB(lRGB)
+      else:
+        self.color_model_error()
+      return output
+
   def apply_channels(self, f, channels, multi = True, trans = False):
     """Apply the operation f(channel) to selected channels of the image.
 
@@ -512,7 +614,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
+          (RGB and grayscale images).
 
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
         if False, the operation must be applied one channel at a time.
@@ -549,6 +652,7 @@ class MixinImage:
     is_RGB  = (self.colormodel == "RGB")
     is_HSV  = (self.colormodel == "HSV")
     is_gray = (self.colormodel == "gray")
+    channels = channels.strip()
     if channels == "":
       if is_gray:
         channels = "L"
@@ -560,19 +664,17 @@ class MixinImage:
       if is_gray:
         output = self.newImage(f(self.image))
         if trans: output.trans = transformation(f, self.image, "V")
-        return output
       elif is_RGB:
         value = self.value()
         output = self.scale_pixels(value, f(value))
         if trans: output.trans = transformation(f, value, "V")
-        return output
       elif is_HSV:
         output = self.copy()
         output.image[2] = f(self.image[2])
         if trans: output.trans = transformation(f, self.image[2], "V")
-        return output
       else:
         self.color_model_error()
+      return output
     elif channels == "S":
       if is_RGB:
         hsv = self.HSV()
@@ -580,30 +682,28 @@ class MixinImage:
         hsv.image[1] = f(hsv.image[1])
         output = hsv.RGB()
         if trans: output.trans = t
-        return output
       elif is_HSV:
         output = self.copy()
         output.image[1] = f(self.image[1])
         if trans: output.trans = transformation(f, self.image[1], "S")
-        return output
       else:
         self.color_model_error()
+      return output
     elif channels == "L" or channels == "Ls" or channels == "Lb":
       if is_gray:
         output = self.newImage(f(self.image))
         if trans: output.trans = transformation(f, self.image, "L")
-        return output
       elif is_RGB:
         luma = self.luma()
         output = self.scale_pixels(luma, f(luma))
         if channels == "Ls":
-          output = output.protect_highlights_sat()
+          output = output.protect_highlights_saturation()
         elif channels == "Lb":
           output = output.protect_highlights_blend(self.apply_channels(f, "RGB", multi))
         if trans: output.trans = transformation(f, luma, "L")
-        return output
       else:
         self.color_model_error()
+      return output
     elif channels == "L*":
       if is_gray:
         lightness = self.lightness()
@@ -692,13 +792,14 @@ class MixinImage:
         - "Lb": Apply the operation to the luma, with highlights protection by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
 
     Returns:
       Image: The clipped image.
     """
     return self.apply_channels(lambda channel: np.clip(channel, 0., 1.), channels)
 
-  def protect_highlights_sat(self):
+  def protect_highlights_saturation(self):
     """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant luma.
 
     The out-of-range RGB components of the pixels are decreased while the in-range RGB components are
@@ -728,22 +829,22 @@ class MixinImage:
     print(f"Maximum luma difference = {abs(diffluma).max()}.")
     return self.newImage(output)
 
-  def protect_highlights_blend(self, bounded):
-    """Normalize out-of-range pixels with HSV value > 1 by blending with a bounded image with HSV values <= 1.
+  def protect_highlights_blend(self, inrange):
+    """Normalize out-of-range pixels with HSV value > 1 by blending with an "in-range" image with HSV values <= 1.
 
-    Each pixel of the image with out-of-range RGB components is brought back in-range by blending with the
-    pixel of the input bounded image.
+    Each pixel of the image with out-of-range RGB components is brought back in the [0, 1] range by blending with the
+    corresponding pixel of the input "in-range" image.
     This aims at protecting the highlights from overflowing when stretching the luma.
 
     Args:
-      bounded (Image): The "in-range" image to blend with. All pixels must have HSV values <= 1.
+      inrange (Image): The "in-range" image to blend with. All pixels must have HSV values <= 1.
 
     Returns:
       Image: The processed image.
     """
-    self.check_color_model("RGB") ; bounded.check_color_model("RGB")
-    if np.any(bounded.value() > 1.+params.IMGTOL/2):
-      print("Warning, can not protect highlights if the input bounded image is out-of-range. Returning original image...")
+    self.check_color_model("RGB") ; inrange.check_color_model("RGB")
+    if np.any(inrange.value() > 1.+params.IMGTOL/2):
+      print("Warning, can not protect highlights if the input inrange image is out-of-range. Returning original image...")
       return self.copy()
-    mixing = np.where(self.image > 1.+params.IMGTOL, helpers.failsafe_divide(self.image-1., self.image-bounded.image), 0.)
-    return self.blend(bounded, mixing.max(axis = 0))
+    mixing = np.where(self.image > 1.+params.IMGTOL, helpers.failsafe_divide(self.image-1., self.image-inrange.image), 0.)
+    return self.blend(inrange, mixing.max(axis = 0))

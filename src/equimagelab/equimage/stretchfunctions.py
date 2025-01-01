@@ -94,16 +94,12 @@ def gasinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
   when SPP = SYP = 0 and HPP = 1.
 
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
-  This function clips the input data x in the [0, 1] range before stretching.
 
   See also:
     asinh_stretch_function
 
   Note:
   Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js.
-
-  Todo:
-  Do not clip the input data and extend the transformation outside [0, 1] ?
 
   Args:
     x (numpy.ndarray): The input data.
@@ -116,11 +112,9 @@ def gasinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
   Returns:
     numpy.ndarray: The stretched data.
   """
-  x = np.clip(x, 0., 1.)
   if abs(D) < 1.e-6: # Identity.
     return x
   else:
-    y = np.empty_like(x)
     qs = -np.arcsinh(D*(SYP-SPP))
     q0 = qs-SPP*D/np.sqrt(1.+(D*(SYP-SPP))**2)
     qh = np.arcsinh(D*(HPP-SYP))
@@ -138,6 +132,7 @@ def gasinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
     a4 = q*(qh-q0-HPP*D/np.sqrt(1.+(D*(HPP-SYP))**2))
     b4 = D*q/np.sqrt(1.+(D*(HPP-SYP))**2)
     # Generalized arcsinh transformation.
+    y = np.empty_like(x)
     if not inverse:
       mask = (x <  SPP)
       y[mask] =    b1*x[mask]
@@ -165,13 +160,9 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
   """Return the generalized hyperbolic stretch function f(x).
 
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
-  This function clips the input data x in the [0, 1] range before stretching.
 
   Note:
   Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js.
-
-  Todo:
-  Do not clip the input data and extend the transformation outside [0, 1] ?
 
   Args:
     x (numpy.ndarray): The input data.
@@ -186,7 +177,6 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
     numpy.ndarray: The stretched data.
   """
   D = np.exp(logD1)-1.
-  x = np.clip(x, 0., 1.)
   if abs(D) < 1.e-6: # Identity.
     return x
   else:
@@ -432,16 +422,11 @@ def rational_stretch_function(x, D, SYP, SPP, HPP, inverse):
 
   when SPP = SYP = 0 and HPP = 1.
 
-  This function clips the input data x in the [0, 1] range before stretching.
-
   See also:
     midtone_stretch_function
 
   Note:
   Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js.
-
-  Todo:
-  Do not clip the input data and extend the transformation outside [0, 1] ?
 
   Args:
     x (numpy.ndarray): The input data.
@@ -454,51 +439,53 @@ def rational_stretch_function(x, D, SYP, SPP, HPP, inverse):
   Returns:
     numpy.ndarray: The stretched data.
   """
-  x = np.clip(x, 0., 1.)
-  y = np.empty_like(x)
-  m = 1./(2.*(D+1.))
-  qs = (m-1.)*(SPP-SYP)/((1.-2.*m)*(SPP-SYP)-m)
-  q0 = qs+SPP*(m-1.)*m/((1.-2.*m)*(SPP-SYP)-m)**2
-  qh = (m-1.)*(HPP-SYP)/((2.*m-1.)*(HPP-SYP)-m)
-  q1 = qh+(HPP-1.)*(m-1.)*m/((2.*m-1.)*(HPP-SYP)-m)**2
-  q = 1./(q1-q0)
-  # Coefficient for x < SPP.
-  b1 = q*m*(1.-m)/((1.-2.*m)*(SPP-SYP)-m)**2
-  # Coefficients for SPP <= x < SYP.
-  a2 = -q0*q
-  b2 = (m-1.)*q
-  c2 = -b2*SYP
-  d2 = 1.-2.*m
-  e2 = -d2*SYP-m
-  # Coefficients for SYP <= x < HPP.
-  a3 = -q0*q
-  b3 = (m-1.)*q
-  c3 = -b3*SYP
-  d3 = 2.*m-1.
-  e3 = -d3*SYP-m
-  # Coefficients for x >= HPP.
-  a4 = q*(qh-q0-HPP*(1.-m)*m/((2.*m-1.)*(HPP-SYP)-m)**2)
-  b4 = -q*m*(m-1.)/((2.*m-1.)*(HPP-SYP)-m)**2
-  # Generalized rational transformation.
-  if not inverse:
-    mask = (x <  SPP)
-    y[mask] =    b1*x[mask]
-    mask = (x >= SPP) & (x < SYP)
-    y[mask] = a2+(b2*x[mask]+c2)/(d2*x[mask]+e2)
-    mask = (x >= SYP) & (x < HPP)
-    y[mask] = a3+(b3*x[mask]+c3)/(d3*x[mask]+e3)
-    mask = (x >= HPP)
-    y[mask] = a4+b4*x[mask]
+  if abs(D) < 1.e-6: # Identity.
+    return x
   else:
-    SPT = b1*SPP
-    SYT = a2
-    HPT = a4+b4*HPP
-    mask = (x <  SPT)
-    y[mask] = x[mask]/b1
-    mask = (x >= SPT) & (x < SYT)
-    y[mask] = (c2-e2*(x[mask]-a2))/(d2*(x[mask]-a2)-b2)
-    mask = (x >= SYT) & (x < HPT)
-    y[mask] = (c3-e3*(x[mask]-a3))/(d3*(x[mask]-a3)-b3)
-    mask = (x >= HPT)
-    y[mask] = (x[mask]-a4)/b4
-  return y
+    m = 1./(2.*(D+1.))
+    qs = (m-1.)*(SPP-SYP)/((1.-2.*m)*(SPP-SYP)-m)
+    q0 = qs+SPP*(m-1.)*m/((1.-2.*m)*(SPP-SYP)-m)**2
+    qh = (m-1.)*(HPP-SYP)/((2.*m-1.)*(HPP-SYP)-m)
+    q1 = qh+(HPP-1.)*(m-1.)*m/((2.*m-1.)*(HPP-SYP)-m)**2
+    q = 1./(q1-q0)
+    # Coefficient for x < SPP.
+    b1 = q*m*(1.-m)/((1.-2.*m)*(SPP-SYP)-m)**2
+    # Coefficients for SPP <= x < SYP.
+    a2 = -q0*q
+    b2 = (m-1.)*q
+    c2 = -b2*SYP
+    d2 = 1.-2.*m
+    e2 = -d2*SYP-m
+    # Coefficients for SYP <= x < HPP.
+    a3 = -q0*q
+    b3 = (m-1.)*q
+    c3 = -b3*SYP
+    d3 = 2.*m-1.
+    e3 = -d3*SYP-m
+    # Coefficients for x >= HPP.
+    a4 = q*(qh-q0-HPP*(1.-m)*m/((2.*m-1.)*(HPP-SYP)-m)**2)
+    b4 = -q*m*(m-1.)/((2.*m-1.)*(HPP-SYP)-m)**2
+    # Generalized rational transformation.
+    y = np.empty_like(x)
+    if not inverse:
+      mask = (x <  SPP)
+      y[mask] =    b1*x[mask]
+      mask = (x >= SPP) & (x < SYP)
+      y[mask] = a2+(b2*x[mask]+c2)/(d2*x[mask]+e2)
+      mask = (x >= SYP) & (x < HPP)
+      y[mask] = a3+(b3*x[mask]+c3)/(d3*x[mask]+e3)
+      mask = (x >= HPP)
+      y[mask] = a4+b4*x[mask]
+    else:
+      SPT = b1*SPP
+      SYT = a2
+      HPT = a4+b4*HPP
+      mask = (x <  SPT)
+      y[mask] = x[mask]/b1
+      mask = (x >= SPT) & (x < SYT)
+      y[mask] = (c2-e2*(x[mask]-a2))/(d2*(x[mask]-a2)-b2)
+      mask = (x >= SYT) & (x < HPT)
+      y[mask] = (c3-e3*(x[mask]-a3))/(d3*(x[mask]-a3)-b3)
+      mask = (x >= HPT)
+      y[mask] = (x[mask]-a4)/b4
+    return y
