@@ -141,6 +141,9 @@ def luminance_to_lightness(Y):
   Note that L* is conventionally defined within [0, 100]. However, this
   function returns the scaled lightness L*/100 within [0, 1].
 
+  See also:
+    The reciprocal lightness_to_luminance function.
+
   Args:
     Y (numpy.ndarray): The luminance Y.
 
@@ -153,7 +156,7 @@ def lightness_to_luminance(L):
   """Compute the lRGB luminance Y from the CIE lightness L*.
 
   See also:
-    luminance_to_lightness
+    The reciprocal luminance_to_lightness function.
 
   Args:
     L (numpy.ndarray): The CIE lightness L*/100.
