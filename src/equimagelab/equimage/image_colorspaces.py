@@ -29,8 +29,10 @@ def sRGB_to_lRGB(image):
   Returns:
     numpy.ndarray: The converted lRGB image.
   """
-  srgb = np.clip(image, 0., None)
-  return np.where(srgb > .04045, ((srgb+.055)/1.055)**2.4, .07739943839475116*srgb)
+  output = .07739943839475116*image
+  mask = (image > .04045)
+  output[mask] = ((image[mask]+.055)/1.055)**2.4
+  return output
 
 def lRGB_to_sRGB(image):
   """Convert the input linear RGB image into a sRGB image.
@@ -44,8 +46,10 @@ def lRGB_to_sRGB(image):
   Returns:
     numpy.ndarray: The converted sRGB image.
   """
-  lrgb = np.clip(image, 0., None)
-  return np.where(lrgb > .0031308072830676845, 1.055*lrgb**(1./2.4)-.055, 12.919990386749564*lrgb)
+  output = 12.919990386749564*image
+  mask = (image > .0031308072830676845)
+  output[mask] = 1.055*image[mask]**(1./2.4)-.055
+  return output
 
 ###########################
 # RGB <-> HSV conversion. #
@@ -150,21 +154,26 @@ def luminance_to_lightness(Y):
   Returns:
     numpy.ndarray: The CIE lightness L*/100.
   """
-  return np.where(Y > .008856, 1.16*Y**(1./3.)-.16, 9.032962955130763*Y)
+  Lstar = 9.032962955130763*Y
+  mask = (Y > .008856)
+  Lstar[mask] = 1.16*Y[mask]**(1./3.)-.16
+  return Lstar
 
-def lightness_to_luminance(L):
+def lightness_to_luminance(Lstar):
   """Compute the lRGB luminance Y from the CIE lightness L*.
 
   See also:
     The reciprocal luminance_to_lightness function.
 
   Args:
-    L (numpy.ndarray): The CIE lightness L*/100.
+    Lstar (numpy.ndarray): The CIE lightness L*/100.
 
   Returns:
     numpy.ndarray: The luminance Y.
   """
-  return np.where(L > .07999591993063804, ((L+.16)/1.16)**3, 0.11070564608393481*L)
+  Y = 0.11070564608393481*Lstar
+  mask = (Lstar > .07999591993063804)
+  Y[mask] = ((Lstar[mask]+.16)/1.16)**3
 
 def lRGB_luminance(image):
   """Return the luminance Y of the input linear RGB image.
