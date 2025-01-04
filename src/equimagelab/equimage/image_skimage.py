@@ -41,10 +41,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+        - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -81,10 +83,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+        - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -120,10 +124,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+        - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -185,10 +191,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+        - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -234,10 +242,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+        - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -282,10 +292,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+        - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -337,10 +349,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+        - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -376,10 +390,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+        - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 

@@ -45,12 +45,13 @@ The image histograms can be stretched with the following methods of the :py:clas
    set_black_point
    set_shadow_highlight
    set_dynamic_range
-   asinh_stretch
+   arcsinh_stretch
    ghyperbolic_stretch
    gamma_stretch
    midtone_stretch
    set_midtone_levels
    rational_stretch
+   curve_stretch
 
 Additionally, the image histograms can be stretched with the following functions, which can be applied either to an :py:class:`Image <equimagelab.equimage.image.Image>` object or to a :py:class:`numpy.ndarray`:
 
@@ -60,6 +61,13 @@ Additionally, the image histograms can be stretched with the following functions
 
    mts
    ghs
+
+The following functions provide alternative parametrizations of the midtone stretch [based on (input, output) levels or on the slope at the origin instead of the midtone]:
+
+.. autosummary::
+
+   midtone_from_point
+   midtone_from_slope
 
 Finally, eQuimageLab provides the following interface to the `Scikit-Image <https://scikit-image.org/>`_ implementation of `CLAHE <https://en.wikipedia.org/wiki/Adaptive_histogram_equalization>`_ as a method of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
 

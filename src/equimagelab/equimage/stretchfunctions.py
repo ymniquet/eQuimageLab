@@ -60,7 +60,7 @@ def dynamic_range_stretch_function(x, fr, to):
   """
   return np.interp(x, fr, to)
 
-def asinh_stretch_function(x, D):
+def arcsinh_stretch_function(x, D):
   """Return the arcsinh stretch function f(x).
 
   The arcsinh stretch function is defined as:
@@ -76,7 +76,7 @@ def asinh_stretch_function(x, D):
   """
   return np.arcsinh(D*x)/np.arcsinh(D) if abs(D) > 1.e-6 else x
 
-def gasinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
+def garcsinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
   """Return the generalized arcsinh stretch function f(x).
 
   This is a generalization of the arcsinh stretch function, defined as:
@@ -96,10 +96,11 @@ def gasinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
   See also:
-    asinh_stretch_function
+    arcsinh_stretch_function
 
   Note:
-  Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js.
+    Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
+    by Mike Cranfield (GNU GPL license).
 
   Args:
     x (numpy.ndarray): The input data.
@@ -162,7 +163,8 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
   Note:
-  Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js.
+    Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
+    by Mike Cranfield (GNU GPL license).
 
   Args:
     x (numpy.ndarray): The input data.
@@ -426,7 +428,8 @@ def rational_stretch_function(x, D, SYP, SPP, HPP, inverse):
     midtone_stretch_function
 
   Note:
-  Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js.
+    Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
+    by Mike Cranfield (GNU GPL license).
 
   Args:
     x (numpy.ndarray): The input data.

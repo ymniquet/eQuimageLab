@@ -7,7 +7,9 @@
 
 """Histogram stretch."""
 
+import copy
 import numpy as np
+from scipy.interpolate import Akima1DInterpolator
 
 from . import stretchfunctions as stf
 
@@ -37,11 +39,11 @@ def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
 def mts(image, midtone):
   """Apply a midtone stretch function to the input image.
 
-  The midtone stretch function is defined as:
+  The midtone stretch function
 
     f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
 
-  In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
+  is a rational interpolation from f(0) = 0 to f(1) = 1 such that f(midtone) = 0.5.
 
   Args:
     image (numpy.ndarray): The input image.
@@ -52,12 +54,63 @@ def mts(image, midtone):
   """
   return stf.midtone_stretch_function(image, midtone, False)
 
+#############################
+# Midtone parametrizations. #
+#############################
+
+def midtone_from_point(xt, yt):
+  """Return the midtone such that f(xt) = yt, with f the midtone stretch function.
+
+  The midtone stretch function
+
+    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
+
+  is a rational interpolation from f(0) = 0 to f(1) = 1 such that f(midtone) = 0.5.
+
+  This function provides an alternative, more general parametrization of f.
+  It returns the midtone such that f(xt) = yt.
+
+  Note that midtone = xt if yt = 0.5 by design.
+
+  Args:
+    xt (float): The target input level (expected in ]0, 1[).
+    yt (float): The target output level (expected in ]0, 1[).
+
+  Returns:
+    float: The midtone such that f(xt) = yt.
+  """
+  return xt*(1.-yt)/(xt+yt-2.*xt*yt)
+
+def midtone_from_slope(s0):
+  """Return the midtone such that f'(0) = s0, with f the midtone stretch function.
+
+  The midtone stretch function
+
+    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
+
+  is a rational interpolation from f(0) = 0 to f(1) = 1 such that f(midtone) = 0.5.
+
+  This function provides an alternative parametrization of f.
+  It returns the midtone such that f'(0) = [df/dx](0) = s0.
+
+  Args:
+    s0 (float): The target slope at the origin (expected > 0).
+
+  Returns:
+    float: The midtone such that f'(0) = s0.
+  """
+  return 1./(1.+s0)
+
 #####################################
 # For inclusion in the Image class. #
 #####################################
 
 class MixinImage:
   """To be included in the Image class."""
+
+  #####################
+  # Simple stretches. #
+  #####################
 
   def set_black_point(self, shadow, channels = "", trans = True):
     """Set the black (shadow) level in selected channels of the image.
@@ -75,10 +128,6 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -111,10 +160,6 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -138,7 +183,7 @@ class MixinImage:
 
     Args:
       fr (a tuple or list of two floats such that fr[1] > fr[0]): The input range.
-      to (a tuple or list of two floats such that to[1] > to[0]): The output range.
+      to (a tuple or list of two floats such that 1 >= to[1] > to[0] >= 0): The output range.
       channels (str, optional): The selected channels:
 
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
@@ -147,10 +192,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -160,11 +207,13 @@ class MixinImage:
     Returns:
       Image: The processed image.
     """
+    if to[0] < 0.: raise ValueError("Error, to[0] must be >= 0 !")
+    if to[1] > 1.: raise ValueError("Error, to[1] must be <= 1 !")
     if fr[1]-fr[0] < 0.0001: raise ValueError("Error, fr[1]-fr[0] must be >= 0.0001 !")
     if to[1]-to[0] < 0.0001: raise ValueError("Error, to[1]-to[0] must be >= 0.0001 !")
     return self.apply_channels(lambda channel: stf.dynamic_range_stretch_function(channel, fr, to), channels, trans = trans)
 
-  def asinh_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
+  def arcsinh_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
     """Apply a (generalized) arcsinh stretch to selected channels of the image.
 
     The generalized arcsinh stretch function f is applied to the selected channels:
@@ -187,6 +236,10 @@ class MixinImage:
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
+    Note:
+      Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
+      by Mike Cranfield (GNU GPL license).
+
     Args:
       D (float): The stretch factor (must be >= 0).
       SYP (float): The symmetry point (expected in [0, 1]).
@@ -201,10 +254,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -221,7 +276,7 @@ class MixinImage:
     if HPP < SYP:
       HPP = SYP
       print("Warning, changed HPP = SYP !")
-    output =  self.apply_channels(lambda channel: stf.gasinh_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
+    output =  self.apply_channels(lambda channel: stf.garcsinh_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
 
@@ -229,6 +284,10 @@ class MixinImage:
     """Apply a generalized hyperbolic stretch to selected channels of the image.
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
+
+    Note:
+      Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
+      by Mike Cranfield (GNU GPL license).
 
     Args:
       logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
@@ -245,10 +304,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -288,10 +349,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -324,10 +387,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -365,10 +430,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -413,6 +480,10 @@ class MixinImage:
 
     when SPP = SYP = 0 and HPP = 1.
 
+    Note:
+      Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
+      by Mike Cranfield (GNU GPL license).
+
     Args:
       D (float): The stretch factor (must be >= 0).
       SYP (float): The symmetry point (expected in [0, 1]).
@@ -427,10 +498,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -450,3 +523,115 @@ class MixinImage:
     output = self.apply_channels(lambda channel: stf.rational_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
+
+  def curve_stretch(self, f, channels = "", trans = True):
+    """Apply a curve stretch, defined by an arbitrary function f, to selected channels of the image.
+
+    f may be, e.g., an explicit function or a spline interpolator. It must be defined over the whole
+    range spanned by the image.
+
+    Args:
+      f (function): The function f(numpy.ndarray) → numpy.ndarray applied to the selected channels.
+      channels (str, optional): The selected channels:
+
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
+
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+
+    Returns:
+      Image: The stretched image.
+    """
+    return self.apply_channels(f, channels, trans = trans)
+
+  ######################
+  # Complex stretches. #
+  ######################
+
+  def statistical_stretch(self, median, boost = 0., maxiter = 5, channels = "", trans = True):
+
+    def compute_medians(image, channels):
+      if channels == "V":
+        cmeds = {"V": np.median(image.value())}
+      elif channels == "S":
+        cmeds = {"S": np.median(image.saturation())}
+      elif channels in ["L", "Ls", "Lb", "Ln"]:
+        cmeds = {"L": np.median(image.luma())}
+      elif channels == "L*":
+        cmeds = {"L*": np.median(image.lightness())}
+      else:
+        nc = self.get_nc()
+        is_RGB  = (image.colormodel == "RGB")
+        cmeds = {}
+        for c in channels:
+          if c.isdigit():
+            ic = int(c)-1
+            ok = (ic >= 0) and (ic < nc)
+          elif c == "R":
+            ic = 0
+            ok = is_RGB
+          elif c == "G":
+            ic = 1
+            ok = is_RGB
+          elif c == "B":
+            ic = 2
+            ok = is_RGB
+          elif c != " ": # Skip spaces.
+            ok = False
+          if not ok: raise ValueError(f"Error, invalid or incompatible channel '{c}'.")
+          if cmeds.get(c, None) is not None:
+            print(f"Warning, channel '{c}' selected twice or more...")
+            continue
+          cmeds[c] = np.median(image.image[ic])
+      return cmeds
+
+    def print_medians(cmeds):
+      spacer = ""
+      for key, med in cmeds.items():
+        print(f"{spacer}Median({key}) = {med:.5f}", end = "")
+        spacer = "; "
+      print()
+
+    nc = self.get_nc()
+    channels = channels.strip()
+    if channels == "":
+      if self.colormodel == "gray":
+        channels = "L"
+      elif self.colormodel == "RGB":
+        channels = "RGB"
+      else:
+        for ic in range(nc): channels += str(ic+1)
+    print("Before median stretch:")
+    cmeds = compute_medians(self, channels)
+    print_medians(cmeds)
+    avgmed = np.mean(list(cmeds.values()))
+    if len(cmeds) > 1: print(f"Average median = {avgmed:.5f}.")
+    print("After median stretch:")
+    stretched = self.midtone_stretch(midtone_from_point(avgmed, median), channels = channels, trans = trans)
+    cmeds = compute_medians(stretched, channels)
+    print_medians(cmeds)
+    avgmed = np.mean(list(cmeds.values()))
+    if len(cmeds) > 1: print(f"Average median = {avgmed:.5f}.")
+    if boost <= 0.: return stretched
+    print("Boosting stretch above average median...")
+    x = [0., .5*avgmed, avgmed, .25+.75*avgmed, .75+.25*avgmed, 1.]
+    y = [x[0], x[1], x[2], x[3]**(1.-boost), (x[4]**(1.-boost))**(1.-boost), x[5]]
+    fboost = Akima1DInterpolator(x, y)
+    boosted = stretched.curve_stretch(fboost, channels = channels, trans = False)
+    if trans:
+      boosted.trans = copy.copy(stretched.trans)
+      boosted.trans.y = fboost(boosted.trans.y)
+    return boosted

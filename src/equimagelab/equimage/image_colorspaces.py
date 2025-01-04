@@ -516,20 +516,16 @@ class MixinImage:
     is_gray = (self.colormodel == "gray")
     output = self if inplace else self.copy()
     channel = channel.strip()
-    if channel in ["R", "G", "B"]:
+    if channel.isdigit():
+      ic = int(channel)-1
+      if ic < 0 or ic >= self.get_nc(): raise ValueError(f"Error, invalid or incompatible channel '{channel}'.")
+      output.image[ic] = data
+      return output
+    elif channel in ["R", "G", "B"]:
       if not is_RGB: self.color_model_error()
       if channel == "R":
         output.image[0] = data
       elif channel == "G":
-        output.image[1] = data
-      else:
-        output.image[2] = data
-      return output
-    elif channel in ["1", "2", "3"]:
-      if channel != "1" and is_gray: self.color_model_error()
-      if channel == "1":
-        output.image[0] = data
-      elif channel == "2":
         output.image[1] = data
       else:
         output.image[2] = data
@@ -590,6 +586,8 @@ class MixinImage:
       else:
         self.color_model_error()
       return output
+    else:
+      raise ValueError(f"Error, invalid or incompatible channel '{channel}'.")
 
   def apply_channels(self, f, channels, multi = True, trans = False):
     """Apply the operation f(channel) to selected channels of the image.
@@ -622,10 +620,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+        - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
           (RGB and grayscale images).
 
@@ -634,13 +634,13 @@ class MixinImage:
       trans (bool, optional): If True (default False), embeds the transformation y = f(x in [0, 1]) in the
         output image as output.trans, where:
 
-          - output.trans.type = "hist".
-          - output.trans.input is a reference to the input image (self).
-          - output.trans.channels are the channels selected for the transformation.
-          - output.trans.x is a mesh of the [0, 1] interval.
-          - output.trans.y = f(output.trans.x)
-          - output.trans.ylabel is a label for output.trans.y.
-          - output.trans.xticks is a list of remarkable x values for this transformation (if any).
+        - output.trans.type = "hist".
+        - output.trans.input is a reference to the input image (self).
+        - output.trans.channels are the channels selected for the transformation.
+        - output.trans.x is a mesh of the [0, 1] interval.
+        - output.trans.y = f(output.trans.x)
+        - output.trans.ylabel is a label for output.trans.y.
+        - output.trans.xticks is a list of remarkable x values for this transformation (if any).
 
         trans shall be set True only for *local* histogram transformations f.
 
@@ -661,6 +661,7 @@ class MixinImage:
       t.ylabel = "f"
       return t
 
+    nc = self.get_nc()
     is_RGB  = (self.colormodel == "RGB")
     is_HSV  = (self.colormodel == "HSV")
     is_gray = (self.colormodel == "gray")
@@ -671,7 +672,7 @@ class MixinImage:
       elif is_RGB:
         channels = "RGB"
       else:
-        channels = "123"
+        for ic in range(nc): channels += str(ic+1)
     if channels == "V":
       if is_gray:
         output = self.newImage(f(self.image))
@@ -701,18 +702,24 @@ class MixinImage:
       else:
         self.color_model_error()
       return output
-    elif channels == "L" or channels == "Ls" or channels == "Lb":
+    elif channels in ["L", "Ls", "Lb", "Ln"]:
       if is_gray:
         output = self.newImage(f(self.image))
         if trans: output.trans = transformation(f, self.image, "L")
       elif is_RGB:
         luma = self.luma()
         output = self.scale_pixels(luma, f(luma))
+        if trans: t = transformation(f, luma, "L")
         if channels == "Ls":
           output = output.protect_highlights_saturation()
         elif channels == "Lb":
           output = output.protect_highlights_blend(self.apply_channels(f, "RGB", multi))
-        if trans: output.trans = transformation(f, luma, "L")
+        elif channels == "Ln":
+          maximum = np.max(output.image)
+          if maximum > 1:
+            output.image /= maximum
+            if trans: t.y /= maximum
+        if trans: output.trans = t
       else:
         self.color_model_error()
       return output
@@ -749,18 +756,11 @@ class MixinImage:
       if trans: output.trans = transformation(f, lightness, "L*")
       return output
     else:
-      nc = self.get_nc()
       selected = nc*[False]
       for c in channels:
-        ok = True
-        if c == "1":
-          ic = 0
-        elif c == "2":
-          ic = 1
-          ok = not is_gray
-        elif c == "3":
-          ic = 2
-          ok = not is_gray
+        if c.isdigit():
+          ic = int(c)-1
+          ok = (ic >= 0) and (ic < nc)
         elif c == "R":
           ic = 0
           ok = is_RGB
@@ -772,7 +772,7 @@ class MixinImage:
           ok = is_RGB
         elif c != " ": # Skip spaces.
           ok = False
-        if not ok: raise ValueError(f"Error, unknown or incompatible channel '{c}'.")
+        if not ok: raise ValueError(f"Error, invalid or incompatible channel '{c}'.")
         if selected[ic]: print(f"Warning, channel '{c}' selected twice or more...")
         selected[ic] = True
       if all(selected) and multi:
@@ -799,9 +799,9 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, with highlights protection by desaturation.
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, with highlights protection by blending.
+        - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).

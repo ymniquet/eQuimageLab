@@ -97,7 +97,7 @@ Also see the following functions of eQuimageLab about histograms:
 Working with composite channels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Some operations (e.g., histograms stretches) can be applied separately to the R, G, B channels of a color image, or to a composite channel (see the generic :py:meth:`Image.apply_channels() <equimagelab.equimage.image_colorspaces.MixinImage.update_channels>` and :py:meth:`Image.apply_channels() <equimagelab.equimage.image_colorspaces.MixinImage.apply_channels>` methods).
+Some operations (e.g., histograms stretches) can be applied separately to the R, G, B channels of a color image, or to a composite channel (see the generic :py:meth:`Image.update_channel() <equimagelab.equimage.image_colorspaces.MixinImage.update_channel>` and :py:meth:`Image.apply_channels() <equimagelab.equimage.image_colorspaces.MixinImage.apply_channels>` methods).
 
 **In particular, operations on the value V and luma L of an image are designed to preserve the ratios between the RGB components, hence to preserve the hue and saturation (the "apparent" color).**
 
@@ -109,17 +109,19 @@ Let us take the midtone transformation T(x) = 0.761x/(0.522x+0.239) as an exampl
 
 Let us now consider a pixel with components (R = 0.4, G = 0.2, B = 0.6) and luma L = 0.2126R+0.7152G+0.0722B = 0.271. Under transformation T, the luma of this pixel doubles and becomes L' = T(L) = 0.543. Accordingly, the new RGB components of the pixel are (R' = 0.8, G' = 0.4, B' = 1.2). While L' is still within bounds, B' is not.
 
-Such out-of-range pixels are cut-off when displayed or saved in png and tiff files.
+Such out-of-range pixels are clipped when displayed or saved in png and tiff files.
 
-There are three options to deal with the out-of-range pixels:
+There are four options to deal with the out-of-range pixels:
 
   1. Leave "as is": If you are confident that further processing will bring back these pixels in the [0, 1] range (or are satisfied with the look of the image), you can simply... do nothing about them.
 
-  2. Desaturate at constant luma: decrease the saturation of the out-of-range pixels while keeping the luma constant until all components fall back in the [0, 1] range. This preserves the intent of the stretch (the luma is unchanged) but tends to bleach the out-of-range pixels. In the present case, the transformed pixel becomes (R' = 0.722, G' = 0.443, B' = 1) and the saturation decreases from S' = 0.667 to S' = 0.557.
+  2. Desaturate at constant luma: decrease the saturation of the out-of-range pixels while keeping the luma constant until all components fall back in the [0, 1] range. This preserves the intent of the stretch (the luma is unchanged, as well as the hue) but tends to bleach the out-of-range pixels. In the present case, the transformed pixel becomes (R' = 0.722, G' = 0.443, B' = 1) and the saturation decreases from S' = 0.667 to S' = 0.557.
 
-  3. Blend each out-of-range pixel with (T(R), T(G), T(B)), so that all components fall back in the [0, 1] range. This does preserve neither the luma nor the hue, and also tends to bleach the out-of-range pixels. In the present case, (T(R), T(G), T(B)) = (0.680, 0.443, 0.827) and the transformed pixel becomes (R' = 0.736, G' = 0.423, B' = 1). The output luma is L' = 0.531 and the output saturation is S' = 0.577.
+  3. Blend each out-of-range pixel with (T(R), T(G), T(B)), so that all components fall back in the [0, 1] range. This preserves neither the luma nor the hue & saturation, and also tends to bleach the out-of-range pixels. In the present case, (T(R), T(G), T(B)) = (0.680, 0.443, 0.827) and the transformed pixel becomes (R' = 0.736, G' = 0.423, B' = 1). The output luma is L' = 0.531 and the output saturation is S' = 0.577.
 
-In eQuimageLab, these three options correspond to different choices for the kwarg `channels` of the transformation: 1) `channels` = "L", 2) `channels` = "Ls" and 3) `channels` = "Lb".
+  4. Normalize the image so that all pixels fall back in the [0, 1] range (namely, divide the image by the maximum RGB value). This preserves the hue and saturation, but darkens the whole image.
+
+In eQuimageLab, these four options correspond to different choices for the kwarg `channels` of the transformation: 1) channels = "L", 2) channels = "Ls", 3) channels = "Lb", and 4) channels = "Ln".
 
 .. note::
 
