@@ -100,7 +100,7 @@ def garcsinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
 
   Note:
     Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
-    by Mike Cranfield (GNU GPL license).
+    (published by Mike Cranfield under GNU GPL license).
 
   Args:
     x (numpy.ndarray): The input data.
@@ -164,7 +164,7 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
 
   Note:
     Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
-    by Mike Cranfield (GNU GPL license).
+    (published by Mike Cranfield under GNU GPL license).
 
   Args:
     x (numpy.ndarray): The input data.
@@ -429,7 +429,7 @@ def rational_stretch_function(x, D, SYP, SPP, HPP, inverse):
 
   Note:
     Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
-    by Mike Cranfield (GNU GPL license).
+    (published by Mike Cranfield under GNU GPL license).
 
   Args:
     x (numpy.ndarray): The input data.

@@ -58,7 +58,7 @@ def mts(image, midtone):
 # Midtone parametrizations. #
 #############################
 
-def midtone_from_point(xt, yt):
+def midtone_point(xt, yt):
   """Return the midtone such that f(xt) = yt, with f the midtone stretch function.
 
   The midtone stretch function
@@ -81,7 +81,7 @@ def midtone_from_point(xt, yt):
   """
   return xt*(1.-yt)/(xt+yt-2.*xt*yt)
 
-def midtone_from_slope(s0):
+def midtone_slope(s0):
   """Return the midtone such that f'(0) = s0, with f the midtone stretch function.
 
   The midtone stretch function
@@ -238,7 +238,7 @@ class MixinImage:
 
     Note:
       Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
-      by Mike Cranfield (GNU GPL license).
+      (published by Mike Cranfield under GNU GPL license).
 
     Args:
       D (float): The stretch factor (must be >= 0).
@@ -287,7 +287,7 @@ class MixinImage:
 
     Note:
       Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
-      by Mike Cranfield (GNU GPL license).
+      (published by Mike Cranfield under GNU GPL license).
 
     Args:
       logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
@@ -411,6 +411,7 @@ class MixinImage:
     """Set shadow, midtone, highlight, low and high levels in selected channels of the image.
 
     This method:
+
       1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight] to [0, 1].
       2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
          with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
@@ -482,7 +483,7 @@ class MixinImage:
 
     Note:
       Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
-      by Mike Cranfield (GNU GPL license).
+      (published by Mike Cranfield under GNU GPL license).
 
     Args:
       D (float): The stretch factor (must be >= 0).
@@ -562,8 +563,53 @@ class MixinImage:
   ######################
 
   def statistical_stretch(self, median, boost = 0., maxiter = 5, channels = "", trans = True):
+    """Statistical stretch of selected channels of the image.
 
+    This method:
+
+      1) Applies (a series) of midtone stretches to the selected channels in order to bring the
+         average median of these channels to the target level.
+      2) Optionally, boosts contrast above the target median with a specially designed curve stretch.
+
+    It is recommended to set the black point of the image before running the statistical stretch.
+
+    Note:
+      This is a Python implementation of the statistical stretch algorithm of Seti Astro,
+      published by Franklin Marek under the CC BY-NC 4.0 license (http://creativecommons.org/licenses/by-nc/4.0/).
+      See: https://www.setiastro.com/statistical-stretch.
+
+    Todo: Highlight protection strategy (in both midtone & boost stretches or in boost only ?).
+
+    Args:
+      median (float): The target median (expected in ]0, 1[).
+      boost (float, optional): The contrast boost (expected >= 0; default 0).
+      maxiter (int, optional): The maximum number of midtone stretches applied to reach the target median (default 5).
+        For a single channel, the algorithm shall actually converge in one iteration.
+      channels (str, optional): The selected channels:
+
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
+
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+
+    Returns:
+      Image: The stretched image.
+    """
     def compute_medians(image, channels):
+      """Compute the medians of the channels of the input image, returned as a dictionary."""
       if channels == "V":
         cmeds = {"V": np.median(image.value())}
       elif channels == "S":
@@ -573,25 +619,19 @@ class MixinImage:
       elif channels == "L*":
         cmeds = {"L*": np.median(image.lightness())}
       else:
-        nc = self.get_nc()
-        is_RGB  = (image.colormodel == "RGB")
         cmeds = {}
+        nc = self.get_nc()
         for c in channels:
-          if c.isdigit():
+          if c in "RGB":
+            if image.colormodel != "RGB": self.color_model_error()
+            ic = "RGB".index(c)
+          elif c.isdigit():
             ic = int(c)-1
-            ok = (ic >= 0) and (ic < nc)
-          elif c == "R":
-            ic = 0
-            ok = is_RGB
-          elif c == "G":
-            ic = 1
-            ok = is_RGB
-          elif c == "B":
-            ic = 2
-            ok = is_RGB
-          elif c != " ": # Skip spaces.
-            ok = False
-          if not ok: raise ValueError(f"Error, invalid or incompatible channel '{c}'.")
+            if ic < 0 or ic >= nc: raise ValueError(f"Error, invalid channel '{c}'.")
+          elif c == " ": # Skip spaces.
+            continue
+          else:
+            raise ValueError(f"Error, unknown channel '{c}'.")
           if cmeds.get(c, None) is not None:
             print(f"Warning, channel '{c}' selected twice or more...")
             continue
@@ -599,13 +639,13 @@ class MixinImage:
       return cmeds
 
     def print_medians(cmeds):
+      """Print the input dictionary of medians."""
       spacer = ""
       for key, med in cmeds.items():
         print(f"{spacer}Median({key}) = {med:.5f}", end = "")
         spacer = "; "
       print()
 
-    nc = self.get_nc()
     channels = channels.strip()
     if channels == "":
       if self.colormodel == "gray":
@@ -613,25 +653,39 @@ class MixinImage:
       elif self.colormodel == "RGB":
         channels = "RGB"
       else:
-        for ic in range(nc): channels += str(ic+1)
-    print("Before median stretch:")
-    cmeds = compute_medians(self, channels)
-    print_medians(cmeds)
-    avgmed = np.mean(list(cmeds.values()))
-    if len(cmeds) > 1: print(f"Average median = {avgmed:.5f}.")
-    print("After median stretch:")
-    stretched = self.midtone_stretch(midtone_from_point(avgmed, median), channels = channels, trans = trans)
-    cmeds = compute_medians(stretched, channels)
-    print_medians(cmeds)
-    avgmed = np.mean(list(cmeds.values()))
-    if len(cmeds) > 1: print(f"Average median = {avgmed:.5f}.")
-    if boost <= 0.: return stretched
-    print("Boosting stretch above average median...")
-    x = [0., .5*avgmed, avgmed, .25+.75*avgmed, .75+.25*avgmed, 1.]
-    y = [x[0], x[1], x[2], x[3]**(1.-boost), (x[4]**(1.-boost))**(1.-boost), x[5]]
-    fboost = Akima1DInterpolator(x, y)
-    boosted = stretched.curve_stretch(fboost, channels = channels, trans = False)
-    if trans:
-      boosted.trans = copy.copy(stretched.trans)
-      boosted.trans.y = fboost(boosted.trans.y)
-    return boosted
+        for ic in range(self.get_nc()): channels += str(ic+1)
+    # Iterate midtone stretches until the average median of the channels matches the target median.
+    # This shall actually converge in one iteration for a single channel image.
+    niter = 0
+    output = self
+    while True:
+      print(f"Iteration #{niter}:")
+      cmeds = compute_medians(output, channels) # Compute the medians of the channels.
+      print_medians(cmeds)
+      avgmed = np.mean(list(cmeds.values())) # Compute the average median.
+      if len(cmeds) > 1: print(f"Average median = {avgmed:.5f}.")
+      converged = (abs(avgmed-median) < .001) # Check convergence.
+      if converged or niter >= maxiter: break
+      niter += 1
+      # Compute the effective midtone such that f(avgmed) = median, with f the midtone stretch function.
+      midtone = midtone_point(avgmed, median)
+      output = output.midtone_stretch(midtone, channels = channels, trans = trans and (niter == 1)) # Midtone stretch.
+      if trans: # Compose all transformations.
+        if niter == 1:
+          ctrans = copy.copy(output.trans)
+          ctrans.xticks = [avgmed]
+        else:
+          ctrans.y = stf.midtone_stretch_function(ctrans.y, midtone, False)
+    if converged:
+      print(f"Converged in {niter} iteration(s).")
+    else:
+      print(f"Warning, did not converge within {maxiter} iteration(s).")
+    if boost > 0.: # Boost contrast above the average median.
+      print("Boosting constrast above average median...")
+      x = [0., .5*avgmed, avgmed, .25+.75*avgmed, .75+.25*avgmed, 1.]
+      y = [x[0], x[1], x[2], x[3]**(1.-boost), (x[4]**(1.-boost))**(1.-boost), x[5]]
+      fboost = Akima1DInterpolator(x, y)
+      output = output.curve_stretch(fboost, channels = channels, trans = False)
+      if trans: ctrans.y = fboost(ctrans.y)
+    if trans: output.trans = ctrans
+    return output

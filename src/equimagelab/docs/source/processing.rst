@@ -62,14 +62,22 @@ Additionally, the image histograms can be stretched with the following functions
    mts
    ghs
 
-The following functions provide alternative parametrizations of the midtone stretch [based on (input, output) levels or on the slope at the origin instead of the midtone]:
+The following functions provide alternative parametrizations of the midtone stretch [based on target (input, output) levels or on the slope at the origin instead of the midtone]:
 
 .. autosummary::
 
-   midtone_from_point
-   midtone_from_slope
+   midtone_point
+   midtone_slope
 
-Finally, eQuimageLab provides the following interface to the `Scikit-Image <https://scikit-image.org/>`_ implementation of `CLAHE <https://en.wikipedia.org/wiki/Adaptive_histogram_equalization>`_ as a method of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+Moreover, eQuimageLab provides an implementation of the `statistical stretch of SETI astro <https://www.setiastro.com/statistical-stretch>`_ as a method of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+
+.. currentmodule:: equimagelab.equimage.image_stretch.MixinImage
+
+.. autosummary::
+
+   statistical_stretch
+
+Finally, eQuimageLab provides an interface to the `Scikit-Image <https://scikit-image.org/>`_ implementation of `CLAHE <https://en.wikipedia.org/wiki/Adaptive_histogram_equalization>`_ as a method of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
 
 .. currentmodule:: equimagelab.equimage.image_skimage.MixinImage
 

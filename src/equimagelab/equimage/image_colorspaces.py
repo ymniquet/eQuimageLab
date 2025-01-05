@@ -516,19 +516,15 @@ class MixinImage:
     is_gray = (self.colormodel == "gray")
     output = self if inplace else self.copy()
     channel = channel.strip()
-    if channel.isdigit():
-      ic = int(channel)-1
-      if ic < 0 or ic >= self.get_nc(): raise ValueError(f"Error, invalid or incompatible channel '{channel}'.")
+    if channel in ["R", "G", "B"]:
+      if not is_RGB: self.color_model_error()
+      ic = "RGB".index(channel)
       output.image[ic] = data
       return output
-    elif channel in ["R", "G", "B"]:
-      if not is_RGB: self.color_model_error()
-      if channel == "R":
-        output.image[0] = data
-      elif channel == "G":
-        output.image[1] = data
-      else:
-        output.image[2] = data
+    elif channel.isdigit():
+      ic = int(channel)-1
+      if ic < 0 or ic >= self.get_nc(): raise ValueError(f"Error, invalid channel '{channel}'.")
+      output.image[ic] = data
       return output
     elif channel == "V":
       if is_gray:
@@ -587,7 +583,7 @@ class MixinImage:
         self.color_model_error()
       return output
     else:
-      raise ValueError(f"Error, invalid or incompatible channel '{channel}'.")
+      raise ValueError(f"Error, unknown channel '{channel}'.")
 
   def apply_channels(self, f, channels, multi = True, trans = False):
     """Apply the operation f(channel) to selected channels of the image.
@@ -758,21 +754,16 @@ class MixinImage:
     else:
       selected = nc*[False]
       for c in channels:
-        if c.isdigit():
+        if c in "RGB":
+          if not is_RGB: self.color_model_error()
+          ic = "RGB".index(c)
+        elif c.isdigit():
           ic = int(c)-1
-          ok = (ic >= 0) and (ic < nc)
-        elif c == "R":
-          ic = 0
-          ok = is_RGB
-        elif c == "G":
-          ic = 1
-          ok = is_RGB
-        elif c == "B":
-          ic = 2
-          ok = is_RGB
-        elif c != " ": # Skip spaces.
-          ok = False
-        if not ok: raise ValueError(f"Error, invalid or incompatible channel '{c}'.")
+          if ic < 0 or ic >= nc: raise ValueError(f"Error, invalid channel '{c}'.")
+        elif c == " ": # Skip spaces.
+          continue
+        else:
+          raise ValueError(f"Error, unknown channel '{c}'.")
         if selected[ic]: print(f"Warning, channel '{c}' selected twice or more...")
         selected[ic] = True
       if all(selected) and multi:

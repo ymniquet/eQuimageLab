@@ -16,6 +16,7 @@ import numpy as np
 from . import params
 
 from .image_io import load_image_as_array
+from .image_stretch import midtone_point
 
 #####################################
 # For inclusion in the Image class. #
@@ -153,7 +154,9 @@ class MixinImage:
     if cmdpath is None: raise FileNotFoundError("Error, starnet++ executable not found in the PATH.")
     path, cmd = os.path.split(cmdpath)
     # Stretch the image if needed.
-    if midtone == "auto": midtone = np.median(self.luma())
+    if midtone == "auto":
+      avgmedian = np.mean(np.median(self.image, axis = (-1, -2)))
+      midtone = midtone_point(avgmedian, .33)
     if midtone != .5:
       image = self.midtone_stretch(midtone)
     else:
