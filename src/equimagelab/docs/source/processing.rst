@@ -47,7 +47,7 @@ The image histograms can be stretched with the following methods of the :py:clas
    set_dynamic_range
    arcsinh_stretch
    ghyperbolic_stretch
-   gamma_stretch
+   powerlaw_stretch
    midtone_stretch
    set_midtone_levels
    rational_stretch

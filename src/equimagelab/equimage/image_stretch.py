@@ -330,10 +330,10 @@ class MixinImage:
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
 
-  def gamma_stretch(self, gamma, channels = "", trans = True):
+  def powerlaw_stretch(self, gamma, channels = "", trans = True):
     """Apply a power law stretch (gamma correction) to selected channels of the image.
 
-    The gamma stretch function f is applied to the selected channels:
+    The power law stretch function f is applied to the selected channels:
 
       f(x) = x**gamma
 
@@ -365,7 +365,7 @@ class MixinImage:
       Image: The stretched image.
     """
     if gamma <= 0.: raise ValueError("Error, gamma must be > 0.")
-    return self.apply_channels(lambda channel: stf.gamma_stretch_function(channel, gamma), channels, trans = trans)
+    return self.apply_channels(lambda channel: stf.powerlaw_stretch_function(channel, gamma), channels, trans = trans)
 
   def midtone_stretch(self, midtone, inverse = False, channels = "", trans = True):
     """Apply a midtone stretch to selected channels of the image.
@@ -562,7 +562,7 @@ class MixinImage:
   # Complex stretches. #
   ######################
 
-  def statistical_stretch(self, median, boost = 0., maxiter = 5, channels = "", trans = True):
+  def statistical_stretch(self, median, boost = 0., maxiter = 5, accuracy = .001, channels = "", trans = True):
     """Statistical stretch of selected channels of the image.
 
     This method:
@@ -571,20 +571,24 @@ class MixinImage:
          average median of these channels to the target level.
       2) Optionally, boosts contrast above the target median with a specially designed curve stretch.
 
-    It is recommended to set the black point of the image before running the statistical stretch.
+    It is recommended to set the black point of the image before the statistical stretch.
 
     Note:
       This is a Python implementation of the statistical stretch algorithm of Seti Astro,
       published by Franklin Marek under the CC BY-NC 4.0 license (http://creativecommons.org/licenses/by-nc/4.0/).
       See: https://www.setiastro.com/statistical-stretch.
 
-    Todo: Highlight protection strategy (in both midtone & boost stretches or in boost only ?).
+    Hint:
+      You can apply the midtone stretches and the final contrast boost separately by calling this method twice with
+      the same target median, first with boost = 0, then with boost > 0. As the average median of the image already
+      matches the target median, no midtone stretch will be applied on second call.
 
     Args:
       median (float): The target median (expected in ]0, 1[).
-      boost (float, optional): The contrast boost (expected >= 0; default 0).
+      boost (float, optional): The contrast boost (expected >= 0; default 0 = no boost).
       maxiter (int, optional): The maximum number of midtone stretches applied to reach the target median (default 5).
         For a single channel, the algorithm shall actually converge in one iteration.
+      accuracy (float, optional): The target accuracy of the median (default 0.001).
       channels (str, optional): The selected channels:
 
         - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
@@ -658,6 +662,7 @@ class MixinImage:
     # This shall actually converge in one iteration for a single channel image.
     niter = 0
     output = self
+    ctrans = None
     while True:
       print(f"Iteration #{niter}:")
       cmeds = compute_medians(output, channels) # Compute the medians of the channels.
@@ -669,9 +674,9 @@ class MixinImage:
       niter += 1
       # Compute the effective midtone such that f(avgmed) = median, with f the midtone stretch function.
       midtone = midtone_point(avgmed, median)
-      output = output.midtone_stretch(midtone, channels = channels, trans = trans and (niter == 1)) # Midtone stretch.
-      if trans: # Compose all transformations.
-        if niter == 1:
+      output = output.midtone_stretch(midtone, channels = channels, trans = trans and ctrans is None) # Midtone stretch.
+      if trans: # Cumulative transformation.
+        if ctrans is None:
           ctrans = copy.copy(output.trans)
           ctrans.xticks = [avgmed]
         else:
@@ -681,11 +686,16 @@ class MixinImage:
     else:
       print(f"Warning, did not converge within {maxiter} iteration(s).")
     if boost > 0.: # Boost contrast above the average median.
-      print("Boosting constrast above average median...")
+      print("Boosting constrast above the average median...")
       x = [0., .5*avgmed, avgmed, .25+.75*avgmed, .75+.25*avgmed, 1.]
       y = [x[0], x[1], x[2], x[3]**(1.-boost), (x[4]**(1.-boost))**(1.-boost), x[5]]
-      fboost = Akima1DInterpolator(x, y)
-      output = output.curve_stretch(fboost, channels = channels, trans = False)
-      if trans: ctrans.y = fboost(ctrans.y)
-    if trans: output.trans = ctrans
+      fboost = Akima1DInterpolator(x, y) # Akima spline.
+      output = output.curve_stretch(fboost, channels = channels, trans = trans and ctrans is None) # Curve stretch.
+      if trans:
+        if ctrans is None: # Cumulative transformation.
+          ctrans = copy.copy(output.trans)
+          ctrans.xticks = [avgmed]
+        else:
+          ctrans.y = fboost(ctrans.y)
+    if trans and ctrans is not None: output.trans = ctrans
     return output

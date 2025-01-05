@@ -341,10 +341,10 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
         y[mask] = (x[mask]-a4)/b4
     return y
 
-def gamma_stretch_function(x, gamma):
-  """Return the gamma stretch function f(x).
+def powerlaw_stretch_function(x, gamma):
+  """Return the power law stretch function f(x).
 
-  The gamma stretch function is defined as:
+  The power law stretch function is defined as:
 
     f(x) = x**gamma
 

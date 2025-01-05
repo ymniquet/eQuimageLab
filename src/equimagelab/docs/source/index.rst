@@ -43,5 +43,6 @@ Latest news:
   - Version 1.0.2.
 
     - Operations on the lightness :math:`L^*`.
-    - Generalized arcsinh, rational and curve stretches.
-
+    - Generalized arcsinh and rational stretches.
+    - Curve stretch.
+    - Statistical stretch.
