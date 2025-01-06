@@ -48,7 +48,7 @@ def dynamic_range_stretch_function(x, fr, to):
   """Return the linear dynamic range stretch function f(x).
 
   The input data x is linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]],
-  then clipped in the [to[0], to[1]] range.
+  then clipped outside the [to[0], to[1]] range.
 
   Args:
     x (numpy.ndarray): The input data.
@@ -60,6 +60,169 @@ def dynamic_range_stretch_function(x, fr, to):
   """
   return np.interp(x, fr, to)
 
+def harmonic_stretch_function(x, D, inverse):
+  """Return the harmonic stretch function f(x).
+
+  The harmonic stretch function defined as
+
+    f(x) = (D+1)*x/(D*x+1)
+
+  is a rational interpolation from f(0) = 0 to f(1) = 1 with f'(0) = D+1.
+
+  See also:
+    gharmonic_stretch_function
+
+  Args:
+    x (numpy.ndarray): The input data.
+    D (float): The stretch parameter (expected >= -1).
+    inverse (bool): Return the inverse stretch function if True.
+
+  Returns:
+    numpy.ndarray: The stretched data.
+  """
+  if abs(D+1.) < 1.e-6: return x # Identity.
+  return x/((D+1.)-D*x) if inverse else (D+1.)*x/(D*x+1.)
+
+def gharmonic_stretch_function(x, D, SYP, SPP, HPP, inverse):
+  """Return the generalized harmonic stretch function f(x).
+
+  The generalized harmonic stretch function is defined as:
+
+    - f(x) = b1*x when x <= SPP,
+    - f(x) = a2+(b2*x+c2)/(d2*x+e2) when SPP <= x <= SYP,
+    - f(x) = a3+(b3*x+c3)/(d3*x+e3) when SYP <= x <= HPP,
+    - f(x) = a4+b4*x when x >= HPP.
+
+  The coefficients a, b, c, d and e are computed so that f is continuous and derivable.
+  The strength of the stretch is controlled by the input parameter D that sets the
+  slope at x = SYP. f(x) falls back to the midtone stretch function:
+
+    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone) with midtone = 1/(2*(D+1))
+
+  when SPP = SYP = 0 and HPP = 1.
+
+  See also:
+    harmonic_stretch_function
+
+  Note:
+    Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
+    (published by Mike Cranfield under GNU GPL license).
+
+  Args:
+    x (numpy.ndarray): The input data.
+    D (float): The stretch parameter (expected >= 0).
+    SYP (float): The symmetry point (expected in [0, 1]).
+    SPP (float): The shadow protection point (expected in [0, SYP]).
+    HPP (float): The highlight protection point (expected in [SYP, 1]).
+    inverse (bool): Return the inverse stretch function if True.
+
+  Returns:
+    numpy.ndarray: The stretched data.
+  """
+  if abs(D) < 1.e-6: # Identity.
+    return x
+  else:
+    m = 1./(2.*(D+1.))
+    qs = (m-1.)*(SPP-SYP)/((1.-2.*m)*(SPP-SYP)-m)
+    q0 = qs+SPP*(m-1.)*m/((1.-2.*m)*(SPP-SYP)-m)**2
+    qh = (m-1.)*(HPP-SYP)/((2.*m-1.)*(HPP-SYP)-m)
+    q1 = qh+(HPP-1.)*(m-1.)*m/((2.*m-1.)*(HPP-SYP)-m)**2
+    q = 1./(q1-q0)
+    # Coefficient for x < SPP.
+    b1 = q*m*(1.-m)/((1.-2.*m)*(SPP-SYP)-m)**2
+    # Coefficients for SPP <= x < SYP.
+    a2 = -q0*q
+    b2 = (m-1.)*q
+    c2 = -b2*SYP
+    d2 = 1.-2.*m
+    e2 = -d2*SYP-m
+    # Coefficients for SYP <= x < HPP.
+    a3 = -q0*q
+    b3 = (m-1.)*q
+    c3 = -b3*SYP
+    d3 = 2.*m-1.
+    e3 = -d3*SYP-m
+    # Coefficients for x >= HPP.
+    a4 = q*(qh-q0-HPP*(1.-m)*m/((2.*m-1.)*(HPP-SYP)-m)**2)
+    b4 = -q*m*(m-1.)/((2.*m-1.)*(HPP-SYP)-m)**2
+    # Generalized rational transformation.
+    y = np.empty_like(x)
+    if not inverse:
+      mask = (x <  SPP)
+      y[mask] =    b1*x[mask]
+      mask = (x >= SPP) & (x < SYP)
+      y[mask] = a2+(b2*x[mask]+c2)/(d2*x[mask]+e2)
+      mask = (x >= SYP) & (x < HPP)
+      y[mask] = a3+(b3*x[mask]+c3)/(d3*x[mask]+e3)
+      mask = (x >= HPP)
+      y[mask] = a4+b4*x[mask]
+    else:
+      SPT = b1*SPP
+      SYT = a2
+      HPT = a4+b4*HPP
+      mask = (x <  SPT)
+      y[mask] = x[mask]/b1
+      mask = (x >= SPT) & (x < SYT)
+      y[mask] = (c2-e2*(x[mask]-a2))/(d2*(x[mask]-a2)-b2)
+      mask = (x >= SYT) & (x < HPT)
+      y[mask] = (c3-e3*(x[mask]-a3))/(d3*(x[mask]-a3)-b3)
+      mask = (x >= HPT)
+      y[mask] = (x[mask]-a4)/b4
+    return y
+
+def midtone_stretch_function(x, midtone, inverse):
+  """Return the midtone stretch function f(x).
+
+  The midtone stretch function defined as
+
+    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
+
+  is a rational interpolation from f(0) = 0 to f(1) = 1 with f(midtone) = 0.5.
+  It is nothing else than the harmonic stretch function with D = 1/midtone-2.
+
+  See also:
+    harmonic_stretch_function
+
+  Args:
+    x (numpy.ndarray): The input data.
+    midtone (float): The midtone level (expected in ]0, 1[]).
+    inverse (bool): Return the inverse stretch function if True.
+
+  Returns:
+    numpy.ndarray: The stretched data.
+  """
+  return midtone*x/((2.*midtone-1.)*x-midtone+1.) if inverse else (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
+
+def midtone_transfer_function(x, shadow, midtone, highlight, low, high):
+  """Return the shadow/midtone/highlight/low/high levels transfer function f(x).
+
+  This function:
+
+    1) Clips the input data in the [shadow, highlight] range and maps [shadow, highlight] onto [0, 1].
+    2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
+       with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
+    3) Maps [low, high] to [0, 1] and clips the output data outside the [0, 1] range.
+
+  See also:
+    midtone_stretch_function
+
+  Args:
+    x (numpy.ndarray): The input data.
+    midtone (float): The input midtone level (expected in ]0, 1[).
+    shadow (float): The input shadow level (expected < midtone).
+    highlight (float): The input highlight level (expected > midtone).
+    low (float): The "low" output level (expected <= 0).
+    high (float): The "high" output level (expected >= 1).
+
+  Returns:
+    numpy.ndarray: The stretched data.
+  """
+  midtone = (midtone-shadow)/(highlight-shadow)
+  x = np.clip(x, shadow, highlight)
+  x = (x-shadow)/(highlight-shadow)
+  y = (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
+  return np.interp(y, (low, high), (0., 1.))
+
 def arcsinh_stretch_function(x, D):
   """Return the arcsinh stretch function f(x).
 
@@ -67,9 +230,12 @@ def arcsinh_stretch_function(x, D):
 
     f(x) = arcsinh(D*x)/arcsinh(D)
 
+  See also:
+    garcsinh_stretch_function
+
   Args:
     x (numpy.ndarray): The input data.
-    D (float): The stretch factor (expected >= 0).
+    D (float): The stretch parameter (expected >= 0).
 
   Returns:
     numpy.ndarray: The stretched data.
@@ -104,7 +270,7 @@ def garcsinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
 
   Args:
     x (numpy.ndarray): The input data.
-    D (float): The stretch factor (expected >= 0).
+    D (float): The stretch parameter (expected >= 0).
     SYP (float): The symmetry point (expected in [0, 1]).
     SPP (float): The shadow protection point (expected in [0, SYP]).
     HPP (float): The highlight protection point (expected in [SYP, 1]).
@@ -168,8 +334,8 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
 
   Args:
     x (numpy.ndarray): The input data.
-    logD1 (float): The global stretch factor ln(D+1) (expected >= 0).
-    b (float): The local stretch factor.
+    logD1 (float): The global stretch parameter ln(D+1) (expected >= 0).
+    b (float): The local stretch parameter.
     SYP (float): The symmetry point (expected in [0, 1]).
     SPP (float): The shadow protection point (expected in [0, SYP]).
     HPP (float): The highlight protection point (expected in [SYP, 1]).
@@ -341,10 +507,10 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
         y[mask] = (x[mask]-a4)/b4
     return y
 
-def powerlaw_stretch_function(x, gamma):
-  """Return the power law stretch function f(x).
+def gamma_stretch_function(x, gamma):
+  """Return the gamma stretch function f(x).
 
-  The power law stretch function is defined as:
+  The gamma stretch function is defined as:
 
     f(x) = x**gamma
 
@@ -359,136 +525,3 @@ def powerlaw_stretch_function(x, gamma):
   """
   x = np.clip(x, 0., None)
   return x**gamma
-
-def midtone_stretch_function(x, midtone, inverse):
-  """Return the midtone stretch function f(x).
-
-  The midtone stretch function is defined as:
-
-    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
-
-  In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
-
-  Args:
-    x (numpy.ndarray): The input data.
-    midtone (float): The midtone level (expected in ]0, 1[]).
-    inverse (bool): Return the inverse stretch function if True.
-
-  Returns:
-    numpy.ndarray: The stretched data.
-  """
-  return midtone*x/((2.*midtone-1.)*x-midtone+1.) if inverse else (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
-
-def midtone_levels_stretch_function(x, shadow, midtone, highlight, low, high):
-  """Return the shadow/midtone/highlight/low/high levels adjustment function f(x).
-
-  This function:
-
-    1) Clips the input data in the [shadow, highlight] range and maps [shadow, highlight] to [0, 1].
-    2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
-       with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
-    3) Maps [low, high] to [0, 1] and clips the output data in the [0, 1] range.
-
-  Args:
-    x (numpy.ndarray): The input data.
-    midtone (float): The input midtone level (expected in ]0, 1[).
-    shadow (float): The input shadow level (expected < midtone).
-    highlight (float): The input highlight level (expected > midtone).
-    low (float): The "low" output level (expected <= 0).
-    high (float): The "high" output level (expected >= 1).
-
-  Returns:
-    numpy.ndarray: The stretched data.
-  """
-  midtone = (midtone-shadow)/(highlight-shadow)
-  x = np.clip(x, shadow, highlight)
-  x = (x-shadow)/(highlight-shadow)
-  y = (midtone-1.)*x/((2.*midtone-1.)*x-midtone)
-  return np.interp(y, (low, high), (0., 1.))
-
-def rational_stretch_function(x, D, SYP, SPP, HPP, inverse):
-  """Return the rational stretch function f(x).
-
-  The rational stretch function is defined as:
-
-    - f(x) = b1*x when x <= SPP,
-    - f(x) = a2+(b2*x+c2)/(d2*x+e2) when SPP <= x <= SYP,
-    - f(x) = a3+(b3*x+c3)/(d3*x+e3) when SYP <= x <= HPP,
-    - f(x) = a4+b4*x when x >= HPP.
-
-  The coefficients a, b, c, d and e are computed so that f is continuous and derivable.
-  The strength of the stretch is controlled by the input parameter D that sets the
-  slope at x = SYP. f(x) falls back to the midtone stretch function:
-
-    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone) with midtone = 1/(2*(D+1))
-
-  when SPP = SYP = 0 and HPP = 1.
-
-  See also:
-    midtone_stretch_function
-
-  Note:
-    Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
-    (published by Mike Cranfield under GNU GPL license).
-
-  Args:
-    x (numpy.ndarray): The input data.
-    D (float): The stretch factor (expected >= 0).
-    SYP (float): The symmetry point (expected in [0, 1]).
-    SPP (float): The shadow protection point (expected in [0, SYP]).
-    HPP (float): The highlight protection point (expected in [SYP, 1]).
-    inverse (bool): Return the inverse stretch function if True.
-
-  Returns:
-    numpy.ndarray: The stretched data.
-  """
-  if abs(D) < 1.e-6: # Identity.
-    return x
-  else:
-    m = 1./(2.*(D+1.))
-    qs = (m-1.)*(SPP-SYP)/((1.-2.*m)*(SPP-SYP)-m)
-    q0 = qs+SPP*(m-1.)*m/((1.-2.*m)*(SPP-SYP)-m)**2
-    qh = (m-1.)*(HPP-SYP)/((2.*m-1.)*(HPP-SYP)-m)
-    q1 = qh+(HPP-1.)*(m-1.)*m/((2.*m-1.)*(HPP-SYP)-m)**2
-    q = 1./(q1-q0)
-    # Coefficient for x < SPP.
-    b1 = q*m*(1.-m)/((1.-2.*m)*(SPP-SYP)-m)**2
-    # Coefficients for SPP <= x < SYP.
-    a2 = -q0*q
-    b2 = (m-1.)*q
-    c2 = -b2*SYP
-    d2 = 1.-2.*m
-    e2 = -d2*SYP-m
-    # Coefficients for SYP <= x < HPP.
-    a3 = -q0*q
-    b3 = (m-1.)*q
-    c3 = -b3*SYP
-    d3 = 2.*m-1.
-    e3 = -d3*SYP-m
-    # Coefficients for x >= HPP.
-    a4 = q*(qh-q0-HPP*(1.-m)*m/((2.*m-1.)*(HPP-SYP)-m)**2)
-    b4 = -q*m*(m-1.)/((2.*m-1.)*(HPP-SYP)-m)**2
-    # Generalized rational transformation.
-    y = np.empty_like(x)
-    if not inverse:
-      mask = (x <  SPP)
-      y[mask] =    b1*x[mask]
-      mask = (x >= SPP) & (x < SYP)
-      y[mask] = a2+(b2*x[mask]+c2)/(d2*x[mask]+e2)
-      mask = (x >= SYP) & (x < HPP)
-      y[mask] = a3+(b3*x[mask]+c3)/(d3*x[mask]+e3)
-      mask = (x >= HPP)
-      y[mask] = a4+b4*x[mask]
-    else:
-      SPT = b1*SPP
-      SYT = a2
-      HPT = a4+b4*HPP
-      mask = (x <  SPT)
-      y[mask] = x[mask]/b1
-      mask = (x >= SPT) & (x < SYT)
-      y[mask] = (c2-e2*(x[mask]-a2))/(d2*(x[mask]-a2)-b2)
-      mask = (x >= SYT) & (x < HPT)
-      y[mask] = (c3-e3*(x[mask]-a3))/(d3*(x[mask]-a3)-b3)
-      mask = (x >= HPT)
-      y[mask] = (x[mask]-a4)/b4
-    return y

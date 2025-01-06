@@ -17,33 +17,36 @@ from . import stretchfunctions as stf
 # Stretch functions. #
 ######################
 
-def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
-  """Apply a generalized hyperbolic stretch function to the input image.
+def hms(image, D):
+  """Apply a harmonic stretch function to the input image.
 
-  For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
+  The harmonic stretch function defined as
+
+    f(x) = (D+1)*x/(D*x+1)
+
+  is a rational interpolation from f(0) = 0 to f(1) = 1 with f'(0) = D+1.
 
   Args:
     image (numpy.ndarray): The input image.
-    logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
-    b (float): The local stretch factor.
-    SYP (float): The symmetry point (expected in [0, 1]).
-    SPP (float, optional): The shadow protection point (default 0; expected in [0, SYP]).
-    HPP (float, optional): The highlight protection point (default 1; expected in [SYP, 1]).
-    inverse (bool): Return the inverse stretch function if True.
+    D (float): The stretch parameter (expected > -1).
 
   Returns:
     numpy.ndarray: The stretched image.
   """
-  return stf.ghyperbolic_stretch_function(image, lnD1, b, SYP, SPP, HPP, False)
+  return stf.harmonic_stretch_function(image, D, False)
 
 def mts(image, midtone):
   """Apply a midtone stretch function to the input image.
 
-  The midtone stretch function
+  The midtone stretch function defined as
 
     f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
 
-  is a rational interpolation from f(0) = 0 to f(1) = 1 such that f(midtone) = 0.5.
+  is a rational interpolation from f(0) = 0 to f(1) = 1 with f(midtone) = 0.5.
+  It is nothing else than the harmonic stretch function with D = 1/midtone-2.
+
+  See also:
+    hms
 
   Args:
     image (numpy.ndarray): The input image.
@@ -54,52 +57,49 @@ def mts(image, midtone):
   """
   return stf.midtone_stretch_function(image, midtone, False)
 
-#############################
-# Midtone parametrizations. #
-#############################
+def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
+  """Apply a generalized hyperbolic stretch function to the input image.
 
-def midtone_point(xt, yt):
-  """Return the midtone such that f(xt) = yt, with f the midtone stretch function.
-
-  The midtone stretch function
-
-    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
-
-  is a rational interpolation from f(0) = 0 to f(1) = 1 such that f(midtone) = 0.5.
-
-  This function provides an alternative, more general parametrization of f.
-  It returns the midtone such that f(xt) = yt.
-
-  Note that midtone = xt if yt = 0.5 by design.
+  For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
   Args:
-    xt (float): The target input level (expected in ]0, 1[).
-    yt (float): The target output level (expected in ]0, 1[).
+    image (numpy.ndarray): The input image.
+    logD1 (float): The global stretch parameter ln(D+1) (must be >= 0).
+    b (float): The local stretch parameter.
+    SYP (float): The symmetry point (expected in [0, 1]).
+    SPP (float, optional): The shadow protection point (default 0; expected in [0, SYP]).
+    HPP (float, optional): The highlight protection point (default 1; expected in [SYP, 1]).
+    inverse (bool): Return the inverse stretch function if True.
 
   Returns:
-    float: The midtone such that f(xt) = yt.
+    numpy.ndarray: The stretched image.
   """
-  return xt*(1.-yt)/(xt+yt-2.*xt*yt)
+  return stf.ghyperbolic_stretch_function(image, lnD1, b, SYP, SPP, HPP, False)
 
-def midtone_slope(s0):
-  """Return the midtone such that f'(0) = s0, with f the midtone stretch function.
+######################################
+# Harmonic stretch parametrizations. #
+######################################
 
-  The midtone stretch function
+def harmonic_through(x, y):
+  """Return the stretch parameter D such that f(x) = y, with f the harmonic stretch function.
 
-    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
+  The harmonic stretch function defined as
 
-  is a rational interpolation from f(0) = 0 to f(1) = 1 such that f(midtone) = 0.5.
+    f(x) = (D+1)*x/(D*x+1)
+
+  is a rational interpolation from f(0) = 0 to f(1) = 1 with f'(0) = D+1.
 
   This function provides an alternative parametrization of f.
-  It returns the midtone such that f'(0) = [df/dx](0) = s0.
+  It returns D such that f(x) = y.
 
   Args:
-    s0 (float): The target slope at the origin (expected > 0).
+    x (float): The target input level (expected in ]0, 1[).
+    y (float): The target output level (expected in ]0, 1[).
 
   Returns:
-    float: The midtone such that f'(0) = s0.
+    float: The stretch parameter D such that f(x) = y.
   """
-  return 1./(1.+s0)
+  return (y-x)/(x*(1.-y))
 
 #####################################
 # For inclusion in the Image class. #
@@ -179,7 +179,7 @@ class MixinImage:
     """Set the dynamic range of selected channels of the image.
 
     The selected channels are linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]],
-    and clipped in the [to[0], to[1]] range.
+    and clipped outside the [to[0], to[1]] range.
 
     Args:
       fr (a tuple or list of two floats such that fr[1] > fr[0]): The input range.
@@ -213,8 +213,217 @@ class MixinImage:
     if to[1]-to[0] < 0.0001: raise ValueError("Error, to[1]-to[0] must be >= 0.0001 !")
     return self.apply_channels(lambda channel: stf.dynamic_range_stretch_function(channel, fr, to), channels, trans = trans)
 
-  def arcsinh_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
-    """Apply a (generalized) arcsinh stretch to selected channels of the image.
+  def harmonic_stretch(self, D, inverse = False, channels = "", trans = True):
+    """Apply a harmonic stretch to selected channels of the image.
+
+    The harmonic stretch function f is applied to the selected channels:
+
+      f(x) = (D+1)*x/(D*x+1)
+
+    f is a rational interpolation from f(0) = 0 to f(1) = 1 with f'(0) = D+1.
+
+    See also:
+      gharmonic_stretch
+
+    Args:
+      D (float): The stretch parameter (expected >= -1).
+      inverse (bool, optional): Return the inverse stretch if True (default False).
+      channels (str, optional): The selected channels:
+
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
+
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+
+    Returns:
+      Image: The stretched image.
+    """
+    if D < -1.: raise ValueError("Error, D must be >= -1.")
+    return self.apply_channels(lambda channel: stf.harmonic_stretch_function(channel, D, inverse), channels, trans = trans)
+
+  def gharmonic_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
+    """Apply a generalized harmonic stretch to selected channels of the image.
+
+    The generalized harmonic stretch function f is applied to the selected channels:
+
+      - f(x) = b1*x when x <= SPP,
+      - f(x) = a2+(b2*x+c2)/(d2*x+e2) when SPP <= x <= SYP,
+      - f(x) = a3+(b3*x+c3)/(d3*x+e3) when SYP <= x <= HPP,
+      - f(x) = a4+b4*x when x >= HPP.
+
+    The coefficients a, b, c, d and e are computed so that f is continuous and derivable.
+    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
+    the "highlight protection point". They can tuned to preserve contrast in the
+    low and high brightness areas, respectively. The strength of the stretch is
+    controlled by the input parameter D that sets the slope at x = SYP.
+
+    f(x) falls back to the midtone stretch function:
+
+      f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone) with midtone = 1/(2*(D+1))
+
+    when SPP = SYP = 0 and HPP = 1.
+
+    See also:
+      harmonic_stretch
+
+    Note:
+      Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
+      (published by Mike Cranfield under GNU GPL license).
+
+    Args:
+      D (float): The stretch parameter (must be >= 0).
+      SYP (float): The symmetry point (expected in [0, 1]).
+      SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
+      HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
+      inverse (bool, optional): Return the inverse stretch if True (default False).
+      channels (str, optional): The selected channels:
+
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
+
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+
+    Returns:
+      Image: The stretched image.
+    """
+    if D < 0.: raise ValueError("Error, D must be >= 0.")
+    if SPP > SYP:
+      SPP = SYP
+      print("Warning, changed SPP = SYP !")
+    if HPP < SYP:
+      HPP = SYP
+      print("Warning, changed HPP = SYP !")
+    output = self.apply_channels(lambda channel: stf.gharmonic_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
+    if trans: output.trans.xticks = [SPP, SYP, HPP]
+    return output
+
+  def midtone_stretch(self, midtone, inverse = False, channels = "", trans = True):
+    """Apply a midtone stretch to selected channels of the image.
+
+    The midtone stretch function f is applied to the selected channels:
+
+      f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
+
+    f is a rational interpolation from f(0) = 0 to f(1) = 1 with f(midtone) = 0.5.
+    It is nothing else than the harmonic stretch function with D = 1/midtone-2.
+
+    See also:
+      harmonic_stretch
+
+    Args:
+      midtone (float): The midtone level (expected in ]0, 1[).
+      inverse (bool, optional): Return the inverse stretch if True (default False).
+      channels (str, optional): The selected channels:
+
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
+
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+
+    Returns:
+      Image: The stretched image.
+    """
+    if midtone < .0001 or midtone >= .9999: raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")
+    output = self.apply_channels(lambda channel: stf.midtone_stretch_function(channel, midtone, inverse), channels, trans = trans)
+    if trans: output.trans.xticks = [midtone]
+    return output
+
+  def midtone_transfer(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = "", trans = True):
+    """Apply the shadow/midtone/highlight/low/high levels transfer function to selected channels of the image.
+
+    This method:
+
+      1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight] onto [0, 1].
+      2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
+         with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
+      3) Maps [low, high] to [0, 1] and clips the output data outside the [0, 1] range.
+
+    See also:
+      midtone_stretch
+
+    Args:
+      midtone (float): The input midtone level (expected in ]0, 1[).
+      shadow (float, optional): The input shadow level (default 0; expected < midtone).
+      highlight (float, optional): The input highlight level (default 1; expected > midtone).
+      low (float, optional): The "low" output level (default 0; expected <= 0).
+      high (float, optional): The "high" output level (default 1; expected >= 1).
+      channels (str, optional): The selected channels:
+
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
+
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+
+    Returns:
+      Image: The stretched image.
+    """
+    if midtone < .0001 or midtone > .9999: raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")
+    if midtone-shadow < .0001: raise ValueError("Error, midtone-shadow must be >= 0.0001.")
+    if highlight-midtone < .0001: raise ValueError("Error, highlight-midtone must be >= 0.0001.")
+    if low > 0.:
+      low = 0.
+      print("Warning, changed low = 0.")
+    if high < 1.:
+      high = 1.
+      print("Warning, changed high = 1.")
+    output = self.apply_channels(lambda channel: stf.midtone_transfer_function(channel, shadow, midtone, highlight, low, high), channels, trans = trans)
+    if trans: output.trans.xticks = [shadow, midtone, highlight]
+    return output
+
+  def garcsinh_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
+    """Apply a generalized arcsinh stretch to selected channels of the image.
 
     The generalized arcsinh stretch function f is applied to the selected channels:
 
@@ -225,14 +434,14 @@ class MixinImage:
 
     The coefficients a and b are computed so that f is continuous and derivable.
     SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
-    the "highlight protection point". They can tuned to protect contrast in the
+    the "highlight protection point". They can tuned to preserve contrast in the
     low and high brightness areas, respectively.
 
     f(x) falls back to the "standard" arcsinh stretch function:
 
       f(x) = arcsinh(D*x)/arcsinh(D)
 
-    when SPP = SYP = 0 and HPP = 1.
+    when SPP = SYP = 0 and HPP = 1 (the defaults).
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
@@ -241,7 +450,7 @@ class MixinImage:
       (published by Mike Cranfield under GNU GPL license).
 
     Args:
-      D (float): The stretch factor (must be >= 0).
+      D (float): The stretch parameter (must be >= 0).
       SYP (float): The symmetry point (expected in [0, 1]).
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
@@ -290,8 +499,8 @@ class MixinImage:
       (published by Mike Cranfield under GNU GPL license).
 
     Args:
-      logD1 (float): The global stretch factor ln(D+1) (must be >= 0).
-      b (float): The local stretch factor.
+      logD1 (float): The global stretch parameter ln(D+1) (must be >= 0).
+      b (float): The local stretch parameter.
       SYP (float): The symmetry point (expected in [0, 1]).
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
@@ -330,14 +539,14 @@ class MixinImage:
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
 
-  def powerlaw_stretch(self, gamma, channels = "", trans = True):
-    """Apply a power law stretch (gamma correction) to selected channels of the image.
+  def gamma_stretch(self, gamma, channels = "", trans = True):
+    """Apply a gamma stretch to selected channels of the image.
 
-    The power law stretch function f is applied to the selected channels:
+    The gamma stretch function f is applied to the selected channels:
 
       f(x) = x**gamma
 
-    This function clips the selected channels below 0 before stretching.
+    This method clips the selected channels below 0 before stretching.
 
     Args:
       gamma (float): The stretch exponent (must be > 0).
@@ -365,165 +574,7 @@ class MixinImage:
       Image: The stretched image.
     """
     if gamma <= 0.: raise ValueError("Error, gamma must be > 0.")
-    return self.apply_channels(lambda channel: stf.powerlaw_stretch_function(channel, gamma), channels, trans = trans)
-
-  def midtone_stretch(self, midtone, inverse = False, channels = "", trans = True):
-    """Apply a midtone stretch to selected channels of the image.
-
-    The midtone stretch function f is applied to the selected channels:
-
-      f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
-
-    In particular, f(0) = 0, f(midtone) = 0.5 and f(1) = 1.
-
-    Args:
-      midtone (float): The midtone level (expected in ]0, 1[).
-      inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
-
-    Returns:
-      Image: The stretched image.
-    """
-    if midtone < .0001 or midtone >= .9999: raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")
-    output = self.apply_channels(lambda channel: stf.midtone_stretch_function(channel, midtone, inverse), channels, trans = trans)
-    if trans: output.trans.xticks = [midtone]
-    return output
-
-  def set_midtone_levels(self, midtone, shadow = 0., highlight = 1., low = 0., high = 1., channels = "", trans = True):
-    """Set shadow, midtone, highlight, low and high levels in selected channels of the image.
-
-    This method:
-
-      1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight] to [0, 1].
-      2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
-         with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
-      3) Maps [low, high] to [0, 1] and clips the output data in the [0, 1] range.
-
-    Args:
-      midtone (float): The input midtone level (expected in ]0, 1[).
-      shadow (float, optional): The input shadow level (default 0; expected < midtone).
-      highlight (float, optional): The input highlight level (default 1; expected > midtone).
-      low (float, optional): The "low" output level (default 0; expected <= 0).
-      high (float, optional): The "high" output level (default 1; expected >= 1).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
-
-    Returns:
-      Image: The stretched image.
-    """
-    if midtone < .0001 or midtone > .9999: raise ValueError("Error, midtone must be >= 0.0001 and <= 0.9999.")
-    if midtone-shadow < .0001: raise ValueError("Error, midtone-shadow must be >= 0.0001.")
-    if highlight-midtone < .0001: raise ValueError("Error, highlight-midtone must be >= 0.0001.")
-    if low > 0.:
-      low = 0.
-      print("Warning, changed low = 0.")
-    if high < 1.:
-      high = 1.
-      print("Warning, changed high = 1.")
-    output = self.apply_channels(lambda channel: stf.midtone_levels_stretch_function(channel, shadow, midtone, highlight, low, high), channels, trans = trans)
-    if trans: output.trans.xticks = [shadow, midtone, highlight]
-    return output
-
-  def rational_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
-    """Apply a rational stretch to selected channels of the image.
-
-    The rational stretch function f is applied to the selected channels:
-
-      - f(x) = b1*x when x <= SPP,
-      - f(x) = a2+(b2*x+c2)/(d2*x+e2) when SPP <= x <= SYP,
-      - f(x) = a3+(b3*x+c3)/(d3*x+e3) when SYP <= x <= HPP,
-      - f(x) = a4+b4*x when x >= HPP.
-
-    The coefficients a, b, c, d and e are computed so that f is continuous and derivable.
-    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
-    the "highlight protection point". They can tuned to protect contrast in the
-    low and high brightness areas, respectively. The strength of the stretch is
-    controlled by the input parameter D that sets the slope at x = SYP.
-
-    f(x) falls back to the midtone stretch function:
-
-      f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone) with midtone = 1/(2*(D+1))
-
-    when SPP = SYP = 0 and HPP = 1.
-
-    Note:
-      Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
-      (published by Mike Cranfield under GNU GPL license).
-
-    Args:
-      D (float): The stretch factor (must be >= 0).
-      SYP (float): The symmetry point (expected in [0, 1]).
-      SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
-      HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
-      inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
-
-    Returns:
-      Image: The stretched image.
-    """
-    if D < 0.: raise ValueError("Error, D must be >= 0.")
-    if SPP > SYP:
-      SPP = SYP
-      print("Warning, changed SPP = SYP !")
-    if HPP < SYP:
-      HPP = SYP
-      print("Warning, changed HPP = SYP !")
-    output = self.apply_channels(lambda channel: stf.rational_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
-    if trans: output.trans.xticks = [SPP, SYP, HPP]
-    return output
+    return self.apply_channels(lambda channel: stf.gamma_stretch_function(channel, gamma), channels, trans = trans)
 
   def curve_stretch(self, f, channels = "", trans = True):
     """Apply a curve stretch, defined by an arbitrary function f, to selected channels of the image.
@@ -567,7 +618,7 @@ class MixinImage:
 
     This method:
 
-      1) Applies (a series) of midtone stretches to the selected channels in order to bring the
+      1) Applies (a series) of harmonic stretches to the selected channels in order to bring the
          average median of these channels to the target level.
       2) Optionally, boosts contrast above the target median with a specially designed curve stretch.
 
@@ -579,14 +630,17 @@ class MixinImage:
       See: https://www.setiastro.com/statistical-stretch.
 
     Hint:
-      You can apply the midtone stretches and the final contrast boost separately by calling this method twice with
+      You can apply the harmonic stretches and the final contrast boost separately by calling this method twice with
       the same target median, first with boost = 0, then with boost > 0. As the average median of the image already
-      matches the target median, no midtone stretch will be applied on second call.
+      matches the target median, no harmonic stretch will be applied on second call.
+
+    See also:
+      harmonic_stretch
 
     Args:
       median (float): The target median (expected in ]0, 1[).
       boost (float, optional): The contrast boost (expected >= 0; default 0 = no boost).
-      maxiter (int, optional): The maximum number of midtone stretches applied to reach the target median (default 5).
+      maxiter (int, optional): The maximum number of harmonic stretches applied to reach the target median (default 5).
         For a single channel, the algorithm shall actually converge in one iteration.
       accuracy (float, optional): The target accuracy of the median (default 0.001).
       channels (str, optional): The selected channels:
@@ -658,7 +712,7 @@ class MixinImage:
         channels = "RGB"
       else:
         for ic in range(self.get_nc()): channels += str(ic+1)
-    # Iterate midtone stretches until the average median of the channels matches the target median.
+    # Iterate harmonic stretches until the average median of the channels matches the target median.
     # This shall actually converge in one iteration for a single channel image.
     niter = 0
     output = self
@@ -672,15 +726,15 @@ class MixinImage:
       converged = (abs(avgmed-median) < .001) # Check convergence.
       if converged or niter >= maxiter: break
       niter += 1
-      # Compute the effective midtone such that f(avgmed) = median, with f the midtone stretch function.
-      midtone = midtone_point(avgmed, median)
-      output = output.midtone_stretch(midtone, channels = channels, trans = trans and ctrans is None) # Midtone stretch.
+      # Compute the effective stretch parameter D such that f(avgmed) = median, with f the harmonic stretch function.
+      D = harmonic_through(avgmed, median)
+      output = output.harmonic_stretch(D, channels = channels, trans = trans and ctrans is None) # Harmonic stretch.
       if trans: # Cumulative transformation.
         if ctrans is None:
           ctrans = copy.copy(output.trans)
           ctrans.xticks = [avgmed]
         else:
-          ctrans.y = stf.midtone_stretch_function(ctrans.y, midtone, False)
+          ctrans.y = stf.harmonic_stretch_function(ctrans.y, D, False)
     if converged:
       print(f"Converged in {niter} iteration(s).")
     else:

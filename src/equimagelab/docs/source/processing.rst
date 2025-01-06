@@ -45,12 +45,13 @@ The image histograms can be stretched with the following methods of the :py:clas
    set_black_point
    set_shadow_highlight
    set_dynamic_range
-   arcsinh_stretch
-   ghyperbolic_stretch
-   powerlaw_stretch
+   harmonic_stretch
+   gharmonic_stretch
    midtone_stretch
-   set_midtone_levels
-   rational_stretch
+   midtone_transfer
+   garcsinh_stretch
+   ghyperbolic_stretch
+   gamma_stretch
    curve_stretch
 
 Additionally, the image histograms can be stretched with the following functions, which can be applied either to an :py:class:`Image <equimagelab.equimage.image.Image>` object or to a :py:class:`numpy.ndarray`:
@@ -59,15 +60,15 @@ Additionally, the image histograms can be stretched with the following functions
 
 .. autosummary::
 
+   hms
    mts
    ghs
 
-The following functions provide alternative parametrizations of the midtone stretch [based on target (input, output) levels or on the slope at the origin instead of the midtone]:
+The following function provides an alternative parametrization of the harmonic stretch [based on target (input, output) levels instead of a stretch factor]:
 
 .. autosummary::
 
-   midtone_point
-   midtone_slope
+   harmonic_through
 
 Moreover, eQuimageLab provides an implementation of the `statistical stretch of SETI astro <https://www.setiastro.com/statistical-stretch>`_ as a method of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
 
