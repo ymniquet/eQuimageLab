@@ -40,10 +40,11 @@ Latest news:
 
     - First complete documentation.
 
-  - Version 1.1.
+  - Version 1.1.0.
 
-    - float32 & float64 image types.
+    - Float32 & float64 image types.
     - Operations on the lightness :math:`L^*`.
     - Generalized arcsinh, harmonic and power law stretches.
     - Curve stretch.
     - Statistical stretch.
+    - Light-dependent blur and sharpen (:py:meth:`LDBS <equimagelab.equimage.image_filters.MixinImage.LDBS>`).

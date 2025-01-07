@@ -113,6 +113,7 @@ Image enhancement
 
    sharpen
    remove_hot_pixels
+   LDBS
 
 and, from `Scikit-Image <https://scikit-image.org/>`_:
 

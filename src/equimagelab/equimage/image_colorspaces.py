@@ -489,11 +489,10 @@ class MixinImage:
   # Channel-selective operations. #
   #################################
 
-  def update_channel(self, data, channel, inplace = False):
+  def update_channel(self, channel, data, inplace = False):
     """Update the selected channel of the image.
 
     Args:
-      data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height as the image.
       channel (str): The updated channel:
 
         - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
@@ -503,6 +502,7 @@ class MixinImage:
         - "L": Update the luma (RGB and grayscale images).
         - "L*": Update the lightness L* in the CIE L*a*b* color space (RGB and grayscale images).
 
+      data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height as the image.
       inplace (bool, optional): If True, update the image "in place"; if False (default), return a new image.
 
     Returns:
