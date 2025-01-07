@@ -15,6 +15,23 @@ class Container:
   """An empty container class."""
   pass # An empty container class.
 
+def fpaccuracy(dtype):
+  """Return the expected floating point accuracy for the input float class.
+
+  Args:
+    dtype (class): A float class (numpy.float32 or numpy.float64).
+
+  Returns:
+    float: The expected floating point accuracy for this class
+      (1.e-6 for numpy.float32 and 1.e-9 for numpy.float64).
+  """
+  if dtype == np.float32:
+    return 1.e-6
+  elif dtype == np.float64:
+    return 1.e-9
+  else:
+    raise ValueError("Error, the input class must be numpy.float32 or numpy.float64.")
+
 def failsafe_divide(A, B):
   """Return A/B, ignoring errors (division by zero, ...).
 
@@ -30,18 +47,19 @@ def failsafe_divide(A, B):
   np.seterr(**status)
   return C
 
-def scale_pixels(image, source, target, cutoff = params.IMGTOL):
+def scale_pixels(image, source, target, cutoff = None):
   """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff, set all channels to target.
 
   Args:
     image (numpy.ndarray): The input image.
     source (numpy.ndarray): The source values for scaling (must be the same size as the input image).
     target (numpy.ndarray): The target values for scaling (must be the same size as the input image).
-    cutoff (float, optional): Threshold for scaling. Defaults to `equimage.params.IMGTOL`.
+    cutoff (float, optional): Threshold for scaling. If None, defaults to `equimage.helpers.fpaccuracy(source.dtype)`.
 
   Returns:
     numpy.ndarray: The scaled image.
   """
+  if cutoff is None: cutoff = fpaccuracy(source.dtype)
   return np.where(abs(source) > cutoff, failsafe_divide(image*target, source), target)
 
 def lookup(x, xlut, ylut, slut, nlut):

@@ -39,9 +39,9 @@ def threshold_mask(filtered, threshold, extend = 0, smooth = 0):
   elif extend < 0:
     mask = skimo.isotropic_erosion(mask, -extend)
   # Smooth the mask.
-  mask = mask.astype(params.IMGTYPE)
+  mask = mask.astype(params.imagetype)
   if smooth > 0:
-    kernel = skimo.disk(smooth, dtype = params.IMGTYPE)
+    kernel = skimo.disk(smooth, dtype = params.imagetype)
     kernel /= np.sum(kernel)
     mask = ndimg.convolve(mask, kernel, mode = "reflect")
   return mask
@@ -118,7 +118,7 @@ class MixinImage:
     if filter == "gaussian":
       return ndimg.gaussian_filter(data, sigma = radius/3., mode = mode, cval = 0.)
     elif filter == "mean":
-      kernel = skimo.disk(radius, dtype = params.IMGTYPE)
+      kernel = skimo.disk(radius, dtype = self.image.dtype)
       kernel /= np.sum(kernel)
       return ndimg.convolve(data, kernel, mode = mode, cval = 0.)
     elif filter == "median":

@@ -65,19 +65,19 @@ def load_image_as_array(filename, verbose = True):
   if verbose: print(f"Data type = {dtype}.")
   if dtype == "uint8":
     bpc = 8
-    image = params.IMGTYPE(image/255)
+    image = params.imagetype(image/255)
   elif dtype == "uint16":
     bpc = 16
-    image = params.IMGTYPE(image/65535)
+    image = params.imagetype(image/65535)
   elif dtype == "uint32":
     bpc = 32
-    image = params.IMGTYPE(image/4294967295)
+    image = params.imagetype(image/4294967295)
   elif dtype in ["float32", ">f4", "<f4"]: # Assumed normalized in [0, 1] !
     bpc = 32
-    image = params.IMGTYPE(image)
+    image = params.imagetype(image)
   elif dtype in ["float64", ">f8", "<f8"]: # Assumed normalized in [0, 1] !
     bpc = 64
-    image = params.IMGTYPE(image)
+    image = params.imagetype(image)
   else:
     raise TypeError(f"Error, image data type {dtype} is not supported.")
   if verbose: print(f"Bit depth per channel = {bpc}.")
@@ -158,8 +158,8 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
       else:
         skio.imsave(filename, image, plugin = "tifffile", check_contrast = False, compression = "zlib" if compress > 0 else None)
   elif ext in [".fit", ".fits", ".fts"]:
-    if verbose: print(f"Color depth = {np.finfo(image.dtype).bits} bits float per channel.")
-    image = image.flip_height().get_image() # Flip image upside down.
+    if verbose: print(f"Color depth = 32 bits float per channel.")
+    image = np.asarray(image.flip_height().get_image(), dtype = np.float32) # Flip image upside down.
     if is_gray: image = image[0]
     hdu = pyfits.PrimaryHDU(image)
     hdu.writeto(filename, overwrite = True)

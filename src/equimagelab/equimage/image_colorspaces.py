@@ -107,7 +107,7 @@ def saturation(image):
   Returns:
     numpy.ndarray: The HSV saturation S.
   """
-  return 1.-image.min(axis = 0)/image.max(axis = 0, initial = params.IMGTOL) # Safe evaluation.
+  return 1.-image.min(axis = 0)/image.max(axis = 0, initial = helpers.fpaccuracy(image.dtype)) # Safe evaluation.
 
 #########
 # Luma. #
@@ -508,7 +508,8 @@ class MixinImage:
     Returns:
       Image: The updated image.
     """
-    data = np.asarray(data, dtype = params.IMGTYPE)
+    dtype = self.image.dtype if inplace else params.imagetype
+    data = np.asarray(data, dtype)
     if data.shape != self.get_size():
       raise ValueError("Error, the channel data must be a 2D array with the same with and height as the image.")
     is_RGB  = (self.colormodel == "RGB")
@@ -570,11 +571,11 @@ class MixinImage:
           lRGB = sRGB_to_lRGB(output.image)
         else:
           self.color_space_error()
-        xyz = np.tensordot(params.RGB2XYZ, lRGB, axes = 1)
+        xyz = np.tensordot(np.asarray(params.RGB2XYZ, dtype = dtype), lRGB, axes = 1)
         lab = skcolor.xyz2lab(xyz, channel_axis = 0)
         lab[0] = 100.*data
         xyz = skcolor.lab2xyz(lab, channel_axis = 0) # Convert from L*a*b* color space.
-        lRGB = np.tensordot(params.XYZ2RGB, xyz, axes = 1)
+        lRGB = np.tensordot(np.asarray(params.XYZ2RGB, dtype = dtype), xyz, axes = 1)
         if self.colorspace == "lRGB":
           output.image[:] = lRGB
         elif self.colorspace == "sRGB":
@@ -737,12 +738,12 @@ class MixinImage:
           lRGB = sRGB_to_lRGB(self.image)
         else:
           self.color_space_error()
-        xyz = np.tensordot(params.RGB2XYZ, lRGB, axes = 1)
+        xyz = np.tensordot(np.asarray(params.RGB2XYZ, dtype = params.imagetype), lRGB, axes = 1)
         lab = skcolor.xyz2lab(xyz, channel_axis = 0)
         lightness = lab[0]/100. # Apply transformation.
         lab[0] = 100.*f(lightness)
         xyz = skcolor.lab2xyz(lab, channel_axis = 0) # Convert from L*a*b* color space.
-        lRGB = np.tensordot(params.XYZ2RGB, xyz, axes = 1)
+        lRGB = np.tensordot(np.asarray(params.XYZ2RGB, dtype = params.imagetype), xyz, axes = 1)
         if self.colorspace == "lRGB":
           output = self.newImage(lRGB)
         elif self.colorspace == "sRGB":
@@ -818,7 +819,8 @@ class MixinImage:
     """
     self.check_color_model("RGB")
     imgluma = self.luma() # Original luma.
-    if np.any(imgluma > 1.+params.IMGTOL/2):
+    epsilon = helpers.fpaccuracy(imgluma.dtype)
+    if np.any(imgluma > 1.+epsilon/2):
       print("Warning, can not protect highlights if the luma is out-of-range. Returning original image...")
       return self.copy()
     newimage = self.image/np.maximum(self.image.max(axis = 0), 1.) # Rescale maximum HSV value to 1.
@@ -826,7 +828,7 @@ class MixinImage:
     # Scale the saturation.
     # Note: The following implementation is failsafe when newluma -> 1 (in which case luma is also 1 in principle),
     # at the cost of a small error.
-    fs = ((1.-imgluma)+params.IMGTOL)/((1.-newluma)+params.IMGTOL)
+    fs = ((1.-imgluma)+epsilon)/((1.-newluma)+epsilon)
     output = 1.-(1.-newimage)*fs
     diffluma = imgluma-luma(output)
     print(f"Maximum luma difference = {abs(diffluma).max()}.")
@@ -846,8 +848,9 @@ class MixinImage:
       Image: The processed image.
     """
     self.check_color_model("RGB") ; inrange.check_color_model("RGB")
-    if np.any(inrange.value() > 1.+params.IMGTOL/2):
+    epsilon = helpers.fpaccuracy(self.image.dtype)
+    if np.any(inrange.value() > 1.+epsilon/2.):
       print("Warning, can not protect highlights if the input inrange image is out-of-range. Returning original image...")
       return self.copy()
-    mixing = np.where(self.image > 1.+params.IMGTOL, helpers.failsafe_divide(self.image-1., self.image-inrange.image), 0.)
+    mixing = np.where(self.image > 1.+epsilon, helpers.failsafe_divide(self.image-1., self.image-inrange.image), 0.)
     return self.blend(inrange, mixing.max(axis = 0))

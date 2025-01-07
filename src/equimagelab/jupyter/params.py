@@ -9,6 +9,8 @@
 
 import numpy as np
 
+IMGTOL = 1.e-6 # Expected floating-point accuracy of numpy.float32 images.
+
 # Images downsampling rate for display.
 # Only images[::sampling, ::sampling] are shown to speed up operations.
 
@@ -31,9 +33,9 @@ mlinecolor = "mediumslateblue"
 
 # Colors for shadows, highlights and differences.
 
-shadowcolor = np.array([1., .5, 0.])
-highlightcolor = np.array([1., 1., 0.])
-diffcolor = np.array([1., 1., 0.])
+shadowcolor = np.array([1., .5, 0.], dtype = np.float32)
+highlightcolor = np.array([1., 1., 0.], dtype = np.float32)
+diffcolor = np.array([1., 1., 0.], dtype = np.float32)
 
 # Setters.
 

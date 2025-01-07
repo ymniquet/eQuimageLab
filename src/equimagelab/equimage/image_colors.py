@@ -33,7 +33,8 @@ class MixinImage:
     """
     self.check_color_model("RGB")
     image = self.image
-    return np.all(abs(image[1]-image[0]) < params.IMGTOL) and np.all(abs(image[2]-image[0]) < params.IMGTOL)
+    epsilon = helpers.fpaccuracy(image.dtype)
+    return np.all(abs(image[1]-image[0]) < epsilon) and np.all(abs(image[2]-image[0]) < epsilon)
 
   ############################
   # Gray scales & negatives. #

@@ -15,7 +15,6 @@ import numpy as np
 from . import params
 
 from ..equimage import Image
-from ..equimage import params as eqparams
 
 def get_image_size(image):
   """Return the width and height of the input image.
@@ -63,6 +62,7 @@ def prepare_images(images, sampling = -1, copy = False):
       if not valid: raise ValueError(f"Error, image {image} is not a valid image.")
     if image.ndim == 3 and image.shape[2] == 1: image = np.squeeze(image, axis = 2)
     if sampling > 1: image = image[::sampling, ::sampling]
+    image = np.asarray(image, dtype = np.float32) # Downgrade floats for display.
     return image.copy() if copy else image
 
   if sampling <= 0: sampling = params.sampling
@@ -150,7 +150,7 @@ def shadowed(image, reference = None):
   """
   image = prepare_images(image, sampling = 1, copy = True)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
-  imgmask = np.all(image < eqparams.IMGTOL, axis = 2)
+  imgmask = np.all(image < params.IMGTOL, axis = 2)
   if image.shape[2] == 1: image = np.repeat(image, 3, axis = 2)
   image[imgmask, :] = params.shadowcolor
   if reference is not None:
@@ -159,7 +159,7 @@ def shadowed(image, reference = None):
       print("Warning, image and reference have different sizes !")
       return image
     if reference.ndim == 2: reference = np.expand_dims(reference, -1)
-    refmask = np.all(reference < eqparams.IMGTOL, axis = 2)
+    refmask = np.all(reference < params.IMGTOL, axis = 2)
     image[imgmask & refmask, :] = .5*params.shadowcolor
   return image
 
@@ -181,7 +181,7 @@ def highlighted(image, reference = None):
   """
   image = prepare_images(image, sampling = 1, copy = True)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
-  imgmask = np.any(image > 1.-eqparams.IMGTOL, axis = 2)
+  imgmask = np.any(image > 1.-params.IMGTOL, axis = 2)
   if image.shape[2] == 1: image = np.repeat(image, 3, axis = 2)
   image[imgmask, :] = params.highlightcolor
   if reference is not None:
@@ -190,7 +190,7 @@ def highlighted(image, reference = None):
       print("Warning, image and reference have different sizes !")
       return image
     if reference.ndim == 2: reference = np.expand_dims(reference, -1)
-    refmask = np.any(reference > 1.-eqparams.IMGTOL, axis = 2)
+    refmask = np.any(reference > 1.-params.IMGTOL, axis = 2)
     image[imgmask & refmask, :] = .5*params.highlightcolor
   return image
 

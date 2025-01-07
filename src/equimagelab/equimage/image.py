@@ -7,7 +7,6 @@
 
 """Image class."""
 
-import copy
 import numpy as np
 
 from . import params
@@ -73,7 +72,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     if colormodel not in ["RGB", "HSV", "gray"]:
       raise ValueError(f"Error, the color model must either be 'RGB', 'HSV' or 'gray' (got {colormodel}).")
     # Convert the input image into an array.
-    image = np.asarray(image, dtype = params.imgtype)
+    image = np.asarray(image, dtype = params.imagetype)
     # Validate the image.
     if image.ndim == 2:
       colormodel = "gray"  # Enforce colormodel = "gray".
@@ -111,15 +110,15 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     colorspace = kwargs.pop("colorspace", self.colorspace)
     colormodel = kwargs.pop("colormodel", self.colormodel)
     if kwargs: print("Discarding extra keyword arguments in Image.newImage...")
-    return Image(image, colorspace = colorspace, colormodel = colormodel, )
+    return Image(image, colorspace = colorspace, colormodel = colormodel)
 
   def copy(self):
     """Return a copy of the object.
 
     Returns:
-      Image: A (deep) copy of the object.
+      Image: A copy of the object.
     """
-    return copy.deepcopy(self)
+    return self.newImage(self.image.copy())
 
   ######################
   # Object management. #

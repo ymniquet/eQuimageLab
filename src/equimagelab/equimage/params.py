@@ -9,14 +9,6 @@
 
 import numpy as np
 
-# Data type used for images (either np.float32 or np.float64).
-
-IMGTYPE = np.float32
-
-# Expected accuracy in np.float32/np.float64 calculations.
-
-IMGTOL = 1.e-6 if IMGTYPE is np.float32 else 1.e-9
-
 # Use imageio or imread module ?
 
 IMAGEIO = False
@@ -25,14 +17,13 @@ IMAGEIO = False
 
 RGB2XYZ = np.array([[0.412453, 0.357580, 0.180423],
                     [0.212671, 0.715160, 0.072169],
-                    [0.019334, 0.119193, 0.950227]], dtype = IMGTYPE)
+                    [0.019334, 0.119193, 0.950227]])
 
 XYZ2RGB = np.linalg.inv(RGB2XYZ)
 
-# Image type and floating point accuracy.
+# Image type.
 
-imgtype = np.float32 # Image type.
-imgtol = 1.e-6 # Tolerance on floating point operations.
+imagetype = np.float32
 
 def get_image_type():
   """Return the image type.
@@ -40,7 +31,7 @@ def get_image_type():
   Returns:
     str: The image type, either "float32" (for 32 bits floats) or "float64" (for 64 bits floats).
   """
-  return "float32" if imgtype == np.float32 else "float64"
+  return "float32" if imagetype == np.float32 else "float64"
 
 def set_image_type(dtype):
   """Set image type.
@@ -49,19 +40,17 @@ def set_image_type(dtype):
     dtype (str): The image type.
       Can be either "float32" (for 32 bits floats) or "float64" (for 64 bits floats).
   """
-  global imgtype, imgtol
+  global imagetype
   if dtype == "float32":
-    imgtype = np.float32
-    imgtol = 1.e-6
+    imagetype = np.float32
   elif dtype == "float64":
-    imgtype = np.float64
-    imgtol = 1.e-9
+    imagetype = np.float64
   else:
     raise ValueError(f"Error, the image type must be 'float32' or 'float64' (got {dtype}).")
 
 # Weights of the RGB components in the luma.
 
-rgbluma = IMGTYPE((.2126, .7152, .0722))
+rgbluma = (.2126, .7152, .0722)
 
 def get_RGB_luma():
   """Return the RGB weights rgbluma of the luma.
@@ -96,7 +85,7 @@ def set_RGB_luma(rgb, verbose = True):
     else:
       raise ValueError("Error, the input rgb weights must be an array with three scalar elements, the string 'uniform' or the string 'human'.")
   else:
-    w = np.array(rgb, dtype = IMGTYPE)
+    w = np.array(rgb)
     if w.shape != (3,): raise ValueError("Error, the input rgb weights must be an array with three scalar elements, the string 'uniform' or the string 'human'.")
     if any(w < 0.): raise ValueError("Error, the input rgb weights must be >= 0.")
     s = np.sum(w)

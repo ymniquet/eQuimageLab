@@ -81,7 +81,8 @@ class MixinImage:
     Returns:
       bool: True if the image is out-of-range, False otherwise.
     """
-    return np.any(self.image < -params.IMGTOL) or np.any(self.image > 1.+params.IMGTOL)
+    epsilon = helpers.fpaccuracy(self.image.dtype)
+    return np.any(self.image < -epsilon) or np.any(self.image > 1.+epsilon)
 
   ##############
   # Templates. #
@@ -119,18 +120,18 @@ class MixinImage:
     """
     return np.clip(self, vmin, vmax)
 
-  def scale_pixels(self, source, target, cutoff = params.IMGTOL):
+  def scale_pixels(self, source, target, cutoff = None):
     """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff, set all channels to target.
 
     Args:
-      source (np.arrray): The source values for scaling (must be the same size as the image).
-      target (np.arrray): The target values for scaling (must be the same size as the image).
-      cutoff (float, optional): Threshold for scaling. Defaults to `equimage.params.IMGTOL`.
+      source (numpy.ndarray): The source values for scaling (must be the same size as the image).
+      target (numpy.ndarray): The target values for scaling (must be the same size as the image).
+      cutoff (float, optional): Threshold for scaling. If None, defaults to `equimage.helpers.fpaccuracy(source.dtype)`.
 
     Returns:
       Image: The scaled image.
     """
-    return self.newImage(helpers.scale_pixels(self.image, np.asarray(source), np.asarray(target), cutoff))
+    return self.newImage(helpers.scale_pixels(self.image, source, target, cutoff))
 
   #############
   # Blending. #

@@ -10,8 +10,6 @@
 import numpy as np
 import scipy.ndimage as ndimg
 
-from . import params
-
 #####################################
 # For inclusion in the Image class. #
 #####################################
@@ -53,7 +51,7 @@ class MixinImage:
     # Translate modes.
     if mode == "zero": mode = "constant"
     # Set-up Laplacian kernel.
-    kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = params.IMGTYPE)
+    kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = self.image.dtype)
     # Convolve selected channels with the kernel.
     return self.apply_channels(lambda channel: ndimg.convolve(channel, kernel, mode = mode, cval = 0.), channels, multi = False)
 
@@ -96,7 +94,7 @@ class MixinImage:
     # Translate modes.
     if mode == "zero": mode = "constant"
     # Set-up the (unnormalized) kernel for nearest-neighbors average.
-    kernel = np.array([[1., 1., 1.], [1., 0., 1.], [1., 1., 1.]], dtype = params.IMGTYPE)
+    kernel = np.array([[1., 1., 1.], [1., 0., 1.], [1., 1., 1.]], dtype = self.image.dtype)
     # Normalize with respect to the actual number of nearest neighbors.
-    nnn = ndimg.convolve(np.ones(*self.get_size()), kernel, mode = mode, cval = 0.)
+    nnn = ndimg.convolve(np.ones(*self.get_size(), dtype = self.image.dtype), kernel, mode = mode, cval = 0.)
     return self.apply_channels(remove_hot_pixels_channel, channels, multi = False)

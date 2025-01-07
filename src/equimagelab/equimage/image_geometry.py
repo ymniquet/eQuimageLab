@@ -79,10 +79,10 @@ class MixinImage:
     else:
       raise ValueError(f"Error, unknown resampling method '{method}'.")
     nc = self.get_nc()
-    output = np.empty((nc, height, width), dtype = params.IMGTYPE)
+    output = np.empty((nc, height, width), dtype = params.imagetype)
     for ic in range(nc): # Resize each channel using PIL.
       PILchannel = PILImage.fromarray(np.float32(self.image[ic]), "F").resize((width, height), method) # Convert to np.float32 while resizing.
-      output[ic] = np.asarray(PILchannel, dtype = params.IMGTYPE)
+      output[ic] = np.asarray(PILchannel, dtype = params.imagetype)
     return self.newImage(output)
 
   def rescale(self, scale, method = "lanczos"):
