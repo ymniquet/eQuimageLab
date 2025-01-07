@@ -66,7 +66,7 @@ def lookup(x, xlut, ylut, slut, nlut):
   """Linearly interpolate y = f(x) between the values ylut = f(xlut) of an evenly spaced look-up table.
 
   Args:
-    x (float): The input value for interpolation.
+    x (float): The input abscissa for interpolation.
     xlut (numpy.ndarray): The x values of the look-up table (must be evenly spaced).
     ylut (numpy.ndarray): The y values of the look-up table ylut = f(xlut).
     slut (numpy.ndarray): The slopes (ylut[1:]-ylut[:-1])/(xlut[1:]-xlut[:-1]) used for linear interpolation between the elements of ylut.

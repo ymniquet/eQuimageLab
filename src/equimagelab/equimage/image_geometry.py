@@ -81,7 +81,8 @@ class MixinImage:
     nc = self.get_nc()
     output = np.empty((nc, height, width), dtype = params.imagetype)
     for ic in range(nc): # Resize each channel using PIL.
-      PILchannel = PILImage.fromarray(np.float32(self.image[ic]), "F").resize((width, height), method) # Convert to np.float32 while resizing.
+      # Convert to np.float32 while resizing.
+      PILchannel = PILImage.fromarray(np.asarray(self.image[ic], dtype = np.float32), "F").resize((width, height), method)
       output[ic] = np.asarray(PILchannel, dtype = params.imagetype)
     return self.newImage(output)
 

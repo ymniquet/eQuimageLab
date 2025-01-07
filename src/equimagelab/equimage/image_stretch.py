@@ -693,7 +693,7 @@ class MixinImage:
       matches the target median, no harmonic stretch will be applied on second call.
 
     See also:
-      set_black_point
+      set_black_point,
       harmonic_stretch
 
     Args:

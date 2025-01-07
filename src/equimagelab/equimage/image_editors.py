@@ -157,7 +157,6 @@ class MixinImage:
     if midtone == "auto":
       avgmedian = np.mean(np.median(self.image, axis = (-1, -2)))
       midtone = 1./(harmonic_through(avgmedian, .33)+2.)
-      print(midtone)
     if midtone != .5:
       image = self.midtone_stretch(midtone)
     else:

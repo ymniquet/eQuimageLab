@@ -40,9 +40,10 @@ Latest news:
 
     - First complete documentation.
 
-  - Version 1.0.2.
+  - Version 1.1.
 
+    - float32 & float64 image types.
     - Operations on the lightness :math:`L^*`.
-    - Generalized arcsinh and rational stretches.
+    - Generalized arcsinh, harmonic and power law stretches.
     - Curve stretch.
     - Statistical stretch.

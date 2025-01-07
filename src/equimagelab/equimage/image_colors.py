@@ -32,9 +32,8 @@ class MixinImage:
       bool: True if the RGB image is a grayscale (same RGB channels), False otherwise.
     """
     self.check_color_model("RGB")
-    image = self.image
-    epsilon = helpers.fpaccuracy(image.dtype)
-    return np.all(abs(image[1]-image[0]) < epsilon) and np.all(abs(image[2]-image[0]) < epsilon)
+    epsilon = helpers.fpaccuracy(self.image.dtype)
+    return np.all(abs(self.image[1]-self.image[0]) < epsilon) and np.all(abs(self.image[2]-self.image[0]) < epsilon)
 
   ############################
   # Gray scales & negatives. #
