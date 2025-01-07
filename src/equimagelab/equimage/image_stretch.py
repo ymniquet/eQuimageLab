@@ -116,7 +116,7 @@ class MixinImage:
     """Set the black (shadow) level in selected channels of the image.
 
     The selected channels are clipped below shadow and linearly stretched to map [shadow, 1] onto [0, 1].
-    The output, stretched image channels therefore fit in the [0, infty[ range.
+    The output, stretched image channels therefore fits in the [0, infty[ range.
 
     Args:
       shadow (float): The black (shadow) level (expected < 1).
@@ -147,7 +147,7 @@ class MixinImage:
 
     The selected channels are clipped below shadow and above highlight and linearly stretched
     to map [shadow, highlight] onto [0, 1].
-    The output, stretched channels levels therefore fit in the [0, 1] range.
+    The output, stretched channels therefore fits in the [0, 1] range.
 
     Args:
       shadow (float): The shadow level (expected < 1).
@@ -226,7 +226,7 @@ class MixinImage:
       gharmonic_stretch
 
     Args:
-      D (float): The stretch parameter (expected >= -1).
+      D (float): The stretch parameter (expected > -1).
       inverse (bool, optional): Return the inverse stretch if True (default False).
       channels (str, optional): The selected channels:
 
@@ -251,7 +251,7 @@ class MixinImage:
     Returns:
       Image: The stretched image.
     """
-    if D < -1.: raise ValueError("Error, D must be >= -1.")
+    if D < -.9999: raise ValueError("Error, D must be >= -.9999")
     return self.apply_channels(lambda channel: stf.harmonic_stretch_function(channel, D, inverse), channels, trans = trans)
 
   def gharmonic_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
@@ -260,24 +260,29 @@ class MixinImage:
     The generalized harmonic stretch function f is applied to the selected channels:
 
       - f(x) = b1*x when x <= SPP,
-      - f(x) = a2+(b2*x+c2)/(d2*x+e2) when SPP <= x <= SYP,
-      - f(x) = a3+(b3*x+c3)/(d3*x+e3) when SYP <= x <= HPP,
+      - f(x) = a2+b2/(1-D*(x-SYP)) when SPP <= x <= SYP,
+      - f(x) = a3+b3/(1+D*(x-SYP)) when SYP <= x <= HPP,
       - f(x) = a4+b4*x when x >= HPP.
 
-    The coefficients a, b, c, d and e are computed so that f is continuous and derivable.
+    The coefficients a and b are computed so that f is continuous and derivable.
     SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
-    the "highlight protection point". They can tuned to preserve contrast in the
-    low and high brightness areas, respectively. The strength of the stretch is
-    controlled by the input parameter D that sets the slope at x = SYP.
+    the "highlight protection point". They can be tuned to preserve contrast in
+    the low and high brightness areas, respectively.
 
-    f(x) falls back to the midtone stretch function:
+    f(x) falls back to the "usual" harmonic stretch function
 
-      f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone) with midtone = 1/(2*(D+1))
+      f(x) = (D+1)*x/(D*x+1)
 
-    when SPP = SYP = 0 and HPP = 1.
+    when SPP = SYP = 0 and HPP = 1 (the defaults).
+
+    Moreover, the generalized hyperbolic stretch function for local stretch
+    parameter b = 1 is the generalized harmonic stretch function.
+
+    For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
     See also:
       harmonic_stretch
+      ghyperbolic_stretch
 
     Note:
       Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
@@ -375,7 +380,7 @@ class MixinImage:
       1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight] onto [0, 1].
       2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
          with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
-      3) Maps [low, high] to [0, 1] and clips the output data outside the [0, 1] range.
+      3) Maps [low, high] onto [0, 1] and clips the output data outside the [0, 1] range.
 
     See also:
       midtone_stretch
@@ -434,10 +439,10 @@ class MixinImage:
 
     The coefficients a and b are computed so that f is continuous and derivable.
     SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
-    the "highlight protection point". They can tuned to preserve contrast in the
-    low and high brightness areas, respectively.
+    the "highlight protection point". They can be tuned to preserve contrast in
+    the low and high brightness areas, respectively.
 
-    f(x) falls back to the "standard" arcsinh stretch function:
+    f(x) falls back to the "standard" arcsinh stretch function
 
       f(x) = arcsinh(D*x)/arcsinh(D)
 
@@ -494,10 +499,6 @@ class MixinImage:
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
-    Note:
-      Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
-      (published by Mike Cranfield under GNU GPL license).
-
     Args:
       logD1 (float): The global stretch parameter ln(D+1) (must be >= 0).
       b (float): The local stretch parameter.
@@ -536,6 +537,63 @@ class MixinImage:
       HPP = SYP
       print("Warning, changed HPP = SYP !")
     output = self.apply_channels(lambda channel: stf.ghyperbolic_stretch_function(channel, lnD1, b, SYP, SPP, HPP, inverse), channels, trans = trans)
+    if trans: output.trans.xticks = [SPP, SYP, HPP]
+    return output
+
+  def gpowerlaw_stretch(self, D, SYP, SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
+    """Apply a generalized power law stretch to selected channels of the image.
+
+    The generalized power law stretch function f is applied to the selected channels:
+
+      - f(x) = b1*x when x <= SPP,
+      - f(x) = a2+b2*(1+(x-SYP))**(D+1) when SPP <= x <= SYP,
+      - f(x) = a3+b3*(1-(x-SYP))**(D+1) when SYP <= x <= HPP,
+      - f(x) = a4+b4*x when x >= HPP.
+
+    The coefficients a and b are computed so that f is continuous and derivable.
+    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
+    the "highlight protection point". They can be tuned to preserve contrast in
+    the low and high brightness areas, respectively.
+
+    For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
+
+    Args:
+      D (float): The stretch parameter (must be >= 0).
+      SYP (float): The symmetry point (expected in [0, 1]).
+      SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
+      HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
+      inverse (bool, optional): Return the inverse stretch if True (default False).
+      channels (str, optional): The selected channels:
+
+        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
+          operation to the first/second/third channel (RGB, HSV and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L": Apply the operation to the luma (RGB and grayscale images).
+        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Lb": Apply the operation to the luma, and protect highlights by blending
+          (after the operation, the out-of-range pixels are blended with channels = "RGB").
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
+        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
+          (RGB and grayscale images).
+
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+
+    Returns:
+      numpy.ndarray: The stretched image.
+    """
+    if D < 0.: raise ValueError("Error, D must be >= 0.")
+    if SPP > SYP:
+      SPP = SYP
+      print("Warning, changed SPP = SYP !")
+    if HPP < SYP:
+      HPP = SYP
+      print("Warning, changed HPP = SYP !")
+    output = self.apply_channels(lambda channel: stf.gpowerlaw_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
 
@@ -635,6 +693,7 @@ class MixinImage:
       matches the target median, no harmonic stretch will be applied on second call.
 
     See also:
+      set_black_point
       harmonic_stretch
 
     Args:

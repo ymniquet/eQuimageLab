@@ -51,6 +51,7 @@ The image histograms can be stretched with the following methods of the :py:clas
    midtone_transfer
    garcsinh_stretch
    ghyperbolic_stretch
+   gpowerlaw_stretch
    gamma_stretch
    curve_stretch
 

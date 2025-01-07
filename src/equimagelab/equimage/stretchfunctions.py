@@ -14,7 +14,7 @@ def shadow_stretch_function(x, shadow):
 
   The input data x is clipped below shadow and linearly stretched
   to map [shadow, 1] onto [0, 1].
-  The output, stretched data therefore fit in the [0, infty[ range.
+  The output, stretched data therefore fits in the [0, infty[ range.
 
   Args:
     x (numpy.ndarray): The input data.
@@ -31,7 +31,7 @@ def shadow_highlight_stretch_function(x, shadow, highlight):
 
   The input data x is clipped below shadow and above highlight and linearly stretched
   to map [shadow, highlight] onto [0, 1].
-  The output, stretched data therefore fit in the [0, 1] range.
+  The output, stretched data therefore fits in the [0, 1] range.
 
   Args:
     x (numpy.ndarray): The input data.
@@ -74,13 +74,12 @@ def harmonic_stretch_function(x, D, inverse):
 
   Args:
     x (numpy.ndarray): The input data.
-    D (float): The stretch parameter (expected >= -1).
+    D (float): The stretch parameter (expected > -1).
     inverse (bool): Return the inverse stretch function if True.
 
   Returns:
     numpy.ndarray: The stretched data.
   """
-  if abs(D+1.) < 1.e-6: return x # Identity.
   return x/((D+1.)-D*x) if inverse else (D+1.)*x/(D*x+1.)
 
 def gharmonic_stretch_function(x, D, SYP, SPP, HPP, inverse):
@@ -89,20 +88,26 @@ def gharmonic_stretch_function(x, D, SYP, SPP, HPP, inverse):
   The generalized harmonic stretch function is defined as:
 
     - f(x) = b1*x when x <= SPP,
-    - f(x) = a2+(b2*x+c2)/(d2*x+e2) when SPP <= x <= SYP,
-    - f(x) = a3+(b3*x+c3)/(d3*x+e3) when SYP <= x <= HPP,
+    - f(x) = a2+b2/(1-D*(x-SYP)) when SPP <= x <= SYP,
+    - f(x) = a3+b3/(1+D*(x-SYP)) when SYP <= x <= HPP,
     - f(x) = a4+b4*x when x >= HPP.
 
-  The coefficients a, b, c, d and e are computed so that f is continuous and derivable.
-  The strength of the stretch is controlled by the input parameter D that sets the
-  slope at x = SYP. f(x) falls back to the midtone stretch function:
+  The coefficients a and b are computed so that f is continuous and derivable.
 
-    f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone) with midtone = 1/(2*(D+1))
+  f(x) falls back to the "usual" harmonic stretch function
+
+    f(x) = (D+1)*x/(D*x+1)
 
   when SPP = SYP = 0 and HPP = 1.
 
+  Moreover, the generalized hyperbolic stretch function for local stretch
+  parameter b = 1 is the generalized harmonic stretch function.
+
+  For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
+
   See also:
     harmonic_stretch_function
+    ghyperbolic_stretch_function
 
   Note:
     Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
@@ -122,50 +127,43 @@ def gharmonic_stretch_function(x, D, SYP, SPP, HPP, inverse):
   if abs(D) < 1.e-6: # Identity.
     return x
   else:
-    m = 1./(2.*(D+1.))
-    qs = (m-1.)*(SPP-SYP)/((1.-2.*m)*(SPP-SYP)-m)
-    q0 = qs+SPP*(m-1.)*m/((1.-2.*m)*(SPP-SYP)-m)**2
-    qh = (m-1.)*(HPP-SYP)/((2.*m-1.)*(HPP-SYP)-m)
-    q1 = qh+(HPP-1.)*(m-1.)*m/((2.*m-1.)*(HPP-SYP)-m)**2
-    q = 1./(q1-q0)
+    qs = 1./(1.+D*(SYP-SPP))
+    q0 = qs-D*SPP/(1.+D*(SYP-SPP))**2
+    qh = 2.-1./(1.+D*(HPP-SYP))
+    q1 = qh+D*(1.-HPP)/(1.+D*(HPP-SYP))**2
+    q  = 1./(q1-q0)
     # Coefficient for x < SPP.
-    b1 = q*m*(1.-m)/((1.-2.*m)*(SPP-SYP)-m)**2
+    b1 =  q*D/(1.+D*(SYP-SPP))**2
     # Coefficients for SPP <= x < SYP.
-    a2 = -q0*q
-    b2 = (m-1.)*q
-    c2 = -b2*SYP
-    d2 = 1.-2.*m
-    e2 = -d2*SYP-m
+    a2 = -q*q0
+    b2 =  q
     # Coefficients for SYP <= x < HPP.
-    a3 = -q0*q
-    b3 = (m-1.)*q
-    c3 = -b3*SYP
-    d3 = 2.*m-1.
-    e3 = -d3*SYP-m
+    a3 =  q*(2.-q0)
+    b3 = -q
     # Coefficients for x >= HPP.
-    a4 = q*(qh-q0-HPP*(1.-m)*m/((2.*m-1.)*(HPP-SYP)-m)**2)
-    b4 = -q*m*(m-1.)/((2.*m-1.)*(HPP-SYP)-m)**2
-    # Generalized rational transformation.
+    a4 =  q*(qh-q0-D*HPP/(1.+D*(HPP-SYP))**2)
+    b4 =  q*D/(1.+D*(HPP-SYP))**2
+    # Generalized harmonic transformation.
     y = np.empty_like(x)
     if not inverse:
       mask = (x <  SPP)
       y[mask] =    b1*x[mask]
       mask = (x >= SPP) & (x < SYP)
-      y[mask] = a2+(b2*x[mask]+c2)/(d2*x[mask]+e2)
+      y[mask] = a2+b2/(1.+D*(SYP-x[mask]))
       mask = (x >= SYP) & (x < HPP)
-      y[mask] = a3+(b3*x[mask]+c3)/(d3*x[mask]+e3)
+      y[mask] = a3+b3/(1.+D*(x[mask]-SYP))
       mask = (x >= HPP)
       y[mask] = a4+b4*x[mask]
     else:
       SPT = b1*SPP
-      SYT = a2
+      SYT = a2+b2
       HPT = a4+b4*HPP
       mask = (x <  SPT)
       y[mask] = x[mask]/b1
       mask = (x >= SPT) & (x < SYT)
-      y[mask] = (c2-e2*(x[mask]-a2))/(d2*(x[mask]-a2)-b2)
+      y[mask] = SYP-(b2/(x[mask]-a2)-1.)/D
       mask = (x >= SYT) & (x < HPT)
-      y[mask] = (c3-e3*(x[mask]-a3))/(d3*(x[mask]-a3)-b3)
+      y[mask] = SYP+(b3/(x[mask]-a3)-1.)/D
       mask = (x >= HPT)
       y[mask] = (x[mask]-a4)/b4
     return y
@@ -201,7 +199,7 @@ def midtone_transfer_function(x, shadow, midtone, highlight, low, high):
     1) Clips the input data in the [shadow, highlight] range and maps [shadow, highlight] onto [0, 1].
     2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
        with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
-    3) Maps [low, high] to [0, 1] and clips the output data outside the [0, 1] range.
+    3) Maps [low, high] onto [0, 1] and clips the output data outside the [0, 1] range.
 
   See also:
     midtone_stretch_function
@@ -253,7 +251,8 @@ def garcsinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
     - f(x) = a4+b4*x when x >= HPP.
 
   The coefficients a and b are computed so that f is continuous and derivable.
-  f(x) falls back to the "standard" arcsinh stretch function:
+
+  f(x) falls back to the "usual" arcsinh stretch function
 
     f(x) = arcsinh(D*x)/arcsinh(D)
 
@@ -284,29 +283,29 @@ def garcsinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
   else:
     qs = -np.arcsinh(D*(SYP-SPP))
     q0 = qs-SPP*D/np.sqrt(1.+(D*(SYP-SPP))**2)
-    qh = np.arcsinh(D*(HPP-SYP))
+    qh =  np.arcsinh(D*(HPP-SYP))
     q1 = qh+(1.-HPP)*D/np.sqrt(1.+(D*(HPP-SYP))**2)
-    q = 1./(q1-q0)
+    q  = 1./(q1-q0)
     # Coefficient for x < SPP.
-    b1 = D*q/np.sqrt(1.+(D*(SYP-SPP))**2)
+    b1 =  q*D/np.sqrt(1.+(D*(SYP-SPP))**2)
     # Coefficients for SPP <= x < SYP.
-    a2 = -q0*q
+    a2 = -q*q0
     b2 = -q
     # Coefficients for SYP <= x < HPP.
-    a3 = -q0*q
+    a3 = -q*q0
     b3 =  q
     # Coefficients for x >= HPP.
-    a4 = q*(qh-q0-HPP*D/np.sqrt(1.+(D*(HPP-SYP))**2))
-    b4 = D*q/np.sqrt(1.+(D*(HPP-SYP))**2)
+    a4 =  q*(qh-q0-HPP*D/np.sqrt(1.+(D*(HPP-SYP))**2))
+    b4 =  q*D/np.sqrt(1.+(D*(HPP-SYP))**2)
     # Generalized arcsinh transformation.
     y = np.empty_like(x)
     if not inverse:
       mask = (x <  SPP)
       y[mask] =    b1*x[mask]
       mask = (x >= SPP) & (x < SYP)
-      y[mask] = a2+b2*np.arcsinh(-D*(x[mask]-SYP))
+      y[mask] = a2+b2*np.arcsinh(D*(SYP-x[mask]))
       mask = (x >= SYP) & (x < HPP)
-      y[mask] = a3+b3*np.arcsinh( D*(x[mask]-SYP))
+      y[mask] = a3+b3*np.arcsinh(D*(x[mask]-SYP))
       mask = (x >= HPP)
       y[mask] = a4+b4*x[mask]
     else:
@@ -356,20 +355,20 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
       q1 = qh+D*(1.-HPP)*np.exp(-D*(HPP-SYP))
       q  = 1./(q1-q0)
       # Coefficient for x < SPP.
-      b1 = D*q*np.exp(-D*(SYP-SPP))
+      b1 = q*D*np.exp(-D*(SYP-SPP))
       # Coefficients for SPP <= x < SYP.
-      a2 = -q0*q
-      b2 = q
+      a2 = -q*q0
+      b2 =  q
       c2 = -D*SYP
-      d2 = D
+      d2 =  D
       # Coefficients for SYP <= x < HPP.
-      a3 = (2.-q0)*q
+      a3 =  q*(2.-q0)
       b3 = -q
-      c3 = D*SYP
+      c3 =  D*SYP
       d3 = -D
       # Coefficients for x >= HPP.
       a4 = q*(qh-q0-D*HPP*np.exp(-D*(HPP-SYP)))
-      b4 = D*q*np.exp(-D*(HPP-SYP))
+      b4 = q*D*np.exp(-D*(HPP-SYP))
       # GHS transformation.
       if not inverse:
         mask = (x <  SPP)
@@ -381,7 +380,7 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
         mask = (x >= HPP)
         y[mask] = a4+b4*x[mask]
       else:
-        SPT =    b1*SPP
+        SPT = b1*SPP
         SYT = a2+b2#*np.exp(c2+d2*SYP)
         HPT = a4+b4*HPP
         mask = (x <  SPT)
@@ -395,24 +394,24 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
     elif abs(b+1.) < 1.e-6:
       qs = -np.log(1.+D*(SYP-SPP))
       q0 = qs-D*SPP/(1.+D*(SYP-SPP))
-      qh = np.log(1.+D*(HPP-SYP))
+      qh =  np.log(1.+D*(HPP-SYP))
       q1 = qh+D*(1.-HPP)/(1.+D*(HPP-SYP))
       q  = 1./(q1-q0)
       # Coefficient for x < SPP.
-      b1 = D*q/(1.+D*(SYP-SPP))
+      b1 = q*D/(1.+D*(SYP-SPP))
       # Coefficients for SPP <= x < SYP.
-      a2 = -q0*q
+      a2 = -q*q0
       b2 = -q
       c2 = 1.+D*SYP
       d2 = -D
       # Coefficients for SYP <= x < HPP.
-      a3 = -q0*q
-      b3 = q
+      a3 = -q*q0
+      b3 =  q
       c3 = 1.-D*SYP
-      d3 = D
+      d3 =  D
       # Coefficients for x >= HPP.
       a4 = q*(qh-q0-D*HPP/(1.+D*(HPP-SYP)))
-      b4 = D*q/(1.+D*(HPP-SYP))
+      b4 = q*D/(1.+D*(HPP-SYP))
       # GHS transformation.
       if not inverse:
         mask = (x <  SPP)
@@ -444,22 +443,22 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
         q1 = qh+D*(1.-HPP)*(1.+D*b*(HPP-SYP))**(-1./b)
         q  = 1./(q1-q0)
         # Coefficient for x < SPP.
-        b1 = D*q*(1.+D*b*(SYP-SPP))**(-1./b)
+        b1 = q*D*(1.+D*b*(SYP-SPP))**(-1./b)
         # Coefficients for SPP <= x < SYP.
-        a2 = (1./(b-1.)-q0)*q
+        a2 =  q*(1./(b-1.)-q0)
         b2 = -q/(b-1.)
         c2 = 1.+D*b*SYP
         d2 = -D*b
         e2 = (b-1.)/b
         # Coefficients for SYP <= x < HPP.
-        a3 = (-1./(b-1.)-q0)*q
+        a3 = q*(-1./(b-1.)-q0)
         b3 = q/(b-1.)
         c3 = 1.-D*b*SYP
         d3 = D*b
         e3 = (b-1.)/b
         # Coefficients for x >= HPP.
         a4 = q*(qh-q0-D*HPP*(1.+D*b*(HPP-SYP))**(-1./b))
-        b4 = D*q*(1.+D*b*(HPP-SYP))**(-1./b)
+        b4 = q*D*(1.+D*b*(HPP-SYP))**(-1./b)
       else:
         qs = (1.+D*b*(SYP-SPP))**(-1./b)
         q0 = qs-D*SPP*(1.+D*b*(SYP-SPP))**(-(1.+b)/b)
@@ -467,22 +466,22 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
         q1 = qh+D*(1.-HPP)*(1.+D*b*(HPP-SYP))**(-(1.+b)/b)
         q  = 1./(q1-q0)
         # Coefficient for x < SPP.
-        b1 = D*q*(1.+D*b*(SYP-SPP))**(-(1.+b)/b)
+        b1 = q*D*(1.+D*b*(SYP-SPP))**(-(1.+b)/b)
         # Coefficients for SPP <= x < SYP.
-        a2 = -q0*q
-        b2 = q
+        a2 = -q*q0
+        b2 =  q
         c2 = 1.+D*b*SYP
         d2 = -D*b
         e2 = -1./b
         # Coefficients for SYP <= x < HPP.
-        a3 = (2.-q0)*q
+        a3 =  q*(2.-q0)
         b3 = -q
         c3 = 1.-D*b*SYP
         d3 = D*b
         e3 = -1./b
         # Coefficients for x >= HPP.
         a4 = q*(qh-q0-D*HPP*(1.+D*b*(HPP-SYP))**(-(b+1.)/b))
-        b4 = D*q*(1.+D*b*(HPP-SYP))**(-(b+1.)/b)
+        b4 = q*D*(1.+D*b*(HPP-SYP))**(-(b+1.)/b)
       # GHS transformation.
       if not inverse:
         mask = (x <  SPP)
@@ -505,6 +504,75 @@ def ghyperbolic_stretch_function(x, logD1, b, SYP, SPP, HPP, inverse):
         y[mask] = (((x[mask]-a3)/b3)**(1./e3)-c3)/d3
         mask = (x >= HPT)
         y[mask] = (x[mask]-a4)/b4
+    return y
+
+def gpowerlaw_stretch_function(x, D, SYP, SPP, HPP, inverse):
+  """Return the generalized power law stretch function f(x).
+
+  The generalized power law stretch function is defined as:
+
+    - f(x) = b1*x when x <= SPP,
+    - f(x) = a2+b2*(1+(x-SYP))**(D+1) when SPP <= x <= SYP,
+    - f(x) = a3+b3*(1-(x-SYP))**(D+1) when SYP <= x <= HPP,
+    - f(x) = a4+b4*x when x >= HPP.
+
+  The coefficients a and b are computed so that f is continuous and derivable.
+
+  For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
+
+  Args:
+    x (numpy.ndarray): The input data.
+    D (float): The stretch parameter (expected >= 0).
+    SYP (float): The symmetry point (expected in [0, 1]).
+    SPP (float): The shadow protection point (expected in [0, SYP]).
+    HPP (float): The highlight protection point (expected in [SYP, 1]).
+    inverse (bool): Return the inverse stretch function if True.
+
+  Returns:
+    numpy.ndarray: The stretched data.
+  """
+  if abs(D) < 1.e-6: # Identity.
+    return x
+  else:
+    qs = (1.-(SYP-SPP))**(D+1.)
+    q0 = qs-(D+1.)*SPP*(1.-(SYP-SPP))**D
+    qh = 2.-(1.-(HPP-SYP))**(D+1.)
+    q1 = qh+(D+1.)*(1.-HPP)*(1.-(HPP-SYP))**D
+    q  = 1./(q1-q0)
+    # Coefficient for x < SPP.
+    b1 =  q*(D+1.)*(1.-(SYP-SPP))**D
+    # Coefficients for SPP <= x < SYP.
+    a2 = -q*q0
+    b2 =  q
+    # Coefficients for SYP <= x < HPP.
+    a3 =  q*(2.-q0)
+    b3 = -q
+    # Coefficients for x >= HPP.
+    a4 =  q*(qh-q0-(D+1.)*HPP*(1.-(HPP-SYP))**D)
+    b4 =  q*(D+1.)*(1.-(HPP-SYP))**D
+    # Generalized power law transformation.
+    y = np.empty_like(x)
+    if not inverse:
+      mask = (x <  SPP)
+      y[mask] =    b1*x[mask]
+      mask = (x >= SPP) & (x < SYP)
+      y[mask] = a2+b2*(1.-(SYP-x[mask]))**(D+1.)
+      mask = (x >= SYP) & (x < HPP)
+      y[mask] = a3+b3*(1.-(x[mask]-SYP))**(D+1.)
+      mask = (x >= HPP)
+      y[mask] = a4+b4*x[mask]
+    else:
+      SPT = b1*SPP
+      SYT = a2+b2
+      HPT = a4+b4*HPP
+      mask = (x <  SPT)
+      y[mask] = x[mask]/b1
+      mask = (x >= SPT) & (x < SYT)
+      y[mask] = SYP-1.+((x[mask]-a2)/b2)**(1./(D+1.))
+      mask = (x >= SYT) & (x < HPT)
+      y[mask] = SYP+1.-((x[mask]-a3)/b3)**(1./(D+1.))
+      mask = (x >= HPT)
+      y[mask] = (x[mask]-a4)/b4
     return y
 
 def gamma_stretch_function(x, gamma):

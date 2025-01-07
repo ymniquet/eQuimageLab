@@ -29,10 +29,10 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
             image_masks.MixinImage, image_stats.MixinImage, image_editors.MixinImage, image_io.MixinImage):
   """Image class.
 
-  The image is stored as self.image, a numpy.ndarray with dtype params.IMGTYPE = np.float32 or np.float64.
-  Color images are represented as arrays with shape (3, height, width) and grayscale images as arrays with
-  shape (1, height, width). The leading axis spans the color channels, and the last two the height and
-  width of the image.
+  The image is stored as self.image, a numpy.ndarray with dtype numpy.float32 or numpy.float64.
+  Color images are represented as arrays with shape (3, height, width) and grayscale images as
+  arrays with shape (1, height, width). The leading axis spans the color channels, and the last
+  two the height and width of the image.
 
   The class embeds colorspace and colormodel attributes for the color space and model of the image.
 
@@ -48,22 +48,24 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     - "HSV": the 3 channels of the image are the hue, value, and saturation within [0, 1].
 
   The default color space is sRGB and the default color model is RGB.
+
+  The dtype of the images (numpy.float32 or numpy.float64) can be set with `equimage.params.set_image_type`.
   """
 
   ################
   # Constructor. #
   ################
 
-  def __init__(self, image, colorspace = "sRGB", colormodel = "RGB", channels = 0):
+  def __init__(self, image, channels = 0, colorspace = "sRGB", colormodel = "RGB"):
     """Initialize a new Image object with the input image.
 
     Args:
       image: The input image (numpy.ndarray or Image).
+      channels (int, optional): The position of the channel axis for color images (default 0).
       colorspace (str, optional): The image color space (default "sRGB").
         Can be "lRGB" (linear RGB color space) or "sRGB" (sRGB color space).
       colormodel (str, optional): The image color model (default "RGB").
         Can be "RGB" (RGB image), "HSV" (HSV image) or "gray (grayscale image).
-      channels (int, optional): The position of the channel axis for color images (default 0).
     """
     # Check color space and model.
     if colorspace not in ["lRGB", "sRGB"]:
@@ -71,7 +73,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     if colormodel not in ["RGB", "HSV", "gray"]:
       raise ValueError(f"Error, the color model must either be 'RGB', 'HSV' or 'gray' (got {colormodel}).")
     # Convert the input image into an array.
-    image = np.asarray(image, dtype = params.IMGTYPE)
+    image = np.asarray(image, dtype = params.imgtype)
     # Validate the image.
     if image.ndim == 2:
       colormodel = "gray"  # Enforce colormodel = "gray".
@@ -109,7 +111,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     colorspace = kwargs.pop("colorspace", self.colorspace)
     colormodel = kwargs.pop("colormodel", self.colormodel)
     if kwargs: print("Discarding extra keyword arguments in Image.newImage...")
-    return Image(image, colorspace = colorspace, colormodel = colormodel)
+    return Image(image, colorspace = colorspace, colormodel = colormodel, )
 
   def copy(self):
     """Return a copy of the object.
@@ -125,7 +127,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
   def __repr__(self):
     """Return the object representation."""
-    return f"{self.__class__.__name__}(colorspace = {self.colorspace}, colormodel = {self.colormodel}, size = {self.image.shape[2]}x{self.image.shape[1]} pixels)"
+    return f"{self.__class__.__name__}(size = {self.image.shape[2]}x{self.image.shape[1]} pixels, colorspace = {self.colorspace}, colormodel = {self.colormodel}, type = {self.image.dtype})"
 
   def __array__(self, dtype = None, copy = None):
     """Expose the object as an numpy.ndarray."""

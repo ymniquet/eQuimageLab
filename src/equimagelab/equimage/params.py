@@ -29,40 +29,35 @@ RGB2XYZ = np.array([[0.412453, 0.357580, 0.180423],
 
 XYZ2RGB = np.linalg.inv(RGB2XYZ)
 
-# Exclude pixels <= 0 or >= 1 from the percentiles in image statistics ?
+# Image type.
 
-exclude01 = False
+imgtype = np.float32
+imgtol = 1.e-6 # Tolerance on floating point operations.
 
-# Number of x mesh points for transformation function plots y = f(x in [0, 1]).
+def get_image_type():
+  """Return the image type.
 
-ntranslo = 128 # Low  resolution.
-ntranshi = 256 # High resolution.
+  Returns:
+    str: The image type, either "float32" (for 32 bits floats) or "float64" (for 64 bits floats).
+  """
+  return "float32" if imgtype == np.float32 else "float64"
 
-# Number of bins in the histograms.
-
-maxhistbins = 8192 # Maximum number of bins within [0, 1].
-defhistbins = 0    # Default number of bins within [0, 1] (see set_default_hist_bins).
-
-def set_max_hist_bins(n):
-  """Set the maximum number of bins in the histograms.
+def set_image_type(dtype):
+  """Set image type.
 
   Args:
-    n (int): The maximum number of bins within [0, 1].
+    dtype (str): The image type.
+      Can be either "float32" (for 32 bits floats) or "float64" (for 64 bits floats).
   """
-  global maxhistbins
-  maxhistbins = n
-
-def set_default_hist_bins(n):
-  """Set the default number of bins in the histograms.
-
-  Args:
-    n (int): If strictly positive, the default number of bins within [0, 1].
-      (practically limited to `equimage.params.maxhistbins`). If zero, the number
-      of bins is computed according to the statistics of each image. If strictly
-      negative, the number of bins is set to `equimage.params.maxhistbins`.
-  """
-  global defhistbins
-  defhistbins = n if n >= 0 else maxhistbins
+  global imgtype, imgtol
+  if dtype == "float32":
+    imgtype = np.float32
+    imgtol = 1.e-6
+  elif dtype == "float64":
+    imgtype = np.float64
+    imgtol = 1.e-9
+  else:
+    raise ValueError(f"Error, the image type must be 'float32' or 'float64' (got {dtype}).")
 
 # Weights of the RGB components in the luma.
 
@@ -108,3 +103,38 @@ def set_RGB_luma(rgb, verbose = True):
     if s == 0.: raise ValueError("Error, the sum of the input rgb weights must be > 0.")
     global rgbluma ; rgbluma = w/s
     if verbose: print(f"Luma = {rgbluma[0]:.4f}R+{rgbluma[1]:.4f}G+{rgbluma[2]:.4f}B.")
+
+# Number of bins in the histograms.
+
+maxhistbins = 8192 # Maximum number of bins within [0, 1].
+defhistbins = 0    # Default number of bins within [0, 1] (see set_default_hist_bins).
+
+def set_max_hist_bins(n):
+  """Set the maximum number of bins in the histograms.
+
+  Args:
+    n (int): The maximum number of bins within [0, 1].
+  """
+  global maxhistbins
+  maxhistbins = n
+
+def set_default_hist_bins(n):
+  """Set the default number of bins in the histograms.
+
+  Args:
+    n (int): If strictly positive, the default number of bins within [0, 1].
+      (practically limited to `equimage.params.maxhistbins`). If zero, the number
+      of bins is computed according to the statistics of each image. If strictly
+      negative, the number of bins is set to `equimage.params.maxhistbins`.
+  """
+  global defhistbins
+  defhistbins = n if n >= 0 else maxhistbins
+
+# Number of x mesh points for transformation function plots y = f(x in [0, 1]).
+
+ntranslo = 128 # Low  resolution.
+ntranshi = 256 # High resolution.
+
+# Exclude pixels <= 0 or >= 1 from the percentiles in image statistics ?
+
+exclude01 = False

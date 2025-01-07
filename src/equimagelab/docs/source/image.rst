@@ -4,7 +4,7 @@ The Image class
 Description
 ^^^^^^^^^^^
 
-An image is stored in an :py:class:`Image <equimagelab.equimage.image.Image>` object as ``Image.image``, a :py:class:`numpy.ndarray` with data type :py:class:`numpy.float32`:
+An image is stored in an :py:class:`Image <equimagelab.equimage.image.Image>` object as ``Image.image``, a :py:class:`numpy.ndarray` with data type :py:class:`numpy.float32` (single precision 32 bits floats) or :py:class:`numpy.float64` (double precision 64 bits floats):
 
   - Color images are represented as arrays with shape (3, H, W), where W is the width and H the height of the image in pixels. The leading axis spans the color channels (see `colormodel` below).
   - Grayscale images are represented as arrays with shape (1, H, W).
@@ -28,6 +28,11 @@ The default color space of an image is "sRGB" and the default color model is "RG
 .. note::
 
   The HSV color model is best suited for some color transformations (color saturation, etc...). Many operations can not, however, be applied to HSV images. eQuimageLab does not automatically convert back and forth between HSV and RGB to apply such operations. You need to do it yourself with the :py:meth:`Image.RGB() <equimagelab.equimage.image_colorspaces.MixinImage.RGB>` and :py:meth:`Image.HSV() <equimagelab.equimage.image_colorspaces.MixinImage.HSV>` methods. HSV images can not, moreover, be displayed in JupyterLab cells and on the dashboard (well, they can, but the outcome is fancy, as they are dealt with as RGB images !). You need, again, to convert them into RGB images to do so.
+
+The data type of the images (:py:class:`numpy.float32` or :py:class:`numpy.float64`) can be set with :py:func:`equimagelab.set_image_type() <equimagelab.equimage.params.set_image_type>` and inquired with :py:func:`equimagelab.get_image_type() <equimagelab.equimage.params.get_image_type>`. The :py:class:`numpy.float64` type is more accurate, but doubles the memory footprint of the images and significantly increases computation times. The default image type is :py:class:`numpy.float32`.
+
+.. hint::
+  You may design your notebook with the :py:class:`numpy.float32` type, then rerun it with the :py:class:`numpy.float64` type for best accuracy.
 
 Creating and accessing images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
