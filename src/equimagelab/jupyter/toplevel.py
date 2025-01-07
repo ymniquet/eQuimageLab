@@ -5,20 +5,8 @@
 # Version: 1.0.2 / 2024.12.28
 # Sphinx OK.
 
-"""eQuimageLab."""
+"""Jupyter interface top-level symbols."""
 
-__version__ = "1.0.2"
-__packagepath__ = __path__[0]
-
-# Import top-level symbols.
-
-from .equimage.toplevel import *
-from .jupyter.toplevel import *
-from . import params
-
-print("######################################"+len(__version__)*"#")
-print(f"# Welcome to eQuimageLab version {__version__}... #")
-print("######################################"+len(__version__)*"#")
-print("Documentation available at: https://astro.ymniquet.fr/codes/equimagelab/docs/")
-
-set_RGB_luma("human")
+from .utils import filter, shadowed, highlighted, differences
+from .backend_plotly import show, show_t, show_histograms, show_statistics, light_curve
+from .backend_dash import Dashboard

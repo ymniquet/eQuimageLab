@@ -7,12 +7,6 @@
 
 """Image processing tools."""
 
-# Import everything.
+# Import top-level symbols.
 
-from .image import Image
-from .params import get_image_type, set_image_type, get_RGB_luma, set_RGB_luma
-from .image_utils import is_valid_image, clip, blend
-from .image_colorspaces import value, saturation, luma
-from .image_stretch import hms, mts, ghs, harmonic_through
-from .image_masks import threshold_mask
-from .image_io import load_image, save_image
+from .toplevel import *

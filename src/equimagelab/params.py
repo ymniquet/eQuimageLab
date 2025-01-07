@@ -5,20 +5,7 @@
 # Version: 1.0.2 / 2024.12.28
 # Sphinx OK.
 
-"""eQuimageLab."""
+"""eQuimageLab parameters."""
 
-__version__ = "1.0.2"
-__packagepath__ = __path__[0]
-
-# Import top-level symbols.
-
-from .equimage.toplevel import *
-from .jupyter.toplevel import *
-from . import params
-
-print("######################################"+len(__version__)*"#")
-print(f"# Welcome to eQuimageLab version {__version__}... #")
-print("######################################"+len(__version__)*"#")
-print("Documentation available at: https://astro.ymniquet.fr/codes/equimagelab/docs/")
-
-set_RGB_luma("human")
+from .equimage.params import get_image_type, set_image_type
+from .jupyter.params import set_image_sampling, set_figure_max_width, set_figure_margins, set_table_row_height

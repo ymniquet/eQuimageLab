@@ -7,9 +7,6 @@
 
 """Jupyter Lab interface."""
 
-# Import everything.
+# Import top-level symbols.
 
-from . import params
-from .utils import filter, shadowed, highlighted, differences
-from .backend_plotly import show, show_t, show_histograms, show_statistics, light_curve
-from .backend_dash import Dashboard
+from .toplevel import *

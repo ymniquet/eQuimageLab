@@ -29,9 +29,9 @@ RGB2XYZ = np.array([[0.412453, 0.357580, 0.180423],
 
 XYZ2RGB = np.linalg.inv(RGB2XYZ)
 
-# Image type.
+# Image type and floating point accuracy.
 
-imgtype = np.float32
+imgtype = np.float32 # Image type.
 imgtol = 1.e-6 # Tolerance on floating point operations.
 
 def get_image_type():
