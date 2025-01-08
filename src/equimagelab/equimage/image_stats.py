@@ -17,7 +17,7 @@ def parse_channels(channels, errors = True):
 
   Args:
     channels (str): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
-      "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness/100).
+      "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness).
     errors (bool, optional): If False, discard unknown channel keys; If True (default), raise a ValueError.
 
   Returns:
@@ -55,7 +55,7 @@ class MixinImage:
 
     Args:
       channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
-        "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness/100). For a HSV image, only the histograms of the
+        "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness). For a HSV image, only the histograms of the
         value and saturation can be computed. If it ends with a "+", channels gets appended with the keys already computed
         and stored in self.hists. Default is "RGBL".
       nbins (int, optional): Number of bins within [0, 1] in the histograms. Set to `equimage.params.maxhistbins` if negative,
@@ -159,7 +159,7 @@ class MixinImage:
 
     Args:
       channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
-        "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness/100). For a HSV image, only the histograms of the
+        "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness). For a HSV image, only the histograms of the
         value and saturation can be computed. If it ends with a "+", channels gets appended with the keys already computed
         and stored in self.hists. Default is "RGBL".
       exclude01 (bool, optional): If True, exclude pixels <= 0 or >= 1 from the median and percentiles.

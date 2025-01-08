@@ -739,16 +739,16 @@ class MixinImage:
         cmeds = {}
         nc = self.get_nc()
         for c in channels:
-          if c in "RGB":
-            if image.colormodel != "RGB": self.color_model_error()
-            ic = "RGB".index(c)
-          elif c.isdigit():
+          if c.isdigit():
             ic = int(c)-1
             if ic < 0 or ic >= nc: raise ValueError(f"Error, invalid channel '{c}'.")
+          elif c in "RGB":
+            self.check_color_model("RGB")
+            ic = "RGB".index(c)
           elif c == " ": # Skip spaces.
             continue
           else:
-            raise ValueError(f"Error, unknown channel '{c}'.")
+            raise ValueError(f"Syntax errror in the channels string '{channels}'.")
           if cmeds.get(c, None) is not None:
             print(f"Warning, channel '{c}' selected twice or more...")
             continue
@@ -810,5 +810,5 @@ class MixinImage:
           ctrans.xticks = [avgmed]
         else:
           ctrans.y = fboost(ctrans.y)
-    if trans and ctrans is not None: output.trans = ctrans
+    if ctrans is not None: output.trans = ctrans
     return output

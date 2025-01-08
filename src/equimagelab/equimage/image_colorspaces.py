@@ -489,7 +489,43 @@ class MixinImage:
   # Channel-selective operations. #
   #################################
 
-  def update_channel(self, channel, data, inplace = False):
+  def get_channel(self, channel):
+    """Return the selected channel of the image.
+
+    Args:
+      channel (str): The selected channel:
+
+        - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+          The first/second/third channel (RGB, HSV and grayscale images).
+        - "V": The HSV value (RGB, HSV and and grayscale images).
+        - "S": The HSV saturation (RGB and HSV images).
+        - "L": The luma (RGB and grayscale images).
+        - "L*": The CIE lightness L* (RGB and grayscale images).
+
+    Returns:
+      numpy.ndarray: The selected channel.
+    """
+    channel = channel.strip()
+    if channel.isdigit():
+      ic = int(channel)-1
+      if ic < 0 or ic >= self.get_nc(): raise ValueError(f"Error, invalid channel '{channel}'.")
+      return self.image[ic]
+    elif channel in ["R", "G", "B"]:
+      self.check_color_model("RGB")
+      ic = "RGB".index(channel)
+      return self.image[ic]
+    elif channel == "V":
+      return self.value()
+    elif channel == "S":
+      return self.saturation()
+    elif channel == "L":
+      return self.luma()
+    elif channel == "L*":
+      return self.lightness()
+    else:
+      raise ValueError(f"Error, unknown channel '{channel}'.")
+
+  def set_channel(self, channel, data, inplace = False):
     """Update the selected channel of the image.
 
     Args:
@@ -517,14 +553,14 @@ class MixinImage:
     is_gray = (self.colormodel == "gray")
     output = self if inplace else self.copy()
     channel = channel.strip()
-    if channel in ["R", "G", "B"]:
-      if not is_RGB: self.color_model_error()
-      ic = "RGB".index(channel)
-      output.image[ic] = data
-      return output
-    elif channel.isdigit():
+    if channel.isdigit():
       ic = int(channel)-1
       if ic < 0 or ic >= self.get_nc(): raise ValueError(f"Error, invalid channel '{channel}'.")
+      output.image[ic] = data
+      return output
+    elif channel in ["R", "G", "B"]:
+      if not is_RGB: self.color_model_error()
+      ic = "RGB".index(channel)
       output.image[ic] = data
       return output
     elif channel == "V":
@@ -755,16 +791,16 @@ class MixinImage:
     else:
       selected = nc*[False]
       for c in channels:
-        if c in "RGB":
-          if not is_RGB: self.color_model_error()
-          ic = "RGB".index(c)
-        elif c.isdigit():
+        if c.isdigit():
           ic = int(c)-1
           if ic < 0 or ic >= nc: raise ValueError(f"Error, invalid channel '{c}'.")
+        elif c in "RGB":
+          if not is_RGB: self.color_model_error()
+          ic = "RGB".index(c)
         elif c == " ": # Skip spaces.
           continue
         else:
-          raise ValueError(f"Error, unknown channel '{c}'.")
+          raise ValueError(f"Syntax errror in the channels string '{channels}'.")
         if selected[ic]: print(f"Warning, channel '{c}' selected twice or more...")
         selected[ic] = True
       if all(selected) and multi:

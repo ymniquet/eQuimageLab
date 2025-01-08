@@ -101,38 +101,92 @@ class MixinImage:
     # Convolve selected channels with the kernel.
     return self.apply_channels(lambda channel: ndimg.convolve(channel, kernel, mode = mode, cval = 0.), channels, multi = False)
 
-  def LDBS(self, sigma, amount, threshold, channel = "L*", mode = "reflect", full_output = False):
+  def LDBS(self, sigma, amount, threshold, channels = "L*", mode = "reflect", full_output = False):
     """Light-dependent blur & sharpen (LDBS).
+
+    Blurs low-brightness and sharpens high-brightness areas.
+
+    The background of astronomical images usually remains noisy. This is the Poisson (photon counting)
+    noise typical of low brightness areas. We may want to "blur" this background by applying a "low-pass"
+    filter that softens small scale features - such as a convolution with a gaussian:
+
+      blurred = image.gaussian_filter(sigma = 5) # Gaussian blur with a std dev of 5 pixels.
+
+    Yet this operation would also blur the objects of interest (the galaxy, nebula...) !
+
+    As a matter of fact, most of these objects already lack sharpness... We may thus want, on the opposite,
+    to apply a "high-pass" filter that enhances small scale features. Since the convolution with a gaussian
+    is a low-pass filter, the following operation:
+
+      sharpened = (1 + q) * image - q * blurred, q > 0
+
+    is a high-pass filter known as an "unsharp mask". We can also rewrite this operation as a conventional
+    blend with a mixing coefficient m > 1:
+
+      sharpened = (1 - m) * blurred + m * image, m > 1
+
+    Yet such an unsharp mask would also enhance the noise in the background !
+
+    We can meet both requirements by making m dependent on the lightness. Namely, we want m ~ 0 where
+    the lightness is "small" (the background), and m > 1 where the lightness is "large" (the object of
+    interest). We may use as a starting point:
+
+      m = (1 + a) * image
+
+    where a > 0 controls image sharpening in the bright areas. In practice, we gain flexibility by stretching
+    the image to control how fast we switch from blurring to sharpening, e.g.:
+
+      m = (1 + a) * hms(image, D)
+
+    where hms is the harmonic stretch with strength D. The latter can be calculated to switch (m = 1) at a
+    given threshold.
+
+    Application of the LDBS to all channels (as in the above equations) can lead to significant "color spilling".
+    It is preferable to apply LDBS to the lightness L*, luma L or value V (i.e. setting image = L*, L or V and
+    updating that channel with the output of the LDBS).
 
     Args:
       sigma (float): The standard deviation of the gaussian blur (pixels).
       amount (float): The full strength of the unsharp mask (must be > 0).
-      threshold (float): The threshold for sharpening.
+      threshold (float): The threshold for sharpening (expected in ]0, 1[).
         The image is blurred below the threshold, and sharpened above.
-      channel (str, optional): The channel for LDBS (can be "L" for luma or "L*" for lightness). Default is "L*".
-      mode (str, optional): How to extend the image across its boundaries:
+      channels (str, optional): The channel(s) for LDBS (can be "" for all channels, "V" for Value, "L" for
+        luma or "L*" for lightness). Default is "L*".
+      mode (str, optional): How to extend the image across its boundaries (for the gaussian blur):
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
         - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
         - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
         - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
 
-      full_output (bool, optional): If True, return the processed image, as well as the original, blurred
-        and enhanced channel as grayscale images. If False (default), only return the processed image.
+      full_output (bool, optional): If False (default), only return the processed image. If True, return
+        the processed image, as well as:
+
+        - The blurred image if channels = "".
+        - The input, blurred and output channel as grayscale images if channels = "V", "L" or "L*".
 
     Returns:
       Image: The processed image(s) (see the full_output argument).
     """
-    channel = channel.strip()
-    if channel not in ["L", "L*"]: raise ValueError("Error, channel must be L or L*.")
+    channels = channels.strip()
+    if channels not in ["", "V", "L", "L*"]: raise ValueError("Error, channels must be '', 'V', 'L' or 'L*'.")
     if amount <= 0.: raise ValueError("Error amount must be > 0.")
-    light = self.grayscale(channel)
-    blurred = light.gaussian_filter(sigma, mode = mode)
+    if threshold < .0001 or threshold >= .9999: raise ValueError("Error, threshold must be >= 0.0001 and <= 0.9999.")
     D = harmonic_through(threshold, 1./(1.+amount))
-    enhanced = blurred.blend(light, (1.+amount)*hms(light, D))
-    newchannel = enhanced.luma() if channel == "L" else enhanced.lightness()
-    output = self.update_channel(channel, newchannel)
-    if full_output:
-      return output, light, blurred, enhanced
+    clipped = self.clip() # Clip the image before LDBS.
+    if channels == "":
+      blurred = clipped.gaussian_filter(sigma, mode = mode)
+      output = blurred.blend(clipped, (1.+amount)*hms(clipped, D)).clip()
+      if full_output:
+        return output, blurred
+      else:
+        return output
     else:
-      return output
+      cin = clipped.grayscale(channels)
+      cblurred = cin.gaussian_filter(sigma, mode = mode)
+      cout = cblurred.blend(cin, (1.+amount)*hms(cin, D)).clip()
+      output = clipped.set_channel(channels, cout.lightness() if channels == "L*" else cout.image[0])
+      if full_output:
+        return output, cin, cblurred, cout
+      else:
+        return output

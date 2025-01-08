@@ -67,6 +67,7 @@ class MixinImage:
         - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
           Apply the filter to the first/second/third channel (RGB, HSV and grayscale images).
         - "V": Apply the filter to the HSV value (RGB, HSV and and grayscale images).
+        - "S": Apply the filter to the HSV saturation (RGB and HSV images).
         - "L": Apply the filter to the luma (RGB and grayscale images).
         - "L*": Apply the filter to the CIE lightness L* (RGB and grayscale images).
 
@@ -90,31 +91,7 @@ class MixinImage:
       *not* converted to a grayscale Image object.
     """
     if mode == "zero": mode = "constant" # Translate modes.
-    if channel == "1":
-      data = self.image[0]
-    elif channel == "2":
-      self.check_is_not_gray()
-      data = self.image[1]
-    elif channel == "3":
-      self.check_is_not_gray()
-      data = self.image[2]
-    elif channel == "R":
-      self.check_color_model("RGB")
-      data = self.image[0]
-    elif channel == "G":
-      self.check_color_model("RGB")
-      data = self.image[1]
-    elif channel == "B":
-      self.check_color_model("RGB")
-      data = self.image[2]
-    elif channel == "V":
-      data = self.value()
-    elif channel == "L":
-      data = self.luma()
-    elif channel == "L*":
-      data = self.lightness()
-    else:
-      raise ValueError(f"Error, unknown or incompatible channel '{channel}'.")
+    data = self.get_channel(channel)
     if filter == "gaussian":
       return ndimg.gaussian_filter(data, sigma = radius/3., mode = mode, cval = 0.)
     elif filter == "mean":

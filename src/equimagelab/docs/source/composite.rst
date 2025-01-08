@@ -97,7 +97,7 @@ Also see the following functions of eQuimageLab about histograms:
 Working with composite channels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Some operations (e.g., histograms stretches) can be applied separately to the R, G, B channels of a color image, or to a composite channel (see the generic :py:meth:`Image.update_channel() <equimagelab.equimage.image_colorspaces.MixinImage.update_channel>` and :py:meth:`Image.apply_channels() <equimagelab.equimage.image_colorspaces.MixinImage.apply_channels>` methods).
+Some operations (e.g., histograms stretches) can be applied separately to the R, G, B channels of a color image, or to a composite channel (see the generic :py:meth:`Image.get_channel() <equimagelab.equimage.image_colorspaces.MixinImage.get_channel>`, :py:meth:`Image.set_channel() <equimagelab.equimage.image_colorspaces.MixinImage.set_channel>`, and :py:meth:`Image.apply_channels() <equimagelab.equimage.image_colorspaces.MixinImage.apply_channels>` methods).
 
 **In particular, operations on the value V and luma L of an image are designed to preserve the ratios between the RGB components, hence to preserve the hue and saturation (the "apparent" color).**
 
