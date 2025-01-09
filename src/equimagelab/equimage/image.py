@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.0.2 / 2024.12.28
+# Version: 1.1.0 / 2025.01.09
 # Sphinx OK.
 
 """Image class."""
@@ -91,6 +91,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
       raise ValueError(f"Error, an image must have 2 or 3 dimensions (found {image.ndim}).")
     # Register image, color space and model.
     self.image = image
+    self.dtype = self.image.dtype # Add a reference to image type.
     self.colorspace = colorspace
     self.colormodel = colormodel
 
@@ -126,7 +127,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
   def __repr__(self):
     """Return the object representation."""
-    return f"{self.__class__.__name__}(size = {self.image.shape[2]}x{self.image.shape[1]} pixels, colorspace = {self.colorspace}, colormodel = {self.colormodel}, type = {self.image.dtype})"
+    return f"{self.__class__.__name__}(size = {self.image.shape[2]}x{self.image.shape[1]} pixels, colorspace = {self.colorspace}, colormodel = {self.colormodel}, type = {self.dtype})"
 
   def __array__(self, dtype = None, copy = None):
     """Expose the object as an numpy.ndarray."""

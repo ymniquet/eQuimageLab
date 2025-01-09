@@ -40,7 +40,7 @@ Latest news:
 
     - First complete documentation.
 
-  - Version 1.1.0.
+  - January 9, 2025: Version 1.1.0.
 
     - Float32 & float64 image types.
     - Operations on the lightness :math:`L^*`.

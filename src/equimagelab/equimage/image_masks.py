@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.0.2 / 2024.12.28
+# Version: 1.1.0 / 2025.01.09
 # Sphinx OK.
 
 """Image masks."""
@@ -95,7 +95,7 @@ class MixinImage:
     if filter == "gaussian":
       return ndimg.gaussian_filter(data, sigma = radius/3., mode = mode, cval = 0.)
     elif filter == "mean":
-      kernel = skimo.disk(radius, dtype = self.image.dtype)
+      kernel = skimo.disk(radius, dtype = self.dtype)
       kernel /= np.sum(kernel)
       return ndimg.convolve(data, kernel, mode = mode, cval = 0.)
     elif filter == "median":

@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.0.2 / 2024.12.28
+# Version: 1.1.0 / 2025.01.09
 # Sphinx OK.
 
 """Image statistics & histograms."""
@@ -183,7 +183,7 @@ class MixinImage:
         - stats[key].exclude01 = True if pixels >= 0 or <= 1 have been excluded from the median and percentiles, False otherwise.
         - stats[key].color = suggested text color for display.
     """
-    epsilon = helpers.fpaccuracy(self.image.dtype)
+    epsilon = helpers.fpaccuracy(self.dtype)
     if exclude01 is None: exclude01 = params.exclude01
     if not hasattr(self, "stats"): self.stats = {} # Register empty statistics in the object, if none already computed.
     if channels and channels[-1] == "+":

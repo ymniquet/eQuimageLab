@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.0.2 / 2024.12.28
+# Version: 1.1.0 / 2025.01.09
 # Sphinx OK.
 
 """Image filters."""
@@ -58,9 +58,9 @@ class MixinImage:
     # Translate modes.
     if mode == "zero": mode = "constant"
     # Set-up the (unnormalized) kernel for nearest-neighbors average.
-    kernel = np.array([[1., 1., 1.], [1., 0., 1.], [1., 1., 1.]], dtype = self.image.dtype)
+    kernel = np.array([[1., 1., 1.], [1., 0., 1.], [1., 1., 1.]], dtype = self.dtype)
     # Normalize with respect to the actual number of nearest neighbors.
-    nnn = ndimg.convolve(np.ones(*self.get_size(), dtype = self.image.dtype), kernel, mode = mode, cval = 0.)
+    nnn = ndimg.convolve(np.ones(*self.get_size(), dtype = self.dtype), kernel, mode = mode, cval = 0.)
     return self.apply_channels(remove_hot_pixels_channel, channels, multi = False)
 
   def sharpen(self, mode = "reflect", channels = ""):
@@ -97,7 +97,7 @@ class MixinImage:
     # Translate modes.
     if mode == "zero": mode = "constant"
     # Set-up Laplacian kernel.
-    kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = self.image.dtype)
+    kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = self.dtype)
     # Convolve selected channels with the kernel.
     return self.apply_channels(lambda channel: ndimg.convolve(channel, kernel, mode = mode, cval = 0.), channels, multi = False)
 

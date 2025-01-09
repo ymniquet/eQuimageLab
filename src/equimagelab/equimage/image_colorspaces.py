@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.0.2 / 2024.12.28
+# Version: 1.1.0 / 2025.01.09
 # Sphinx OK.
 
 """Color spaces and models management."""
@@ -544,7 +544,7 @@ class MixinImage:
     Returns:
       Image: The updated image.
     """
-    dtype = self.image.dtype if inplace else params.imagetype
+    dtype = self.dtype if inplace else params.imagetype
     data = np.asarray(data, dtype)
     if data.shape != self.get_size():
       raise ValueError("Error, the channel data must be a 2D array with the same with and height as the image.")
@@ -884,7 +884,7 @@ class MixinImage:
       Image: The processed image.
     """
     self.check_color_model("RGB") ; inrange.check_color_model("RGB")
-    epsilon = helpers.fpaccuracy(self.image.dtype)
+    epsilon = helpers.fpaccuracy(self.dtype)
     if np.any(inrange.value() > 1.+epsilon/2.):
       print("Warning, can not protect highlights if the input inrange image is out-of-range. Returning original image...")
       return self.copy()

@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.0.2 / 2024.12.28
+# Version: 1.1.0 / 2025.01.09
 # Sphinx OK.
 
 """Color management."""
@@ -32,7 +32,7 @@ class MixinImage:
       bool: True if the RGB image is a grayscale (same RGB channels), False otherwise.
     """
     self.check_color_model("RGB")
-    epsilon = helpers.fpaccuracy(self.image.dtype)
+    epsilon = helpers.fpaccuracy(self.dtype)
     return np.all(abs(self.image[1]-self.image[0]) < epsilon) and np.all(abs(self.image[2]-self.image[0]) < epsilon)
 
   ############################
