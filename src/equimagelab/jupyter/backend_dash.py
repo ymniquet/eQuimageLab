@@ -71,9 +71,14 @@ class Dashboard():
                       Input({"type": "image", "index": MATCH}, "clickData"),
                       State("updateid", "data"),
                       prevent_initial_call = True)(self.__click_image)
+    #   - Image selection.
+    self.app.callback(Output({"type": "image", "index": MATCH}, "figure", allow_duplicate = True),
+                      Output({"type": "selectdiv", "index": MATCH}, "children"),
+                      Input({"type": "image", "index": MATCH}, "relayoutData"),
+                      prevent_initial_call = True)(self.__select_image)
     #   - Image filters:
     self.app.callback(Output({"type": "filters", "index": MATCH}, "value"), Output({"type": "selectedfilters", "index": MATCH}, "data"),
-                      Output({"type": "image", "index": MATCH}, "figure", allow_duplicate = True),
+                      Output({"type": "image", "index": MATCH}, "figure"),
                       Input({"type": "filters", "index": MATCH}, "value"),
                       State({"type": "selectedfilters", "index": MATCH}, "data"), State("updateid", "data"),
                       prevent_initial_call = True)(self.__filter_image)
@@ -83,10 +88,10 @@ class Dashboard():
                       State({"type": "offcanvas", "index": MATCH}, "is_open"), State({"type": "image", "index": MATCH}, "figure"),
                       State("updateid", "data"),
                       prevent_initial_call = True)(self.__local_histograms)
-    #   - Relayouts (selections & images zoom synchronization):
-    self.app.callback(Output({"type": "image", "index": ALL}, "figure"), Output({"type": "selectdiv", "index": ALL}, "children"),
-                      State({"type": "image", "index": ALL}, "figure"), Input({"type": "image", "index": ALL}, "relayoutData"),
-                      prevent_initial_call = True)(self.__relayout_images)
+    #   - Zoom synchronizations:
+    self.app.callback(Output({"type": "image", "index": ALL}, "figure", allow_duplicate = True),
+                      Input({"type": "image", "index": ALL}, "relayoutData"),
+                      prevent_initial_call = True)(self.__sync_image_zooms)
     #   - Histograms zoom tracking:
     self.app.callback(Input({"type": "histograms", "index": ALL}, "relayoutData"), prevent_initial_call = True)(self.__track_histograms_zoom)
     #   - Tab switch.
@@ -157,6 +162,27 @@ class Dashboard():
       else:
         return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {data:.5f}", className = "luma"), "."]
 
+  def __select_image(self, relayout):
+    """Callback for image selection.
+
+    Args:
+      relayout (dict) : The relayout of the image.
+
+    Returns:
+      A figure patch and the content of the "selectdiv" div element with the selection dictionary.
+    """
+    with self.updatelock: # Lock on callback.
+      # Did the user draw or modify a (selection) shape on the image ?
+      shapes = relayout.get("shapes", None)
+      if shapes is None: return dash.no_update, html.Span(repr(relayout), className = "selection")
+      if shapes == []: return dash.no_update, [] # Shape has been deleted.
+      shape = shapes[-1]
+      selection = [html.Span(repr(shape), id = "selection", className = "selection"),
+                   dcc.Clipboard(target_id = "selection", title = "copy", className = "copyselection")]
+      patch = dash.Patch()
+      patch["layout"]["shapes"] = [shape]
+      return patch, selection
+
   def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
 
@@ -169,7 +195,7 @@ class Dashboard():
       updateid (integer): The unique ID of the displayed dashboard update.
 
     Returns:
-      The curated filters (twice, as currently selected and new previous), and the filtered figure.
+      The curated filters (twice, as currently selected and new previous), and a patch for the filtered figure.
     """
 
     def filter_channels(image, channels):
@@ -265,52 +291,34 @@ class Dashboard():
       content = [dcc.Graph(figure = figure)]
       return True, content
 
-  def __relayout_images(self, layouts, relayouts):
-    """Callback for image relayouts (selections & zoom synchronization).
+  def __sync_image_zooms(self, relayouts):
+    """Callback for zoom synchronizations.
 
     Args:
-      layouts (list): Input layouts of all images.
-      relayouts (list): Input relayouts of all images.
+      relayouts (list): The relayouts of all images.
 
     Returns:
-      Output layout patches for all images, and selection divs of all tabs.
+      The figure patches for all images.
     """
     nimages = len(relayouts)
-    patches = [dash.no_update]*nimages
-    selections = [dash.no_update]*nimages
+    if not self.synczoom: return [dash.no_update]*nimages
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
-    if not trigger: return patches, selections
+    if not trigger: return [dash.no_update]*nimages
     with self.updatelock: # Lock on callback.
       n = trigger["index"] # Image index.
       relayout = relayouts[n]
-      selections[n] = html.Span(repr(relayout), className = "selection")
-      # Did the user draw or modify a (selection) shape on the image ?
-      shapes = relayout.get("shapes", None)
-      if shapes is not None:
-        if shapes == []: # Shape has been deleted.
-          selections[n] = []
-          return patches, selections
-        shape = shapes[-1]
-        selections[n] = [html.Span(repr(shape), id = "selection", className = "selection"),
-                         dcc.Clipboard(target_id = "selection", title = "copy", className = "copyselection")]
-        patch = dash.Patch()
-        patch["layout"]["shapes"] = [shape]
-        patches[n] = patch
-        return patches, selections
-      # If not, attempt to synchronize zooms.
-      if not self.synczoom: return patches, selections
       xauto = relayout.get("xaxis.autorange", False)
       if not xauto:
         xmin = relayout.get("xaxis.range[0]", None)
         xmax = relayout.get("xaxis.range[1]", None)
         if xmin is None or xmax is None:
-          return patches, selections # Unexpected relayout structure; Discard event.
+          return [dash.no_update]*nimages # Unexpected relayout structure; Discard event.
       yauto = relayout.get("yaxis.autorange", False)
       if not yauto:
         ymin = relayout.get("yaxis.range[0]", None)
         ymax = relayout.get("yaxis.range[1]", None)
         if ymin is None or ymax is None:
-          return patches, selections # Unexpected relayout structure; Discard event.
+          return [dash.no_update]*nimages # Unexpected relayout structure; Discard event.
       patch = dash.Patch()
       patch["layout"]["xaxis"]["autorange"] = xauto
       patch["layout"]["yaxis"]["autorange"] = yauto
@@ -324,7 +332,7 @@ class Dashboard():
       else:
         self.yrange = [ymin, ymax]
         patch["layout"]["yaxis"]["range"] = self.yrange
-      return [patch]*nimages, selections
+      return [patch]*nimages
 
   def __track_histograms_zoom(self, relayouts):
     """Callback for histograms zoom tracking.
@@ -332,7 +340,7 @@ class Dashboard():
     Tracks x axis changes on histograms.
 
     Args:
-      relayouts (dict): Input relayouts of all histograms.
+      relayouts (dict): The relayouts of all histograms.
     """
     if not self.synczoom: return # This comes along with image zoom synchronization.
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.

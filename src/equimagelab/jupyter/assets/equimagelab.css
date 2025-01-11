@@ -1,11 +1,17 @@
 /* Dashboard layout. */
 
-.dashboard-outer { margin: 15px }
+.dashboard-outer { margin: 16px }
 .dashboard-inner { display: inline-block }
 
 /* Tabs. */
 
-.tab { border: solid 1px black }
+.tab {
+  border: solid 1px black;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 8px;
+  border-bottom-left-radius: 8px
+}
 
 .selection {
   display: inline-block;
