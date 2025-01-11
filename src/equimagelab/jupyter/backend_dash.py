@@ -67,7 +67,7 @@ class Dashboard():
                       Input("updateinterval", "n_intervals"),
                       running = [Output("updateinterval", "disabled"), True, False], prevent_initial_call = True)(self.__update_dashboard)
     #   - Image click:
-    self.app.callback(Output({"type": "datadiv", "index": MATCH}, "children", allow_duplicate = True),
+    self.app.callback(Output({"type": "datadiv", "index": MATCH}, "children"),
                       Input({"type": "image", "index": MATCH}, "clickData"),
                       State("updateid", "data"),
                       prevent_initial_call = True)(self.__click_image)
@@ -83,10 +83,10 @@ class Dashboard():
                       State({"type": "offcanvas", "index": MATCH}, "is_open"), State({"type": "image", "index": MATCH}, "figure"),
                       State("updateid", "data"),
                       prevent_initial_call = True)(self.__local_histograms)
-    #   - Images zoom synchronization:
-    self.app.callback(Output({"type": "image", "index": ALL}, "relayoutData"), Output({"type": "image", "index": ALL}, "figure"),
-                      Input({"type": "image", "index": ALL}, "relayoutData"),
-                      prevent_initial_call = True)(self.__sync_image_zoom)
+    #   - Relayouts (selections & images zoom synchronization):
+    self.app.callback(Output({"type": "image", "index": ALL}, "figure"), Output({"type": "selectdiv", "index": ALL}, "children"),
+                      State({"type": "image", "index": ALL}, "figure"), Input({"type": "image", "index": ALL}, "relayoutData"),
+                      prevent_initial_call = True)(self.__relayout_images)
     #   - Histograms zoom tracking:
     self.app.callback(Input({"type": "histograms", "index": ALL}, "relayoutData"), prevent_initial_call = True)(self.__track_histograms_zoom)
     #   - Tab switch.
@@ -99,7 +99,7 @@ class Dashboard():
     except:
       pass
     else:
-      self.show({"Welcome": splash}, filters = False, click = False, synczoom = False)
+      self.show({"Welcome": splash}, filters = False, click = False, select = False, synczoom = False)
 
   ##############
   # Callbacks. #
@@ -226,15 +226,16 @@ class Dashboard():
         else:
           image = differences(image, reference)
       # Return filtered image as a patch.
-      figure_patch = dash.Patch()
-      figure_patch["data"][0]["source"] = prepare_images_as_b64strings(image, sampling = 1)
+      patch = dash.Patch()
+      patch["data"][0]["source"] = prepare_images_as_b64strings(image, sampling = 1)
       current = list(current)
-      return current, current, figure_patch
+      return current, current, patch
 
   def __local_histograms(self, n_clicks, is_open, figure, updateid):
     """Callback for local histograms.
 
-    Shows the histograms of the displayed area of the current image.
+    Shows the histograms of the current selection (if any) or of the displayed
+    area of the image.
 
     Args:
       n_clicks (list): The number of clicks on the histograms button.
@@ -264,48 +265,66 @@ class Dashboard():
       content = [dcc.Graph(figure = figure)]
       return True, content
 
-  def __sync_image_zoom(self, relayouts):
-    """Callback for images zoom synchronization.
+  def __relayout_images(self, layouts, relayouts):
+    """Callback for image relayouts (selections & zoom synchronization).
 
     Args:
+      layouts (list): Input layouts of all images.
       relayouts (list): Input relayouts of all images.
 
     Returns:
-      Output relayouts and figure patches for all images.
+      Output layout patches for all images, and selection divs of all tabs.
     """
     nimages = len(relayouts)
-    if not self.synczoom: return [dash.no_update]*nimages, [dash.no_update]*nimages
+    patches = [dash.no_update]*nimages
+    selections = [dash.no_update]*nimages
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
-    if not trigger: return [dash.no_update]*nimages, [dash.no_update]*nimages
+    if not trigger: return patches, selections
     with self.updatelock: # Lock on callback.
       n = trigger["index"] # Image index.
       relayout = relayouts[n]
+      selections[n] = html.Span(repr(relayout), className = "selection")
+      # Did the user draw or modify a (selection) shape on the image ?
+      shapes = relayout.get("shapes", None)
+      if shapes is not None:
+        if shapes == []: # Shape has been deleted.
+          selections[n] = []
+          return patches, selections
+        shape = shapes[-1]
+        selections[n] = [html.Span(repr(shape), id = "selection", className = "selection"),
+                         dcc.Clipboard(target_id = "selection", title = "copy", className = "copyselection")]
+        patch = dash.Patch()
+        patch["layout"]["shapes"] = [shape]
+        patches[n] = patch
+        return patches, selections
+      # If not, attempt to synchronize zooms.
+      if not self.synczoom: return patches, selections
       xauto = relayout.get("xaxis.autorange", False)
       if not xauto:
         xmin = relayout.get("xaxis.range[0]", None)
         xmax = relayout.get("xaxis.range[1]", None)
         if xmin is None or xmax is None:
-          return [dash.no_update]*nimages, [dash.no_update]*nimages # Unexpected relayout structure; Discard event.
+          return patches, selections # Unexpected relayout structure; Discard event.
       yauto = relayout.get("yaxis.autorange", False)
       if not yauto:
         ymin = relayout.get("yaxis.range[0]", None)
         ymax = relayout.get("yaxis.range[1]", None)
         if ymin is None or ymax is None:
-          return [dash.no_update]*nimages, [dash.no_update]*nimages # Unexpected relayout structure; Discard event.
-      figure_patch = dash.Patch()
-      figure_patch["layout"]["xaxis"]["autorange"] = xauto
-      figure_patch["layout"]["yaxis"]["autorange"] = yauto
+          return patches, selections # Unexpected relayout structure; Discard event.
+      patch = dash.Patch()
+      patch["layout"]["xaxis"]["autorange"] = xauto
+      patch["layout"]["yaxis"]["autorange"] = yauto
       if xauto:
         self.xrange = None
       else:
         self.xrange = [xmin, xmax]
-        figure_patch["layout"]["xaxis"]["range"] = self.xrange
+        patch["layout"]["xaxis"]["range"] = self.xrange
       if yauto:
         self.yrange = None
       else:
         self.yrange = [ymin, ymax]
-        figure_patch["layout"]["yaxis"]["range"] = self.yrange
-      return [relayout]*nimages, [figure_patch]*nimages
+        patch["layout"]["yaxis"]["range"] = self.yrange
+      return [patch]*nimages, selections
 
   def __track_histograms_zoom(self, relayouts):
     """Callback for histograms zoom tracking.
@@ -347,7 +366,8 @@ class Dashboard():
 
   ### Tabs layout.
 
-  def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True, click = True, synczoom = True, trans = None):
+  def show(self, images, histograms = False, statistics = False, sampling = -1,
+           filters = True, click = True, select = True, synczoom = True, trans = None):
     """Show image(s) on the dashboard.
 
     Args:
@@ -364,7 +384,8 @@ class Dashboard():
         Only images[::sampling, ::sampling] are shown, to speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, local histograms).
-      click (bool, optional): If True, show image data on click (default True).
+      click (bool, optional): If True (default), show image data on click.
+      select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on the image.
       synczoom (bool, optional): If True (default), synchronize zooms over images.
         Zooms will be synchronized only if all images have the same size.
       trans (optional): A container with an histogram transformation (see equimage.Image.apply_channels),
@@ -419,24 +440,29 @@ class Dashboard():
       if xrange is not None: figure.update_layout(xaxis_range = xrange)
       if yrange is not None: figure.update_layout(yaxis_range = yrange)
       if click: figure.update_layout(clickmode = "event+select")
-      tab.append(dcc.Graph(figure = figure, id = {"type": "image", "index": n}))
+      if select:
+        figure.update_layout(newshape = dict(line = dict(color = "white", dash = "dashdot", width = 2.), fillcolor = None, opacity = .5))
+        config = dict(modeBarButtonsToAdd = ["drawrect", "drawcircle", "drawclosedpath", "eraseshape"])
+      else:
+        config = dict()
+      tab.append(dcc.Graph(figure = figure, id = {"type": "image", "index": n}, config = config))
       if filters:
         options = []
         values = []
         if pimages[n].ndim > 2: # Color image.
-          options.extend([{"label": html.Span("R", className = "red lm1"), "value": "R"},
-                          {"label": html.Span("G", className = "green lm1"), "value": "G"},
-                          {"label": html.Span("B", className = "blue lm1"), "value": "B"},
-                          {"label": html.Span("L", className = "luma lm1 rm4"), "value": "L"}])
+          options.extend([dict(label = html.Span("R", className = "red lm1"), value = "R"),
+                          dict(label = html.Span("G", className = "green lm1"), value = "G"),
+                          dict(label = html.Span("B", className = "blue lm1"), value = "B"),
+                          dict(label = html.Span("L", className = "luma lm1 rm4"), value = "L")])
           values.extend(["R", "G", "B"])
-        options.extend([{"label": html.Span("Shadowed", className = "lm1"), "value": "S"},
-                        {"label": html.Span("Highlighted", className = "lm1"), "value": "H"}])
+        options.extend([dict(label = html.Span("Shadowed", className = "lm1"), value = "S"),
+                        dict(label = html.Span("Highlighted", className = "lm1"), value = "H")])
         if reference is not None and pimages[n].shape == pimages[reference].shape:
-          options.extend([{"label": html.Span("Differences", className = "lm1"), "value": "D"}])
+          options.extend([dict(label = html.Span("Differences", className = "lm1"), value = "D")])
         checklist = dcc.Checklist(options = options, value = values, id = {"type": "filters", "index": n},
                                   inline = True, labelClassName = "rm4")
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
-        button = dbc.Button("Local histograms", color = "primary", size = "sm", n_clicks = 0, id = {"type": "histogramsbutton", "index": n})
+        button = dbc.Button("Sel. histograms", color = "primary", size = "sm", n_clicks = 0, id = {"type": "histogramsbutton", "index": n})
         offcanvas = dbc.Offcanvas([], title = "Histograms of the displayed area of the image:", placement = "top", close_button = True, keyboard = True,
                                   id = {"type": "offcanvas", "index": n}, style = {"height": "auto", "bottom": "initial"}, is_open = False)
         tab.append(html.Div([html.Div(["Filters:"], className = "rm4"), html.Div([checklist]),  html.Div([button], className = "flushright"),
@@ -445,6 +471,10 @@ class Dashboard():
       if click:
         tab.append(html.Div([], id = {"type": "datadiv", "index": n}, className = "tm1 bm1",
                    style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
+      if select:
+        tab.append(html.Div([], id = {"type": "selectdiv", "index": n}, className = "tm2 bm2",
+                   style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px",
+                            "position": "relative"}))
       if histograms is not False:
         if histograms is True: histograms = ""
         figure = _figure_histograms_(images[n], channels = histograms, log = True, width = params.maxwidth,
@@ -478,7 +508,7 @@ class Dashboard():
       self.content = [dbc.Tabs(tabs, active_tab = activetab, id = "image-tabs")]
       self.refresh = True
 
-  def show_t(self, image, channels = "RGBL", sampling = -1, filters = True, click = True, synczoom = True):
+  def show_t(self, image, channels = "RGBL", sampling = -1, filters = True, click = True, select = True, synczoom = True):
     """Show the input and output images of an histogram transformation on the dashboard.
 
     Displays the input image, histograms, statistics, and transformation curve in tab "Reference",
@@ -493,7 +523,8 @@ class Dashboard():
         Only image[::sampling, ::sampling] is shown, to speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, local histograms).
-      click (bool, optional): If True, show image data on click (default True).
+      click (bool, optional): If True (default), show image data on click.
+      select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on the image.
       synczoom (bool, optional): If True (default), synchronize zooms over images.
     """
     if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
@@ -507,7 +538,7 @@ class Dashboard():
       for key in parse_channels(trans.channels, errors = False):
         if not key in keys: channels += key
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
-              sampling = sampling, filters = filters, click = click, synczoom = synczoom, trans = trans)
+              sampling = sampling, filters = filters, click = click, select = select, synczoom = synczoom, trans = trans)
 
   ### Carousel layout.
 
