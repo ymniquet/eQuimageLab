@@ -9,7 +9,7 @@
 
 import numpy as np
 import scipy.ndimage as ndimg
-import skimage.draw as skidraw
+import skimage.draw as skdraw
 import skimage.morphology as skimo
 
 from . import params
@@ -145,7 +145,7 @@ def shape_bmask(shape, x, y, width, height):
           corners C1 = (x1, y1) and C2 = (x2, y2) of the rectangle.
         - If shape == "ellipse", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
           corners C1 = (x1, y1) and C2 = (x2, y2) or the rectangle that bounds the ellipse.
-        - If shape == "polygon", the points A[n] = (x[n], y[n]) (0 <= n < len(x)) are the vertices of
+        - If shape == "polygon", the points P[n] = (x[n], y[n]) (0 <= n < len(x)) are the vertices of
           the polygon.
 
       width (int): The width of the mask (pixels).
@@ -156,10 +156,10 @@ def shape_bmask(shape, x, y, width, height):
     """
     if shape == "rectangle":
       if len(x) != 2 or len(y) != 2: raise ValueError("Error, x and y must have exactly two elements for shape = 'rect'.")
-      x1 = max(int(np.floor(x.min()))  , 0)
-      x2 = min(int(np.ceil (x.max()))+1, width)
-      y1 = max(int(np.floor(y.min()))  , 0)
-      y2 = min(int(np.ceil (y.max()))+1, height)
+      x1 = max(int(np.floor(min(x)))  , 0)
+      x2 = min(int(np.ceil (max(x)))+1, width)
+      y1 = max(int(np.floor(min(y)))  , 0)
+      y2 = min(int(np.ceil (max(y)))+1, height)
       bmask = np.zeros((height, width), dtype = bool)
       bmask[y1:y2, x1:x2] = True
     elif shape == "ellipse":
@@ -173,7 +173,7 @@ def shape_bmask(shape, x, y, width, height):
       bmask[rs, cs] = True
     elif shape == "polygon":
       if len(x) != len(y): raise ValueError("Error, x and y must have the same length for shape = 'polygon'.")
-      bmask = skdraw.polygon2mask(np.column_stack((y, x)), shape = (height, width))
+      bmask = skdraw.polygon2mask((height, width), np.column_stack((y, x)))
     else:
       raise ValueError(f"Error, unknown shape {shape}.")
     return bmask
@@ -238,7 +238,7 @@ class MixinImage:
     else:
       raise ValueError(f"Error, unknown filter '{filter}'.")
 
-  def shape_bmask(shape, x, y):
+  def shape_bmask(self, shape, x, y):
     """Return a boolean mask defined by the input shape.
 
     Args:
@@ -250,7 +250,7 @@ class MixinImage:
           corners C1 = (x1, y1) and C2 = (x2, y2) of the rectangle.
         - If shape == "ellipse", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
           corners C1 = (x1, y1) and C2 = (x2, y2) or the rectangle that bounds the ellipse.
-        - If shape == "polygon", the points A[n] = (x[n], y[n]) (0 <= n < len(x)) are the vertices of
+        - If shape == "polygon", the points P[n] = (x[n], y[n]) (0 <= n < len(x)) are the vertices of
           the polygon.
 
     Returns:

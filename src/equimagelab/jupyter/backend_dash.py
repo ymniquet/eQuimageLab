@@ -74,7 +74,9 @@ class Dashboard():
     #   - Image selection.
     self.app.callback(Output({"type": "image", "index": MATCH}, "figure", allow_duplicate = True),
                       Output({"type": "selectdiv", "index": MATCH}, "children"),
+                      Output({"type": "shape", "index": MATCH}, "data"),
                       Input({"type": "image", "index": MATCH}, "relayoutData"),
+                      State({"type": "shape", "index": MATCH}, "data"),
                       prevent_initial_call = True)(self.__select_image)
     #   - Image filters:
     self.app.callback(Output({"type": "filters", "index": MATCH}, "value"), Output({"type": "selectedfilters", "index": MATCH}, "data"),
@@ -91,11 +93,16 @@ class Dashboard():
     #   - Zoom synchronizations:
     self.app.callback(Output({"type": "image", "index": ALL}, "figure", allow_duplicate = True),
                       Input({"type": "image", "index": ALL}, "relayoutData"),
+                      State("updateid", "data"),
                       prevent_initial_call = True)(self.__sync_image_zooms)
     #   - Histograms zoom tracking:
-    self.app.callback(Input({"type": "histograms", "index": ALL}, "relayoutData"), prevent_initial_call = True)(self.__track_histograms_zoom)
+    self.app.callback(Input({"type": "histograms", "index": ALL}, "relayoutData"),
+                      State("updateid", "data"),
+                      prevent_initial_call = True)(self.__track_histograms_zoom)
     #   - Tab switch.
-    self.app.callback(Input("image-tabs", "active_tab"), prevent_initial_call = True)(self.__switch_tab)
+    self.app.callback(Input("image-tabs", "active_tab"),
+                      State("updateid", "data"),
+                      prevent_initial_call = True)(self.__switch_tab)
     # Launch Dash server.
     self.app.run_server(port = port, debug = debug, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
@@ -162,26 +169,57 @@ class Dashboard():
       else:
         return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {data:.5f}", className = "luma"), "."]
 
-  def __select_image(self, relayout):
+  def __select_image(self, relayout, stype):
     """Callback for image selection.
 
     Args:
-      relayout (dict) : The relayout of the image.
+      relayout (dict): The relayout of the image.
+      stype (str): The current shape type.
 
     Returns:
-      A figure patch and the content of the "selectdiv" div element with the selection dictionary.
+      A patch for the image figure, the content of the "selectdiv" div element with the
+      representation of the shape as a python method, and the content of the "shape" store
+      with the current shape type.
     """
-    with self.updatelock: # Lock on callback.
-      # Did the user draw or modify a (selection) shape on the image ?
-      shapes = relayout.get("shapes", None)
-      if shapes is None: return dash.no_update, html.Span(repr(relayout), className = "selection")
-      if shapes == []: return dash.no_update, [] # Shape has been deleted.
+    shape = None
+    patch = dash.no_update
+    # Did the user draw or modify a shape on the image ?
+    if (shapes := relayout.get("shapes", None)) is not None: # New or deleted shape.
+      if shapes == []: return patch, [], "" # Shape has been deleted.
       shape = shapes[-1]
-      selection = [html.Span(repr(shape), id = "selection", className = "selection"),
-                   dcc.Clipboard(target_id = "selection", title = "copy", className = "copyselection")]
       patch = dash.Patch()
-      patch["layout"]["shapes"] = [shape]
-      return patch, selection
+      patch["layout"]["shapes"] = [shape] # Keep only last shape.
+    elif relayout.get("shapes[0].x0", None) is not None: # Rectangle or ellipse update.
+      if stype == "rect" or stype == "circle":
+        shape = {"type": stype,
+                  "x0": relayout["shapes[0].x0"], "x1": relayout["shapes[0].x1"],
+                  "y0": relayout["shapes[0].y0"], "y1": relayout["shapes[0].y1"]}
+    elif (path := relayout.get("shapes[0].path", None)) is not None: # Polygon update.
+      if stype == "path": shape = {"type": "path", "path": path}
+    if shape is None: return dash.no_update, dash.no_update, dash.no_update
+    stype = shape["type"]
+    if stype == "rect": # Rectangle.
+      x1 = np.rint(shape["x0"]) ; x2 = np.rint(shape["x1"])
+      y1 = np.rint(shape["y0"]) ; y2 = np.rint(shape["y1"])
+      representation = f'shape_bmask("rectangle", ({x1:.0f}, {x2:.0f}), ({y1:.0f}, {y2:.0f}))'
+    elif stype == "circle": # Ellipse.
+      x1 = np.rint(shape["x0"]) ; x2 = np.rint(shape["x1"])
+      y1 = np.rint(shape["y0"]) ; y2 = np.rint(shape["y1"])
+      representation = f'shape_bmask("ellipse", ({x1:.0f}, {x2:.0f}), ({y1:.0f}, {y2:.0f}))'
+    elif stype == "path": # Polygon.
+      path = shape["path"] # Decode the SVG path.
+      vertices = [token.replace("M", "").replace("Z", "").split(",") for token in path.split("L")]
+      vertices = np.rint(np.array(vertices, dtype = float))
+      x = f"({vertices[0, 0]:.0f}" ; y = f"({vertices[0, 1]:.0f}"
+      for i in range(1, vertices.shape[0]):
+        x += f", {vertices[i, 0]:.0f}" ; y += f", {vertices[i, 1]:.0f}"
+      x += ")" ; y += ")"
+      representation = 'shape_bmask("polygon", '+x+', '+y+')'
+    else:
+      representation = repr(shape) # Unknown shape; display "as is".
+    selectdiv = [html.Span([representation], id = "selection", className = "selection"),
+                 dcc.Clipboard(target_id = "selection", title = "copy", className = "copyselection")]
+    return patch, selectdiv, stype
 
   def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
@@ -291,20 +329,22 @@ class Dashboard():
       content = [dcc.Graph(figure = figure)]
       return True, content
 
-  def __sync_image_zooms(self, relayouts):
+  def __sync_image_zooms(self, relayouts, updateid):
     """Callback for zoom synchronizations.
 
     Args:
       relayouts (list): The relayouts of all images.
+      updateid (integer): The unique ID of the displayed dashboard update.
 
     Returns:
-      The figure patches for all images.
+      Patches for all image figures.
     """
     nimages = len(relayouts)
     if not self.synczoom: return [dash.no_update]*nimages
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return [dash.no_update]*nimages
     with self.updatelock: # Lock on callback.
+      if updateid != self.nupdates: return [dash.no_update]*nimages # The dashboard is out of sync.
       n = trigger["index"] # Image index.
       relayout = relayouts[n]
       xauto = relayout.get("xaxis.autorange", False)
@@ -334,18 +374,21 @@ class Dashboard():
         patch["layout"]["yaxis"]["range"] = self.yrange
       return [patch]*nimages
 
-  def __track_histograms_zoom(self, relayouts):
+  def __track_histograms_zoom(self, relayouts, updateid):
     """Callback for histograms zoom tracking.
 
-    Tracks x axis changes on histograms.
+    Tracks x axis changes on all histograms.
 
     Args:
       relayouts (dict): The relayouts of all histograms.
+      updateid (integer): The unique ID of the displayed dashboard update.
+
     """
     if not self.synczoom: return # This comes along with image zoom synchronization.
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return
     with self.updatelock: # Lock on callback.
+      if updateid != self.nupdates: return # The dashboard is out of sync.
       n = trigger["index"] # Image index.
       relayout = relayouts[n]
       xauto = relayout.get("xaxis.autorange", False)
@@ -357,15 +400,17 @@ class Dashboard():
         if xmin is None or xmax is None: return # Unexpected relayout structure; Discard event.
         self.hrange[n] = [xmin, xmax]
 
-  def __switch_tab(self, tab):
+  def __switch_tab(self, tab, updateid):
     """Callback for tab switches.
 
     This callback just stores the current tab name.
 
     Args:
       tab (string): The name of the current tab.
+      updateid (integer): The unique ID of the displayed dashboard update.
     """
     with self.updatelock: # Lock on callback.
+      if updateid != self.nupdates: return # The dashboard is out of sync.
       self.activetab = tab
 
   ############
@@ -454,6 +499,7 @@ class Dashboard():
       else:
         config = dict()
       tab.append(dcc.Graph(figure = figure, id = {"type": "image", "index": n}, config = config))
+      # Image filters.
       if filters:
         options = []
         values = []
@@ -473,16 +519,19 @@ class Dashboard():
         button = dbc.Button("Sel. histograms", color = "primary", size = "sm", n_clicks = 0, id = {"type": "histogramsbutton", "index": n})
         offcanvas = dbc.Offcanvas([], title = "Histograms of the displayed area of the image:", placement = "top", close_button = True, keyboard = True,
                                   id = {"type": "offcanvas", "index": n}, style = {"height": "auto", "bottom": "initial"}, is_open = False)
-        tab.append(html.Div([html.Div(["Filters:"], className = "rm4"), html.Div([checklist]),  html.Div([button], className = "flushright"),
-                             selected, offcanvas], className = "flex center tm1 bm1",
-                             style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
-      if click:
-        tab.append(html.Div([], id = {"type": "datadiv", "index": n}, className = "tm1 bm1",
+        tab.append(html.Div([html.Div(["Filters:"], className = "rm4"), html.Div([checklist]), html.Div([button], className = "flushright")],
+                   className = "flex center tm1 bm1",
                    style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
-      if select:
-        tab.append(html.Div([], id = {"type": "selectdiv", "index": n}, className = "tm2 bm2",
-                   style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px",
-                            "position": "relative"}))
+        tab.append(html.Div([selected, offcanvas]))
+      # Click data (keep defined for the callbacks even if click is False).
+      tab.append(html.Div([], id = {"type": "datadiv", "index": n}, className = "tm1 bm1",
+                 style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
+      # Selection data (keep defined for the callbacks even if select is False).
+      shape = dcc.Store(data = "", id = {"type": "shape", "index": n})
+      tab.append(html.Div([], id = {"type": "selectdiv", "index": n}, className = "tm2 bm2",
+                 style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px",
+                          "position": "relative"}))
+      tab.append(html.Div([shape]))
       if histograms is not False:
         if histograms is True: histograms = ""
         figure = _figure_histograms_(images[n], channels = histograms, log = True, width = params.maxwidth,
