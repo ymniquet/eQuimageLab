@@ -311,14 +311,14 @@ class Dashboard():
       if not xauto:
         xmin = relayout.get("xaxis.range[0]", None)
         xmax = relayout.get("xaxis.range[1]", None)
-        if xmin is None or xmax is None:
-          return [dash.no_update]*nimages # Unexpected relayout structure; Discard event.
+        if xmin is None or xmax is None: # Unexpected relayout structure; Discard event.
+          return [dash.no_update]*nimages
       yauto = relayout.get("yaxis.autorange", False)
       if not yauto:
         ymin = relayout.get("yaxis.range[0]", None)
         ymax = relayout.get("yaxis.range[1]", None)
-        if ymin is None or ymax is None:
-          return [dash.no_update]*nimages # Unexpected relayout structure; Discard event.
+        if ymin is None or ymax is None: # Unexpected relayout structure; Discard event.
+          return [dash.no_update]*nimages
       patch = dash.Patch()
       patch["layout"]["xaxis"]["autorange"] = xauto
       patch["layout"]["yaxis"]["autorange"] = yauto

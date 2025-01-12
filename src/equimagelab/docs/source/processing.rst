@@ -184,7 +184,7 @@ At present, eQuimageLab can construct "threshold" masks that are 1 whereever som
 
 .. autosummary::
 
-   threshold_mask
+   threshold_fmask
 
 The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimagelab.equimage.image.Image>` class provides the following useful filters:
 

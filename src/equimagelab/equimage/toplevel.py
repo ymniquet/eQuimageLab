@@ -12,5 +12,5 @@ from .image import Image
 from .image_utils import is_valid_image, clip, blend
 from .image_colorspaces import value, saturation, luma
 from .image_stretch import hms, mts, ghs, harmonic_through
-from .image_masks import threshold_mask
+from .image_masks import float_mask, extend_bmask, smooth_mask, threshold_bmask, threshold_fmask
 from .image_io import load_image, save_image

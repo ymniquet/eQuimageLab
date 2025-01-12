@@ -13,38 +13,123 @@ import skimage.morphology as skimo
 
 from . import params
 
-def threshold_mask(filtered, threshold, extend = 0, smooth = 0):
-  """Set-up a threshold mask.
+####################################
+# Binary & float masks management. #
+####################################
 
-  Returns the pixels of the image such that filtered >= threshold.
+def float_mask(mask):
+  """Convert a boolean mask into a float mask.
+
+  Args:
+    mask (numpy.ndarray): The input boolean mask.
+
+  Returns:
+    numpy.ndarray: A float mask with datatype `equimagelab.equimage.params.imagetype`
+      and values 1 where mask is True and 0 where mask is False. If already a float
+      array, the input mask is returned as is.
+  """
+  return np.asarray(mask, dtype = params.imagetype)
+
+def extend_bmask(mask, extend):
+  """Extend or erode a boolean mask.
+
+  Args:
+    mask (numpy.ndarray): The input boolean mask.
+    extend (int): The number of pixels by which the mask is extended.
+      The mask is extended if extend > 0, and eroded if extend < 0.
+
+  Returns:
+    numpy.ndarray: The extended boolean mask.
+  """
+  if extend > 0:
+    return skimo.isotropic_dilation(mask, extend)
+  else:
+    return skimo.isotropic_erosion(mask, -extend)
+
+def smooth_mask(mask, radius, mode = "zero"):
+  """Smooth a boolean or float mask.
+
+  The input mask is converted into a float mask and convolved with a disk of radius smooth.
+
+  Args:
+    mask (numpy.ndarray): The input boolean or float mask.
+    radius (float): The smoothing radius in pixels. The edges of the output float mask get
+      smoothed over 2*radius pixels.
+    mode (str, optional): How to extend the mask across its boundaries for the convolution:
+
+      - "reflect": the mask is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
+      - "mirror": the mask is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
+      - "nearest": the mask is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
+      - "zero" (default): the mask is padded with zeros (abcd -> 0000|abcd|0000).
+      - "one": the mask is padded with ones (abcd -> 1111|abcd|1111).
+
+  Returns:
+    numpy.ndarray: The smoothed, float mask.
+  """
+  # Translate modes.
+  if mode == "zero":
+    mode = "constant"
+    cval = 0.
+  elif mode == "one":
+    mode = "constant"
+    cval = 1.
+  # Convert into a float mask.
+  fmask = float_mask(mask)
+  # Smooth the float mask.
+  if radius > 0.:
+    kernel = skimo.disk(radius, dtype = params.imagetype)
+    kernel /= np.sum(kernel)
+    fmask = ndimg.convolve(fmask, kernel, mode = mode, cval = cval)
+  return fmask
+
+def threshold_bmask(filtered, threshold, extend = 0):
+  """Set-up a threshold boolean mask.
+
+  Returns the pixels of the image such that filtered >= threshold as a boolean mask.
 
   See also:
-    Image.filter
+    Image.filter,
+    threshold_fmask
+
+  Args:
+    filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image (see Image.filter).
+    threshold (float): The threshold for the mask. The mask is True wherever filtered >= threshold, and False elsewhere.
+    extend (int, optional): Once computed, the mask is extended/eroded by extend pixels (default 0).
+      The mask is is extended if extend > 0, and eroded if extend < 0.
+
+  Returns:
+    numpy.ndarray: The mask as a boolean array with the same shape as filtered.
+  """
+  return extend_bmask(filtered >= threshold, extend)
+
+def threshold_fmask(filtered, threshold, extend = 0, smooth = 0., mode = "zero"):
+  """Set-up a threshold float mask.
+
+  Returns the pixels of the image such that filtered >= threshold as a float mask.
+
+  See also:
+    Image.filter,
+    smooth_mask,
+    threshold_bmask
 
   Args:
     filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image (see Image.filter).
     threshold (float): The threshold for the mask. The mask is 1 wherever filtered >= threshold, and 0 elsewhere.
-    extend (int, optional): Once computed, the mask can be extended/eroded by extend pixels (default 0). The mask
-      is extended if extend > 0, and eroded if extend < 0.
-    smooth (int, optional): Once extended, the edges of the mask can be smoothed over smooth pixels (default 0).
+    extend (int, optional): Once computed, the mask is extended/eroded by extend pixels (default 0).
+      The mask is is extended if extend > 0, and eroded if extend < 0.
+    smooth (float, optional): Once extended, the edges of the mask are smoothed over smooth pixels (default 0).
+    mode (str, optional): How to extend the mask across its boundaries for smoothing:
+
+      - "reflect": the mask is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
+      - "mirror": the mask is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
+      - "nearest": the mask is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
+      - "zero" (default): the mask is padded with zeros (abcd -> 0000|abcd|0000).
+      - "one": the mask is padded with ones (abcd -> 1111|abcd|1111).
 
   Returns:
-    numpy.ndarray: The mask as an array with the same shape as filtered (*not* converted to a grayscale Image object).
+    numpy.ndarray: The mask as a float array with the same shape as filtered.
   """
-  # Threshold the filter.
-  mask = (filtered >= threshold)
-  # Extend the mask.
-  if extend > 0:
-    mask = skimo.isotropic_dilation(mask, extend)
-  elif extend < 0:
-    mask = skimo.isotropic_erosion(mask, -extend)
-  # Smooth the mask.
-  mask = mask.astype(params.imagetype)
-  if smooth > 0:
-    kernel = skimo.disk(smooth, dtype = params.imagetype)
-    kernel /= np.sum(kernel)
-    mask = ndimg.convolve(mask, kernel, mode = "reflect")
-  return mask
+  return smooth_mask(threshold_bmask(filtered, threshold, extend), smooth, mode = mode)
 
 #####################################
 # For inclusion in the Image class. #
@@ -59,7 +144,8 @@ class MixinImage:
     The main purpose of this method is to prepare masks for image processing.
 
     See also:
-      threshold_mask
+      threshold_bmask
+      threshold_fmask
 
     Args:
       channel (str): The selected channel:
