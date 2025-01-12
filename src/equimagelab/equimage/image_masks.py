@@ -9,6 +9,7 @@
 
 import numpy as np
 import scipy.ndimage as ndimg
+import skimage.draw as skidraw
 import skimage.morphology as skimo
 
 from . import params
@@ -53,7 +54,7 @@ def smooth_mask(mask, radius, mode = "zero"):
 
   Args:
     mask (numpy.ndarray): The input boolean or float mask.
-    radius (float): The smoothing radius in pixels. The edges of the output float mask get
+    radius (float): The smoothing radius (pixels). The edges of the output float mask get
       smoothed over 2*radius pixels.
     mode (str, optional): How to extend the mask across its boundaries for the convolution:
 
@@ -117,7 +118,8 @@ def threshold_fmask(filtered, threshold, extend = 0, smooth = 0., mode = "zero")
     threshold (float): The threshold for the mask. The mask is 1 wherever filtered >= threshold, and 0 elsewhere.
     extend (int, optional): Once computed, the mask is extended/eroded by extend pixels (default 0).
       The mask is is extended if extend > 0, and eroded if extend < 0.
-    smooth (float, optional): Once extended, the edges of the mask are smoothed over smooth pixels (default 0).
+    smooth (float, optional): Once extended, the edges of the mask are smoothed over 2*smooth pixels (default 0;
+      see smooth_mask).
     mode (str, optional): How to extend the mask across its boundaries for smoothing:
 
       - "reflect": the mask is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
@@ -130,6 +132,51 @@ def threshold_fmask(filtered, threshold, extend = 0, smooth = 0., mode = "zero")
     numpy.ndarray: The mask as a float array with the same shape as filtered.
   """
   return smooth_mask(threshold_bmask(filtered, threshold, extend), smooth, mode = mode)
+
+def shape_bmask(shape, x, y, width, height):
+    """Return a boolean mask defined by the input shape.
+
+    Args:
+      shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for a polygon.
+      x (tuple, list or numpy.ndarray) : The x coordinates of the shape (pixels, along the width).
+      y (tuple, list or numpy.ndarray) : The y coordinates of the shape (pixels, along the height):
+
+        - If shape == "rectangle", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
+          corners C1 = (x1, y1) and C2 = (x2, y2) of the rectangle.
+        - If shape == "ellipse", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
+          corners C1 = (x1, y1) and C2 = (x2, y2) or the rectangle that bounds the ellipse.
+        - If shape == "polygon", the points A[n] = (x[n], y[n]) (0 <= n < len(x)) are the vertices of
+          the polygon.
+
+      width (int): The width of the mask (pixels).
+      height (int): The height of the mask (pixels).
+
+    Returns:
+      numpy.ndarray: A boolean array with shape (height, width), and values True in the shape and False outside.
+    """
+    if shape == "rectangle":
+      if len(x) != 2 or len(y) != 2: raise ValueError("Error, x and y must have exactly two elements for shape = 'rect'.")
+      x1 = max(int(np.floor(x.min()))  , 0)
+      x2 = min(int(np.ceil (x.max()))+1, width)
+      y1 = max(int(np.floor(y.min()))  , 0)
+      y2 = min(int(np.ceil (y.max()))+1, height)
+      bmask = np.zeros((height, width), dtype = bool)
+      bmask[y1:y2, x1:x2] = True
+    elif shape == "ellipse":
+      if len(x) != 2 or len(y) != 2: raise ValueError("Error, x and y must have exactly two elements for shape = 'ellipse'.")
+      xc = (x[0]+x[1])/2.
+      yc = (y[0]+y[1])/2.
+      rx = abs(x[1]-x[0])/2.
+      ry = abs(y[1]-y[0])/2.
+      bmask = np.zeros((height, width), dtype = bool)
+      rs, cs = skdraw.ellipse(yc, xc, ry, rx, shape = (height, width))
+      bmask[rs, cs] = True
+    elif shape == "polygon":
+      if len(x) != len(y): raise ValueError("Error, x and y must have the same length for shape = 'polygon'.")
+      bmask = skdraw.polygon2mask(np.column_stack((y, x)), shape = (height, width))
+    else:
+      raise ValueError(f"Error, unknown shape {shape}.")
+    return bmask
 
 #####################################
 # For inclusion in the Image class. #
@@ -164,7 +211,7 @@ class MixinImage:
         - "gaussian": Return the gaussian average of the channel around each pixel.
         - "maximum": Return the maximum of the channel within a disk around each pixel.
 
-      radius (float): The radius of the disk in pixels. The standard deviation for gaussian average is radius/3.
+      radius (float): The radius of the disk (pixels). The standard deviation for gaussian average is radius/3.
       mode (str, optional): How to extend the image across its boundaries:
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
@@ -173,7 +220,7 @@ class MixinImage:
         - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
 
     Returns:
-      numpy.ndarray: A (image height, image width) array with the output of the filter,
+      numpy.ndarray: The output of the filter as an array with shape (image height, image width),
       *not* converted to a grayscale Image object.
     """
     if mode == "zero": mode = "constant" # Translate modes.
@@ -185,8 +232,30 @@ class MixinImage:
       kernel /= np.sum(kernel)
       return ndimg.convolve(data, kernel, mode = mode, cval = 0.)
     elif filter == "median":
-      return ndimg.median_filter(data, footprint = skimo.disk(radius), mode = mode, cval = 0.)
+      return ndimg.median_filter(data, footprint = skimo.disk(radius, dtype = bool), mode = mode, cval = 0.)
     elif filter == "maximum":
-      return ndimg.maximum_filter(data, footprint = skimo.disk(radius), mode = mode, cval = 0.)
+      return ndimg.maximum_filter(data, footprint = skimo.disk(radius, dtype = bool), mode = mode, cval = 0.)
     else:
       raise ValueError(f"Error, unknown filter '{filter}'.")
+
+  def shape_bmask(shape, x, y):
+    """Return a boolean mask defined by the input shape.
+
+    Args:
+      shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for a polygon.
+      x (tuple, list or numpy.ndarray) : The x coordinates of the shape (pixels, along the width).
+      y (tuple, list or numpy.ndarray) : The y coordinates of the shape (pixels, along the height):
+
+        - If shape == "rectangle", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
+          corners C1 = (x1, y1) and C2 = (x2, y2) of the rectangle.
+        - If shape == "ellipse", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
+          corners C1 = (x1, y1) and C2 = (x2, y2) or the rectangle that bounds the ellipse.
+        - If shape == "polygon", the points A[n] = (x[n], y[n]) (0 <= n < len(x)) are the vertices of
+          the polygon.
+
+    Returns:
+      numpy.ndarray: A boolean array with shape (image height, image width), and values True in the shape
+      and False outside.
+    """
+    width, height = self.get_size()
+    return shape_bmask(shape, x, y, width, height)
