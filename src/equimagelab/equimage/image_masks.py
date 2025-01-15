@@ -156,10 +156,10 @@ def shape_bmask(shape, x, y, width, height):
     """
     if shape == "rectangle":
       if len(x) != 2 or len(y) != 2: raise ValueError("Error, x and y must have exactly two elements for shape = 'rect'.")
-      x1 = max(int(np.floor(min(x)))  , 0)
-      x2 = min(int(np.ceil (max(x)))+1, width)
-      y1 = max(int(np.floor(min(y)))  , 0)
-      y2 = min(int(np.ceil (max(y)))+1, height)
+      x1 = max(int(np.rint(min(x)))  , 0)
+      x2 = min(int(np.rint(max(x)))+1, width)
+      y1 = max(int(np.rint(min(y)))  , 0)
+      y2 = min(int(np.rint(max(y)))+1, height)
       bmask = np.zeros((height, width), dtype = bool)
       bmask[y1:y2, x1:x2] = True
     elif shape == "ellipse":

@@ -10,7 +10,7 @@
 import numpy as np
 import scipy.ndimage as ndimg
 
-from .image_stretch import hms, harmonic_through
+from .image_stretch import hms, Dharmonic_through
 
 #####################################
 # For inclusion in the Image class. #
@@ -172,7 +172,7 @@ class MixinImage:
     if channels not in ["", "V", "L", "L*"]: raise ValueError("Error, channels must be '', 'V', 'L' or 'L*'.")
     if amount <= 0.: raise ValueError("Error amount must be > 0.")
     if threshold < .0001 or threshold >= .9999: raise ValueError("Error, threshold must be >= 0.0001 and <= 0.9999.")
-    D = harmonic_through(threshold, 1./(1.+amount))
+    D = Dharmonic_through(threshold, 1./(1.+amount))
     clipped = self.clip() # Clip the image before LDBS.
     if channels == "":
       blurred = clipped.gaussian_filter(sigma, mode = mode)

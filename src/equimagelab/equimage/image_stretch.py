@@ -80,7 +80,7 @@ def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
 # Harmonic stretch parametrizations. #
 ######################################
 
-def harmonic_through(x, y):
+def Dharmonic_through(x, y):
   """Return the stretch parameter D such that f(x) = y, with f the harmonic stretch function.
 
   The harmonic stretch function defined as
@@ -786,7 +786,7 @@ class MixinImage:
       if converged or niter >= maxiter: break
       niter += 1
       # Compute the effective stretch parameter D such that f(avgmed) = median, with f the harmonic stretch function.
-      D = harmonic_through(avgmed, median)
+      D = Dharmonic_through(avgmed, median)
       output = output.harmonic_stretch(D, channels = channels, trans = trans and ctrans is None) # Harmonic stretch.
       if trans: # Cumulative transformation.
         if ctrans is None:

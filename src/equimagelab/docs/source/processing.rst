@@ -69,7 +69,7 @@ The following function provides an alternative parametrization of the harmonic s
 
 .. autosummary::
 
-   harmonic_through
+   Dharmonic_through
 
 Moreover, eQuimageLab provides an implementation of the `statistical stretch of SETI astro <https://www.setiastro.com/statistical-stretch>`_ as a method of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
 
