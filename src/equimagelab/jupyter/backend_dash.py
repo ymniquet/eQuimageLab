@@ -158,7 +158,7 @@ class Dashboard():
       n = trigger["index"] # Image index.
       x = click["points"][0]["x"]
       y = click["points"][0]["y"]
-      data = self.images[n][y, x]
+      data = self.images[n][y//self.sampling, x//self.sampling]
       if data.size > 1:
         rgbluma = get_RGB_luma()
         luma = rgbluma[0]*data[0]+rgbluma[1]*data[1]+rgbluma[2]*data[2]
@@ -318,9 +318,9 @@ class Dashboard():
       if self.images is None or updateid != self.nupdates: return False, [] # The dashboard is out of sync.
       # Get x and y axes range.
       xmin, xmax = figure["layout"]["xaxis"]["range"]
-      xmin = np.ceil(xmin) ; xmax = np.floor(xmax)
+      xmin = int(np.rint(xmin))//self.sampling ; xmax = int(np.rint(xmax))//self.sampling
       ymax, ymin = figure["layout"]["yaxis"]["range"]
-      ymin = np.ceil(ymin) ; ymax = np.floor(ymax)
+      ymin = int(np.rint(ymin))//self.sampling ; ymax = int(np.rint(ymax))//self.sampling
       if (xmax-xmin)*(ymax-ymin) < 256: return False, [] # Area too small for histograms.
       # Compute local histograms using eQuimage.
       n = trigger["index"] # Image index.
@@ -489,7 +489,7 @@ class Dashboard():
     tabs = []
     for n in range(nimages):
       tab = []
-      figure = _figure_prepared_image_(pimages[n], width = params.maxwidth, hover = False, template = "slate")
+      figure = _figure_prepared_image_(pimages[n], dx = sampling, dy = sampling, width = params.maxwidth, hover = False, template = "slate")
       if xrange is not None: figure.update_layout(xaxis_range = xrange)
       if yrange is not None: figure.update_layout(yaxis_range = yrange)
       if click: figure.update_layout(clickmode = "event+select")
@@ -558,6 +558,7 @@ class Dashboard():
       self.yrange = yrange
       self.hrange = hrange
       self.synczoom = synczoom
+      self.sampling = sampling
       self.imagesize = imagesize
       self.reference = reference
       self.activetab = activetab

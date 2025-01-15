@@ -24,11 +24,13 @@ from ..equimage.image_stats import parse_channels
 # Helper functions. #
 #####################
 
-def _figure_prepared_image_(image, width = -1, hover = False, template = "plotly_dark"):
+def _figure_prepared_image_(image, dx = 1, dy = 1, width = -1, hover = False, template = "plotly_dark"):
   """Prepare a ploty figure for the input (prepared) image.
 
   Args:
-    image (numpy.ndarray): The prepared image (processed by utils.prepare_images).3
+    image (numpy.ndarray): The prepared image (processed by utils.prepare_images).
+    dx (int, optional): The size of a pixel along x (default 1).
+    dy (int, optional): The size of a pixel along y (default 1).
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
       Warning: Setting hover = True can slow down display a lot !
@@ -39,7 +41,9 @@ def _figure_prepared_image_(image, width = -1, hover = False, template = "plotly
   """
   if width <= 0: width = params.maxwidth
   # Plot image.
-  figure = px.imshow(image, zmin = 0., zmax = 1., aspect = "equal", binary_string = not hover)
+  x = np.arange(0, image.shape[1])*dx
+  y = np.arange(0, image.shape[0])*dy
+  figure = px.imshow(image, x = x, y = y, zmin = 0., zmax = 1., aspect = "equal", binary_string = not hover)
   figure.update_traces(name = "", hovertemplate = "(%{x}, %{y}): %{z}" if hover else "(%{x}, %{y})")
   layout = go.Layout(template = template,
                      width = width+params.lmargin+params.rmargin, height = width*image.shape[0]/image.shape[1]+params.bmargin+params.tmargin,
@@ -62,7 +66,7 @@ def _figure_image_(image, sampling = -1, width = -1, hover = False, template = "
   Returns:
     plotly.graph_objects.Figure: A plotly figure with the image.
   """
-  return _figure_prepared_image_(prepare_images(image, sampling = sampling), width = width, hover = hover, template = template)
+  return _figure_prepared_image_(prepare_images(image, sampling = sampling), dx = sampling, dy = sampling, width = width, hover = hover, template = template)
 
 def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "Level", trans = None, template = "plotly_dark"):
   """Prepare a plotly figure with the histograms of an image.
