@@ -20,7 +20,7 @@ import dash_bootstrap_components as dbc
 import dash_extensions as dxt
 
 from . import params
-from .utils import prepare_images, prepare_images_as_b64strings, shadowed, highlighted, differences
+from .utils import get_image_size, prepare_images, prepare_images_as_b64strings, shadowed, highlighted, differences
 from .backend_plotly import _figure_prepared_image_, _figure_histograms_
 
 from ..equimage import Image, load_image, get_RGB_luma
@@ -84,12 +84,13 @@ class Dashboard():
                       Input({"type": "filters", "index": MATCH}, "value"),
                       State({"type": "selectedfilters", "index": MATCH}, "data"), State("updateid", "data"),
                       prevent_initial_call = True)(self.__filter_image)
-    #   - Local histograms:
-    self.app.callback(Output({"type": "offcanvas", "index": MATCH}, "is_open"), Output({"type": "offcanvas", "index": MATCH}, "children"),
+    #   - Partial histograms:
+    self.app.callback(Output({"type": "offcanvas", "index": MATCH}, "is_open"),
+                      Output({"type": "offcanvas", "index": MATCH}, "title"), Output({"type": "offcanvas", "index": MATCH}, "children"),
                       Input({"type": "histogramsbutton", "index": MATCH}, "n_clicks"),
                       State({"type": "offcanvas", "index": MATCH}, "is_open"), State({"type": "image", "index": MATCH}, "figure"),
-                      State("updateid", "data"),
-                      prevent_initial_call = True)(self.__local_histograms)
+                      State({"type": "shape", "index": MATCH}, "data"), State("updateid", "data"),
+                      prevent_initial_call = True)(self.__partial_histograms)
     #   - Zoom synchronizations:
     self.app.callback(Output({"type": "image", "index": ALL}, "figure", allow_duplicate = True),
                       Input({"type": "image", "index": ALL}, "relayoutData"),
@@ -111,7 +112,7 @@ class Dashboard():
     except:
       pass
     else:
-      self.show({"Welcome": splash}, filters = False, click = False, select = False, synczoom = False)
+      self.show({"Welcome": splash}, sampling = 1, filters = False, click = False, select = False, synczoom = False)
 
   ##############
   # Callbacks. #
@@ -169,57 +170,66 @@ class Dashboard():
       else:
         return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {data:.5f}", className = "luma"), "."]
 
-  def __select_image(self, relayout, stype):
+  def __select_image(self, relayout, current):
     """Callback for image selection.
 
     Args:
       relayout (dict): The relayout of the image.
-      stype (str): The current shape type.
+      current (str): The current shape.
 
     Returns:
       A patch for the image figure, the content of the "selectdiv" div element with the
       representation of the shape as a python method, and the content of the "shape" store
-      with the current shape type.
+      with the updated current shape.
     """
     shape = None
     patch = dash.no_update
+    stype = current.get("type", None)
     # Did the user draw or modify a shape on the image ?
     if (shapes := relayout.get("shapes", None)) is not None: # New or deleted shape.
-      if shapes == []: return patch, [], "" # Shape has been deleted.
+      if shapes == []: return patch, [], {} # The current shape has been deleted.
       shape = shapes[-1]
       patch = dash.Patch()
       patch["layout"]["shapes"] = [shape] # Keep only last shape.
     elif relayout.get("shapes[0].x0", None) is not None: # Rectangle or ellipse update.
-      if stype == "rect" or stype == "circle":
-        shape = {"type": stype,
+      if stype == "rectangle":
+        shape = {"type": "rect",
+                  "x0": relayout["shapes[0].x0"], "x1": relayout["shapes[0].x1"],
+                  "y0": relayout["shapes[0].y0"], "y1": relayout["shapes[0].y1"]}
+      elif stype == "ellipse":
+        shape = {"type": "circle",
                   "x0": relayout["shapes[0].x0"], "x1": relayout["shapes[0].x1"],
                   "y0": relayout["shapes[0].y0"], "y1": relayout["shapes[0].y1"]}
     elif (path := relayout.get("shapes[0].path", None)) is not None: # Polygon update.
-      if stype == "path": shape = {"type": "path", "path": path}
+      if stype == "polygon":
+        shape = {"type": "path", "path": path}
     if shape is None: return dash.no_update, dash.no_update, dash.no_update
     stype = shape["type"]
     if stype == "rect": # Rectangle.
-      x1 = np.rint(shape["x0"]) ; x2 = np.rint(shape["x1"])
-      y1 = np.rint(shape["y0"]) ; y2 = np.rint(shape["y1"])
-      representation = f'shape_bmask("rectangle", ({x1:.0f}, {x2:.0f}), ({y1:.0f}, {y2:.0f}))'
+      x0 = shape["x0"] ; x1 = shape["x1"]
+      y0 = shape["y0"] ; y1 = shape["y1"]
+      current = {"type": "rectangle", "x": (x0, x1), "y": (y0, y1)}
+      representation = f'shape_bmask("rectangle", ({x0:.1f}, {x1:.1f}), ({y0:.1f}, {y1:.1f}))'
     elif stype == "circle": # Ellipse.
-      x1 = np.rint(shape["x0"]) ; x2 = np.rint(shape["x1"])
-      y1 = np.rint(shape["y0"]) ; y2 = np.rint(shape["y1"])
-      representation = f'shape_bmask("ellipse", ({x1:.0f}, {x2:.0f}), ({y1:.0f}, {y2:.0f}))'
+      x0 = shape["x0"] ; x1 = shape["x1"]
+      y0 = shape["y0"] ; y1 = shape["y1"]
+      current = {"type": "ellipse", "x": (x0, x1), "y": (y0, y1)}
+      representation = f'shape_bmask("ellipse", ({x0:.1f}, {x1:.1f}), ({y0:.1f}, {y1:.1f}))'
     elif stype == "path": # Polygon.
       path = shape["path"] # Decode the SVG path.
-      vertices = [token.replace("M", "").replace("Z", "").split(",") for token in path.split("L")]
-      vertices = np.rint(np.array(vertices, dtype = float))
-      x = f"({vertices[0, 0]:.0f}" ; y = f"({vertices[0, 1]:.0f}"
-      for i in range(1, vertices.shape[0]):
-        x += f", {vertices[i, 0]:.0f}" ; y += f", {vertices[i, 1]:.0f}"
-      x += ")" ; y += ")"
-      representation = 'shape_bmask("polygon", '+x+', '+y+')'
+      vertices = np.asarray([token.replace("M", "").replace("Z", "").split(",") for token in path.split("L")], dtype = float)
+      xstr = f"({vertices[0, 0]:.1f}" ; ystr = f"({vertices[0, 1]:.1f}"
+      for i in range(1, len(vertices)):
+        xstr += f", {vertices[i, 0]:.1f}" ; ystr += f", {vertices[i, 1]:.1f}"
+      xstr += ")" ; ystr += ")"
+      current = {"type": "polygon", "x": vertices[:, 0], "y": vertices[:, 1]}
+      representation = 'shape_bmask("polygon", '+xstr+', '+ystr+')'
     else:
+      current = {}
       representation = repr(shape) # Unknown shape; display "as is".
     selectdiv = [html.Span([representation], id = "selection", className = "selection"),
                  dcc.Clipboard(target_id = "selection", title = "copy", className = "copyselection")]
-    return patch, selectdiv, stype
+    return patch, selectdiv, current
 
   def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
@@ -295,39 +305,56 @@ class Dashboard():
       current = list(current)
       return current, current, patch
 
-  def __local_histograms(self, n_clicks, is_open, figure, updateid):
-    """Callback for local histograms.
+  def __partial_histograms(self, n_clicks, is_open, figure, shape, updateid):
+    """Callback for partial histograms.
 
     Shows the histograms of the current selection (if any) or of the displayed
     area of the image.
 
     Args:
       n_clicks (list): The number of clicks on the histograms button.
-      is_open (bool): The status of the off-canvas showing the local histograms.
+      is_open (bool): The status of the off-canvas showing the partial histograms.
       figure (dict): The figure associated with the histograms button.
+      shape (dict): The shape currently drawn on the figure, if any.
       updateid (integer): The unique ID of the displayed dashboard update.
 
     Returns:
-      The status and content of the off-canvas showing the local histograms.
+      The status, title and content of the off-canvas showing the partial histograms.
     """
-    if is_open: return False, [] # Close the off-canvas.
-    if n_clicks <= 0: return False, []
+    if is_open: return False, "", [] # Close the off-canvas.
+    if n_clicks <= 0: return False, "", []
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
-    if not trigger: return False, []
+    if not trigger: return False, "", []
     with self.updatelock: # Lock on callback.
-      if self.images is None or updateid != self.nupdates: return False, [] # The dashboard is out of sync.
-      # Get x and y axes range.
-      xmin, xmax = figure["layout"]["xaxis"]["range"]
-      xmin = int(np.rint(xmin))//self.sampling ; xmax = int(np.rint(xmax))//self.sampling
-      ymax, ymin = figure["layout"]["yaxis"]["range"]
-      ymin = int(np.rint(ymin))//self.sampling ; ymax = int(np.rint(ymax))//self.sampling
-      if (xmax-xmin)*(ymax-ymin) < 256: return False, [] # Area too small for histograms.
-      # Compute local histograms using eQuimage.
+      if self.images is None or updateid != self.nupdates: return False, "", [] # The dashboard is out of sync.
+      # Compute partial histograms using eQuimage.
+      # For that purpose, create an Image object.
       n = trigger["index"] # Image index.
-      image = Image(self.images[n], channels = -1).crop(xmin, xmax, ymin, ymax)
-      figure = _figure_histograms_(image, channels = "RGBL", log = True, width = params.maxwidth, template = "slate")
+      image = Image(self.images[n], channels = -1)
+      # Did the user draw a shape on the image ?
+      stype = shape.get("type", None)
+      if stype is None: # Displayed area.
+        title = "Histograms of the displayed area of the image:"
+        # Get the x and y axes ranges.
+        xmin, xmax = figure["layout"]["xaxis"]["range"]
+        xmin = int(np.rint(xmin))//self.sampling ; xmax = int(np.rint(xmax))//self.sampling
+        ymax, ymin = figure["layout"]["yaxis"]["range"]
+        ymin = int(np.rint(ymin))//self.sampling ; ymax = int(np.rint(ymax))//self.sampling
+        # Crop the image.
+        image = image.crop(xmin, xmax, ymin, ymax)
+      else: # Current selection.
+        title = "Histograms of the current selection:"
+        # Create a mask from the drawn shape.
+        x = np.asarray(shape["x"])/self.sampling
+        y = np.asarray(shape["y"])/self.sampling
+        mask = image.shape_bmask(stype, x, y)
+        # Unravel the selection as an image with width 1.
+        image = Image(np.expand_dims(image.image[:, mask], 2))
+      width, height = image.get_size()
+      if width*height < 256: return True, title, [html.P("Not enough data for histograms.")] # Area too small for histograms.
+      figure = _figure_histograms_(image, channels = self.histograms, log = True, width = params.maxwidth, template = "slate")
       content = [dcc.Graph(figure = figure)]
-      return True, content
+      return True, title, content
 
   def __sync_image_zooms(self, relayouts, updateid):
     """Callback for zoom synchronizations.
@@ -424,19 +451,19 @@ class Dashboard():
     """Show image(s) on the dashboard.
 
     Args:
-      images: The image(s) as a single/tuple/list/dictionary of equimage.Image object(s) or numpy.ndarray.
+      images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
+        (for color images), (height, width, 1) or (height, width) (for grayscale images).
         Each image is displayed in a separate tab. The tabs are labelled according to the keys for
         a dictionary. Otherwise, the tabs are labelled "Image" & "Reference" if there are one or two images,
         and "Image #1", "Image #2"... if there are more.
-        The images must all be equimage.Image objects if histograms or statistics is True.
       histograms (optional): If True or a string, show the histograms of the image(s). The string lists the
         channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
       statistics (optional): If True or a string, show the statistics of the image(s). The string lists the
         channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
-      sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
+      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
         Only images[::sampling, ::sampling] are shown, to speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
-        shadowed/highlighted pixels, images differences, local histograms).
+        shadowed/highlighted pixels, images differences, partial histograms).
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on the image.
       synczoom (bool, optional): If True (default), synchronize zooms over images.
@@ -467,13 +494,11 @@ class Dashboard():
       reference = keys.index("Reference")
     except:
       reference = None
-    # Prepare images.
-    pimages = prepare_images(images, sampling = sampling)
     # Check if zooms can be synchronized.
     if synczoom:
-      imagesize = pimages[0].shape[0:2]
-      for image in pimages[1:]:
-        synczoom = (image.shape[0:2] == imagesize)
+      imagesize = get_image_size(images[0])
+      for image in images[1:]:
+        synczoom = (get_image_size(image) == imagesize)
         if not synczoom: break
     if not synczoom: imagesize = None
     # Try to preserve existing axes if already in tabs layout and synczoom is consistently True.
@@ -485,6 +510,8 @@ class Dashboard():
       xrange = None
       yrange = None
     hrange = [None]*nimages # Histograms x ranges.
+    # Prepare images.
+    pimages = prepare_images(images, sampling = sampling)
     # Set-up tabs.
     tabs = []
     for n in range(nimages):
@@ -517,7 +544,7 @@ class Dashboard():
                                   inline = True, labelClassName = "rm4")
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
         button = dbc.Button("Sel. histograms", color = "primary", size = "sm", n_clicks = 0, id = {"type": "histogramsbutton", "index": n})
-        offcanvas = dbc.Offcanvas([], title = "Histograms of the displayed area of the image:", placement = "top", close_button = True, keyboard = True,
+        offcanvas = dbc.Offcanvas([], placement = "top", close_button = True, keyboard = True,
                                   id = {"type": "offcanvas", "index": n}, style = {"height": "auto", "bottom": "initial"}, is_open = False)
         tab.append(html.Div([html.Div(["Filters:"], className = "rm4"), html.Div([checklist]), html.Div([button], className = "flushright")],
                    className = "flex center tm1 bm1",
@@ -527,7 +554,7 @@ class Dashboard():
       tab.append(html.Div([], id = {"type": "datadiv", "index": n}, className = "tm1 bm1",
                  style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
       # Selection data (keep defined for the callbacks even if select is False).
-      shape = dcc.Store(data = "", id = {"type": "shape", "index": n})
+      shape = dcc.Store(data = {}, id = {"type": "shape", "index": n})
       tab.append(html.Div([], id = {"type": "selectdiv", "index": n}, className = "tm2 bm2",
                  style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px",
                           "position": "relative"}))
@@ -562,6 +589,7 @@ class Dashboard():
       self.imagesize = imagesize
       self.reference = reference
       self.activetab = activetab
+      self.histograms = histograms if histograms is not False else "RGBL"
       self.images = pimages if click or filters else None # No need to register images for the callbacks if click and filters are False.
       self.content = [dbc.Tabs(tabs, active_tab = activetab, id = "image-tabs")]
       self.refresh = True
@@ -573,14 +601,14 @@ class Dashboard():
     and the output image, histograms, and statistics in tab "Image".
 
     Args:
-      image (equimage.Image): The output image (must embed a transformation image.trans -
-        see equimage.Image.apply_channels).
+      image (equimage.Image): The output image
+        (must embed a transformation image.trans - see equimage.Image.apply_channels).
       channels (str, optional): The channels of the histograms and statistics (default "RGBL" for red,
         green, blue, luma). The channels of the transformation are added if needed.
-      sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
+      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
         Only image[::sampling, ::sampling] is shown, to speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
-        shadowed/highlighted pixels, images differences, local histograms).
+        shadowed/highlighted pixels, images differences, partial histograms).
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on the image.
       synczoom (bool, optional): If True (default), synchronize zooms over images.
@@ -604,10 +632,11 @@ class Dashboard():
     """Show a carousel of images on the dashboard.
 
     Args:
-      images: The images as a tuple/list/dictionary of equimage.Image object(s) or numpy.ndarray.
+      images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
+        (for color images), (height, width, 1) or (height, width) (for grayscale images).
         The images are labelled according to the keys for a dictionary. Otherwise, the images are labelled
         "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
-      sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
+      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
         Only images[::sampling, ::sampling] are shown, to speed up display.
       interval (int, optional): The interval (ms) between image switches in the carousel (default 2000).
     """
@@ -648,11 +677,13 @@ class Dashboard():
     """Compare two images with a "before/after" slider on the dashboard.
 
     Args:
-      image1: The "after" image as an equimage.Image object or numpy.ndarray.
-      image2: The "before"" image as an equimage.Image object or numpy.ndarray.
+      image1: The "after" image, an equimage.Image object or numpy.ndarray with shape (height, width, 3)
+        (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+      image2: The "before" image, an equimage.Image object or numpy.ndarray with shape (height, width, 3)
+       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
       label1 (str, optional): The label of the first image (default "Image").
       label2 (str, optional): The label of the second image (default "Reference").
-      sampling (int, optional): Downsampling rate (defaults to `jupyter.params.sampling` if negative).
+      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
         Only image1[::sampling, ::sampling] and image2[::sampling, ::sampling] are shown, to speed up display.
     """
     self.refresh = False # Stop refreshing dashboard.
@@ -681,16 +712,15 @@ def _table_statistics_(image, channels = ""):
   """Prepare a table with the statistics of an image.
 
   Args:
-    image (equimage.Image): The image.
+    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
+      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
 
   Returns:
     dbc.Table: A dash bootstrap components table with the statistics of the image.
   """
   # Prepare statistics.
-  if not issubclass(type(image), Image):
-    print("The statistics can only be displayed for Image objects.")
-    return None
+  if not issubclass(type(image), Image): image = Image(image, channels = -1)
   if channels == "":
     stats = getattr(image, "stats", None)
     if stats is None: stats = image.statistics()
