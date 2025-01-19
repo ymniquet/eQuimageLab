@@ -23,21 +23,33 @@ class MixinImage:
   # Geometrical transformations. #
   ################################
 
-  def flip_height(self):
-    """Flip the image along its height.
+  def flipud(self):
+    """Flip the image upside/down.
 
     Returns:
       Image: The flipped image.
     """
     return np.flip(self, axis = 1)
 
-  def flip_width(self):
-    """Flip the image along its width.
+  def fliplr(self):
+    """Flip the image left/right.
 
     Returns:
       Image: The flipped image.
     """
     return np.flip(self, axis = 2)
+
+  def rot90(self, n = 1):
+    """Rotate the image by (a multiple of) 90°.
+
+    Args:
+      n (int, optional): The number of 90° rotations (positive for counter-clockwise
+        rotations, negative for clockwise rotations; default 1).
+
+    Returns:
+      Image: The rotated image.
+    """
+    return self.newImage(np.rot90(self, n, axes = (1, 2))) # Needed to add the self.newImage here... Bug in numpy ?
 
   ##################
   # Resize & Crop. #

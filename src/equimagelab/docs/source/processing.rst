@@ -12,8 +12,9 @@ The geometry of the image (size, orientation, ...) can be transformed with the f
 
 .. autosummary::
 
-   flip_height
-   flip_width
+   flipud
+   fliplr
+   rot90
    resize
    rescale
    crop
