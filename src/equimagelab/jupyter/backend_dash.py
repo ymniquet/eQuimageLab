@@ -511,6 +511,7 @@ class Dashboard():
       yrange = None
     hrange = [None]*nimages # Histograms x ranges.
     # Prepare images.
+    if sampling <= 0: sampling = params.sampling
     pimages = prepare_images(images, sampling = sampling)
     # Set-up tabs.
     tabs = []

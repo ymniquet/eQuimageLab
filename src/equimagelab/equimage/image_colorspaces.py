@@ -546,7 +546,8 @@ class MixinImage:
     """
     dtype = self.dtype if inplace else params.imagetype
     data = np.asarray(data, dtype)
-    if data.shape != self.get_size():
+    width, height = self.get_size()
+    if data.shape != (height, width):
       raise ValueError("Error, the channel data must be a 2D array with the same with and height as the image.")
     is_RGB  = (self.colormodel == "RGB")
     is_HSV  = (self.colormodel == "HSV")

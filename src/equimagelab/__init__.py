@@ -12,8 +12,8 @@ __packagepath__ = __path__[0]
 
 # Import top-level symbols.
 
-from .equimage.toplevel import *
-from .jupyter.toplevel import *
+from .equimage.imports import *
+from .jupyter.imports import *
 from . import params
 
 print("######################################"+len(__version__)*"#")

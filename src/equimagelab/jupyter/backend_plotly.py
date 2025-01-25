@@ -67,6 +67,7 @@ def _figure_image_(image, sampling = -1, width = -1, hover = False, template = "
   Returns:
     plotly.graph_objects.Figure: A plotly figure with the image.
   """
+  if sampling <= 0: sampling = params.sampling
   return _figure_prepared_image_(prepare_images(image, sampling = sampling), dx = sampling, dy = sampling, width = width, hover = hover, template = template)
 
 def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "Level", trans = None, template = "plotly_dark"):
