@@ -32,7 +32,7 @@ def get_image_size(image):
     if image.ndim in [2, 3]: return image.shape[1], image.shape[0]
   raise ValueError(f"Error, {image} is not a valid image.")
 
-def prepare_images(images, sampling = -1, copy = False):
+def prepare_images(images, sampling = 1, copy = False):
   """Prepare images for plotly and Dash.
 
   Returns all images as numpy.ndarrays with shape (height, width, 3) (for color images),
@@ -41,7 +41,7 @@ def prepare_images(images, sampling = -1, copy = False):
   Args:
     images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
-    sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
+    sampling (int, optional): The downsampling rate (default 1; set to `jupyter.params.sampling` if negative).
       Only images[::sampling, ::sampling] are processed, to speed up operations.
     copy (bool, optional): If False (default), the output images are (when possible) views of the original
       images; If True, they are always copies.
@@ -69,7 +69,7 @@ def prepare_images(images, sampling = -1, copy = False):
   if not isinstance(images, (tuple, list)): return prepare(images, copy)
   return type(images)(prepare(image, copy) for image in images)
 
-def prepare_images_as_b64strings(images, sampling = -1, compression = 4):
+def prepare_images_as_b64strings(images, sampling = 1, compression = 4):
   """Prepare images for plotly and Dash as PNGs encoded in base64 strings.
 
   Returns all images as PNGs encoded in base64 strings.
@@ -77,7 +77,7 @@ def prepare_images_as_b64strings(images, sampling = -1, compression = 4):
   Args:
     images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
-    sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
+    sampling (int, optional): The downsampling rate (default 1; set to `jupyter.params.sampling` if negative).
       Only images[::sampling, ::sampling] are processed, to speed up operations.
     compression (int, optional): The PNG compression level (default 4).
 
@@ -117,7 +117,7 @@ def filter(image, channels):
 
   Returns:
     numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the
-    non-displayed channels set to zero.
+    non-selected channels set to zero.
   """
   selected = np.array([False, False, False])
   for c in channels:
@@ -129,13 +129,13 @@ def filter(image, channels):
       selected[2] = True
     else:
       raise ValueError(f"Error, unknown channel {c}.")
-  image = prepare_images(image, sampling = 1, copy = True)
+  image = prepare_images(image, copy = True)
   if image.ndim != 3: raise ValueError("Error, the input must be a RGB (not a grayscale) image.""")
   image[:, :, ~selected] = 0.
   return image
 
 def shadowed(image, reference = None):
-  """Highlight black pixels in an image.
+  """Highlight black pixels of an image.
 
   Highlight black pixels on the input image with color `jupyter.params.shadowcolor`.
   If a reference image is provided, highlight pixels black on both input and reference images
@@ -152,13 +152,13 @@ def shadowed(image, reference = None):
     numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the
     black pixels highlighted with color `jupyter.params.shadowcolor`.
   """
-  image = prepare_images(image, sampling = 1, copy = True)
+  image = prepare_images(image, copy = True)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
   imgmask = np.all(image < params.IMGTOL, axis = 2)
   if image.shape[2] == 1: image = np.repeat(image, 3, axis = 2)
   image[imgmask, :] = params.shadowcolor
   if reference is not None:
-    reference = prepare_images(reference, sampling = 1)
+    reference = prepare_images(reference)
     if reference.shape[0:2] != image.shape[0:2]:
       print("Warning, image and reference have different sizes !")
       return image
@@ -168,7 +168,7 @@ def shadowed(image, reference = None):
   return image
 
 def highlighted(image, reference = None):
-  """Highlight saturated pixels in an image.
+  """Highlight saturated pixels of an image.
 
   A pixel is saturated if at least one channel is >= 1.
   Show pixels saturated on the input image with color `jupyter.params.highlightcolor`.
@@ -186,13 +186,13 @@ def highlighted(image, reference = None):
     numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the saturated
     pixels highlighted with color `jupyter.params.highlightcolor`.
   """
-  image = prepare_images(image, sampling = 1, copy = True)
+  image = prepare_images(image, copy = True)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
   imgmask = np.any(image > 1.-params.IMGTOL, axis = 2)
   if image.shape[2] == 1: image = np.repeat(image, 3, axis = 2)
   image[imgmask, :] = params.highlightcolor
   if reference is not None:
-    reference = prepare_images(reference, sampling = 1)
+    reference = prepare_images(reference)
     if reference.shape[0:2] != image.shape[0:2]:
       print("Warning, image and reference have different sizes !")
       return image
@@ -209,14 +209,13 @@ def differences(image, reference):
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
     reference (optional): An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
-      Default is None.
 
   Returns:
     numpy.ndarray: A copy of the image as an array with shape (height, width, 3)
     and the differences with the reference highlighted with color `jupyter.params.diffcolor`.
   """
-  image = prepare_images(image, sampling = 1, copy = True)
-  reference = prepare_images(reference, sampling = 1)
+  image = prepare_images(image, copy = True)
+  reference = prepare_images(reference)
   if image.shape != reference.shape:
     raise ValueError("Error, image and reference have different sizes/number of channels !")
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
