@@ -104,7 +104,7 @@ class MixinImage:
     if blue  != 1.: output.image[2] *= blue
     return output
 
-  def color_saturation(self, A = 0., model = "midsat", interpolation = "cubic", trans = True, **kwargs):
+  def color_saturation(self, A = 0., model = "midsat", interpolation = "cubic", lightness = False, trans = True, **kwargs):
     """Adjust color saturation.
 
     The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model' kwarg:
@@ -136,8 +136,10 @@ class MixinImage:
         - "linear": Linear spline interpolation.
         - "cubic": Cubic spline interpolation (default).
 
-      trans (boolean, optional): If True, embeds the transformation delta(hue) in the output
-        image as output.trans.
+      lightness (bool, optional): If True (default), preserve the CIE lightness L* of the original image.
+        This will however decrease color saturation in the bright areas of the image. Only available for RGB images.
+      trans (boolean, optional): If True, embeds the transformation delta(hue) in the output image as output.trans
+        (see Image.apply_channels). Default is False.
 
     Returns:
       Image: The processed image.
@@ -181,6 +183,7 @@ class MixinImage:
       raise ValueError(f"Error, unknown saturation model '{model}.")
     hsv.image[1] = np.clip(sat, 0., 1.)
     output = hsv if self.colormodel == "HSV" else hsv.RGB()
+    if lightness: output.set_channel("L*", self.lightness(), inplace = True)
     if trans:
       t = helpers.Container()
       t.type = "hue"
@@ -215,8 +218,7 @@ class MixinImage:
         "cyan" alias "C", "blue" alias "B", or "magenta" alias "M"].
       protection (str, optional): The protection mode ["avgneutral" (default), "maxneutral", "addmask" or "maxmask"].
       amount (float, optional): The parameter A for mask protection (protection = "addmask" or "maxmask", default 1).
-      lightness (bool, optional): If True (default), rescale the output pixels to preserve the CIE lightness L* of
-        the original image.
+      lightness (bool, optional): If True (default), preserve the CIE lightness L* of the original image.
 
     Returns:
       Image: The processed image.
@@ -254,11 +256,5 @@ class MixinImage:
       raise ValueError(f"Error, unknown protection mode '{protection}'.")
     if negative: image = 1.-image
     output = self.newImage(image)
-    if lightness:
-      output.check_color_space("lRGB", "sRGB")
-      output = output.lRGB()
-      output = output.scale_pixels(output.luminance(), self.luminance())
-      if self.colorspace == "sRGB": output = output.sRGB()
-      difflight = output.lightness()-self.lightness()
-      print(f"Maximum lightness difference = {abs(difflight).max()}.")
+    if lightness: output.set_channel("L*", self.lightness(), inplace = True)
     return output

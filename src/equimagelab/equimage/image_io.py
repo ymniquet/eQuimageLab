@@ -159,7 +159,7 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
         skio.imsave(filename, image, plugin = "tifffile", check_contrast = False, compression = "zlib" if compress > 0 else None)
   elif ext in [".fit", ".fits", ".fts"]:
     if verbose: print(f"Color depth = 32 bits float per channel.")
-    image = np.asarray(image.flip_height().get_image(), dtype = np.float32) # Flip image upside down.
+    image = np.asarray(image.flipud().get_image(), dtype = np.float32) # Flip image upside down.
     if is_gray: image = image[0]
     hdu = pyfits.PrimaryHDU(image)
     hdu.writeto(filename, overwrite = True)
