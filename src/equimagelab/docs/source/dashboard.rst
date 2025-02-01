@@ -20,16 +20,16 @@ You shall now see this on the dashboard:
 
 The "Image" tab displays the image, histograms and statistics. You can zoom in the image or histograms with the mouse (double click to zoom out). A single click on a point of the image shows the data at this point (RGB components, ...).
 
-You can tweak the display with the filter buttons available below the image:
+You can filter the display with the buttons available below the image:
 
   - *R/G/B*: Include/exclude the red, blue, green component of the image.
   - *Luma*: Display the luma as a grayscale image (see :doc:`composite`).
   - *Shadowed*: Show the black (≤ 0) pixels in orange.
   - *Highlighted*: Show the saturated (≥ 1) pixels in yellow.
 
-You can combine these filters (e.g., *R* + *Shadowed* displays the red component only with the pixels ≤ 0 highlighted in orange).
+You may combine these filters (e.g., *R* + *Shadowed* displays the red component only with the pixels ≤ 0 highlighted in orange).
 
-There is also a *Local histograms* button on the right. This button shows the histograms of the *zoomed area* of the image.
+The *Sel. histograms* button on the right shows the histograms of the displayed (zoomed) area of the image or of the selection (if any, see below).
 
 Displaying multiple images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -48,6 +48,48 @@ Here is another example of dashboard with two images and the "Reference" tab sho
    :alt: eQuimageLab dashboard with histograms transformation
 
 This dashboard is the outcome of :py:meth:`dbrd.show_t(stretched) <equimagelab.jupyter.backend_dash.Dashboard.show_t>`, where *stretched* is the output image of a midtone stretch (see :py:meth:`Image.midtone_stretch() <equimagelab.equimage.image_stretch.MixinImage.midtone_stretch>`). The dashboard displays the output, stretched image in the "Image" tab, and the original, input image in the "Reference" tab. Moreover, the histograms panel of the "Reference" tab shows the midtone stretch function *f* (the relation between the input and output luma L, in purple). You can click on the *f/log f'* button to switch between plots of *f* and *log f'*. The latter is a measure of contrast enhancement as a function of the input luma (it is positive when contrast is enhanced, negative when contrast is reduced).
+
+Selections
+^^^^^^^^^^
+
+When the mouse pointer is over an image, the following contextual menu appears on the top right of that image:
+
+.. image:: images/menu.png
+   :width: 50%
+   :align: center
+   :alt: The contextual menu
+
+The items of this menu enable, from left to right :
+
+  - To take a snapshot of the image.
+  - To zoom in the image with the mouse (default).
+  - To pan the image with the mouse.
+  - To make a rectangular selection in the image with the mouse.
+  - To make an elliptical selection in the image with the mouse.
+  - To make an arbitrary lasso selection in the image with the mouse.
+  - To cancel the present selection.
+  - To zoom in.
+  - To zoom out.
+  - To auto-scale the image.
+  - To go back to the original view.
+
+When a selection is made, a text box displays a ``shape_bmask(...)`` instruction below the image:
+
+.. image:: images/selection.png
+   :width: 100%
+   :align: center
+   :alt: eQuimageLab dashboard with selection
+
+This ``shape_bmask(...)`` instruction can be copied (with the copy icon on the right of the text box) and pasted into the notebook to define a mask corresponding to the selection. For example,
+
+.. code-block:: python
+
+  mask = stretched.shape_bmask("ellipse", (1157.0, 387.4), (1152.1, 422.0))
+  selected = np.where(mask, stretched, 0.)
+
+creates a binary mask for the image `stretched`, then uses this mask to set all pixels outside the selection to zero (black). The binary mask is a boolean :py:class:`numpy.ndarray` with the same size as the image, which is True inside the selection and False outside. Here the selection is the ellipse inscribed in the rectangle extending from x = 387.4 to x = 1157.0 and from y = 422.0 to y = 1152.1. That way you won't need to reselect manually if you run the notebook again, as the selection is now "hardcoded" in the notebook. For more informations about masks, see :doc:`processing`.
+
+A selection can be modified by clicking on its border then moving the points that define this border. Also, the *Sel. histograms* button displays the histograms of the current selection (or the histograms of the displayed area of the image if there is none).
 
 The carousel and before/after slider
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

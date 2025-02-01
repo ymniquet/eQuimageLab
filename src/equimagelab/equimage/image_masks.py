@@ -19,10 +19,10 @@ from . import params
 ####################################
 
 def float_mask(mask):
-  """Convert a boolean mask into a float mask.
+  """Convert a binary mask into a float mask.
 
   Args:
-    mask (numpy.ndarray): The input boolean mask.
+    mask (numpy.ndarray): The input binary mask.
 
   Returns:
     numpy.ndarray: A float mask with datatype `equimagelab.equimage.params.imagetype`
@@ -32,15 +32,15 @@ def float_mask(mask):
   return np.asarray(mask, dtype = params.imagetype)
 
 def extend_bmask(mask, extend):
-  """Extend or erode a boolean mask.
+  """Extend or erode a binary mask.
 
   Args:
-    mask (numpy.ndarray): The input boolean mask.
+    mask (numpy.ndarray): The input binary mask.
     extend (int): The number of pixels by which the mask is extended.
       The mask is extended if extend > 0, and eroded if extend < 0.
 
   Returns:
-    numpy.ndarray: The extended boolean mask.
+    numpy.ndarray: The extended binary mask.
   """
   if extend > 0:
     return skimo.isotropic_dilation(mask, extend)
@@ -48,12 +48,12 @@ def extend_bmask(mask, extend):
     return skimo.isotropic_erosion(mask, -extend)
 
 def smooth_mask(mask, radius, mode = "zero"):
-  """Smooth a boolean or float mask.
+  """Smooth a binary or float mask.
 
   The input mask is converted into a float mask and convolved with a disk of radius smooth.
 
   Args:
-    mask (numpy.ndarray): The input boolean or float mask.
+    mask (numpy.ndarray): The input binary or float mask.
     radius (float): The smoothing radius (pixels). The edges of the output float mask get
       smoothed over 2*radius pixels.
     mode (str, optional): How to extend the mask across its boundaries for the convolution:
@@ -84,9 +84,9 @@ def smooth_mask(mask, radius, mode = "zero"):
   return fmask
 
 def threshold_bmask(filtered, threshold, extend = 0):
-  """Set-up a threshold boolean mask.
+  """Set-up a threshold binary mask.
 
-  Returns the pixels of the image such that filtered >= threshold as a boolean mask.
+  Returns the pixels of the image such that filtered >= threshold as a binary mask.
 
   See also:
     Image.filter,
@@ -134,7 +134,7 @@ def threshold_fmask(filtered, threshold, extend = 0, smooth = 0., mode = "zero")
   return smooth_mask(threshold_bmask(filtered, threshold, extend), smooth, mode = mode)
 
 def shape_bmask(shape, x, y, width, height):
-    """Return a boolean mask defined by the input shape.
+    """Return a binary mask defined by the input shape.
 
     Args:
       shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for a polygon.
@@ -239,7 +239,7 @@ class MixinImage:
       raise ValueError(f"Error, unknown filter '{filter}'.")
 
   def shape_bmask(self, shape, x, y):
-    """Return a boolean mask defined by the input shape.
+    """Return a binary mask defined by the input shape.
 
     Args:
       shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for a polygon.

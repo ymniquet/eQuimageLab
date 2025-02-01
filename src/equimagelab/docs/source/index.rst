@@ -54,3 +54,4 @@ Latest news:
     - Rectangle, ellipse & lasso (polygon) selections on the images.
     - Histograms of the selection.
     - Image mask from the selection.
+    - Added lightness parameter in :py:meth:`color_saturation <equimagelab.equimage.image_colors.MixinImage.color_saturation>`.
