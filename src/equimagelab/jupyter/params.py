@@ -9,7 +9,7 @@
 
 import numpy as np
 
-IMGTOL = 1.e-6 # Expected floating-point accuracy of numpy.float32 images.
+IMGTOL = np.spacing(1, dtype = np.float32) # Expected floating-point accuracy of numpy.float32 images.
 
 # Images downsampling rate for display.
 # Only images[::sampling, ::sampling] are shown to speed up operations.

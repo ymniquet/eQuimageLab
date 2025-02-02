@@ -81,8 +81,7 @@ class MixinImage:
     Returns:
       bool: True if the image is out-of-range, False otherwise.
     """
-    epsilon = helpers.fpaccuracy(self.dtype)
-    return np.any(self.image < -epsilon) or np.any(self.image > 1.+epsilon)
+    return np.any(self.image < 0.) or np.any(self.image > 1.)
 
   ##############
   # Templates. #
@@ -126,7 +125,7 @@ class MixinImage:
     Args:
       source (numpy.ndarray): The source values for scaling (must be the same size as the image).
       target (numpy.ndarray): The target values for scaling (must be the same size as the image).
-      cutoff (float, optional): Threshold for scaling. If None, defaults to `equimage.helpers.fpaccuracy(source.dtype)`.
+      cutoff (float, optional): Threshold for scaling. If None, defaults to `equimage.helpers.fpepsilon(source.dtype)`.
 
     Returns:
       Image: The scaled image.

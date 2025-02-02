@@ -83,7 +83,7 @@ def HSV_to_RGB(image):
   """
   return skcolor.hsv2rgb(image, channel_axis = 0)
 
-def value(image):
+def HSV_value(image):
   """Return the HSV value V = max(RGB) of the input RGB image.
 
   Note: Compatible with single channel grayscale images.
@@ -96,7 +96,7 @@ def value(image):
   """
   return image.max(axis = 0)
 
-def saturation(image):
+def HSV_saturation(image):
   """Return the HSV saturation S = 1-min(RGB)/max(RGB) of the input RGB image.
 
   Note: Compatible with single channel grayscale images.
@@ -107,7 +107,70 @@ def saturation(image):
   Returns:
     numpy.ndarray: The HSV saturation S.
   """
-  return 1.-image.min(axis = 0)/image.max(axis = 0, initial = helpers.fpaccuracy(image.dtype)) # Safe evaluation.
+  return 1.-image.min(axis = 0)/image.max(axis = 0, initial = helpers.fpepsilon(image.dtype)) # Safe evaluation.
+
+###########################
+# RGB <-> HSL conversion. #
+###########################
+
+def RGB_to_HSL(image):
+  """Convert the input RGB image into a HSL image.
+
+  See also:
+    The reciprocal HSL_to_RGB function.
+
+  Args:
+    image (numpy.ndarray): The input RGB image.
+
+  Returns:
+    numpy.ndarray: The converted HSL image.
+  """
+  return skcolor.rgb2hsl(image, channel_axis = 0) # Does not exist, actually.
+
+def HSL_to_RGB(image):
+  """Convert the input HSL image into a RGB image.
+
+  See also:
+    The reciprocal RGB_to_HSL function.
+
+  Args:
+    image (numpy.ndarray): The input HSL image.
+
+  Returns:
+    numpy.ndarray: The converted RGB image.
+  """
+  return skcolor.hsl2rgb(image, channel_axis = 0) # Does not exist, actually.
+
+def HSL_lightness(image):
+  """Return the HSL lightness L = (max(RGB)+min(RGB))/2 of the input RGB image.
+
+  Note: Compatible with single channel grayscale images.
+
+  Args:
+    image (numpy.ndarray): The input RGB image.
+
+  Returns:
+    numpy.ndarray: The HSL lightness L.
+  """
+  return (image.min(axis = 0)+image.max(axis = 0))/2.
+
+def HSL_saturation(image):
+  """Return the HSL saturation S = (max(RGB)-min(RGB))/(1-|max(RGB)-min(RGB)-1|) of the input RGB image.
+
+  Note: Compatible with single channel grayscale images.
+
+  Args:
+    image (numpy.ndarray): The input RGB image.
+
+  Returns:
+    numpy.ndarray: The HSL saturation S.
+  """
+  mini = image.min(axis = 0)
+  maxi = image.max(axis = 0)
+  C = maxi-mini
+  L = mini+maxi
+  epsilon = helpers.fpepsilon(image.dtype)
+  return np.where(L < 1., C/(L+epsilon), C/(2.-L)) # Safe evaluation.
 
 #########
 # Luma. #
@@ -403,27 +466,27 @@ class MixinImage:
   # Composite channels. #
   #######################
 
-  def value(self):
+  def HSV_value(self):
     """Return the HSV value V = max(RGB) of the image.
 
     Returns:
       numpy.ndarray: The HSV value V.
     """
     if self.colormodel == "RGB" or self.colormodel == "gray":
-      return value(self.image)
+      return HSV_value(self.image)
     elif self.colormodel == "HSV":
       return self.image[2]
     else:
       self.color_model_error()
 
-  def saturation(self):
+  def HSV_saturation(self):
     """Return the HSV saturation S = 1-min(RGB)/max(RGB) of the image.
 
     Returns:
       numpy.ndarray: The HSV saturation S.
     """
     if self.colormodel == "RGB" or self.colormodel == "gray":
-      return saturation(self.image)
+      return HSV_saturation(self.image)
     elif self.colormodel == "HSV":
       return self.image[1]
     else:
@@ -515,9 +578,9 @@ class MixinImage:
       ic = "RGB".index(channel)
       return self.image[ic]
     elif channel == "V":
-      return self.value()
+      return self.HSV_value()
     elif channel == "S":
-      return self.saturation()
+      return self.HSV_saturation()
     elif channel == "L":
       return self.luma()
     elif channel == "L*":
@@ -568,7 +631,7 @@ class MixinImage:
       if is_gray:
         output.image[0] = data
       elif is_RGB:
-        output.image[:] = helpers.scale_pixels(output.image, output.value(), data)
+        output.image[:] = helpers.scale_pixels(output.image, output.HSV_value(), data)
       elif is_HSV:
         output.image[2] = data
       else:
@@ -712,7 +775,7 @@ class MixinImage:
         output = self.newImage(f(self.image))
         if trans: output.trans = transformation(f, self.image, "V")
       elif is_RGB:
-        value = self.value()
+        value = self.HSV_value()
         output = self.scale_pixels(value, f(value))
         if trans: output.trans = transformation(f, value, "V")
       elif is_HSV:
@@ -856,8 +919,7 @@ class MixinImage:
     """
     self.check_color_model("RGB")
     imgluma = self.luma() # Original luma.
-    epsilon = helpers.fpaccuracy(imgluma.dtype)
-    if np.any(imgluma > 1.+epsilon/2):
+    if np.any(imgluma > 1.):
       print("Warning, can not protect highlights if the luma is out-of-range. Returning original image...")
       return self.copy()
     newimage = self.image/np.maximum(self.image.max(axis = 0), 1.) # Rescale maximum HSV value to 1.
@@ -865,6 +927,7 @@ class MixinImage:
     # Scale the saturation.
     # Note: The following implementation is failsafe when newluma -> 1 (in which case luma is also 1 in principle),
     # at the cost of a small error.
+    epsilon = helpers.fpepsilon(self.dtype)
     fs = ((1.-imgluma)+epsilon)/((1.-newluma)+epsilon)
     output = 1.-(1.-newimage)*fs
     diffluma = imgluma-luma(output)
@@ -885,9 +948,8 @@ class MixinImage:
       Image: The processed image.
     """
     self.check_color_model("RGB") ; inrange.check_color_model("RGB")
-    epsilon = helpers.fpaccuracy(self.dtype)
-    if np.any(inrange.value() > 1.+epsilon/2.):
+    if np.any(inrange.HSV_value() > 1.):
       print("Warning, can not protect highlights if the input inrange image is out-of-range. Returning original image...")
       return self.copy()
-    mixing = np.where(self.image > 1.+epsilon, helpers.failsafe_divide(self.image-1., self.image-inrange.image), 0.)
+    mixing = np.where(self.image > 1., helpers.failsafe_divide(self.image-1., self.image-inrange.image), 0.)
     return self.blend(inrange, mixing.max(axis = 0))

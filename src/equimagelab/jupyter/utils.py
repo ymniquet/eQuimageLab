@@ -188,7 +188,7 @@ def highlighted(image, reference = None):
   """
   image = prepare_images(image, copy = True)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
-  imgmask = np.any(image > 1.-params.IMGTOL, axis = 2)
+  imgmask = np.any(image > 1., axis = 2)
   if image.shape[2] == 1: image = np.repeat(image, 3, axis = 2)
   image[imgmask, :] = params.highlightcolor
   if reference is not None:
@@ -197,7 +197,7 @@ def highlighted(image, reference = None):
       print("Warning, image and reference have different sizes !")
       return image
     if reference.ndim == 2: reference = np.expand_dims(reference, -1)
-    refmask = np.any(reference > 1.-params.IMGTOL, axis = 2)
+    refmask = np.any(reference > 1., axis = 2)
     image[imgmask & refmask, :] = .5*params.highlightcolor
   return image
 

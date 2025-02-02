@@ -728,9 +728,9 @@ class MixinImage:
     def compute_medians(image, channels):
       """Compute the medians of the channels of the input image, returned as a dictionary."""
       if channels == "V":
-        cmeds = {"V": np.median(image.value())}
+        cmeds = {"V": np.median(image.HSV_value())}
       elif channels == "S":
-        cmeds = {"S": np.median(image.saturation())}
+        cmeds = {"S": np.median(image.HSV_saturation())}
       elif channels in ["L", "Ls", "Lb", "Ln"]:
         cmeds = {"L": np.median(image.luma())}
       elif channels == "L*":

@@ -32,7 +32,7 @@ class MixinImage:
       bool: True if the RGB image is a grayscale (same RGB channels), False otherwise.
     """
     self.check_color_model("RGB")
-    epsilon = helpers.fpaccuracy(self.dtype)
+    epsilon = helpers.fpepsilon(self.dtype)
     return np.all(abs(self.image[1]-self.image[0]) < epsilon) and np.all(abs(self.image[2]-self.image[0]) < epsilon)
 
   ############################
@@ -63,7 +63,7 @@ class MixinImage:
     """
     self.check_color_model("RGB")
     if channel == "V":
-      grayscale = self.value()
+      grayscale = self.HSV_value()
     elif channel == "L":
       grayscale = self.luma()
     elif channel == "Y" or channel == "L*":

@@ -125,11 +125,11 @@ class MixinImage:
       elif key == "V":
         name = "Value"
         color = "darkslategray"
-        channel = self.value()
+        channel = self.HSV_value()
       elif key == "S":
         name = "Saturation"
         color = "orange"
-        channel = self.saturation()
+        channel = self.HSV_saturation()
       elif key == "L":
         name = "Luma"
         color = "lightslategray"
@@ -183,7 +183,7 @@ class MixinImage:
         - stats[key].exclude01 = True if pixels >= 0 or <= 1 have been excluded from the median and percentiles, False otherwise.
         - stats[key].color = suggested text color for display.
     """
-    epsilon = helpers.fpaccuracy(self.dtype)
+    epsilon = helpers.fpepsilon(self.dtype)
     if exclude01 is None: exclude01 = params.exclude01
     if not hasattr(self, "stats"): self.stats = {} # Register empty statistics in the object, if none already computed.
     if channels and channels[-1] == "+":
@@ -221,11 +221,11 @@ class MixinImage:
       elif key == "V":
         name = "Value"
         color = "darkslategray"
-        channel = self.value()
+        channel = self.HSV_value()
       elif key == "S":
         name = "Saturation"
         color = "orange"
-        channel = self.saturation()
+        channel = self.HSV_saturation()
       elif key == "L":
         name = "Luma"
         color = "lightslategray"
@@ -244,13 +244,13 @@ class MixinImage:
       stats[key].minimum = np.min(channel)
       stats[key].maximum = np.max(channel)
       if exclude01:
-        mask = (channel >= epsilon) & (channel <= 1.-epsilon)
+        mask = (channel >= epsilon) & (channel < 1.)
         stats[key].percentiles = np.percentile(channel[mask], [25., 50., 75.]) if np.any(mask) else None
       else:
         stats[key].percentiles = np.percentile(channel, [25., 50., 75.])
       stats[key].median = stats[key].percentiles[1] if stats[key].percentiles is not None else None
       stats[key].zerocount = np.sum(channel < epsilon)
-      stats[key].outcount = np.sum(channel > 1.+epsilon)
+      stats[key].outcount = np.sum(channel > 1.)
       stats[key].exclude01 = exclude01
       stats[key].color = color
     self.stats = stats
