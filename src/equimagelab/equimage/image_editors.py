@@ -16,7 +16,7 @@ import numpy as np
 from . import params
 
 from .image_io import load_image_as_array
-from .image_stretch import harmonic_through
+from .image_stretch import Dharmonic_through
 
 #####################################
 # For inclusion in the Image class. #
@@ -156,7 +156,7 @@ class MixinImage:
     # Stretch the image if needed.
     if midtone == "auto":
       avgmedian = np.mean(np.median(self.image, axis = (-1, -2)))
-      midtone = 1./(harmonic_through(avgmedian, .33)+2.)
+      midtone = 1./(Dharmonic_through(avgmedian, .33)+2.)
     if midtone != .5:
       image = self.midtone_stretch(midtone)
     else:

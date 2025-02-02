@@ -7,13 +7,13 @@
 
 """eQuimageLab."""
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 __packagepath__ = __path__[0]
 
 # Import top-level symbols.
 
-from .equimage.toplevel import *
-from .jupyter.toplevel import *
+from .equimage.imports import *
+from .jupyter.imports import *
 from . import params
 
 print("######################################"+len(__version__)*"#")

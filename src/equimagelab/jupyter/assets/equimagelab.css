@@ -1,11 +1,33 @@
 /* Dashboard layout. */
 
-.dashboard-outer { margin: 15px }
+.dashboard-outer { margin: 16px }
 .dashboard-inner { display: inline-block }
 
 /* Tabs. */
 
-.tab { border: solid 1px black }
+.tab {
+  border: solid 1px black;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 6px
+}
+
+.selection {
+  display: inline-block;
+  padding: 6px;
+  border: thin lightslategray solid;
+  border-radius: 4px;
+  width: 100%;
+  max-height: 100px;
+  overflow-y: scroll
+}
+.copyselection {
+  position: absolute;
+  top: 0px;
+  right: -28px;
+  font-size: 20px
+}
 
 /* Before/After slider. */
 
@@ -14,12 +36,12 @@
   vertical-align: middle;
   padding: 4px;
   writing-mode: vertical-lr;
-  transform: rotate(180deg);
+  transform: rotate(180deg)
 }
 
 .ba-middle {
   display: inline-block;
-  vertical-align: middle;
+  vertical-align: middle
 }
 
 .ba-right {
@@ -27,7 +49,7 @@
   vertical-align: middle;
   padding: 4px;
   writing-mode: vertical-rl;
-  transform: rotate(180deg);
+  transform: rotate(180deg)
 }
 
 /* Alignments. */

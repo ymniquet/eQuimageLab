@@ -23,21 +23,33 @@ class MixinImage:
   # Geometrical transformations. #
   ################################
 
-  def flip_height(self):
-    """Flip the image along its height.
+  def flipud(self):
+    """Flip the image upside/down.
 
     Returns:
       Image: The flipped image.
     """
     return np.flip(self, axis = 1)
 
-  def flip_width(self):
-    """Flip the image along its width.
+  def fliplr(self):
+    """Flip the image left/right.
 
     Returns:
       Image: The flipped image.
     """
     return np.flip(self, axis = 2)
+
+  def rot90(self, n = 1):
+    """Rotate the image by (a multiple of) 90°.
+
+    Args:
+      n (int, optional): The number of 90° rotations (positive for counter-clockwise
+        rotations, negative for clockwise rotations; default 1).
+
+    Returns:
+      Image: The rotated image.
+    """
+    return self.newImage(np.rot90(self, n, axes = (1, 2))) # Needed to add the self.newImage here... Bug in numpy ?
 
   ##################
   # Resize & Crop. #
@@ -112,7 +124,7 @@ class MixinImage:
     """Crop the image.
 
     Args:
-      xmin, xmax, ymin, ymax (integer or float): Crop from x = xmin to x = xmax and from y = ymin to y = ymax.
+      xmin, xmax, ymin, ymax (integer or float): Crop from x = xmin to x = xmax (along the width) and from y = ymin to y = ymax (along the height).
 
     Returns:
       Image: The cropped image.
@@ -120,8 +132,8 @@ class MixinImage:
     if xmax <= xmin: raise ValueError("Error, xmax <= xmin.")
     if ymax <= ymin: raise ValueError("Error, ymax <= ymin.")
     width, height = self.get_size()
-    xmin = max(int(np.floor(xmin))  , 0)
-    xmax = min(int(np.ceil (xmax))+1, width)
-    ymin = max(int(np.floor(ymin))  , 0)
-    ymax = min(int(np.ceil (ymax))+1, height)
+    xmin = max(int(np.rint(xmin))  , 0)
+    xmax = min(int(np.rint(xmax))+1, width)
+    ymin = max(int(np.rint(ymin))  , 0)
+    ymax = min(int(np.rint(ymax))+1, height)
     return self.newImage(self.image[:, ymin:ymax, xmin:xmax])

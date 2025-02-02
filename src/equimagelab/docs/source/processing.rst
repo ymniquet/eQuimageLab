@@ -12,8 +12,9 @@ The geometry of the image (size, orientation, ...) can be transformed with the f
 
 .. autosummary::
 
-   flip_height
-   flip_width
+   flipud
+   fliplr
+   rot90
    resize
    rescale
    crop
@@ -69,7 +70,7 @@ The following function provides an alternative parametrization of the harmonic s
 
 .. autosummary::
 
-   harmonic_through
+   Dharmonic_through
 
 Moreover, eQuimageLab provides an implementation of the `statistical stretch of SETI astro <https://www.setiastro.com/statistical-stretch>`_ as a method of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
 
@@ -184,7 +185,7 @@ At present, eQuimageLab can construct "threshold" masks that are 1 whereever som
 
 .. autosummary::
 
-   threshold_mask
+   threshold_fmask
 
 The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimagelab.equimage.image.Image>` class provides the following useful filters:
 
