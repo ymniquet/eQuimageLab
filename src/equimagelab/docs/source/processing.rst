@@ -183,7 +183,7 @@ Binary and float masks can be used to apply operations to selected parts of an i
 
   selection = np.where(bmask, image, 0.)
 
-returns a new :py:class:`Image <equimagelab.equimage.image.Image>` `selection`, equal to `image` where `bmask` is True and to zero (black) where `bmask` is False. Likewise, given a float mask `fmask` and some transformation function `transform`,
+returns a new :py:class:`Image <equimagelab.equimage.image.Image>` object `selection`, equal to `image` where `bmask` is True and to zero (black) where `bmask` is False. Likewise, given a float mask `fmask` and some transformation function `transform`,
 
 .. code-block:: python
 
@@ -200,7 +200,7 @@ eQuimageLab can construct "threshold" float and binary masks that are 1 or True 
    threshold_fmask
    threshold_bmask
 
-The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimagelab.equimage.image.Image>` class provides the following useful filters:
+The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimagelab.equimage.image.Image>` class provides the following useful filters (local average, median, ...):
 
 .. currentmodule:: equimagelab.equimage.image_masks.MixinImage
 

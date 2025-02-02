@@ -87,7 +87,7 @@ This ``shape_bmask(...)`` instruction can be copied (with the copy icon on the r
   mask = stretched.shape_bmask("ellipse", (1157.0, 387.4), (1152.1, 422.0))
   selected = np.where(mask, stretched, 0.)
 
-creates a binary mask for the image `stretched`, then uses this mask to set all pixels outside the selection to zero (black). The binary mask is a boolean :py:class:`numpy.ndarray` with the same size as the image, which is True inside the selection and False outside. Here the selection is the ellipse inscribed in the rectangle extending from x = 387.4 to x = 1157.0 and from y = 422.0 to y = 1152.1. That way you won't need to reselect manually if you run the notebook again, as the selection is now "hardcoded" in the notebook. For more informations about masks, see :doc:`processing`.
+creates a binary mask for the image `stretched`, then uses this mask to set all pixels outside the selection to zero (black). The binary mask is a boolean :py:class:`numpy.ndarray` with the same size as the image, which is True inside the selection and False outside. Here the selection is the ellipse inscribed in the rectangle extending from x = 387.4 to x = 1157.0 and from y = 422.0 to y = 1152.1. That way you won't need to redraw the selection with the mouse if you run the notebook again, as it is now "hardcoded" in Python. For more informations about masks, see :doc:`processing`.
 
 A selection can be modified by clicking on its border then moving the points that define this border. Also, the *Sel. histograms* button displays the histograms of the current selection (or the histograms of the displayed area of the image if there is none).
 

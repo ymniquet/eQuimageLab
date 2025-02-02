@@ -220,8 +220,7 @@ class MixinImage:
         - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
 
     Returns:
-      numpy.ndarray: The output of the filter as an array with shape (image height, image width),
-      *not* converted to a grayscale Image object.
+      numpy.ndarray: The output of the filter as an array with shape (image height, image width).
     """
     if mode == "zero": mode = "constant" # Translate modes.
     data = self.get_channel(channel)
