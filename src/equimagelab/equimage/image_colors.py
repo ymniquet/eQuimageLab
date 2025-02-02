@@ -109,7 +109,8 @@ class MixinImage:
 
     The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model' kwarg:
 
-      - "deltasat": Shift the saturation S ← S+delta.
+      - "addsat": Shift the saturation S ← S+delta.
+      - "mulsat": Scale the saturation S ← S*(1+delta).
       - "midsat": Apply a midtone stretch function S ← f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
         This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1.
 
@@ -174,8 +175,10 @@ class MixinImage:
     hue = hsv.image[0]
     sat = hsv.image[1]
     delta = interpolate(hue, psat, interpolation)
-    if model == "deltasat":
+    if model == "addsat":
       sat += delta
+    elif model == "mulsat":
+      sat *= 1.+delta
     elif model == "midsat":
       midsat = np.clip(.5*(1.-delta), .005, .995)
       sat = (midsat-1.)*sat/((2.*midsat-1.)*sat-midsat)
