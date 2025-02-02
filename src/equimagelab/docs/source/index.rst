@@ -49,7 +49,7 @@ Latest news:
     - Statistical stretch.
     - Light-dependent blur and sharpen (:py:meth:`LDBS <equimagelab.equimage.image_filters.MixinImage.LDBS>`).
 
-  - Version 1.2.0.
+  - February 2, 2025: Version 1.2.0.
 
     - Rectangle, ellipse & lasso (polygon) selections on the images.
     - Histograms of the selection.
