@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.1.1 / 2025.01.25
+# Version: 1.2.0 / 2025.02.02
 # Sphinx OK.
 
 """Dash backend for Jupyter Lab interface."""
@@ -36,8 +36,7 @@ class Dashboard():
   def __init__(self, port = 8050, interval = 500, debug = False):
     """Initialize dashboard.
 
-    This dashboard uses Dash to display images, histograms, statistics, etc...
-    in a separate browser tab or window.
+    This dashboard uses Dash to display images, histograms, statistics, etc... in a separate browser tab or window.
     It fetches updates from the Dash server at given intervals.
 
     Args:
@@ -71,7 +70,7 @@ class Dashboard():
                       Input({"type": "image", "index": MATCH}, "clickData"),
                       State("updateid", "data"),
                       prevent_initial_call = True)(self.__click_image)
-    #   - Image selection.
+    #   - Image selection:
     self.app.callback(Output({"type": "image", "index": MATCH}, "figure", allow_duplicate = True),
                       Output({"type": "selectdiv", "index": MATCH}, "children"),
                       Output({"type": "shape", "index": MATCH}, "data"),
@@ -91,7 +90,7 @@ class Dashboard():
                       State({"type": "offcanvas", "index": MATCH}, "is_open"), State({"type": "image", "index": MATCH}, "figure"),
                       State({"type": "shape", "index": MATCH}, "data"), State("updateid", "data"),
                       prevent_initial_call = True)(self.__partial_histograms)
-    #   - Zoom synchronizations:
+    #   - Image zooms synchronization:
     self.app.callback(Output({"type": "image", "index": ALL}, "figure", allow_duplicate = True),
                       Input({"type": "image", "index": ALL}, "relayoutData"),
                       State("updateid", "data"),
@@ -100,7 +99,7 @@ class Dashboard():
     self.app.callback(Input({"type": "histograms", "index": ALL}, "relayoutData"),
                       State("updateid", "data"),
                       prevent_initial_call = True)(self.__track_histograms_zoom)
-    #   - Tab switch.
+    #   - Tab switch:
     self.app.callback(Input("image-tabs", "active_tab"),
                       State("updateid", "data"),
                       prevent_initial_call = True)(self.__switch_tab)
@@ -248,7 +247,7 @@ class Dashboard():
 
     def filter_channels(image, channels):
       """Apply channel filters to the input image."""
-      if image.ndim > 2:
+      if image.ndim > 2: # Color image.
         if "L" in channels: # Return luma.
           rgbluma = get_RGB_luma()
           return rgbluma[0]*image[:, : , 0]+rgbluma[1]*image[:, : , 1]+rgbluma[2]*image[:, : , 2]
@@ -258,7 +257,7 @@ class Dashboard():
           if "G" not in channels: output[:, :, 1] = 0.
           if "B" not in channels: output[:, :, 2] = 0.
         return output
-      else: # Return luma.
+      else: # Grayscale image.
         return image
 
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
@@ -357,7 +356,7 @@ class Dashboard():
       return True, title, content
 
   def __sync_image_zooms(self, relayouts, updateid):
-    """Callback for zoom synchronizations.
+    """Callback for image zooms synchronization.
 
     Args:
       relayouts (list): The relayouts of all images.
@@ -409,9 +408,8 @@ class Dashboard():
     Args:
       relayouts (dict): The relayouts of all histograms.
       updateid (integer): The unique ID of the displayed dashboard update.
-
     """
-    if not self.synczoom: return # This comes along with image zoom synchronization.
+    if not self.synczoom: return # This comes along with image zooms synchronization.
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return
     with self.updatelock: # Lock on callback.
@@ -468,7 +466,7 @@ class Dashboard():
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on the image.
       synczoom (bool, optional): If True (default), synchronize zooms over images.
         Zooms will be synchronized only if all images have the same size.
-      trans (optional): A container with an histogram transformation (see equimage.Image.apply_channels),
+      trans (optional): A container with an histogram transformation (see `equimage.Image.apply_channels`),
         plotted on top of the histograms of the "Reference" tab (default None).
     """
     self.refresh = False # Stop refreshing dashboard.
@@ -603,7 +601,7 @@ class Dashboard():
 
     Args:
       image (equimage.Image): The output image
-        (must embed a transformation image.trans - see equimage.Image.apply_channels).
+        (must embed a transformation image.trans - see `equimage.Image.apply_channels`).
       channels (str, optional): The channels of the histograms and statistics (default "RGBL" for red,
         green, blue, luma). The channels of the transformation are added if needed.
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
@@ -614,7 +612,9 @@ class Dashboard():
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on the image.
       synczoom (bool, optional): If True (default), synchronize zooms over images.
     """
-    if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
+    if not issubclass(type(image), Image):
+      print("The transformations can only be displayed for Image objects.")
+      return
     trans = getattr(image, "trans", None)
     if trans is None:
       print("There is no transformation embedded in the input image.")
@@ -633,13 +633,13 @@ class Dashboard():
     """Show a carousel of images on the dashboard.
 
     Args:
-      images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
+      images: A tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
         (for color images), (height, width, 1) or (height, width) (for grayscale images).
         The images are labelled according to the keys for a dictionary. Otherwise, the images are labelled
         "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
         Only images[::sampling, ::sampling] are shown, to speed up display.
-      interval (int, optional): The interval (ms) between image switches in the carousel (default 2000).
+      interval (int, optional): The interval (ms) between image changes in the carousel (default 2000).
     """
     self.refresh = False # Stop refreshing dashboard.
     # Build the dictionary of images.
@@ -715,7 +715,7 @@ def _table_statistics_(image, channels = ""):
   Args:
     image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
-    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
+    channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
 
   Returns:
     dbc.Table: A dash bootstrap components table with the statistics of the image.

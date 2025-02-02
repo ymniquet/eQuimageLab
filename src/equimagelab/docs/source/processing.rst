@@ -177,17 +177,30 @@ You may also clip or blend images with the following functions, which can be app
 Image masks
 ^^^^^^^^^^^
 
-Masks can be used to apply operations to selected parts of an image. In the simplest form, a mask is a 2D :py:class:`numpy.ndarray` with the same width and height as the image, and only 0's and 1's. Then the instruction ``output = (1-mask)*input+mask*transform(input)`` (or equivalently ``output = input.blend(transform(input), mask)``) returns an `output` image which is the transform of the `input` image wherever `mask` is 1, and the original `input` image wherever it is 0. The edges of the mask may be smoothed (vary gradually from 0 to 1) for a soft transition between the original and transformed images.
+Binary and float masks can be used to apply operations to selected parts of an image. A binary mask is a boolean :py:class:`numpy.ndarray` with the same size as the image, which defines a False/True flag for each pixel. A float mask is a :py:class:`numpy.ndarray` with the same size as the image, which defines in the same spirit a 0/1 coefficient for each pixel (or, more generally, a weight ranging from 0 to 1). For example, given some :py:class:`Image <equimagelab.equimage.image.Image>` object `image` and binary mask `bmask`,
 
-At present, eQuimageLab can construct "threshold" masks that are 1 whereever some function ``filter(image)`` is greater than a threshold:
+.. code-block:: python
+
+  selection = np.where(bmask, image, 0.)
+
+returns a new :py:class:`Image <equimagelab.equimage.image.Image>` object `selection`, equal to `image` where `bmask` is True and to zero (black) where `bmask` is False. Likewise, given a float mask `fmask` and some transformation function `transform`,
+
+.. code-block:: python
+
+  output = (1-fmask)*image+fmask*transform(image) # Or equivalently output = image.blend(transform(image), fmask)
+
+returns the transformed image where `fmask` is 1, and the original image where `fmask` is 0. The edges of the mask may be smoothed (made vary gradually from 0 to 1) for a soft transition between the original and transformed images.
+
+eQuimageLab can construct "threshold" float and binary masks that are 1 or True wherever some function ``filter(image)`` is greater than a threshold:
 
 .. currentmodule:: equimagelab.equimage.image_masks
 
 .. autosummary::
 
    threshold_fmask
+   threshold_bmask
 
-The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimagelab.equimage.image.Image>` class provides the following useful filters:
+The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimagelab.equimage.image.Image>` class provides the following useful filters (local average, median, ...):
 
 .. currentmodule:: equimagelab.equimage.image_masks.MixinImage
 
@@ -195,7 +208,45 @@ The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``
 
    filter
 
-See the :doc:`examples` for use cases. "Lasso selection" of regions of interest will come soon.
+The function
+
+.. currentmodule:: equimagelab.equimage.image_masks
+
+.. autosummary::
+
+   shape_bmask
+
+and method of the :py:class:`Image <equimagelab.equimage.image.Image>` class
+
+.. currentmodule:: equimagelab.equimage.image_masks.MixinImage
+
+.. autosummary::
+
+   shape_bmask
+
+enable the construction of binary masks with rectangular, elliptic and polygonal shapes. The rectangle/ellipse/polygon can be selected with the mouse on the dashboard, then its coordinates copied to the notebook. See :doc:`dashboard` for details.
+
+A binary mask can be extended/eroded with the function:
+
+.. currentmodule:: equimagelab.equimage.image_masks
+
+.. autosummary::
+
+   extend_bmask
+
+It can be converted into a float mask with the function:
+
+.. autosummary::
+
+   float_mask
+
+A mask can be smoothed with the function:
+
+.. autosummary::
+
+   smooth_mask
+
+Binary masks are converted into float masks for that purpose.
 
 Edition with external softwares
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

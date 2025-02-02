@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.1.1 / 2025.01.25
+# Version: 1.2.0 / 2025.02.02
 # Sphinx OK.
 
 """Plotly backend for Jupyter Lab interface."""
@@ -80,7 +80,7 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
     log (bool, optional): If True (default), plot the histogram counts in log scale.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     xlabel (str, optional): The x axis label of the plot (default "Level").
-    trans (optional): A container with an histogram transformation (see equimage.Image.apply_channels),
+    trans (optional): A container with an histogram transformation (see `equimage.Image.apply_channels`),
       plotted on top of the histograms (default None).
     template (str, optional): The template for the figure (default "plotly_dark").
 
@@ -264,7 +264,7 @@ def show_histograms(image, channels = "", log = True, width = -1, xlabel = "Leve
     log (bool, optional): If True (default), plot the histogram counts in log scale.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     xlabel (str, optional): The x axis label of the plot (default "Level").
-    trans (optional): A container with an histogram transformation (see equimage.Image.apply_channels),
+    trans (optional): A container with an histogram transformation (see `equimage.Image.apply_channels`),
       plotted on top of the histograms (default None).
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """
@@ -292,7 +292,7 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, r
 
   Args:
     image (equimage.Image): The output image
-      (must embed a transformation image.trans - see equimage.Image.apply_channels).
+      (must embed a transformation image.trans - see `equimage.Image.apply_channels`).
     channels (str, optional): The channels of the histograms (default "RGBL" for red, green, blue, luma).
       The channels of the transformation are added if needed.
     sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
@@ -302,7 +302,9 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, r
       Warning: Setting hover = True can slow down display a lot !
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """
-  if not issubclass(type(image), Image): print("The transformations can only be displayed for Image objects.")
+  if not issubclass(type(image), Image):
+    print("The transformations can only be displayed for Image objects.")
+    return
   trans = getattr(image, "trans", None)
   if trans is None:
     print("There is no transformation embedded in the input image.")
@@ -317,7 +319,7 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, r
   show(image, histograms = False, statistics = False, sampling = sampling, width = width, hover = hover, renderer = renderer)
 
 def light_curve(image, reference, maxpoints = 32768, width = -1, renderer = None):
-  """Plot light curve (scatter plot of an output image vs an input reference channel).
+  """Plot light curve (scatter plot of an output image channel vs an input reference channel).
 
   Args:
     image (numpy.ndarray): The output image channel (luma, ...) as an array with shape (height, width).

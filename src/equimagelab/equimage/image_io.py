@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.1.1 / 2025.01.25
+# Version: 1.2.0 / 2025.02.02
 # Sphinx OK.
 
 """Image I/O management."""
@@ -159,7 +159,7 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
         skio.imsave(filename, image, plugin = "tifffile", check_contrast = False, compression = "zlib" if compress > 0 else None)
   elif ext in [".fit", ".fits", ".fts"]:
     if verbose: print(f"Color depth = 32 bits float per channel.")
-    image = np.asarray(image.flip_height().get_image(), dtype = np.float32) # Flip image upside down.
+    image = np.asarray(image.flipud().get_image(), dtype = np.float32) # Flip image upside down.
     if is_gray: image = image[0]
     hdu = pyfits.PrimaryHDU(image)
     hdu.writeto(filename, overwrite = True)
