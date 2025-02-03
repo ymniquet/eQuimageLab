@@ -44,7 +44,8 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
     - "gray": grayscale image with one single channel within [0, 1].
     - "RGB": the 3 channels of the image are the red, blue, and green levels within [0, 1].
-    - "HSV": the 3 channels of the image are the hue, value, and saturation within [0, 1].
+    - "HSV": the 3 channels of the image are the HSV hue, saturation and value within [0, 1].
+    - "HSL": the 3 channels of the image are the HSL hue, saturation and lightness within [0, 1].
 
   The default color space is sRGB and the default color model is RGB.
 
@@ -64,13 +65,13 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
       colorspace (str, optional): The image color space (default "sRGB").
         Can be "lRGB" (linear RGB color space) or "sRGB" (sRGB color space).
       colormodel (str, optional): The image color model (default "RGB").
-        Can be "RGB" (RGB image), "HSV" (HSV image) or "gray (grayscale image).
+        Can be "RGB" (RGB image), "HSV" (HSV image), "HSL" (HSL image) or "gray (grayscale image).
     """
     # Check color space and model.
     if colorspace not in ["lRGB", "sRGB"]:
       raise ValueError(f"Error, the color space must either be 'lRGB' or 'sRGB' (got {colorspace}).")
-    if colormodel not in ["RGB", "HSV", "gray"]:
-      raise ValueError(f"Error, the color model must either be 'RGB', 'HSV' or 'gray' (got {colormodel}).")
+    if colormodel not in ["RGB", "HSV", "HSL", "gray"]:
+      raise ValueError(f"Error, the color model must either be 'RGB', 'HSV', 'HSL' or 'gray' (got {colormodel}).")
     # Convert the input image into an array.
     image = np.asarray(image, dtype = params.imagetype)
     # Validate the image.
@@ -103,7 +104,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
       colorspace (str, optional): The image color space (default self.colorspace).
         Can be "lRGB" (linear RGB color space) or "sRGB" (sRGB color space).
       colormodel (str, optional): The image color model (default self.colormodel).
-        Can be "RGB" (RGB image), "HSV" (HSV image) or "gray (grayscale image).
+        Can be "RGB" (RGB image), "HSV" (HSV image), "HSL" (HSL image) or "gray (grayscale image).
 
     Returns:
       Image: The new Image object.

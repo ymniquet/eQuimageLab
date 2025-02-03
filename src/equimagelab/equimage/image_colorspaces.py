@@ -67,7 +67,7 @@ def RGB_to_HSV(image):
   Returns:
     numpy.ndarray: The converted HSV image.
   """
-  return skcolor.rgb2hsv(image, channel_axis = 0)
+  return skcolor.rgb2hsv(np.clip(image, 0., 1.), channel_axis = 0)
 
 def HSV_to_RGB(image):
   """Convert the input HSV image into a RGB image.
@@ -81,7 +81,7 @@ def HSV_to_RGB(image):
   Returns:
     numpy.ndarray: The converted RGB image.
   """
-  return skcolor.hsv2rgb(image, channel_axis = 0)
+  return skcolor.hsv2rgb(np.clip(image, 0., 1.), channel_axis = 0)
 
 def HSV_value(image):
   """Return the HSV value V = max(RGB) of the input RGB image.
@@ -97,7 +97,7 @@ def HSV_value(image):
   return image.max(axis = 0)
 
 def HSV_saturation(image):
-  """Return the HSV saturation S = 1-min(RGB)/max(RGB) of the input RGB image.
+  """Return the HSV saturation Sv = 1-min(RGB)/max(RGB) of the input RGB image.
 
   Note: Compatible with single channel grayscale images.
 
@@ -105,13 +105,57 @@ def HSV_saturation(image):
     image (numpy.ndarray): The input RGB image.
 
   Returns:
-    numpy.ndarray: The HSV saturation S.
+    numpy.ndarray: The HSV saturation Sv.
   """
-  return 1.-image.min(axis = 0)/image.max(axis = 0, initial = helpers.fpepsilon(image.dtype)) # Safe evaluation.
+  S = np.zeros_like(image)
+  mini = np.maximum(image.min(axis = 0), 0.)
+  maxi = np.maximum(image.max(axis = 0), 0.)
+  mask = (maxi > 0.)
+  S[mask] = 1.-mini[mask]/maxi[mask]
+  return S
 
-###########################
-# RGB <-> HSL conversion. #
-###########################
+#################################
+# RGB, HSV <-> HSL conversions. #
+################################
+
+def HSV_to_HSL(image):
+  """Convert the input HSV image into a HSL image.
+
+  See also:
+    The reciprocal HSL_to_HSV function.
+
+  Args:
+    image (numpy.ndarray): The input HSV image.
+
+  Returns:
+    numpy.ndarray: The converted HSL image.
+  """
+  output = np.clip(image, 0., 1.)
+  SV = output[1]*output[2]
+  output[2] -= SV/2.
+  D = 1.-abs(2.*output[2]-1.)
+  mask = (D > 0.)
+  output[1][mask] = SV[mask]/D[mask]
+  return output
+
+def HSL_to_HSV(image):
+  """Convert the input HSL image into a HSV image.
+
+  See also:
+    The reciprocal HSV_to_HSL function.
+
+  Args:
+    image (numpy.ndarray): The input HSL image.
+
+  Returns:
+    numpy.ndarray: The converted HSV image.
+  """
+  output = np.clip(image, 0., 1.)
+  SD = output[1]*(1.-abs(2.*output[2]-1.))
+  output[2] += SD/2.
+  mask = (output[2] > 0.)
+  output[1][mask] = SD[mask]/output[2][mask]
+  return output
 
 def RGB_to_HSL(image):
   """Convert the input RGB image into a HSL image.
@@ -125,7 +169,7 @@ def RGB_to_HSL(image):
   Returns:
     numpy.ndarray: The converted HSL image.
   """
-  return skcolor.rgb2hsl(image, channel_axis = 0) # Does not exist, actually.
+  return HSV_to_HSL(skcolor.rgb2hsv(np.clip(image, 0., 1.), channel_axis = 0))
 
 def HSL_to_RGB(image):
   """Convert the input HSL image into a RGB image.
@@ -139,10 +183,10 @@ def HSL_to_RGB(image):
   Returns:
     numpy.ndarray: The converted RGB image.
   """
-  return skcolor.hsl2rgb(image, channel_axis = 0) # Does not exist, actually.
+  return skcolor.hsv2rgb(HSL_to_HSV(image), channel_axis = 0)
 
 def HSL_lightness(image):
-  """Return the HSL lightness L = (max(RGB)+min(RGB))/2 of the input RGB image.
+  """Return the HSL lightness I = (max(RGB)+min(RGB))/2 of the input RGB image.
 
   Note: Compatible with single channel grayscale images.
 
@@ -150,12 +194,12 @@ def HSL_lightness(image):
     image (numpy.ndarray): The input RGB image.
 
   Returns:
-    numpy.ndarray: The HSL lightness L.
+    numpy.ndarray: The HSL lightness I.
   """
   return (image.min(axis = 0)+image.max(axis = 0))/2.
 
 def HSL_saturation(image):
-  """Return the HSL saturation S = (max(RGB)-min(RGB))/(1-|max(RGB)-min(RGB)-1|) of the input RGB image.
+  """Return the HSL saturation Sl = (max(RGB)-min(RGB))/(1-|max(RGB)+min(RGB)-1|) of the input RGB image.
 
   Note: Compatible with single channel grayscale images.
 
@@ -163,14 +207,16 @@ def HSL_saturation(image):
     image (numpy.ndarray): The input RGB image.
 
   Returns:
-    numpy.ndarray: The HSL saturation S.
+    numpy.ndarray: The HSL saturation Sl.
   """
-  mini = image.min(axis = 0)
-  maxi = image.max(axis = 0)
+  S = np.zeros_like(image)
+  mini = np.clip(image.min(axis = 0), 0., 1.)
+  maxi = np.clip(image.max(axis = 0), 0., 1.)
   C = maxi-mini
-  L = mini+maxi
-  epsilon = helpers.fpepsilon(image.dtype)
-  return np.where(L < 1., C/(L+epsilon), C/(2.-L)) # Safe evaluation.
+  D = 1.-abs(mini+maxi-1.)
+  mask = (D > 0.)
+  S[mask] = C[mask]/D[mask]
+  return S
 
 #########
 # Luma. #
@@ -441,6 +487,8 @@ class MixinImage:
       return self.copy()
     elif self.colormodel == "HSV":
       return self.newImage(HSV_to_RGB(self.image), colormodel = "RGB")
+    elif self.colormodel == "HSL":
+      return self.newImage(HSL_to_RGB(self.image), colormodel = "RGB")
     elif self.colormodel == "gray":
       return self.newImage(np.repeat(self.image[0, :, :], 3, axis = 0), colormodel = "RGB")
     else:
@@ -459,6 +507,26 @@ class MixinImage:
       return self.newImage(RGB_to_HSV(self.image), colormodel = "HSV")
     elif self.colormodel == "HSV":
       return self.copy()
+    elif self.colormodel == "HSL":
+      return self.newImage(HSL_to_HSV(self.image), colormodel = "HSV")
+    else:
+      self.color_model_error()
+
+  def HSL(self):
+    """Convert the image to the HSL color model.
+
+    Warning:
+      The conversion from a gray scale to a HSL image is ill-defined (no hue).
+
+    Returns:
+      Image: The converted HSL image (a copy of the original image if already HSL).
+    """
+    if self.colormodel == "RGB":
+      return self.newImage(RGB_to_HSL(self.image), colormodel = "HSL")
+    elif self.colormodel == "HSV":
+      return self.newImage(HSV_to_HSL(self.image), colormodel = "HSL")
+    elif self.colormodel == "HSL":
+      return self.copy()
     else:
       self.color_model_error()
 
@@ -468,6 +536,9 @@ class MixinImage:
 
   def HSV_value(self):
     """Return the HSV value V = max(RGB) of the image.
+
+    Warning:
+      Not implemented for HSL images !
 
     Returns:
       numpy.ndarray: The HSV value V.
@@ -480,14 +551,49 @@ class MixinImage:
       self.color_model_error()
 
   def HSV_saturation(self):
-    """Return the HSV saturation S = 1-min(RGB)/max(RGB) of the image.
+    """Return the HSV saturation Sv = 1-min(RGB)/max(RGB) of the image.
+
+    Warning:
+      Not implemented for HSL images !
 
     Returns:
-      numpy.ndarray: The HSV saturation S.
+      numpy.ndarray: The HSV saturation Sv.
     """
     if self.colormodel == "RGB" or self.colormodel == "gray":
       return HSV_saturation(self.image)
     elif self.colormodel == "HSV":
+      return self.image[1]
+    else:
+      self.color_model_error()
+
+  def HSL_lightness(self):
+    """Return the HSL lightness I = (max(RGB)+min(RGB))/2 of the image.
+
+    Warning:
+      Not implemented for HSV images !
+
+    Returns:
+      numpy.ndarray: The HSL lightness I.
+    """
+    if self.colormodel == "RGB" or self.colormodel == "gray":
+      return HSL_lightness(self.image)
+    elif self.colormodel == "HSL":
+      return self.image[2]
+    else:
+      self.color_model_error()
+
+  def HSL_saturation(self):
+    """Return the HSL saturation Sl = (max(RGB)-min(RGB))/(1-|max(RGB)+min(RGB)-1|) of the image.
+
+    Warning:
+      Not implemented for HSV images !
+
+    Returns:
+      numpy.ndarray: The HSL saturation Sl.
+    """
+    if self.colormodel == "RGB" or self.colormodel == "gray":
+      return HSL_saturation(self.image)
+    elif self.colormodel == "HSL":
       return self.image[1]
     else:
       self.color_model_error()
@@ -500,7 +606,7 @@ class MixinImage:
       L = rgbluma[0]*image[0]+rgbluma[1]*image[1]+rgbluma[2]*image[2].
 
     Warning:
-      The luma is available only for RGB and grayscale images.
+      Available only for RGB and grayscale images.
 
     Returns:
       numpy.ndarray: The luma L.
@@ -514,7 +620,7 @@ class MixinImage:
     """Return the luminance Y of the image.
 
     Warning:
-      The luminance is available only for RGB and grayscale images.
+      Available only for RGB and grayscale images.
 
     Returns:
       numpy.ndarray: The luminance Y.
@@ -535,7 +641,7 @@ class MixinImage:
     the scaled lightness L*/100 within [0, 1].
 
     Warning:
-      The lightness is available only for RGB and grayscale images.
+      Available only for RGB and grayscale images.
 
     Returns:
       numpy.ndarray: The CIE lightness L*/100.
