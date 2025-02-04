@@ -128,7 +128,7 @@ def filter(image, channels):
     elif c == "B":
       selected[2] = True
     else:
-      raise ValueError(f"Error, unknown channel {c}.")
+      raise ValueError(f"Error, unknown channel '{c}'.")
   image = prepare_images(image, copy = True)
   if image.ndim != 3: raise ValueError("Error, the input must be a RGB (not a grayscale) image.""")
   image[:, :, ~selected] = 0.

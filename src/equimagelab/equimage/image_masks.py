@@ -175,7 +175,7 @@ def shape_bmask(shape, x, y, width, height):
       if len(x) != len(y): raise ValueError("Error, x and y must have the same length for shape = 'polygon'.")
       bmask = skdraw.polygon2mask((height, width), np.column_stack((y, x)))
     else:
-      raise ValueError(f"Error, unknown shape {shape}.")
+      raise ValueError(f"Error, unknown shape '{shape}'.")
     return bmask
 
 #####################################
@@ -196,13 +196,16 @@ class MixinImage:
 
     Args:
       channel (str): The selected channel:
-
-        - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the filter to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the filter to the HSV value (RGB, HSV and and grayscale images).
+        - An empty string: Apply the filter to all channels (RGB, HSV, HSL and grayscale images).
+        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+          Apply the filter to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+        - "V": Apply the filter to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the filter to the HSV saturation (RGB and HSV images).
+        - "L'": Apply the filter to the HSL lightness (RGB, HSL and grayscale images).
+        - "S'": Apply the filter to the HSL saturation (RGB and HSL images).
         - "L": Apply the filter to the luma (RGB and grayscale images).
-        - "L*": Apply the filter to the CIE lightness L* (RGB and grayscale images).
+        - "L*": Apply the filter to the lightness L* in the CIE L*a*b* color space
+          (RGB and grayscale images).
 
       filter (str): The filter:
 

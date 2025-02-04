@@ -57,7 +57,7 @@ def load_image_as_array(filename, verbose = True):
   elif image.ndim == 3:
     nc = image.shape[2]
   else:
-    raise ValueError(f"Error, invalid image shape = {image.shape}.")
+    raise ValueError(f"Error, invalid image shape {image.shape}.")
   if verbose: print(f"Image size = {image.shape[1]}x{image.shape[0]} pixels.")
   if verbose: print(f"Number of channels = {nc}.")
   if nc not in [1, 3, 4]: raise ValueError(f"Error, images with {nc} channels are not supported.")
@@ -164,7 +164,7 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
     hdu = pyfits.PrimaryHDU(image)
     hdu.writeto(filename, overwrite = True)
   else:
-    raise ValueError("Error, file extension must be .png or .tif/.tiff., or .fit/.fits/.fts.")
+    raise ValueError("Error, file extension must be .png, .tif/.tiff, or .fit/.fits/.fts.")
 
 #####################################
 # For inclusion in the Image class. #

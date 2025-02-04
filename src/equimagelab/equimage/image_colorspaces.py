@@ -23,6 +23,9 @@ def sRGB_to_lRGB(image):
   See also:
     The reciprocal lRGB_to_sRGB function.
 
+  Note:
+    This function does not clip the input image to the [0, 1] range.
+
   Args:
     image (numpy.ndarray): The input sRGB image.
 
@@ -39,6 +42,9 @@ def lRGB_to_sRGB(image):
 
   See also:
     The reciprocal sRGB_to_lRGB function.
+
+  Note:
+    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input lRGB image.
@@ -61,6 +67,9 @@ def RGB_to_HSV(image):
   See also:
     The reciprocal HSV_to_RGB function.
 
+  Note:
+    This function clips the input image to the [0, 1] range.
+
   Args:
     image (numpy.ndarray): The input RGB image.
 
@@ -75,6 +84,9 @@ def HSV_to_RGB(image):
   See also:
     The reciprocal RGB_to_HSV function.
 
+  Note:
+    This function clips the input image to the [0, 1] range.
+
   Args:
     image (numpy.ndarray): The input HSV image.
 
@@ -86,7 +98,9 @@ def HSV_to_RGB(image):
 def HSV_value(image):
   """Return the HSV value V = max(RGB) of the input RGB image.
 
-  Note: Compatible with single channel grayscale images.
+  Note:
+    Compatible with single channel grayscale images.
+    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input RGB image.
@@ -97,32 +111,37 @@ def HSV_value(image):
   return image.max(axis = 0)
 
 def HSV_saturation(image):
-  """Return the HSV saturation Sv = 1-min(RGB)/max(RGB) of the input RGB image.
+  """Return the HSV saturation S = 1-min(RGB)/max(RGB) of the input RGB image.
 
-  Note: Compatible with single channel grayscale images.
+  Note:
+    Compatible with single channel grayscale images.
+    This function clips the input image below 0.
 
   Args:
     image (numpy.ndarray): The input RGB image.
 
   Returns:
-    numpy.ndarray: The HSV saturation Sv.
+    numpy.ndarray: The HSV saturation S.
   """
-  S = np.zeros_like(image)
   mini = np.maximum(image.min(axis = 0), 0.)
   maxi = np.maximum(image.max(axis = 0), 0.)
+  S = np.zeros_like(maxi)
   mask = (maxi > 0.)
   S[mask] = 1.-mini[mask]/maxi[mask]
   return S
 
 #################################
 # RGB, HSV <-> HSL conversions. #
-################################
+#################################
 
 def HSV_to_HSL(image):
   """Convert the input HSV image into a HSL image.
 
   See also:
     The reciprocal HSL_to_HSV function.
+
+  Note:
+    This function clips the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input HSV image.
@@ -144,6 +163,9 @@ def HSL_to_HSV(image):
   See also:
     The reciprocal HSV_to_HSL function.
 
+  Note:
+    This function clips the input image to the [0, 1] range.
+
   Args:
     image (numpy.ndarray): The input HSL image.
 
@@ -163,6 +185,9 @@ def RGB_to_HSL(image):
   See also:
     The reciprocal HSL_to_RGB function.
 
+  Note:
+    This function clips the input image to the [0, 1] range.
+
   Args:
     image (numpy.ndarray): The input RGB image.
 
@@ -177,6 +202,9 @@ def HSL_to_RGB(image):
   See also:
     The reciprocal RGB_to_HSL function.
 
+  Note:
+    This function clips the input image to the [0, 1] range.
+
   Args:
     image (numpy.ndarray): The input HSL image.
 
@@ -186,34 +214,38 @@ def HSL_to_RGB(image):
   return skcolor.hsv2rgb(HSL_to_HSV(image), channel_axis = 0)
 
 def HSL_lightness(image):
-  """Return the HSL lightness I = (max(RGB)+min(RGB))/2 of the input RGB image.
+  """Return the HSL lightness L' = (max(RGB)+min(RGB))/2 of the input RGB image.
 
-  Note: Compatible with single channel grayscale images.
+  Note:
+    Compatible with single channel grayscale images.
+    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input RGB image.
 
   Returns:
-    numpy.ndarray: The HSL lightness I.
+    numpy.ndarray: The HSL lightness L'.
   """
   return (image.min(axis = 0)+image.max(axis = 0))/2.
 
 def HSL_saturation(image):
-  """Return the HSL saturation Sl = (max(RGB)-min(RGB))/(1-|max(RGB)+min(RGB)-1|) of the input RGB image.
+  """Return the HSL saturation S' = (max(RGB)-min(RGB))/(1-|max(RGB)+min(RGB)-1|) of the input RGB image.
 
-  Note: Compatible with single channel grayscale images.
+  Note:
+    Compatible with single channel grayscale images.
+    This function clips the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input RGB image.
 
   Returns:
-    numpy.ndarray: The HSL saturation Sl.
+    numpy.ndarray: The HSL saturation S'.
   """
-  S = np.zeros_like(image)
   mini = np.clip(image.min(axis = 0), 0., 1.)
   maxi = np.clip(image.max(axis = 0), 0., 1.)
   C = maxi-mini
   D = 1.-abs(mini+maxi-1.)
+  S = np.zeros_like(D)
   mask = (D > 0.)
   S[mask] = C[mask]/D[mask]
   return S
@@ -229,7 +261,9 @@ def luma(image):
 
     L = rgbluma[0]*image[0]+rgbluma[1]*image[1]+rgbluma[2]*image[2].
 
-  Note: Compatible with single channel grayscale images.
+  Note:
+    Compatible with single channel grayscale images.
+    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input RGB image.
@@ -257,6 +291,9 @@ def luminance_to_lightness(Y):
   See also:
     The reciprocal lightness_to_luminance function.
 
+  Note:
+    This function does not clip the input luminance to the [0, 1] range.
+
   Args:
     Y (numpy.ndarray): The luminance Y.
 
@@ -273,6 +310,9 @@ def lightness_to_luminance(Lstar):
 
   See also:
     The reciprocal luminance_to_lightness function.
+
+  Note:
+    This function does not clip the input lightness to the [0, 1] range.
 
   Args:
     Lstar (numpy.ndarray): The CIE lightness L*/100.
@@ -294,13 +334,15 @@ def lRGB_luminance(image):
   It is equivalently the luma of the lRGB image for RGB weights (0.2126, 0.7152, 0.0722),
   and is the basic ingredient of the perceptual lightness L*.
 
-  Note: Compatible with single channel grayscale images.
-
   See also:
     lRGB_lightness,
     sRGB_luminance,
     sRGB_lightness,
     luma
+
+  Note:
+    Compatible with single channel grayscale images.
+    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input lRGB image.
@@ -321,13 +363,15 @@ def lRGB_lightness(image):
   conventionally defined within [0, 100]. However, this function returns
   the scaled lightness L*/100 within [0, 1].
 
-  Note: Compatible with single channel grayscale images.
-
   See also:
     lRGB_luminance,
     sRGB_luminance,
     sRGB_lightness,
     luma
+
+  Note:
+    Compatible with single channel grayscale images.
+    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input lRGB image.
@@ -348,13 +392,15 @@ def sRGB_luminance(image):
   computed after conversion in the lRGB color space and is the basic ingredient of
   the *genuine* perceptual lightness (see lRGB_lightness).
 
-  Note: Compatible with single channel grayscale images.
-
   See also:
     sRGB_lightness,
     lRGB_luminance,
     lRGB_lightness,
     luma
+
+  Note:
+    Compatible with single channel grayscale images.
+    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input sRGB image.
@@ -372,13 +418,15 @@ def sRGB_lightness(image):
   conventionally defined within [0, 100]. However, this function returns
   the scaled lightness L*/100 within [0, 1].
 
-  Note: Compatible with single channel grayscale images.
-
   See also:
     sRGB_luminance,
     lRGB_luminance,
     lRGB_lightness,
     luma
+
+  Note:
+    Compatible with single channel grayscale images.
+    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input sRGB image.
@@ -445,6 +493,9 @@ class MixinImage:
     Warning:
       The color model must be "RGB" or "gray".
 
+    Note:
+      This method does not clip the image to the [0, 1] range.
+
     Returns:
       Image: The converted lRGB image (a copy of the original image if already lRGB).
     """
@@ -461,6 +512,9 @@ class MixinImage:
 
     Warning:
       The color model must be "RGB" or "gray".
+
+    Note:
+      This method does not clip the image to the [0, 1] range.
 
     Returns:
       Image: The converted sRGB image (a copy of the original image if already sRGB).
@@ -480,6 +534,9 @@ class MixinImage:
   def RGB(self):
     """Convert the image to the RGB color model.
 
+    Note:
+      This method clips HSV and HSL images to the [0, 1] range.
+
     Returns:
       Image: The converted RGB image (a copy of the original image if already RGB).
     """
@@ -498,7 +555,10 @@ class MixinImage:
     """Convert the image to the HSV color model.
 
     Warning:
-      The conversion from a gray scale to a HSV image is ill-defined (no hue).
+      The conversion from a grayscale to a HSV image is ill-defined (no hue).
+
+    Note:
+      This method clips RGB and HSL images to the [0, 1] range.
 
     Returns:
       Image: The converted HSV image (a copy of the original image if already HSV).
@@ -516,7 +576,10 @@ class MixinImage:
     """Convert the image to the HSL color model.
 
     Warning:
-      The conversion from a gray scale to a HSL image is ill-defined (no hue).
+      The conversion from a grayscale to a HSL image is ill-defined (no hue).
+
+    Note:
+      This method clips RGB and HSV images to the [0, 1] range.
 
     Returns:
       Image: The converted HSL image (a copy of the original image if already HSL).
@@ -530,6 +593,55 @@ class MixinImage:
     else:
       self.color_model_error()
 
+  ##########################
+  # Arbitrary conversions. #
+  ##########################
+
+  def convert(self, colorspace = None, colormodel = None):
+    """Convert the image to the target color space and color model.
+
+    This method is more versatile than the dedicated conversion
+    functions such as Image.sRGB, Image.HSV, etc... In particular,
+    it can chain conversions to reach the target color space and model
+    [e.g. (sRGB, HSV) -> (lRGB, RGB) = (sRGB, HSV) -> (sRGB, RGB) -> (lRGB, RGB)].
+
+    Args:
+      colorspace (str, optional): The target color space ("lRGB" or "sRGB").
+        If None (default), keep the original color space.
+      colormodel (str, optional): The target color model ("RGB", "HSV" or "HSL").
+        If None (default), keep the original color model.
+
+    Returns:
+      Image: The converted image (a copy of the original image if already
+      in the target color space and color model).
+    """
+    copied = True
+    if colorspace is None or colorspace == self.colorspace:
+      csconv = self
+      copied = False
+    else:
+      if self.colormodel not in ["RGB", "gray"]:
+        if colormodel is None: colormodel = self.colormodel
+        rgb = self.RGB()
+      else:
+        rgb = self
+      if colorspace == "lRGB":
+        csconv = rgb.lRGB()
+      elif colorspace == "sRGB":
+        csconv = rgb.sRGB()
+      else:
+        raise ValueError(f"Unknown color space {colorspace}.")
+    if colormodel == "None" or colormodel == csconv.colormodel:
+      return csconv if copied else csconv.copy()
+    elif colormodel == "RGB":
+      return csconv.RGB()
+    elif colormodel == "HSV":
+      return csconv.HSV()
+    elif colormodel == "HSL":
+      return csconv.HSL()
+    else:
+      raise ValueError(f"Unknown color model {colormodel}.")
+
   #######################
   # Composite channels. #
   #######################
@@ -539,6 +651,9 @@ class MixinImage:
 
     Warning:
       Not implemented for HSL images !
+
+    Note:
+      The HSV value may be outside the [0, 1] range if the image does not fit within this range.
 
     Returns:
       numpy.ndarray: The HSV value V.
@@ -551,13 +666,16 @@ class MixinImage:
       self.color_model_error()
 
   def HSV_saturation(self):
-    """Return the HSV saturation Sv = 1-min(RGB)/max(RGB) of the image.
+    """Return the HSV saturation S = 1-min(RGB)/max(RGB) of the image.
 
     Warning:
       Not implemented for HSL images !
 
+    Note:
+      The HSV saturation may be outside the [0, 1] range if the image does not fit within this range.
+
     Returns:
-      numpy.ndarray: The HSV saturation Sv.
+      numpy.ndarray: The HSV saturation S.
     """
     if self.colormodel == "RGB" or self.colormodel == "gray":
       return HSV_saturation(self.image)
@@ -567,13 +685,16 @@ class MixinImage:
       self.color_model_error()
 
   def HSL_lightness(self):
-    """Return the HSL lightness I = (max(RGB)+min(RGB))/2 of the image.
+    """Return the HSL lightness L' = (max(RGB)+min(RGB))/2 of the image.
 
     Warning:
       Not implemented for HSV images !
 
+    Note:
+      The HSL lightness may be outside the [0, 1] range if the image does not fit within this range.
+
     Returns:
-      numpy.ndarray: The HSL lightness I.
+      numpy.ndarray: The HSL lightness L'.
     """
     if self.colormodel == "RGB" or self.colormodel == "gray":
       return HSL_lightness(self.image)
@@ -583,13 +704,16 @@ class MixinImage:
       self.color_model_error()
 
   def HSL_saturation(self):
-    """Return the HSL saturation Sl = (max(RGB)-min(RGB))/(1-|max(RGB)+min(RGB)-1|) of the image.
+    """Return the HSL saturation S' = (max(RGB)-min(RGB))/(1-|max(RGB)+min(RGB)-1|) of the image.
 
     Warning:
       Not implemented for HSV images !
 
+    Note:
+      The HSL saturation may be outside the [0, 1] range if the image does not fit within this range.
+
     Returns:
-      numpy.ndarray: The HSL saturation Sl.
+      numpy.ndarray: The HSL saturation S'.
     """
     if self.colormodel == "RGB" or self.colormodel == "gray":
       return HSL_saturation(self.image)
@@ -608,6 +732,9 @@ class MixinImage:
     Warning:
       Available only for RGB and grayscale images.
 
+    Note:
+      The luma may be outside the [0, 1] range if the image does not fit within this range.
+
     Returns:
       numpy.ndarray: The luma L.
     """
@@ -621,6 +748,9 @@ class MixinImage:
 
     Warning:
       Available only for RGB and grayscale images.
+
+    Note:
+      The luminance may be outside the [0, 1] range if the image does not fit within this range.
 
     Returns:
       numpy.ndarray: The luminance Y.
@@ -642,6 +772,9 @@ class MixinImage:
 
     Warning:
       Available only for RGB and grayscale images.
+
+    Note:
+      The lightness may be outside the [0, 1] range if the image does not fit within this range.
 
     Returns:
       numpy.ndarray: The CIE lightness L*/100.
@@ -665,9 +798,11 @@ class MixinImage:
       channel (str): The selected channel:
 
         - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          The first/second/third channel (RGB, HSV and grayscale images).
-        - "V": The HSV value (RGB, HSV and and grayscale images).
-        - "S": The HSV saturation (RGB and HSV images).
+          The first/second/third channel (RGB, HSV, HSL and grayscale images).
+        - "V": The HSV value (RGB, HSV and grayscale images).
+        - "S": The HSV saturation (RGB, HSV and grayscale images).
+        - "L'" : The HSL lightness (RGB, HSL and grayscale images).
+        - "S'" : The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
         - "L*": The CIE lightness L* (RGB and grayscale images).
 
@@ -687,6 +822,10 @@ class MixinImage:
       return self.HSV_value()
     elif channel == "S":
       return self.HSV_saturation()
+    elif channel == "L'":
+      return self.HSL_lightness()
+    elif channel == "S":
+      return self.HSL_saturation()
     elif channel == "L":
       return self.luma()
     elif channel == "L*":
@@ -701,9 +840,11 @@ class MixinImage:
       channel (str): The updated channel:
 
         - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Update the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Update the HSV value (RGB, HSV and and grayscale images).
+          Update the first/second/third channel (RGB, HSV, HSL and grayscale images).
+        - "V": Update the HSV value (RGB, HSV and grayscale images).
         - "S": Update the HSV saturation (RGB and HSV images).
+        - "L'": The HSL lightness (RGB, HSL and grayscale images).
+        - "S'": The HSL saturation (RGB and HSL images).
         - "L": Update the luma (RGB and grayscale images).
         - "L*": Update the lightness L* in the CIE L*a*b* color space (RGB and grayscale images).
 
@@ -720,6 +861,7 @@ class MixinImage:
       raise ValueError("Error, the channel data must be a 2D array with the same with and height as the image.")
     is_RGB  = (self.colormodel == "RGB")
     is_HSV  = (self.colormodel == "HSV")
+    is_HSL  = (self.colormodel == "HSL")
     is_gray = (self.colormodel == "gray")
     output = self if inplace else self.copy()
     channel = channel.strip()
@@ -737,7 +879,7 @@ class MixinImage:
       if is_gray:
         output.image[0] = data
       elif is_RGB:
-        output.image[:] = helpers.scale_pixels(output.image, output.HSV_value(), data)
+        output.image[:] = helpers.scale_pixels(self.image, self.HSV_value(), data)
       elif is_HSV:
         output.image[2] = data
       else:
@@ -745,10 +887,32 @@ class MixinImage:
       return output
     elif channel == "S":
       if is_RGB:
-        hsv = RGB_to_HSV(output.image)
+        hsv = RGB_to_HSV(self.image)
         hsv[1] = data
         output.image[:] = HSV_to_RGB(hsv)
       elif is_HSV:
+        output.image[1] = data
+      else:
+        self.color_model_error()
+      return output
+    elif channel == "L'":
+      if is_gray:
+        output.image[0] = data
+      elif is_RGB:
+        hsl = RGB_to_HSL(self.image)
+        hsl[2] = data
+        output.image[:] = HSL_to_RGB(hsl)
+      elif is_HSL:
+        output.image[2] = data
+      else:
+        self.color_model_error()
+      return output
+    elif channel == "S'":
+      if is_RGB:
+        hsl = RGB_to_HSL(self.image)
+        hsl[1] = data
+        output.image[:] = HSL_to_RGB(hsl)
+      elif is_HSL:
         output.image[1] = data
       else:
         self.color_model_error()
@@ -757,7 +921,7 @@ class MixinImage:
       if is_gray:
         output.image[0] = data
       elif is_RGB:
-        output.image[:] = helpers.scale_pixels(output.image, output.luma(), data)
+        output.image[:] = helpers.scale_pixels(self.image, self.luma(), data)
       else:
         self.color_model_error()
       return output
@@ -772,9 +936,9 @@ class MixinImage:
           self.color_space_error()
       elif is_RGB:
         if self.colorspace == "lRGB": # Convert to L*a*b* color space.
-          lRGB = output.image
+          lRGB = self.image
         elif self.colorspace == "sRGB":
-          lRGB = sRGB_to_lRGB(output.image)
+          lRGB = sRGB_to_lRGB(self.image)
         else:
           self.color_space_error()
         xyz = np.tensordot(np.asarray(params.RGB2XYZ, dtype = dtype), lRGB, axes = 1)
@@ -796,32 +960,36 @@ class MixinImage:
     """Apply the operation f(channel) to selected channels of the image.
 
     Note: When applying an operation to the luma, the RGB components of the image are rescaled
-    by the ratio f(luma)/luma. This preserves the hue, but may bring some RGB components
-    out-of-range even though f(luma) is within [0, 1]. These out-of-range components can be
-    regularized with two highlights protection methods:
+    by the ratio f(luma)/luma. This preserves the hue and HSV saturation, but may bring some RGB
+    components out-of-range even though f(luma) fits within [0, 1]. These out-of-range components
+    can be regularized with three highlights protection methods:
 
-      - "saturation": The out-of-range pixels are desaturated at constant luma (namely, the
-        out-of-range components are decreased while the in-range components are increased so
-        that the luma is conserved). This tends to whiten the out-of-range pixels.
-        f(luma) must be within [0, 1] to make use of this highlights protection method.
-      - "mixing": The out-of-range pixels are blended with f(RGB) (the operation applied to the
-        RGB channels). This usually tends to whiten the out-of-range pixels too.
-        f(RGB) must be within [0, 1] to make use of this highlights protection method.
+      - "desaturation": The out-of-range pixels are desaturated at constant hue and luma (namely,
+        the out-of-range components are decreased while the in-range components are increased so
+        that the hue and luma are preserved). This tends to whiten the out-of-range pixels.
+        f(luma) must fit within [0, 1] to make use of this highlights protection method.
+      - "blending": The out-of-range pixels are blended with f(RGB) (the operation applied to the
+        RGB channels). This tends to whiten the out-of-range pixels too.
+        f(RGB) must fit within [0, 1] to make use of this highlights protection method.
+      - "normalization": The whole image is normalized so that all pixels are brought back in
+        the [0, 1] range.
 
-    Alternatively, applying the operation to the HSV value V also preserves the hue and can not
-    produce out-of-range pixels if f([0, 1]) is within [0, 1]. However, this may strongly affect
-    the balance of the image, the HSV value being a very poor approximation to the perceptual
-    lightness.
+    Alternatively, applying the operation to the HSV value V also preserves the hue and HSV saturation
+    and can not produce out-of-range pixels if f([0, 1]) fits within [0, 1]. However, this may strongly
+    affect the balance of the image, the HSV value being a very poor approximation to the perceptual
+    lightness L*.
 
     Args:
       f (function): The function f(numpy.ndarray) → numpy.ndarray applied to the selected channels.
       channels (str): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV and grayscale images).
+        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
+        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
           (after the operation, the out-of-range pixels are desaturated at constant luma).
@@ -867,6 +1035,7 @@ class MixinImage:
     nc = self.get_nc()
     is_RGB  = (self.colormodel == "RGB")
     is_HSV  = (self.colormodel == "HSV")
+    is_HSL  = (self.colormodel == "HSL")
     is_gray = (self.colormodel == "gray")
     channels = channels.strip()
     if channels == "":
@@ -902,6 +1071,37 @@ class MixinImage:
         output = self.copy()
         output.image[1] = f(self.image[1])
         if trans: output.trans = transformation(f, self.image[1], "S")
+      else:
+        self.color_model_error()
+      return output
+    elif channels == "L'":
+      if is_gray:
+        output = self.newImage(f(self.image))
+        if trans: output.trans = transformation(f, self.image, "L'")
+      elif is_RGB:
+        hsl = self.HSL()
+        if trans: t = transformation(f, hsl.image[2], "L'")
+        hsl.image[2] = f(hsl.image[2])
+        output = hsl.RGB()
+        if trans: output.trans = t
+      elif is_HSV:
+        output = self.copy()
+        output.image[2] = f(self.image[2])
+        if trans: output.trans = transformation(f, self.image[2], "L'")
+      else:
+        self.color_model_error()
+      return output
+    elif channels == "S'":
+      if is_RGB:
+        hsl = self.HSL()
+        if trans: t = transformation(f, hsl.image[1], "S'")
+        hsl.image[1] = f(hsl.image[1])
+        output = hsl.RGB()
+        if trans: output.trans = t
+      elif is_HSL:
+        output = self.copy()
+        output.image[1] = f(self.image[1])
+        if trans: output.trans = transformation(f, self.image[1], "S'")
       else:
         self.color_model_error()
       return output
@@ -970,7 +1170,7 @@ class MixinImage:
         elif c == " ": # Skip spaces.
           continue
         else:
-          raise ValueError(f"Syntax errror in the channels string '{channels}'.")
+          raise ValueError(f"Syntax error in the channels string '{channels}'.")
         if selected[ic]: print(f"Warning, channel '{c}' selected twice or more...")
         selected[ic] = True
       if all(selected) and multi:
@@ -991,16 +1191,14 @@ class MixinImage:
     Args:
       channels (str): The selected channels:
 
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
+        - An empty string (default): Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
+          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
+        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
+        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
         - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
           (RGB and grayscale images).
 
@@ -1010,12 +1208,11 @@ class MixinImage:
     return self.apply_channels(lambda channel: np.clip(channel, 0., 1.), channels)
 
   def protect_highlights_saturation(self):
-    """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant luma.
+    """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant hue and luma.
 
-    The out-of-range RGB components of the pixels are decreased while the in-range RGB components are
-    increased so that the luma is conserved. This desaturates (whitens) the pixels with out-of-range
-    components.
-    This aims at protecting the highlights from overflowing when stretching the luma or lightness.
+    The out-of-range RGB components of the pixels are decreased while the in-range RGB components are increased
+    so that the hue and luma are conserved. This desaturates (whitens) the pixels with out-of-range components.
+    This aims at protecting the highlights from overflowing when stretching the luma.
 
     Warning:
       The luma must be <= 1 even though some pixels have HSV value > 1.

@@ -9,6 +9,7 @@
 
 import numpy as np
 import scipy.interpolate as spint
+from scipy.interpolate import Akima1DInterpolator
 
 from . import params
 from . import helpers
@@ -104,23 +105,23 @@ class MixinImage:
     if blue  != 1.: output.image[2] *= blue
     return output
 
-  def color_saturation(self, A = 0., model = "midsat", interpolation = "cubic", lightness = False, trans = True, **kwargs):
+  def color_saturation(self, A = 0., mode = "midsat", interpolation = "akima", model = "HSV", lightness = False, trans = True, **kwargs):
     """Adjust color saturation.
 
-    The image is converted to HSV (if needed) and the color saturation S is adjusted according to the 'model' kwarg:
+    The image is converted (if needed) to the HSV or HSL color model and the color saturation S is transformed according
+    to the 'mode' kwarg:
 
       - "addsat": Shift the saturation S ← S+delta.
       - "mulsat": Scale the saturation S ← S*(1+delta).
       - "midsat": Apply a midtone stretch function S ← f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
         This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1.
 
-    The image is converted back to the original color model ("RGB" or "HSV") after this operation.
-    delta is expected in the [-1, 1] range, with delta = 0 leaving the image unchanged. delta > 0 saturates the colors,
-    while delta < 0 turn the image into a a gray scale.
+    The image is then converted back to the original color model after this operation.
+    delta is expected in the [-1, 1] range (except in the "mulsat" mode, where it can be > 1). Whatever the saturation mode,
+    delta = 0 leaves the image unchanged, delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale.
     delta is first set for all hues (with the 'A' kwarg), then can be updated for the red ('R'), yellow ('Y'), green ('G'),
-    cyan ('C'), blue ('B') and magenta ('M') hues, if these kwargs are provided.
-    delta is interpolated for arbitrary HSV hues using nearest neighbor, linear or cubic spline interpolation, according
-    to the 'interpolation' kwarg.
+    cyan ('C'), blue ('B') and magenta ('M') hues by providing the corresponding kwarg. delta is interpolated for arbitrary
+    hues using nearest neighbor, linear, cubic or akima spline interpolation, according to the 'interpolation' kwarg.
 
     Args:
       A (float, optional): The delta for all hues (default 0).
@@ -130,17 +131,19 @@ class MixinImage:
       C (float, optional): The cyan delta (default A).
       B (float, optional): The blue delta (default A).
       M (float, optional): The magenta delta (default A).
-      model (str, optional): The saturation model ["deltasat" or "midsat" (default)]
-      interpolation (str, optional): The hue interpolation model:
+      mode (str, optional): The saturation mode ["addsat", "mulsat" or "midsat" (default)].
+      model (str, optional): The color model for saturation ["HSV" (default) or "HSL"].
+      interpolation (str, optional): The interpolation method for delta(hue):
 
         - "nearest": Nearest neighbor interpolation.
         - "linear": Linear spline interpolation.
-        - "cubic": Cubic spline interpolation (default).
+        - "cubic": Cubic spline interpolation.
+        - "akima": Akima spline interpolation (default).
 
       lightness (bool, optional): If True (default), preserve the CIE lightness L* of the original image.
-        This will however decrease color saturation in the bright areas of the image. Only available for RGB images.
-      trans (boolean, optional): If True, embeds the transformation delta(hue) in the output image as output.trans
-        (see Image.apply_channels). Default is False.
+        This will however decrease color saturation in the bright areas of the image. Available only for RGB images.
+      trans(bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
 
     Returns:
       Image: The processed image.
@@ -150,19 +153,25 @@ class MixinImage:
       """Interpolate the saturation parameter psat[RYGCBM] for arbitrary hues."""
       if np.all(psat == psat[0]):
         return np.full_like(hue, psat[0]) # Short-cut if the saturation parameter is the same for RYGCBM.
-      hsat = np.linspace(0., 1., 7)
-      psat = np.append(psat, psat[0]) # Enforce periodic boundary conditions.
       if interpolation == "nearest":
+        hsat = np.linspace(0., 1., 7)
+        psat = np.append(psat, psat[0]) # Enforce periodic boundary conditions.
         fsat = spint.interp1d(hsat, psat, kind = "nearest")
       elif interpolation == "linear" or interpolation == "cubic":
+        hsat = np.linspace(0., 1., 7)
+        psat = np.append(psat, psat[0]) # Enforce periodic boundary conditions.
         k = 3 if interpolation == "cubic" else 1
-        tck = spint.splrep(hsat, psat, k = k, per = True) # Enforce periodic boundary conditions.
-        def fsat(x): return np.clip(spint.splev(x, tck), -1., 1.)
+        tck = spint.splrep(hsat, psat, k = k, per = True)
+        def fsat(x): spint.splev(x, tck)
+      elif interpolation == "akima":
+        hsat = np.linspace(-1./3., 4./3, 11)
+        psat = np.concatenate(([psat[-2], psat[-1]], psat, [psat[0], psat[1], psat[2]])) # Enforce periodic boundary conditions.
+        fsat = Akima1DInterpolator(hsat, psat)
       else:
         raise ValueError(f"Error, unknown interpolation method '{interpolation}'.")
       return fsat(hue)
 
-    self.check_color_model("RGB", "HSV")
+    self.check_color_model("RGB", "HSV", "HSL")
     psat = np.empty(6)
     psat[0] = kwargs.pop("R", A)
     psat[1] = kwargs.pop("Y", A)
@@ -171,21 +180,26 @@ class MixinImage:
     psat[4] = kwargs.pop("B", A)
     psat[5] = kwargs.pop("M", A)
     if kwargs: print("Discarding extra keyword arguments in Image.color_saturation...")
-    hsv = self.HSV()
-    hue = hsv.image[0]
-    sat = hsv.image[1]
+    if model == "HSV":
+      hsx = self.HSV()
+    elif model == "HSL":
+      hsx = self.HSL()
+    else:
+      raise ValueError("Error, model must be 'HSV' or 'HSL'.")
+    hue = hsx.image[0]
+    sat = hsx.image[1]
     delta = interpolate(hue, psat, interpolation)
-    if model == "addsat":
+    if mode == "addsat":
       sat += delta
-    elif model == "mulsat":
+    elif mode == "mulsat":
       sat *= 1.+delta
-    elif model == "midsat":
+    elif mode == "midsat":
       midsat = np.clip(.5*(1.-delta), .005, .995)
       sat = (midsat-1.)*sat/((2.*midsat-1.)*sat-midsat)
     else:
-      raise ValueError(f"Error, unknown saturation model '{model}.")
-    hsv.image[1] = np.clip(sat, 0., 1.)
-    output = hsv if self.colormodel == "HSV" else hsv.RGB()
+      raise ValueError(f"Error, unknown saturation mode '{mode}.")
+    hsx.image[1] = np.clip(sat, 0., 1.)
+    output = hsx.convert(colormodel = self.colormodel)
     if lightness: output.set_channel("L*", self.lightness(), inplace = True)
     if trans:
       t = helpers.Container()
@@ -205,7 +219,7 @@ class MixinImage:
   ##########################
 
   def SCNR(self, hue = "green", protection = "avgneutral", amount = 1., lightness = True):
-    """Selective color noise reduction of a given hue of a RGB image.
+    """Subtractive Chromatic Noise Reduction of a given hue of a RGB image.
 
     The input hue is reduced according to the 'protection' kwarg. For the green hue for example,
 

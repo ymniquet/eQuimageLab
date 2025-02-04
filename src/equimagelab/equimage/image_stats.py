@@ -27,9 +27,13 @@ def parse_channels(channels, errors = True):
   prevkey = None
   for key in channels:
     ok = False
-    if key in ["R", "G", "B", "V", "S", "L"]:
+    if key in ["R", "G", "B", "L", "V", "S"]:
       keys.append(key)
       ok = True
+    elif key == "'":
+      if prevkey == "L" or prevkey == "S":
+        keys[-1] += key
+        ok = True
     elif key == "*":
       if prevkey == "L":
         keys[-1] += key
@@ -47,17 +51,19 @@ def parse_channels(channels, errors = True):
 class MixinImage:
   """To be included in the Image class."""
 
-  def histograms(self, channels = "RGBL", nbins = None, recompute = False):
+  def histograms(self, channels = None, nbins = None, recompute = False):
     """Compute histograms of selected channels of the image.
 
     The histograms are both returned and embedded in the object as self.hists. Histograms already registered in self.hists
     are not recomputed unless required.
 
     Args:
-      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
-        "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness). For a HSV image, only the histograms of the
-        value and saturation can be computed. If it ends with a "+", channels gets appended with the keys already computed
-        and stored in self.hists. Default is "RGBL".
+      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "S" (for HSV saturation),
+        "V" (for HSV value), "S'" (for HSL saturation), "L'" (for HSL lightness), "L" (for luma), and "L*" (for CIE lightness).
+        For a HSV image, only the histograms of the value and saturation can be computed; while for a HSL image, only the
+        histograms of the lightness and saturation can be computed. If it ends with a "+", channels gets appended with the keys
+        already computed and stored in self.hists. Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for
+        HSL images, and "L" for grayscale images.
       nbins (int, optional): Number of bins within [0, 1] in the histograms. Set to `equimage.params.maxhistbins` if negative,
         and computed from the image statistics using Scott's rule if zero. If None, defaults to `equimage.params.defhistbins`.
       recompute (bool, optional): If False (default), the histograms already registered in self.hists are not recomputed
@@ -66,12 +72,23 @@ class MixinImage:
     Returns:
       dict: hists[key] for key in channels, with:
 
-        - hists[key].name = channel name ("Red", "Green", "Blue", "Value", "Saturation", "Luma" or "Lightness", provided for convenience).
+        - hists[key].name = channel name (provided for convenience).
         - hists[key].nbins = number of bins within [0, 1].
         - hists[key].edges = histogram bins edges.
         - hists[key].counts = histogram bins counts.
         - hists[key].color = suggested line color for plots.
     """
+    if channels is None:
+      if self.colormodel == "RGB":
+        channels = "RGBL"
+      elif self.colormodel == "HSV":
+        channels = "VS"
+      elif self.colormodel == "HSL":
+        channels = "V'S'"
+      elif self.colormodel == "gray":
+        channels = "L"
+      else:
+        self.color_model_error()
     if nbins is None: nbins = params.defhistbins
     if nbins == 0:
       if not recompute and hasattr(self, "hists"): # Retrieve the number of bins from the existing histograms.
@@ -81,7 +98,7 @@ class MixinImage:
         npixels = width*height
         if self.colormodel == "RGB":
           channel = (self.image[0]+self.image[1]+self.image[2])/3.
-        elif self.colormodel == "HSV":
+        elif self.colormodel == "HSV" or self.colormodel == "HSL":
           channel = self.image[2]
         elif self.colormodel == "gray":
           channel = self.image[0]
@@ -123,13 +140,21 @@ class MixinImage:
         color = "blue"
         channel = self.image[2] if self.colormodel == "RGB" else self.image[0]
       elif key == "V":
-        name = "Value"
+        name = "HSV value"
         color = "darkslategray"
         channel = self.HSV_value()
       elif key == "S":
-        name = "Saturation"
+        name = "HSV saturation"
         color = "orange"
         channel = self.HSV_saturation()
+      elif key == "L'":
+        name = "HSL lightness"
+        color = "darkslategray"
+        channel = self.HSL_lightness()
+      elif key == "S'":
+        name = "HSL saturation"
+        color = "orange"
+        channel = self.HSL_saturation()
       elif key == "L":
         name = "Luma"
         color = "lightslategray"
@@ -151,17 +176,19 @@ class MixinImage:
     self.hists = hists
     return hists
 
-  def statistics(self, channels = "RGBL", exclude01 = None, recompute = False):
+  def statistics(self, channels = None, exclude01 = None, recompute = False):
     """Compute statistics of selected channels of the image.
 
     The statistics are both returned and embedded in the object as self.stats. Statistics already registered in self.stats are
     not recomputed unless required.
 
     Args:
-      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "V" (for HSV value),
-        "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness). For a HSV image, only the histograms of the
-        value and saturation can be computed. If it ends with a "+", channels gets appended with the keys already computed
-        and stored in self.hists. Default is "RGBL".
+      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "S" (for HSV saturation),
+        "V" (for HSV value), "S'" (for HSL saturation), "L'" (for HSL lightness), "L" (for luma), and "L*" (for CIE lightness).
+        For a HSV image, only the statistics of the value and saturation can be computed; while for a HSL image, only the
+        statistics of the lightness and saturation can be computed. If it ends with a "+", channels gets appended with the keys
+        already computed and stored in self.stats. Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for
+        HSL images, and "L" for grayscale images.
       exclude01 (bool, optional): If True, exclude pixels <= 0 or >= 1 from the median and percentiles.
         Defaults to `equimage.params.exclude01` if None.
       recompute (bool, optional): If False (default), the statistics already registered in self.stats are not recomputed.
@@ -170,7 +197,7 @@ class MixinImage:
     Returns:
       dict: stats[key] for key in channels, with:
 
-        - stats[key].name = channel name ("Red", "Green", "Blue", "Value", "Saturation", "Luma" or "Lightness", provided for convenience).
+        - stats[key].name = channel name (provided for convenience).
         - stats[key].width = image width (provided for convenience).
         - stats[key].height = image height (provided for convenience).
         - stats[key].npixels = number of image pixels = image width*image height (provided for convenience).
@@ -184,6 +211,17 @@ class MixinImage:
         - stats[key].color = suggested text color for display.
     """
     epsilon = helpers.fpepsilon(self.dtype)
+    if channels is None:
+      if self.colormodel == "RGB":
+        channels = "RGBL"
+      elif self.colormodel == "HSV":
+        channels = "VS"
+      elif self.colormodel == "HSL":
+        channels = "V'S'"
+      elif self.colormodel == "gray":
+        channels = "L"
+      else:
+        self.color_model_error()
     if exclude01 is None: exclude01 = params.exclude01
     if not hasattr(self, "stats"): self.stats = {} # Register empty statistics in the object, if none already computed.
     if channels and channels[-1] == "+":
@@ -219,13 +257,21 @@ class MixinImage:
         color = "blue"
         channel = self.image[2] if self.colormodel == "RGB" else self.image[0]
       elif key == "V":
-        name = "Value"
+        name = "HSV value"
         color = "darkslategray"
         channel = self.HSV_value()
       elif key == "S":
-        name = "Saturation"
+        name = "HSV saturation"
         color = "orange"
         channel = self.HSV_saturation()
+      elif key == "L'":
+        name = "HSL lightness"
+        color = "darkslategray"
+        channel = self.HSL_lightness()
+      elif key == "S'":
+        name = "HSL saturation"
+        color = "orange"
+        channel = self.HSL_saturation()
       elif key == "L":
         name = "Luma"
         color = "lightslategray"

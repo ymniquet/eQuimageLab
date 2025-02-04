@@ -69,9 +69,9 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     """
     # Check color space and model.
     if colorspace not in ["lRGB", "sRGB"]:
-      raise ValueError(f"Error, the color space must either be 'lRGB' or 'sRGB' (got {colorspace}).")
+      raise ValueError(f"Error, the color space must either be 'lRGB' or 'sRGB' (got '{colorspace}').")
     if colormodel not in ["RGB", "HSV", "HSL", "gray"]:
-      raise ValueError(f"Error, the color model must either be 'RGB', 'HSV', 'HSL' or 'gray' (got {colormodel}).")
+      raise ValueError(f"Error, the color model must either be 'RGB', 'HSV', 'HSL' or 'gray' (got '{colormodel}').")
     # Convert the input image into an array.
     image = np.asarray(image, dtype = params.imagetype)
     # Validate the image.

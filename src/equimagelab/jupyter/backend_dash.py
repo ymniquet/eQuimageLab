@@ -286,7 +286,7 @@ class Dashboard():
         elif t == "D":
           current.difference_update({"S", "H"})
         else:
-          raise ValueError(f"Error, unknown filter {t}.")
+          raise ValueError(f"Error, unknown filter '{t}'.")
       # Apply selected filters to the image.
       n = trigger["index"] # Image index.
       image = filter_channels(self.images[n], current)

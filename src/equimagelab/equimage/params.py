@@ -46,7 +46,7 @@ def set_image_type(dtype):
   elif dtype == "float64":
     imagetype = np.float64
   else:
-    raise ValueError(f"Error, the image type must be 'float32' or 'float64' (got {dtype}).")
+    raise ValueError(f"Error, the image type must be 'float32' or 'float64' (got '{dtype}').")
 
 # Weights of the RGB components in the luma.
 
@@ -83,10 +83,10 @@ def set_RGB_luma(rgb, verbose = True):
     elif rgb == "human":
       set_RGB_luma((.2126, .7152, .0722))
     else:
-      raise ValueError("Error, the input rgb weights must be an array with three scalar elements, the string 'uniform' or the string 'human'.")
+      raise ValueError("Error, the input rgb weights must be a tuple/list/array with three scalar elements, the string 'uniform' or the string 'human'.")
   else:
     w = np.array(rgb)
-    if w.shape != (3,): raise ValueError("Error, the input rgb weights must be an array with three scalar elements, the string 'uniform' or the string 'human'.")
+    if w.shape != (3,): raise ValueError("Error, the input rgb weights must be a tuple/list/array with three scalar elements, the string 'uniform' or the string 'human'.")
     if any(w < 0.): raise ValueError("Error, the input rgb weights must be >= 0.")
     s = np.sum(w)
     if s == 0.: raise ValueError("Error, the sum of the input rgb weights must be > 0.")
