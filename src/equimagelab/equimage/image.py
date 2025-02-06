@@ -39,13 +39,19 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
     - "lRGB" for the linear RGB color space.
     - "sRGB" for the sRGB color space.
+    - "CIELab" for the CIE Lab color space.
 
-  The colormodel attribute can be:
+  In the lRGB and sRGB color spaces, the colormodel attribute can be:
 
     - "gray": grayscale image with one single channel within [0, 1].
     - "RGB": the 3 channels of the image are the red, blue, and green levels within [0, 1].
     - "HSV": the 3 channels of the image are the HSV hue, saturation and value within [0, 1].
     - "HSL": the 3 channels of the image are the HSL hue, saturation and lightness within [0, 1].
+
+  In the CIELab color space, the colormodel attribute can be:
+
+    - "Lab": the 3 channels of the image are the CIELab components L*/100, a*/100 and b*/100.
+       L*/100 fits within [0, 1], but a* and b* are signed and technically unbounded.
 
   The default color space is sRGB and the default color model is RGB.
 
@@ -62,16 +68,21 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     Args:
       image: The input image (numpy.ndarray or Image).
       channels (int, optional): The position of the channel axis for color images (default 0).
-      colorspace (str, optional): The image color space (default "sRGB").
-        Can be "lRGB" (linear RGB color space) or "sRGB" (sRGB color space).
-      colormodel (str, optional): The image color model (default "RGB").
-        Can be "RGB" (RGB image), "HSV" (HSV image), "HSL" (HSL image) or "gray (grayscale image).
+      colorspace (str, optional): The color space of the image (default "sRGB").
+        Can be "lRGB" (linear RGB color space), "sRGB" (sRGB color space), or "CIELab" (CIELab color space).
+      colormodel (str, optional): The color model of the image (default "RGB").
+        In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL" (HSL color model)
+        or "gray" (grayscale image). In the CIELab colorspace, must be "Lab" (L*a*b* color model).
     """
     # Check color space and model.
-    if colorspace not in ["lRGB", "sRGB"]:
-      raise ValueError(f"Error, the color space must either be 'lRGB' or 'sRGB' (got '{colorspace}').")
-    if colormodel not in ["RGB", "HSV", "HSL", "gray"]:
-      raise ValueError(f"Error, the color model must either be 'RGB', 'HSV', 'HSL' or 'gray' (got '{colormodel}').")
+    if colorspace in ["lRGB", "sRGB"]:
+      if colormodel not in ["RGB", "HSV", "HSL", "gray"]:
+        raise ValueError(f"Error, the color model of {colorspace} images must be 'RGB', 'HSV', 'HSL' or 'gray' (got '{colormodel}').")
+    elif colorspace == "CIELab":
+      if colormodel != "Lab":
+        raise ValueError(f"Error, the color model of {colorspace} images must be 'Lab' (got '{colormodel}').")
+    else:
+      raise ValueError(f"Error, the color space must be 'lRGB', 'sRGB' or 'CIELab' (got '{colorspace}').")
     # Convert the input image into an array.
     image = np.asarray(image, dtype = params.imagetype)
     # Validate the image.
@@ -87,9 +98,11 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
         if colormodel == "gray":
           raise ValueError(f"Error, a grayscale image must have one single channel (found {nc}).")
       else:
-        raise ValueError(f"Error, an image must have 1 or 3 channels (found {nc}).")
+        raise ValueError(f"Error, an image must have either 1 or 3 channels (found {nc}).")
     else:
-      raise ValueError(f"Error, an image must have 2 or 3 dimensions (found {image.ndim}).")
+      raise ValueError(f"Error, an image must have either 2 or 3 dimensions (found {image.ndim}).")
+    if colorspace == "CIELab" and colormodel == "gray":
+      raise ValueError(f"Error, a CIELab image must have 3 channels.")
     # Register image, color space and model.
     self.image = image
     self.dtype = self.image.dtype # Add a reference to image type.
@@ -101,10 +114,11 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
     Args:
       image (numpy.ndarray): The input image.
-      colorspace (str, optional): The image color space (default self.colorspace).
-        Can be "lRGB" (linear RGB color space) or "sRGB" (sRGB color space).
-      colormodel (str, optional): The image color model (default self.colormodel).
-        Can be "RGB" (RGB image), "HSV" (HSV image), "HSL" (HSL image) or "gray (grayscale image).
+      colorspace (str, optional): The color space of the image (default self.colorspace).
+        Can be "lRGB" (linear RGB color space), "sRGB" (sRGB color space), or "CIELab" (CIELab color space).
+      colormodel (str, optional): The color model of the image (default self.colormodel).
+        In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL" (HSL color model)
+        or "gray" (grayscale image). In the CIELab colorspace, must be "Lab" (L*a*b* color model).
 
     Returns:
       Image: The new Image object.
@@ -255,30 +269,42 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   ######################
 
   def int8(self):
-    """Return the image as a (height, width, channels) array of 8 bits integers in the range [0, 255].
+    """Return the image as an array of 8 bits integers in the range [0, 255], with shape (height, width, channels).
+
+    Warning:
+      This method maps [0., 1.] onto [0, 255].
+      Not suitable for the CIELab color space !
 
     Returns:
-      numpy.ndarray: The image as a (height, width, channels) array of 8 bits integers in the range [0, 255].
+      numpy.ndarray: The image as an array of 8 bits integers with shape (height, width, channels).
     """
     image = self.get_image(channels = -1)
     data = np.clip(image*255, 0, 255)
     return np.rint(data).astype("uint8")
 
   def int16(self):
-    """Return the image as a (height, width, channels) array of 16 bits integers in the range [0, 65535].
+    """Return the image as an array of 16 bits integers in the range [0, 65535], with shape (height, width, channels).
+
+    Warning:
+      This method maps [0., 1.] onto [0, 65535].
+      Not suitable for the CIELab color space !
 
     Returns:
-      numpy.ndarray: The image as a (height, width, channels) array of 16 bits integers in the range [0, 65535].
+      numpy.ndarray: The image as an array of 16 bits integers with shape (height, width, channels).
     """
     image = self.get_image(channels = -1)
     data = np.clip(image*65535, 0, 65535)
     return np.rint(data).astype("uint16")
 
   def int32(self):
-    """Return the image as a (height, width, channels) array of 32 bits integers in the range [0, 4294967295].
+    """Return the image as an array of 32 bits integers in the range [0, 4294967295], with shape (height, width, channels).
+
+    Warning:
+      This method maps [0., 1.] onto [0, 4294967295].
+      Not suitable for the CIELab color space !
 
     Returns:
-      numpy.ndarray: The image as a (height, width, channels) array of 32 bits integers in the range [0, 4294967295].
+      numpy.ndarray: The image as an array of 32 bits integers with shape (height, width, channels).
     """
     image = self.get_image(channels = -1)
     data = np.clip(image*4294967295, 0, 4294967295)

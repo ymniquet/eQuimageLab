@@ -13,14 +13,6 @@ import numpy as np
 
 IMAGEIO = False
 
-# RGB <-> XYZ conversion matrices.
-
-RGB2XYZ = np.array([[0.412453, 0.357580, 0.180423],
-                    [0.212671, 0.715160, 0.072169],
-                    [0.019334, 0.119193, 0.950227]])
-
-XYZ2RGB = np.linalg.inv(RGB2XYZ)
-
 # Image type.
 
 imagetype = np.float32

@@ -196,16 +196,17 @@ class MixinImage:
 
     Args:
       channel (str): The selected channel:
-        - An empty string: Apply the filter to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the filter to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the filter to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the filter to the first/second/third channel (all images).
+        - "H": Apply the filter to the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Apply the filter to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the filter to the HSV saturation (RGB and HSV images).
         - "L'": Apply the filter to the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Apply the filter to the HSL saturation (RGB and HSL images).
         - "L": Apply the filter to the luma (RGB and grayscale images).
-        - "L*": Apply the filter to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the filter to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
       filter (str): The filter:
 

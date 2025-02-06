@@ -53,9 +53,9 @@ class MixinImage:
     """Convert the selected channel of a RGB image into a grayscale image.
 
     Args:
-      channel: The converted channel ("V" for the HSV value, "L" for the luma, "Y" or "L*" for the
-        luminance/lightness). Namely, the output grayscale image has the same value/luma/luminance
-        and lightness as the original RGB image.
+      channel: The converted channel ("V" for the HSV value, "L'" for HSL lightness, "L" for the luma,
+        "Y" or "L*" for the luminance/lightness). Namely, the output grayscale image has the same
+        value/luma/luminance and lightness as the original RGB image.
       RGB (bool, optional): If True, return the grayscale as a RGB image (with identical R/G/B
         channels). If False (default), return the grayscale as a single channel image.
 
@@ -65,6 +65,8 @@ class MixinImage:
     self.check_color_model("RGB")
     if channel == "V":
       grayscale = self.HSV_value()
+    elif channel == "L'":
+      grayscale = self.HSL_lightness()
     elif channel == "L":
       grayscale = self.luma()
     elif channel == "Y" or channel == "L*":

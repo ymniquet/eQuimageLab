@@ -29,16 +29,16 @@ class MixinImage:
       ratio (float): The threshold for hot pixels detection.
       channels (str, optional): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -71,9 +71,9 @@ class MixinImage:
     Args:
       channels (str, optional): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -85,8 +85,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -154,8 +154,8 @@ class MixinImage:
       amount (float): The full strength of the unsharp mask (must be > 0).
       threshold (float): The threshold for sharpening (expected in ]0, 1[).
         The image is blurred below the threshold, and sharpened above.
-      channels (str, optional): The channel(s) for LDBS (can be "" for all channels, "V" for Value, "L" for
-        luma or "L*" for lightness). Default is "L*".
+      channels (str, optional): The channel(s) for LDBS (can be "" for all channels, "V" for HSV Value, "L'" for
+        HSL lightness, "L" for luma or "L*" for lightness). Default is "L*".
       mode (str, optional): How to extend the image across its boundaries (for the gaussian blur):
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
@@ -173,7 +173,7 @@ class MixinImage:
       Image: The processed image(s) (see the full_output argument).
     """
     channels = channels.strip()
-    if channels not in ["", "V", "L", "L*"]: raise ValueError("Error, channels must be '', 'V', 'L' or 'L*'.")
+    if channels not in ["", "V", "L'", "L", "L*"]: raise ValueError("Error, channels must be '', 'V', 'L'', 'L' or 'L*'.")
     if amount <= 0.: raise ValueError("Error amount must be > 0.")
     if threshold < .0001 or threshold >= .9999: raise ValueError("Error, threshold must be >= 0.0001 and <= 0.9999.")
     D = Dharmonic_through(threshold, 1./(1.+amount))

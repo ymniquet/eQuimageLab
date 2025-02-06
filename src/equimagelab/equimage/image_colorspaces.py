@@ -14,8 +14,28 @@ from . import params
 from . import helpers
 
 #############################
-# sRGB <-> lRGB conversion. #
+# lRGB <-> sRGB conversion. #
 #############################
+
+def lRGB_to_sRGB(image):
+  """Convert the input linear RGB image into a sRGB image.
+
+  See also:
+    The reciprocal sRGB_to_lRGB function.
+
+  Note:
+    This function does not clip the input image to the [0, 1] range.
+
+  Args:
+    image (numpy.ndarray): The input lRGB image.
+
+  Returns:
+    numpy.ndarray: The converted sRGB image.
+  """
+  output = 12.919990386749564*image
+  mask = (image > .0031308072830676845)
+  output[mask] = 1.055*image[mask]**(1./2.4)-.055
+  return output
 
 def sRGB_to_lRGB(image):
   """Convert the input sRGB image into a linear RGB image.
@@ -37,11 +57,29 @@ def sRGB_to_lRGB(image):
   output[mask] = ((image[mask]+.055)/1.055)**2.4
   return output
 
-def lRGB_to_sRGB(image):
-  """Convert the input linear RGB image into a sRGB image.
+###############################
+# lRGB <-> CIELab conversion. #
+###############################
+
+# RGB <-> XYZ conversion matrices.
+
+RGB2XYZ = np.array([[0.412453, 0.357580, 0.180423],
+                    [0.212671, 0.715160, 0.072169],
+                    [0.019334, 0.119193, 0.950227]])
+
+XYZ2RGB = np.linalg.inv(RGB2XYZ)
+
+#
+
+def lRGB_to_CIELab(image):
+  """Convert the input linear RGB image into a CIELab image.
+
+  Note that the CIE lightness L* is conventionally defined within [0, 100], and
+  that the CIE chromatic components a*, b* are signed and technically unbounded.
+  This function actually returns L*/100, a*/100 and b*/100.
 
   See also:
-    The reciprocal sRGB_to_lRGB function.
+    The reciprocal CIELab_to_lRGB function.
 
   Note:
     This function does not clip the input image to the [0, 1] range.
@@ -50,12 +88,70 @@ def lRGB_to_sRGB(image):
     image (numpy.ndarray): The input lRGB image.
 
   Returns:
+    numpy.ndarray: The converted CIELab image (/100).
+  """
+  xyz = np.tensordot(np.asarray(RGB2XYZ, dtype = image.dtype), image, axes = 1)
+  return skcolor.xyz2lab(xyz, channel_axis = 0)/100.
+
+def CIELab_to_lRGB(image):
+  """Convert the input CIELab image into a linear RGB image.
+
+  See also:
+    The reciprocal lRGB_to_CIELab function.
+
+  Note:
+    This function does not clip the input image to the [0, 1] range.
+
+  Args:
+    image (numpy.ndarray): The input CIELab image (/100).
+
+  Returns:
+    numpy.ndarray: The converted lRGB image.
+  """
+  xyz = skcolor.lab2xyz(100.*image, channel_axis = 0)
+  return np.tensordot(np.asarray(XYZ2RGB, dtype = image.dtype), xyz, axes = 1)
+
+###############################
+# sRGB <-> CIELab conversion. #
+###############################
+
+def sRGB_to_CIELab(image):
+  """Convert the input sRGB image into a CIELab image.
+
+  Note that the CIE lightness L* is conventionally defined within [0, 100], and
+  that the CIE chromatic components a*, b* are signed and technically unbounded.
+  This function actually returns L*/100, a*/100 and b*/100.
+
+  See also:
+    The reciprocal CIELab_to_sRGB function.
+
+  Note:
+    This function does not clip the input image to the [0, 1] range.
+
+  Args:
+    image (numpy.ndarray): The input sRGB image.
+
+  Returns:
+    numpy.ndarray: The converted CIELab image (/100).
+  """
+  return lRGB_to_CIELab(sRGB_to_lRGB(image))
+
+def CIELab_to_sRGB(image):
+  """Convert the input CIELab image into a sRGB image.
+
+  See also:
+    The reciprocal sRGB_to_CIELab function.
+
+  Note:
+    This function does not clip the input image to the [0, 1] range.
+
+  Args:
+    image (numpy.ndarray): The input CIELab image (/100).
+
+  Returns:
     numpy.ndarray: The converted sRGB image.
   """
-  output = 12.919990386749564*image
-  mask = (image > .0031308072830676845)
-  output[mask] = 1.055*image[mask]**(1./2.4)-.055
-  return output
+  return lRGB_to_sRGB(CIELab_to_lRGB(image))
 
 ###########################
 # RGB <-> HSV conversion. #
@@ -95,44 +191,9 @@ def HSV_to_RGB(image):
   """
   return skcolor.hsv2rgb(np.clip(image, 0., 1.), channel_axis = 0)
 
-def HSV_value(image):
-  """Return the HSV value V = max(RGB) of the input RGB image.
-
-  Note:
-    Compatible with single channel grayscale images.
-    This function does not clip the input image to the [0, 1] range.
-
-  Args:
-    image (numpy.ndarray): The input RGB image.
-
-  Returns:
-    numpy.ndarray: The HSV value V.
-  """
-  return image.max(axis = 0)
-
-def HSV_saturation(image):
-  """Return the HSV saturation S = 1-min(RGB)/max(RGB) of the input RGB image.
-
-  Note:
-    Compatible with single channel grayscale images.
-    This function clips the input image below 0.
-
-  Args:
-    image (numpy.ndarray): The input RGB image.
-
-  Returns:
-    numpy.ndarray: The HSV saturation S.
-  """
-  mini = np.maximum(image.min(axis = 0), 0.)
-  maxi = np.maximum(image.max(axis = 0), 0.)
-  S = np.zeros_like(maxi)
-  mask = (maxi > 0.)
-  S[mask] = 1.-mini[mask]/maxi[mask]
-  return S
-
-#################################
-# RGB, HSV <-> HSL conversions. #
-#################################
+############################
+# HSV <-> HSL conversions. #
+############################
 
 def HSV_to_HSL(image):
   """Convert the input HSV image into a HSL image.
@@ -179,6 +240,10 @@ def HSL_to_HSV(image):
   output[1][mask] = SD[mask]/output[2][mask]
   return output
 
+############################
+# RGB <-> HSL conversions. #
+############################
+
 def RGB_to_HSL(image):
   """Convert the input RGB image into a HSL image.
 
@@ -212,6 +277,71 @@ def HSL_to_RGB(image):
     numpy.ndarray: The converted RGB image.
   """
   return skcolor.hsv2rgb(HSL_to_HSV(image), channel_axis = 0)
+
+######################################################
+# HSV and HSL hue, value, lightness and saturations. #
+######################################################
+
+def HSX_hue(image):
+  """Return the HSV/HSL hue of the input RGB image.
+
+  Note:
+    This function clips the input image below 0.
+
+  Args:
+    image (numpy.ndarray): The input RGB image.
+
+  Returns:
+    numpy.ndarray: The HSV/HSL hue.
+  """
+  mini = np.maximum(image.min(axis = 0), 0.)
+  maxi = np.maximum(image.max(axis = 0), 0.)
+  delta = maxi-mini
+  H = np.empty_like(delta)
+  mask = (image[0] == maxi) # Red is maximum.
+  H[mask] =    helpers.failsafe_divide(image[1][mask]-image[2][mask], delta[mask])
+  mask = (image[1] == maxi) # Green is maximum.
+  H[mask] = 2.+helpers.failsafe_divide(image[2][mask]-image[0][mask], delta[mask])
+  mask = (image[2] == maxi) # Blue is maximum.
+  H[mask] = 4.+helpers.failsafe_divide(image[0][mask]-image[1][mask], delta[mask])
+  mask = (delta == 0.) # Delta is 0.
+  H[mask] = 0.
+  return (H/6.)%1.
+
+def HSV_value(image):
+  """Return the HSV value V = max(RGB) of the input RGB image.
+
+  Note:
+    Compatible with single channel grayscale images.
+    This function does not clip the input image to the [0, 1] range.
+
+  Args:
+    image (numpy.ndarray): The input RGB image.
+
+  Returns:
+    numpy.ndarray: The HSV value V.
+  """
+  return image.max(axis = 0)
+
+def HSV_saturation(image):
+  """Return the HSV saturation S = 1-min(RGB)/max(RGB) of the input RGB image.
+
+  Note:
+    Compatible with single channel grayscale images.
+    This function clips the input image below 0.
+
+  Args:
+    image (numpy.ndarray): The input RGB image.
+
+  Returns:
+    numpy.ndarray: The HSV saturation S.
+  """
+  mini = np.maximum(image.min(axis = 0), 0.)
+  maxi = np.maximum(image.max(axis = 0), 0.)
+  S = np.zeros_like(maxi)
+  mask = (maxi > 0.)
+  S[mask] = 1.-mini[mask]/maxi[mask]
+  return S
 
 def HSL_lightness(image):
   """Return the HSL lightness L' = (max(RGB)+min(RGB))/2 of the input RGB image.
@@ -491,7 +621,7 @@ class MixinImage:
     """Convert the image to the linear RGB color space.
 
     Warning:
-      The color model must be "RGB" or "gray".
+      Does not apply to the HSV and HSL color models.
 
     Note:
       This method does not clip the image to the [0, 1] range.
@@ -499,11 +629,14 @@ class MixinImage:
     Returns:
       Image: The converted lRGB image (a copy of the original image if already lRGB).
     """
-    self.check_color_model("RGB", "gray")
     if self.colorspace == "lRGB":
       return self.copy()
     elif self.colorspace == "sRGB":
+      self.check_color_model("RGB", "gray")
       return self.newImage(sRGB_to_lRGB(self.image), colorspace = "lRGB")
+    elif self.colorspace == "CIELab":
+      self.check_color_model("Lab")
+      return self.newImage(CIELab_to_lRGB(self.image), colorspace = "lRGB", colormodel = "RGB")
     else:
       self.color_space_error()
 
@@ -511,7 +644,7 @@ class MixinImage:
     """Convert the image to the sRGB color space.
 
     Warning:
-      The color model must be "RGB" or "gray".
+      Does not apply to the HSV and HSL color models.
 
     Note:
       This method does not clip the image to the [0, 1] range.
@@ -519,10 +652,40 @@ class MixinImage:
     Returns:
       Image: The converted sRGB image (a copy of the original image if already sRGB).
     """
-    self.check_color_model("RGB", "gray")
     if self.colorspace == "lRGB":
+      self.check_color_model("RGB", "gray")
       return self.newImage(lRGB_to_sRGB(self.image), colorspace = "sRGB")
     elif self.colorspace == "sRGB":
+      return self.copy()
+    elif self.colorspace == "CIELab":
+      self.check_color_model("Lab")
+      return self.newImage(CIELab_to_sRGB(self.image), colorspace = "sRGB", colormodel = "RGB")
+    else:
+      self.color_space_error()
+
+  def CIELab(self):
+    """Convert the image to the CIELab color space.
+
+    Note that the CIE lightness L* is conventionally defined within [0, 100], and
+    that the CIE chromatic components a*, b* are signed and technically unbounded.
+    This function actually returns L*/100, a*/100 and b*/100.
+
+    Warning:
+      Does not apply to the HSV and HSL color models.
+
+    Note:
+      This method does not clip the image to the [0, 1] range.
+
+    Returns:
+      Image: The converted CIELab image (/100) (a copy of the original image if already CIELab).
+    """
+    if self.colorspace == "lRGB":
+      self.check_color_model("RGB")
+      return self.newImage(lRGB_to_CIELab(self.image), colorspace = "CIELab", colormodel = "Lab")
+    elif self.colorspace == "sRGB":
+      self.check_color_model("RGB")
+      return self.newImage(sRGB_to_CIELab(self.image), colorspace = "CIELab", colormodel = "Lab")
+    elif self.colorspace == "CIELab":
       return self.copy()
     else:
       self.color_space_error()
@@ -534,12 +697,16 @@ class MixinImage:
   def RGB(self):
     """Convert the image to the RGB color model.
 
+    Warning:
+      Does not apply to the CIELab color space.
+
     Note:
       This method clips HSV and HSL images to the [0, 1] range.
 
     Returns:
       Image: The converted RGB image (a copy of the original image if already RGB).
     """
+    self.check_color_space("lRGB", "sRGB")
     if self.colormodel == "RGB":
       return self.copy()
     elif self.colormodel == "HSV":
@@ -555,6 +722,7 @@ class MixinImage:
     """Convert the image to the HSV color model.
 
     Warning:
+      Does not apply to the CIELab color space.
       The conversion from a grayscale to a HSV image is ill-defined (no hue).
 
     Note:
@@ -563,6 +731,7 @@ class MixinImage:
     Returns:
       Image: The converted HSV image (a copy of the original image if already HSV).
     """
+    self.check_color_space("lRGB", "sRGB")
     if self.colormodel == "RGB":
       return self.newImage(RGB_to_HSV(self.image), colormodel = "HSV")
     elif self.colormodel == "HSV":
@@ -576,6 +745,7 @@ class MixinImage:
     """Convert the image to the HSL color model.
 
     Warning:
+      Does not apply to the CIELab color space.
       The conversion from a grayscale to a HSL image is ill-defined (no hue).
 
     Note:
@@ -584,6 +754,7 @@ class MixinImage:
     Returns:
       Image: The converted HSL image (a copy of the original image if already HSL).
     """
+    self.check_color_space("lRGB", "sRGB")
     if self.colormodel == "RGB":
       return self.newImage(RGB_to_HSL(self.image), colormodel = "HSL")
     elif self.colormodel == "HSV":
@@ -600,16 +771,17 @@ class MixinImage:
   def convert(self, colorspace = None, colormodel = None):
     """Convert the image to the target color space and color model.
 
-    This method is more versatile than the dedicated conversion
-    functions such as Image.sRGB, Image.HSV, etc... In particular,
-    it can chain conversions to reach the target color space and model
-    [e.g. (sRGB, HSV) -> (lRGB, RGB) = (sRGB, HSV) -> (sRGB, RGB) -> (lRGB, RGB)].
+    This method is more versatile than the dedicated conversion functions such
+    as Image.sRGB, Image.HSV, etc... In particular, it can chain conversions to
+    reach the target color space and model. For example,
+    (sRGB, HSV) -> (lRGB, RGB) = (sRGB, HSV) -> (sRGB, RGB) -> (lRGB, RGB).
 
     Args:
-      colorspace (str, optional): The target color space ("lRGB" or "sRGB").
+      colorspace (str, optional): The target color space ("lRGB", "sRGB", or "CIELab").
         If None (default), keep the original color space.
-      colormodel (str, optional): The target color model ("RGB", "HSV" or "HSL").
-        If None (default), keep the original color model.
+      colormodel (str, optional): The target color model ("RGB", "HSV" or "HSL"
+        in the lRGB and sRGB color spaces, "Lab" in the CIELab color space).
+        If None (default), keep (if possible) the original color model.
 
     Returns:
       Image: The converted image (a copy of the original image if already
@@ -620,18 +792,20 @@ class MixinImage:
       csconv = self
       copied = False
     else:
-      if self.colormodel not in ["RGB", "gray"]:
-        if colormodel is None: colormodel = self.colormodel
-        rgb = self.RGB()
+      if self.colormodel not in ["RGB", "gray", "Lab"]:
+        if colormodel == None and colorspace != "CIELab": colormodel = self.colormodel
+        imconv = self.RGB()
       else:
-        rgb = self
+        imconv = self
       if colorspace == "lRGB":
-        csconv = rgb.lRGB()
+        csconv = imconv.lRGB()
       elif colorspace == "sRGB":
-        csconv = rgb.sRGB()
+        csconv = imconv.sRGB()
+      elif colormodel == "CIELab":
+        csconv = imconv.CIELab()
       else:
-        raise ValueError(f"Unknown color space {colorspace}.")
-    if colormodel == "None" or colormodel == csconv.colormodel:
+        raise ValueError(f"Error, unknown color space {colorspace}.")
+    if colormodel == None or colormodel == csconv.colormodel:
       return csconv if copied else csconv.copy()
     elif colormodel == "RGB":
       return csconv.RGB()
@@ -639,18 +813,36 @@ class MixinImage:
       return csconv.HSV()
     elif colormodel == "HSL":
       return csconv.HSL()
+    elif colormodel == "Lab":
+      if colorspace != "CIELab": csconv.color_model_error()
     else:
-      raise ValueError(f"Unknown color model {colormodel}.")
+      raise ValueError(f"Error, unknown color model {colormodel}.")
 
   #######################
   # Composite channels. #
   #######################
 
+  def HSX_hue(self):
+    """Return the HSV/HSL hue of the image.
+
+    Warning:
+      Available only for RGB, HSV and HSL images.
+
+    Returns:
+      numpy.ndarray: The HSV/HSL hue H.
+    """
+    if self.colormodel == "RGB":
+      return HSX_hue(self.image)
+    elif self.colormodel == "HSV" or self.colormodel == "HSL":
+      return self.image[0]
+    else:
+      self.color_model_error()
+
   def HSV_value(self):
     """Return the HSV value V = max(RGB) of the image.
 
     Warning:
-      Not implemented for HSL images !
+      Available only for RGB and HSV images.
 
     Note:
       The HSV value may be outside the [0, 1] range if the image does not fit within this range.
@@ -669,7 +861,7 @@ class MixinImage:
     """Return the HSV saturation S = 1-min(RGB)/max(RGB) of the image.
 
     Warning:
-      Not implemented for HSL images !
+      Available only for RGB and HSV images.
 
     Note:
       The HSV saturation may be outside the [0, 1] range if the image does not fit within this range.
@@ -688,7 +880,7 @@ class MixinImage:
     """Return the HSL lightness L' = (max(RGB)+min(RGB))/2 of the image.
 
     Warning:
-      Not implemented for HSV images !
+      Available only for RGB and HSL images.
 
     Note:
       The HSL lightness may be outside the [0, 1] range if the image does not fit within this range.
@@ -707,7 +899,7 @@ class MixinImage:
     """Return the HSL saturation S' = (max(RGB)-min(RGB))/(1-|max(RGB)+min(RGB)-1|) of the image.
 
     Warning:
-      Not implemented for HSV images !
+      Available only for RGB and HSL images.
 
     Note:
       The HSL saturation may be outside the [0, 1] range if the image does not fit within this range.
@@ -771,7 +963,7 @@ class MixinImage:
     the scaled lightness L*/100 within [0, 1].
 
     Warning:
-      Available only for RGB and grayscale images.
+      Available only for RGB, grayscale and CIELab images.
 
     Note:
       The lightness may be outside the [0, 1] range if the image does not fit within this range.
@@ -779,11 +971,14 @@ class MixinImage:
     Returns:
       numpy.ndarray: The CIE lightness L*/100.
     """
-    self.check_color_model("RGB", "gray")
     if self.colorspace == "lRGB":
+      self.check_color_model("RGB", "gray")
       return lRGB_lightness(self.image)
     elif self.colorspace == "sRGB":
+      self.check_color_model("RGB", "gray")
       return sRGB_lightness(self.image)
+    elif self.colorspace == "CIELab":
+      return self.image[0]
     else:
       raise self.color_space_error()
 
@@ -798,13 +993,14 @@ class MixinImage:
       channel (str): The selected channel:
 
         - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          The first/second/third channel (RGB, HSV, HSL and grayscale images).
+          The first/second/third channel (all images).
+        - "H": The HSV/HSL hue (RGB, HSV and HSL images).
         - "V": The HSV value (RGB, HSV and grayscale images).
         - "S": The HSV saturation (RGB, HSV and grayscale images).
         - "L'" : The HSL lightness (RGB, HSL and grayscale images).
         - "S'" : The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
-        - "L*": The CIE lightness L* (RGB and grayscale images).
+        - "L*": The CIE lightness L* (RGB, grayscale and CIELab images).
 
     Returns:
       numpy.ndarray: The selected channel.
@@ -815,9 +1011,11 @@ class MixinImage:
       if ic < 0 or ic >= self.get_nc(): raise ValueError(f"Error, invalid channel '{channel}'.")
       return self.image[ic]
     elif channel in ["R", "G", "B"]:
-      self.check_color_model("RGB")
-      ic = "RGB".index(channel)
+      self.check_color_model("RGB", "gray")
+      ic = "RGB".index(channel) if self.colormodel == "RGB" else 0
       return self.image[ic]
+    elif channel == "H":
+      return self.HSX_hue()
     elif channel == "V":
       return self.HSV_value()
     elif channel == "S":
@@ -840,13 +1038,14 @@ class MixinImage:
       channel (str): The updated channel:
 
         - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Update the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Update the first/second/third channel (all images).
+        - "H": Update the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Update the HSV value (RGB, HSV and grayscale images).
         - "S": Update the HSV saturation (RGB and HSV images).
-        - "L'": The HSL lightness (RGB, HSL and grayscale images).
-        - "S'": The HSL saturation (RGB and HSL images).
+        - "L'": Update the HSL lightness (RGB, HSL and grayscale images).
+        - "S'": Update the HSL saturation (RGB and HSL images).
         - "L": Update the luma (RGB and grayscale images).
-        - "L*": Update the lightness L* in the CIE L*a*b* color space (RGB and grayscale images).
+        - "L*": Update the lightness L* in the CIELab color space (RGB, grayscale and CIELab images).
 
       data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height as the image.
       inplace (bool, optional): If True, update the image "in place"; if False (default), return a new image.
@@ -874,6 +1073,16 @@ class MixinImage:
       if not is_RGB: self.color_model_error()
       ic = "RGB".index(channel)
       output.image[ic] = data
+      return output
+    elif channel == "H":
+      if is_RGB:
+        hsv = RGB_to_HSV(self.image)
+        hsv[0] = data
+        output.image[:] = HSV_to_RGB(hsv)
+      elif is_HSV or is_HSL:
+        output.image[0] = data
+      else:
+        self.color_model_error()
       return output
     elif channel == "V":
       if is_gray:
@@ -928,28 +1137,26 @@ class MixinImage:
     elif channel == "L*":
       if is_gray:
         luminance = lightness_to_luminance(data)
-        if output.colorspace == "lRGB":
+        if self.colorspace == "lRGB":
           output.image[0] = luminance
         elif self.colorspace == "sRGB":
           output.image[0] = lRGB_to_sRGB(luminance)
         else:
           self.color_space_error()
       elif is_RGB:
-        if self.colorspace == "lRGB": # Convert to L*a*b* color space.
-          lRGB = self.image
+        if self.colorspace == "lRGB":
+          lab = lRGB_to_CIELab(self.image)
         elif self.colorspace == "sRGB":
-          lRGB = sRGB_to_lRGB(self.image)
+          lab = sRGB_to_CIELab(self.image)
         else:
           self.color_space_error()
-        xyz = np.tensordot(np.asarray(params.RGB2XYZ, dtype = dtype), lRGB, axes = 1)
-        lab = skcolor.xyz2lab(xyz, channel_axis = 0)
-        lab[0] = 100.*data
-        xyz = skcolor.lab2xyz(lab, channel_axis = 0) # Convert from L*a*b* color space.
-        lRGB = np.tensordot(np.asarray(params.XYZ2RGB, dtype = dtype), xyz, axes = 1)
+        lab[0] = data
         if self.colorspace == "lRGB":
-          output.image[:] = lRGB
-        elif self.colorspace == "sRGB":
-          output.image[:] = lRGB_to_sRGB(lRGB)
+          output.image[:] = CIELab_to_lRGB(lab)
+        else:
+          output.image[:] = CIELab_to_sRGB(lab)
+      elif self.colorspace == "CIELab":
+        output.image[0] = data
       else:
         self.color_model_error()
       return output
@@ -983,9 +1190,10 @@ class MixinImage:
       f (function): The function f(numpy.ndarray) → numpy.ndarray applied to the selected channels.
       channels (str): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
+        - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -997,8 +1205,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
         if False, the operation must be applied one channel at a time.
@@ -1045,7 +1253,21 @@ class MixinImage:
         channels = "RGB"
       else:
         for ic in range(nc): channels += str(ic+1)
-    if channels == "V":
+    if channels == "H":
+      if is_RGB:
+        hsv = HSV_to_RGB(self.image)
+        if trans: t = transformation(f, hsv[0], "H")
+        hsv[0] = f(hsv[0])
+        output = self.newImage(hsv)
+        if trans: output.trans = t
+      elif is_HSV:
+        output = self.copy()
+        output.image[1] = f(self.image[1])
+        if trans: output.trans = transformation(f, self.image[1], "S")
+      else:
+        self.color_model_error()
+      return output
+    elif channels == "V":
       if is_gray:
         output = self.newImage(f(self.image))
         if trans: output.trans = transformation(f, self.image, "V")
@@ -1062,10 +1284,10 @@ class MixinImage:
       return output
     elif channels == "S":
       if is_RGB:
-        hsv = self.HSV()
-        if trans: t = transformation(f, hsv.image[1], "S")
-        hsv.image[1] = f(hsv.image[1])
-        output = hsv.RGB()
+        hsv = HSV_to_RGB(self.image)
+        if trans: t = transformation(f, hsv[1], "S")
+        hsv[1] = f(hsv[1])
+        output = self.newImage(hsv)
         if trans: output.trans = t
       elif is_HSV:
         output = self.copy()
@@ -1079,10 +1301,10 @@ class MixinImage:
         output = self.newImage(f(self.image))
         if trans: output.trans = transformation(f, self.image, "L'")
       elif is_RGB:
-        hsl = self.HSL()
-        if trans: t = transformation(f, hsl.image[2], "L'")
-        hsl.image[2] = f(hsl.image[2])
-        output = hsl.RGB()
+        hsl = RGB_to_HSL(self.image)
+        if trans: t = transformation(f, hsl[2], "L'")
+        hsl[2] = f(hsl[2])
+        output = self.newImage(hsl)
         if trans: output.trans = t
       elif is_HSV:
         output = self.copy()
@@ -1093,10 +1315,10 @@ class MixinImage:
       return output
     elif channels == "S'":
       if is_RGB:
-        hsl = self.HSL()
-        if trans: t = transformation(f, hsl.image[1], "S'")
-        hsl.image[1] = f(hsl.image[1])
-        output = hsl.RGB()
+        hsl = RGB_to_HSL(self.image)
+        if trans: t = transformation(f, hsl[1], "S'")
+        hsl[1] = f(hsl[1])
+        output = self.newImage(hsl)
         if trans: output.trans = t
       elif is_HSL:
         output = self.copy()
@@ -1138,22 +1360,20 @@ class MixinImage:
         else:
           self.color_space_error()
       elif is_RGB:
-        if self.colorspace == "lRGB": # Convert to L*a*b* color space.
-          lRGB = self.image
+        if self.colorspace == "lRGB":
+          lab = lRGB_to_CIELab(self.image)
         elif self.colorspace == "sRGB":
-          lRGB = sRGB_to_lRGB(self.image)
+          lab = sRGB_to_CIELab(self.image)
         else:
           self.color_space_error()
-        xyz = np.tensordot(np.asarray(params.RGB2XYZ, dtype = params.imagetype), lRGB, axes = 1)
-        lab = skcolor.xyz2lab(xyz, channel_axis = 0)
-        lightness = lab[0]/100. # Apply transformation.
-        lab[0] = 100.*f(lightness)
-        xyz = skcolor.lab2xyz(lab, channel_axis = 0) # Convert from L*a*b* color space.
-        lRGB = np.tensordot(np.asarray(params.XYZ2RGB, dtype = params.imagetype), xyz, axes = 1)
+        lab[0] = f(lightness)
         if self.colorspace == "lRGB":
-          output = self.newImage(lRGB)
-        elif self.colorspace == "sRGB":
-          output = self.newImage(lRGB_to_sRGB(lRGB))
+          output = self.newImage(CIELab_to_lRGB(lab))
+        else:
+          output = self.newImage(CIELab_to_sRGB(lab))
+      elif self.colorspace == "CIELab":
+        output = self.copy()
+        output.image[0] = f(self.image[0])
       else:
         self.color_model_error()
       if trans: output.trans = transformation(f, lightness, "L*")
@@ -1191,16 +1411,17 @@ class MixinImage:
     Args:
       channels (str): The selected channels:
 
-        - An empty string (default): Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string (default): Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
+        - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space.
+          (RGB, grayscale and CIELab images).
 
     Returns:
       Image: The clipped image.

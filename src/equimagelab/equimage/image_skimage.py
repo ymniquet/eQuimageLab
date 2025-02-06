@@ -35,9 +35,10 @@ class MixinImage:
 
       channels (str, optional): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
+        - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -49,8 +50,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
     Returns:
       Image: The processed image.
@@ -79,9 +80,10 @@ class MixinImage:
         artifacts on the edges).
       channels (str, optional): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
+        - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -93,8 +95,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
     Returns:
       Image: The processed image.
@@ -122,9 +124,10 @@ class MixinImage:
       strength (float): The mixing strength.
       channels (str, optional): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
+        - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -136,8 +139,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
     Returns:
       Image: The processed image.
@@ -191,9 +194,10 @@ class MixinImage:
         shifted back to the original position.
       channels (str, optional): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
+        - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -205,8 +209,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
     Returns:
       Image: The processed image.
@@ -244,9 +248,10 @@ class MixinImage:
 
       channels (str, optional): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
+        - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -258,8 +263,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
     Returns:
       Image: The processed image.
@@ -296,9 +301,10 @@ class MixinImage:
                                  or "Bregman" for the split Bregman algorithm.
       channels (str, optional): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
+        - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -310,8 +316,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
     Returns:
       Image: The processed image.
@@ -355,9 +361,10 @@ class MixinImage:
         If false, they are weighted by a gaussian (better yet slower).
       channels (str, optional): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
+        - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -369,8 +376,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
     Returns:
       Image: The processed image.
@@ -398,9 +405,9 @@ class MixinImage:
       nbins (int, optional): The number of bins in the local histograms (default 256).
       channels (str, optional): The selected channels:
 
-        - An empty string: Apply the operation to all channels (RGB, HSV, HSL and grayscale images).
+        - An empty string: Apply the operation to all channels (all images).
         - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (RGB, HSV, HSL and grayscale images).
+          Apply the operation to the first/second/third channel (all images).
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "S": Apply the operation to the HSV saturation (RGB and HSV images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -412,8 +419,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space
-          (RGB and grayscale images).
+        - "L*": Apply the operation to the lightness L* in the CIELab color space
+          (RGB, grayscale and CIELab images).
 
         However, CLAHE is only used, in principle, for the "V" (default), "L(s, b)" and L* channels.
 
