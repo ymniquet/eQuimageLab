@@ -42,7 +42,7 @@ def set_image_type(dtype):
 
 # Weights of the RGB components in the luma.
 
-rgbluma = (.2126, .7152, .0722)
+rgbluma = (.212671, .715160, .072169)
 
 def get_RGB_luma():
   """Return the RGB weights rgbluma of the luma.
@@ -64,8 +64,8 @@ def set_RGB_luma(rgb, verbose = True):
 
       - a tuple, list or array of the (red, green, blue) weights. They will be normalized so that their sum is 1.
       - the string "uniform": the RGB weights are set to (1/3, 1/3, 1/3).
-      - the string "human": the RGB weights are set to (.2126, .7152, .0722). The luma is then the luminance for lRGB images,
-        and an approximate substitute for the lightness for sRGB images.
+      - the string "human": the RGB weights are set to (.212671, .715160, .072169). The luma is then the luminance
+        for lRGB images, and an approximate substitute for the lightness for sRGB images.
 
     verbose (bool, optional): If True (default), print the updated definition of the luma.
   """
@@ -73,7 +73,7 @@ def set_RGB_luma(rgb, verbose = True):
     if rgb == "uniform":
       set_RGB_luma((1./3., 1./3., 1./3.))
     elif rgb == "human":
-      set_RGB_luma((.2126, .7152, .0722))
+      set_RGB_luma((.212671, .715160, .072169))
     else:
       raise ValueError("Error, the input rgb weights must be a tuple/list/array with three scalar elements, the string 'uniform' or the string 'human'.")
   else:

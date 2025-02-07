@@ -37,8 +37,7 @@ class MixinImage:
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -85,8 +84,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -155,7 +153,7 @@ class MixinImage:
       threshold (float): The threshold for sharpening (expected in ]0, 1[).
         The image is blurred below the threshold, and sharpened above.
       channels (str, optional): The channel(s) for LDBS (can be "" for all channels, "V" for HSV Value, "L'" for
-        HSL lightness, "L" for luma or "L*" for lightness). Default is "L*".
+        HSL lightness, "L" for luma or "L*" for CIE lightness). Default is "L*".
       mode (str, optional): How to extend the image across its boundaries (for the gaussian blur):
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
@@ -167,7 +165,7 @@ class MixinImage:
         the processed image, as well as:
 
         - The blurred image if channels = "".
-        - The input, blurred and output channel as grayscale images if channels = "V", "L" or "L*".
+        - The input, blurred and output channel as grayscale images if channels = "V", "L", "L'" or "L*".
 
     Returns:
       Image: The processed image(s) (see the full_output argument).

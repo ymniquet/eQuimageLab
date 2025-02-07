@@ -50,8 +50,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
     Returns:
       Image: The processed image.
@@ -95,8 +94,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
     Returns:
       Image: The processed image.
@@ -139,8 +137,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
     Returns:
       Image: The processed image.
@@ -209,8 +206,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
     Returns:
       Image: The processed image.
@@ -263,8 +259,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
     Returns:
       Image: The processed image.
@@ -316,8 +311,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
     Returns:
       Image: The processed image.
@@ -376,8 +370,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
     Returns:
       Image: The processed image.
@@ -419,10 +412,9 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
-        However, CLAHE is only used, in principle, for the "V" (default), "L(s, b)" and L* channels.
+        However, CLAHE is only used, in principle, for the "V" (default), "L(s, b, n)" and L* channels.
 
     Returns:
       Image: The processed image.

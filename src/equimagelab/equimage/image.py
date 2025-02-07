@@ -39,7 +39,8 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
     - "lRGB" for the linear RGB color space.
     - "sRGB" for the sRGB color space.
-    - "CIELab" for the CIE Lab color space.
+    - "CIELab" for the CIELab color space.
+    - "CIELuv" for the CIELuv color space.
 
   In the lRGB and sRGB color spaces, the colormodel attribute can be:
 
@@ -51,10 +52,18 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   In the CIELab color space, the colormodel attribute can be:
 
     - "Lab": the 3 channels of the image are the CIELab components L*/100, a*/100 and b*/100.
-       The lightness L*/100 fits within [0, 1], but a* and b* are signed and technically unbounded.
+       The lightness L*/100 fits within [0, 1], but a* and b* are signed and not bounded.
     - "Lch": the 3 channels of the image are the CIELab components L*/100, c*/100 and h*.
-       The lightness L*/100 fits within [0, 1], the hue angle h* fits within [0, 2pi], but the
-       chroma c*/100 is technically unbounded.
+       The lightness L*/100 fits within [0, 1], the hue angle h* fits within [0, 2pi], but
+       the chroma c*/100 is not bounded.
+
+  In the CIELuv color space, the colormodel attribute can be:
+
+    - "Luv": the 3 channels of the image are the CIELuv components L*/100, u*/100 and v*/100.
+       The lightness L*/100 fits within [0, 1], but u* and v* are signed and not bounded.
+    - "Lch": the 3 channels of the image are the CIELuv components L*/100, c*/100 and h*.
+       The lightness L*/100 fits within [0, 1], the hue angle h* fits within [0, 2pi], but
+       the chroma c*/100 is not bounded.
 
   The default color space is sRGB and the default color model is RGB.
 
@@ -72,11 +81,13 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
       image: The input image (numpy.ndarray or Image).
       channels (int, optional): The position of the channel axis for color images (default 0).
       colorspace (str, optional): The color space of the image (default "sRGB").
-        Can be "lRGB" (linear RGB color space), "sRGB" (sRGB color space), or "CIELab" (CIELab color space).
+        Can be "lRGB" (linear RGB color space), "sRGB" (sRGB color space), "CIELab" (CIELab color space),
+        or "CIELuv" (CIELuv color space).
       colormodel (str, optional): The color model of the image (default "RGB").
-        In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL" (HSL color model)
-        or "gray" (grayscale image). In the CIELab colorspace, can be "Lab" (L*a*b* color model) or "Lch" (L*c*h*
-        color model).
+        In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL"
+        (HSL color model) or "gray" (grayscale image).
+        In the CIELab color space, can be "Lab" (L*a*b* color model) or "Lch" (L*c*h* color model).
+        In the CIELuv color space, can be "Luv" (L*u*v* color model) or "Lch" (L*c*h* color model).
     """
     # Check color space and model.
     if colorspace in ["lRGB", "sRGB"]:
@@ -85,8 +96,11 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     elif colorspace == "CIELab":
       if colormodel not in ["Lab", "Lch"]:
         raise ValueError(f"Error, the color model of {colorspace} images must be 'Lab' or 'Lch' (got '{colormodel}').")
+    elif colorspace == "CIELuv":
+      if colormodel not in ["Luv", "Lch"]:
+        raise ValueError(f"Error, the color model of {colorspace} images must be 'Luv' or 'Lch' (got '{colormodel}').")
     else:
-      raise ValueError(f"Error, the color space must be 'lRGB', 'sRGB' or 'CIELab' (got '{colorspace}').")
+      raise ValueError(f"Error, the color space must be 'lRGB', 'sRGB', 'CIELab' or 'CIELuv' (got '{colorspace}').")
     # Convert the input image into an array.
     image = np.asarray(image, dtype = params.imagetype)
     # Validate the image.
@@ -105,8 +119,8 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
         raise ValueError(f"Error, an image must have either 1 or 3 channels (found {nc}).")
     else:
       raise ValueError(f"Error, an image must have either 2 or 3 dimensions (found {image.ndim}).")
-    if colorspace == "CIELab" and colormodel == "gray":
-      raise ValueError(f"Error, a CIELab image must have 3 channels.")
+    if colorspace in ["CIELab", "CIELuv"] and colormodel == "gray":
+      raise ValueError(f"Error, a CIELab/CIELuv image must have 3 channels.")
     # Register image, color space and model.
     self.image = image
     self.dtype = self.image.dtype # Add a reference to image type.

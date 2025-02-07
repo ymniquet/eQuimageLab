@@ -51,9 +51,9 @@ def sRGB_to_lRGB(image):
   output[mask] = ((image[mask]+.055)/1.055)**2.4
   return output
 
-###############################
-# lRGB <-> CIELab conversion. #
-###############################
+###########################################
+# lRGB <-> CIELab and CIELuv conversions. #
+###########################################
 
 # RGB <-> XYZ conversion matrices.
 
@@ -68,8 +68,8 @@ XYZ2RGB = np.linalg.inv(RGB2XYZ)
 def lRGB_to_CIELab(image):
   """Convert the input linear RGB image into a CIELab image.
 
-  Note that the CIE lightness L* is conventionally defined within [0, 100], and
-  that the CIE chromatic components a*, b* are signed and technically unbounded.
+  Note that the CIE lightness L* is conventionally defined within [0, 100],
+  and that the CIE chromatic components a*, b* are signed and not bounded.
   This function actually returns L*/100, a*/100 and b*/100.
 
   See also:
@@ -99,15 +99,49 @@ def CIELab_to_lRGB(image):
   xyz = skcolor.lab2xyz(100.*image, channel_axis = 0)
   return np.tensordot(np.asarray(XYZ2RGB, dtype = image.dtype), xyz, axes = 1)
 
-###############################
-# sRGB <-> CIELab conversion. #
-###############################
+def lRGB_to_CIELuv(image):
+  """Convert the input linear RGB image into a CIELuv image.
+
+  Note that the CIE lightness L* is conventionally defined within [0, 100],
+  and that the CIE chromatic components u*, v* are signed and not bounded.
+  This function actually returns L*/100, u*/100 and v²*/100.
+
+  See also:
+    The reciprocal CIELuv_to_lRGB function.
+
+  Args:
+    image (numpy.ndarray): The input lRGB image.
+
+  Returns:
+    numpy.ndarray: The converted CIELuv image (/100).
+  """
+  xyz = np.tensordot(np.asarray(RGB2XYZ, dtype = image.dtype), image, axes = 1)
+  return skcolor.xyz2luv(xyz, channel_axis = 0)/100.
+
+def CIELuv_to_lRGB(image):
+  """Convert the input CIELuv image into a linear RGB image.
+
+  See also:
+    The reciprocal lRGB_to_CIELuv function.
+
+  Args:
+    image (numpy.ndarray): The input CIELuv image (/100).
+
+  Returns:
+    numpy.ndarray: The converted lRGB image.
+  """
+  xyz = skcolor.luv2xyz(100.*image, channel_axis = 0)
+  return np.tensordot(np.asarray(XYZ2RGB, dtype = image.dtype), xyz, axes = 1)
+
+###########################################
+# sRGB <-> CIELab and CIELuv conversions. #
+###########################################
 
 def sRGB_to_CIELab(image):
   """Convert the input sRGB image into a CIELab image.
 
-  Note that the CIE lightness L* is conventionally defined within [0, 100], and
-  that the CIE chromatic components a*, b* are signed and technically unbounded.
+  Note that the CIE lightness L* is conventionally defined within [0, 100],
+  and that the CIE chromatic components a*, b* are signed and not bounded.
   This function actually returns L*/100, a*/100 and b*/100.
 
   See also:
@@ -134,6 +168,38 @@ def CIELab_to_sRGB(image):
     numpy.ndarray: The converted sRGB image.
   """
   return lRGB_to_sRGB(CIELab_to_lRGB(image))
+
+def sRGB_to_CIELuv(image):
+  """Convert the input sRGB image into a CIELuv image.
+
+  Note that the CIE lightness L* is conventionally defined within [0, 100],
+  and that the CIE chromatic components u*, v* are signed and not bounded.
+  This function actually returns L*/100, u*/100 and v*/100.
+
+  See also:
+    The reciprocal CIELuv_to_sRGB function.
+
+  Args:
+    image (numpy.ndarray): The input sRGB image.
+
+  Returns:
+    numpy.ndarray: The converted CIELuv image (/100).
+  """
+  return lRGB_to_CIELuv(sRGB_to_lRGB(image))
+
+def CIELuv_to_sRGB(image):
+  """Convert the input CIELuv image into a sRGB image.
+
+  See also:
+    The reciprocal sRGB_to_CIELuv function.
+
+  Args:
+    image (numpy.ndarray): The input CIELuv image (/100).
+
+  Returns:
+    numpy.ndarray: The converted sRGB image.
+  """
+  return lRGB_to_sRGB(CIELuv_to_lRGB(image))
 
 ###########################
 # RGB <-> HSV conversion. #
@@ -260,15 +326,15 @@ def HSL_to_RGB(image):
   """
   return skcolor.hsv2rgb(HSL_to_HSV(image), channel_axis = 0)
 
-############################
-# Lab <-> Lch conversions. #
-############################
+################################
+# Lab/Luv <-> Lch conversions. #
+################################
 
-def Lab_to_Lch(image):
-  """Convert the input Lab image into a Lch image.
+def Lxx_to_Lch(image):
+  """Convert the input Lab/Luv image into a Lch image.
 
   See also:
-    The reciprocal Lch_to_Lab function.
+    The reciprocal Lch_to_Lxx function.
 
   Args:
     image (numpy.ndarray): The input Lab image.
@@ -276,21 +342,30 @@ def Lab_to_Lch(image):
   Returns:
     numpy.ndarray: The converted Lch image.
   """
-  return skcolor.lab2lch(image, channel_axis = 0)
+  output = np.empty_like(image)
+  output[0] = image[0]
+  output[1] = np.hypot(image[2], image[1])
+  output[2] = np.arctan2(image[2], image[1])
+  output[2] += np.where(output[2] < 0., 2.*np.pi, 0.)
+  return output
 
-def Lch_to_Lab(image):
-  """Convert the input Lch image into a Lab image.
+def Lch_to_Lxx(image):
+  """Convert the input Lch image into a Lab/Luv image.
 
   See also:
-    The reciprocal Lab_to_Lch function.
+    The reciprocal Lxx_to_Lch function.
 
   Args:
     image (numpy.ndarray): The input Lch image.
 
   Returns:
-    numpy.ndarray: The converted Lab image.
+    numpy.ndarray: The converted Lab/Luv image.
   """
-  return skcolor.lch2lab(image, channel_axis = 0)
+  output = np.empty_like(image)
+  output[0] = image[0]
+  output[1] = image[1]*np.cos(image[2])
+  output[2] = image[1]*np.sin(image[2])
+  return output
 
 ######################################################
 # HSV and HSL hue, value, lightness and saturations. #
@@ -468,9 +543,9 @@ def lRGB_luminance(image):
 
   The luminance Y of a lRGB image is defined as:
 
-    Y = 0.2126*R+0.7152*G+0.0722*B
+    Y = 0.212671*R+0.715160*G+0.072169*B
 
-  It is equivalently the luma of the lRGB image for RGB weights (0.2126, 0.7152, 0.0722),
+  It is equivalently the luma of the lRGB image for RGB weights (0.212671, 0.715160, 0.072169),
   and is the basic ingredient of the perceptual lightness L* in the CIELab color space.
 
   See also:
@@ -488,7 +563,7 @@ def lRGB_luminance(image):
   Returns:
     numpy.ndarray: The luminance Y.
   """
-  return .2126*image[0]+.7152*image[1]+.0722*image[2] if image.shape[0] > 1 else image[0]
+  return .212671*image[0]+.715160*image[1]+.072169*image[2] if image.shape[0] > 1 else image[0]
 
 def lRGB_lightness(image):
   """Return the CIE lightness L* of the input linear RGB image.
@@ -641,6 +716,9 @@ class MixinImage:
     elif self.colorspace == "CIELab":
       self.check_color_model("Lab")
       return self.newImage(CIELab_to_lRGB(self.image), colorspace = "lRGB", colormodel = "RGB")
+    elif self.colorspace == "CIELuv":
+      self.check_color_model("Luv")
+      return self.newImage(CIELuv_to_lRGB(self.image), colorspace = "lRGB", colormodel = "RGB")
     else:
       self.color_space_error()
 
@@ -662,14 +740,17 @@ class MixinImage:
     elif self.colorspace == "CIELab":
       self.check_color_model("Lab")
       return self.newImage(CIELab_to_sRGB(self.image), colorspace = "sRGB", colormodel = "RGB")
+    elif self.colorspace == "CIELuv":
+      self.check_color_model("Luv")
+      return self.newImage(CIELuv_to_sRGB(self.image), colorspace = "sRGB", colormodel = "RGB")
     else:
       self.color_space_error()
 
   def CIELab(self):
     """Convert the image to the CIELab color space.
 
-    Note that the CIE lightness L* is conventionally defined within [0, 100], and
-    that the CIE chromatic components a*, b* are signed and technically unbounded.
+    Note that the CIE lightness L* is conventionally defined within [0, 100],
+    and that the CIE chromatic components a*, b* are signed and not bounded.
     This function actually returns L*/100, a*/100 and b*/100.
 
     Warning:
@@ -686,6 +767,37 @@ class MixinImage:
       return self.newImage(sRGB_to_CIELab(self.image), colorspace = "CIELab", colormodel = "Lab")
     elif self.colorspace == "CIELab":
       self.check_color_model("Lab")
+      return self.copy()
+    elif self.colorspace == "CIELuv":
+      self.check_color_model("Luv")
+      return self.newImage(lRGB_to_CIELab(CIELuv_to_lRGB(self.image)), colorspace = "CIELab", colormodel = "Lab")
+    else:
+      self.color_space_error()
+
+  def CIELuv(self):
+    """Convert the image to the CIELuv color space.
+
+    Note that the CIE lightness L* is conventionally defined within [0, 100],
+    and that the CIE chromatic components u*, v* are signed and not bounded.
+    This function actually returns L*/100, u*/100 and v*/100.
+
+    Warning:
+      Does not apply to the HSV, HSL and Lch color models, and to grayscale images.
+
+    Returns:
+      Image: The converted CIELuv image (/100) (a copy of the original image if already CIELuv).
+    """
+    if self.colorspace == "lRGB":
+      self.check_color_model("RGB")
+      return self.newImage(lRGB_to_CIELuv(self.image), colorspace = "CIELuv", colormodel = "Luv")
+    elif self.colorspace == "sRGB":
+      self.check_color_model("RGB")
+      return self.newImage(sRGB_to_CIELuv(self.image), colorspace = "CIELuv", colormodel = "Luv")
+    elif self.colorspace == "CIELab":
+      self.check_color_model("Lab")
+      return self.newImage(lRGB_to_CIELuv(CIELab_to_lRGB(self.image)), colorspace = "CIELuv", colormodel = "Luv")
+    elif self.colorspace == "CIELuv":
+      self.check_color_model("Luv")
       return self.copy()
     else:
       self.color_space_error()
@@ -777,7 +889,7 @@ class MixinImage:
     if self.colormodel == "Lab":
       return self.copy()
     elif self.colormodel == "Lch":
-      return self.newImage(Lch_to_Lab(self.image), colormodel = "Lab")
+      return self.newImage(Lch_to_Lxx(self.image), colormodel = "Lab")
     else:
       self.color_model_error()
 
@@ -785,16 +897,33 @@ class MixinImage:
     """Convert the image to the Lch color model.
 
     Warning:
-      Only applies in the CIELab color space.
+      Only applies in the CIELab and CIELuv color spaces.
 
     Returns:
       Image: The converted Lch image (a copy of the original image if already Lch).
     """
-    self.check_color_space("CIELab")
-    if self.colormodel == "Lab":
-      return self.newImage(Lab_to_Lch(self.image), colormodel = "Lch")
+    self.check_color_space("CIELab", "CIELuv")
+    if self.colormodel == "Lab" or self.colormodel == "Luv":
+      return self.newImage(Lxx_to_Lch(self.image), colormodel = "Lch")
     elif self.colormodel == "Lch":
       return self.copy()
+    else:
+      self.color_model_error()
+
+  def Luv(self):
+    """Convert the image to the Luv color model.
+
+    Warning:
+      Only applies in the CIELuv color space.
+
+    Returns:
+      Image: The converted Luv image (a copy of the original image if already Luv).
+    """
+    self.check_color_space("CIELuv")
+    if self.colormodel == "Luv":
+      return self.copy()
+    elif self.colormodel == "Lch":
+      return self.newImage(Lch_to_Lxx(self.image), colormodel = "Luv")
     else:
       self.color_model_error()
 
@@ -811,10 +940,11 @@ class MixinImage:
     (sRGB, HSV) -> (lRGB, RGB) = (sRGB, HSV) -> (sRGB, RGB) -> (lRGB, RGB).
 
     Args:
-      colorspace (str, optional): The target color space ("lRGB", "sRGB", or "CIELab").
-        If None (default), keep the original color space.
+      colorspace (str, optional): The target color space ("lRGB", "sRGB", "CIELab"
+        or "CIELuv"). If None (default), keep the original color space.
       colormodel (str, optional): The target color model ("RGB", "HSV" or "HSL"
-        in the lRGB and sRGB color spaces, "Lab" or "Lch" in the CIELab color space).
+        in the lRGB and sRGB color spaces, "Lab" or "Lch" in the CIELab color space,
+        "Luv" or "Lch" in the CIELuv color space).
         If None (default), keep (if possible) the original color model.
 
     Returns:
@@ -826,9 +956,9 @@ class MixinImage:
       csconv = self
       copied = False
     else:
-      if self.colorspace in ["sRGB", "lRGB"]:
+      if self.colorspace in ["lRGB", "sRGB"]:
         if self.colormodel not in ["RGB", "gray"]:
-          if colormodel == None and colorspace != "CIELab": colormodel = self.colormodel
+          if colormodel == None and colorspace in ["lRGB", "sRGB"]: colormodel = self.colormodel
           imconv = self.RGB()
         else:
           imconv = self
@@ -838,12 +968,20 @@ class MixinImage:
           imconv = self.Lab()
         else:
           imconv = self
+      elif self.colorspace == "CIELuv":
+        if self.colormodel != "Luv":
+          if colormodel == None and colorspace == "CIELuv": colormodel = self.colormodel
+          imconv = self.Luv()
+        else:
+          imconv = self
       if colorspace == "lRGB":
         csconv = imconv.lRGB()
       elif colorspace == "sRGB":
         csconv = imconv.sRGB()
       elif colormodel == "CIELab":
         csconv = imconv.CIELab()
+      elif colormodel == "CIELuv":
+        csconv = imconv.CIELuv()
       else:
         raise ValueError(f"Error, unknown color space {colorspace}.")
     if colormodel == None or colormodel == csconv.colormodel:
@@ -856,6 +994,8 @@ class MixinImage:
       return csconv.HSL()
     elif colormodel == "Lab":
       return csconv.Lab()
+    elif colormodel == "Luv":
+      return csconv.Luv()
     elif colormodel == "Lch":
       return csconv.Lch()
     else:
@@ -978,7 +1118,7 @@ class MixinImage:
     elif self.colorspace == "sRGB":
       self.check_color_model("RGB", "gray")
       return sRGB_luminance(self.image)
-    elif self.colorspace == "CIELab":
+    elif self.colorspace == "CIELab" or self.colorspace == "CIELuv":
       return lightness_to_luminance(self.image[0])
     else:
       self.color_space_error()
@@ -1002,7 +1142,7 @@ class MixinImage:
     elif self.colorspace == "sRGB":
       self.check_color_model("RGB", "gray")
       return sRGB_lightness(self.image)
-    elif self.colorspace == "CIELab":
+    elif self.colorspace == "CIELab" or self.colorspace == "CIELuv":
       return self.image[0]
     else:
       raise self.color_space_error()
@@ -1025,7 +1165,7 @@ class MixinImage:
         - "L'" : The HSL lightness (RGB, HSL and grayscale images).
         - "S'" : The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
-        - "L*": The CIE lightness L* (RGB, grayscale and CIELab images).
+        - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
     Returns:
       numpy.ndarray: The selected channel.
@@ -1070,7 +1210,7 @@ class MixinImage:
         - "L'": Update the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Update the HSL saturation (RGB and HSL images).
         - "L": Update the luma (RGB and grayscale images).
-        - "L*": Update the lightness L* in the CIELab color space (RGB, grayscale and CIELab images).
+        - "L*": Update the lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
       data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height as the image.
       inplace (bool, optional): If True, update the image "in place"; if False (default), return a new image.
@@ -1180,7 +1320,7 @@ class MixinImage:
           output.image[:] = CIELab_to_lRGB(lab)
         else:
           output.image[:] = CIELab_to_sRGB(lab)
-      elif self.colorspace == "CIELab":
+      elif self.colorspace == "CIELab" or self.colorspace == "CIELuv":
         output.image[0] = data
       else:
         self.color_model_error()
@@ -1230,8 +1370,7 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
         if False, the operation must be applied one channel at a time.
@@ -1396,7 +1535,7 @@ class MixinImage:
           output = self.newImage(CIELab_to_lRGB(lab))
         else:
           output = self.newImage(CIELab_to_sRGB(lab))
-      elif self.colorspace == "CIELab":
+      elif self.colorspace == "CIELab" or self.colorspace == "CIELuv":
         output = self.copy()
         output.image[0] = f(self.image[0])
       else:
@@ -1445,8 +1584,7 @@ class MixinImage:
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the lightness L* in the CIELab color space.
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
     Returns:
       Image: The clipped image.
