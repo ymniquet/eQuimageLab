@@ -16,8 +16,18 @@ def parse_channels(channels, errors = True):
   """Parse channel keys.
 
   Args:
-    channels (str): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "H" (for HSV/HSL hue),
-      "V" (for HSV value), "S" (for HSV saturation), "L" (for luma), and "L*" (for lightness).
+    channels (str): A combination of channel keys:
+
+      - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+        The first/second/third channel (all images).
+      - "H": The HSV/HSL hue (RGB, HSV and HSL images).
+      - "V": The HSV value (RGB, HSV and grayscale images).
+      - "S": The HSV saturation (RGB, HSV and grayscale images).
+      - "L'" : The HSL lightness (RGB, HSL and grayscale images).
+      - "S'" : The HSL saturation (RGB, HSL and grayscale images).
+      - "L": The luma (RGB and grayscale images).
+      - "L*": The CIE lightness L* (RGB, grayscale and CIELab images).
+
     errors (bool, optional): If False, discard unknown channel keys; If True (default), raise a ValueError.
 
   Returns:
@@ -27,7 +37,7 @@ def parse_channels(channels, errors = True):
   prevkey = None
   for key in channels:
     ok = False
-    if key in ["R", "G", "B", "L", "H", "V", "S"]:
+    if key in ["1", "2", "3", "R", "G", "B", "L", "H", "V", "S"]:
       keys.append(key)
       ok = True
     elif key == "'":
@@ -58,13 +68,19 @@ class MixinImage:
     are not recomputed unless required.
 
     Args:
-      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "H" (for HSV/HSL hue),
-        "S" (for HSV saturation), "V" (for HSV value), "S'" (for HSL saturation), "L'" (for HSL lightness), "L" (for luma),
-        and "L*" (for CIE lightness). If it ends with a "+", channels gets appended with the keys already computed and stored
-        in self.hists.
-        For a HSV image, only the histograms of the hue, value and saturation can be computed; while for a HSL image, only the
-        histograms of the hue, lightness and saturation can be computed.
-        For a CIELab image, only the histograms of the lightness can be computed.
+      channels (str, optional): A combination of keys for the selected channels:
+
+        - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+          The first/second/third channel (all images).
+        - "H": The HSV/HSL hue (RGB, HSV and HSL images).
+        - "V": The HSV value (RGB, HSV and grayscale images).
+        - "S": The HSV saturation (RGB, HSV and grayscale images).
+        - "L'" : The HSL lightness (RGB, HSL and grayscale images).
+        - "S'" : The HSL saturation (RGB, HSL and grayscale images).
+        - "L": The luma (RGB and grayscale images).
+        - "L*": The CIE lightness L* (RGB, grayscale and CIELab images).
+
+        If it ends with a "+", channels gets appended with the keys already computed and stored in self.hists.
         Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images, "L" for grayscale images,
         and "L*" for CIELab images.
       nbins (int, optional): Number of bins within [0, 1] in the histograms. Set to `equimage.params.maxhistbins` if negative,
@@ -105,10 +121,8 @@ class MixinImage:
           channel = (self.image[0]+self.image[1]+self.image[2])/3.
         elif self.colormodel == "HSV" or self.colormodel == "HSL":
           channel = self.image[2]
-        elif self.colormodel == "gray" or self.colormodel == "Lab":
-          channel = self.image[0]
         else:
-          self.color_model_error()
+          channel = self.image[0]
         nbins = int(np.ceil(npixels**(1./3.)/(3.5*np.std(channel))))
     elif nbins < 0:
       nbins = params.maxhistbins
@@ -129,7 +143,21 @@ class MixinImage:
         if self.hists[key].nbins == nbins:
           hists[key] = self.hists[key]
           continue
-      if key == "R":
+      if key == "1":
+        name = "Channel #1"
+        color = "red"
+        channel = self.image[0]
+      elif key == "2":
+        name = "Channel #2"
+        color = "green"
+        if self.get_nc() < 2: raise self.color_model_error()
+        channel = self.image[1]
+      elif key == "3":
+        name = "Channel #3"
+        color = "blue"
+        if self.get_nc() < 3: raise self.color_model_error()
+        channel = self.image[2]
+      elif key == "R":
         self.check_color_model("RGB", "gray")
         name = "Red"
         color = "red"
@@ -192,13 +220,19 @@ class MixinImage:
     not recomputed unless required.
 
     Args:
-      channels (str, optional): A combination of the keys "R" (for red), "G" (for green), "B" (for blue), "H" (for HSV/HSL hue),
-        "S" (for HSV saturation), "V" (for HSV value), "S'" (for HSL saturation), "L'" (for HSL lightness), "L" (for luma),
-        and "L*" (for CIE lightness). If it ends with a "+", channels gets appended with the keys already computed and stored
-        in self.stats.
-        For a HSV image, only the statistics of the hue, value and saturation can be computed; while for a HSL image, only the
-        statistics of the hue, lightness and saturation can be computed.
-        For a CIELab image, only the statistics of the lightness can be computed.
+      channels (str, optional): A combination of keys for the selected channels:
+
+        - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+          The first/second/third channel (all images).
+        - "H": The HSV/HSL hue (RGB, HSV and HSL images).
+        - "V": The HSV value (RGB, HSV and grayscale images).
+        - "S": The HSV saturation (RGB, HSV and grayscale images).
+        - "L'" : The HSL lightness (RGB, HSL and grayscale images).
+        - "S'" : The HSL saturation (RGB, HSL and grayscale images).
+        - "L": The luma (RGB and grayscale images).
+        - "L*": The CIE lightness L* (RGB, grayscale and CIELab images).
+
+        If it ends with a "+", channels gets appended with the keys already computed and stored in self.stats.
         Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images, "L" for grayscale images,
         and "L*" for CIELab images.
       exclude01 (bool, optional): If True, exclude pixels <= 0 or >= 1 from the median and percentiles.
@@ -255,7 +289,21 @@ class MixinImage:
         if self.stats[key].exclude01 == exclude01:
           stats[key] = self.stats[key]
           continue
-      if key == "R":
+      if key == "1":
+        name = "Channel #1"
+        color = "red"
+        channel = self.image[0]
+      elif key == "2":
+        name = "Channel #2"
+        color = "green"
+        if self.get_nc() < 2: raise self.color_model_error()
+        channel = self.image[1]
+      elif key == "3":
+        name = "Channel #3"
+        color = "blue"
+        if self.get_nc() < 3: raise self.color_model_error()
+        channel = self.image[2]
+      elif key == "R":
         self.check_color_model("RGB", "gray")
         name = "Red"
         color = "red"

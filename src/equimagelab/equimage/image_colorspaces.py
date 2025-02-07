@@ -23,9 +23,6 @@ def lRGB_to_sRGB(image):
   See also:
     The reciprocal sRGB_to_lRGB function.
 
-  Note:
-    This function does not clip the input image to the [0, 1] range.
-
   Args:
     image (numpy.ndarray): The input lRGB image.
 
@@ -42,9 +39,6 @@ def sRGB_to_lRGB(image):
 
   See also:
     The reciprocal lRGB_to_sRGB function.
-
-  Note:
-    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input sRGB image.
@@ -81,9 +75,6 @@ def lRGB_to_CIELab(image):
   See also:
     The reciprocal CIELab_to_lRGB function.
 
-  Note:
-    This function does not clip the input image to the [0, 1] range.
-
   Args:
     image (numpy.ndarray): The input lRGB image.
 
@@ -98,9 +89,6 @@ def CIELab_to_lRGB(image):
 
   See also:
     The reciprocal lRGB_to_CIELab function.
-
-  Note:
-    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input CIELab image (/100).
@@ -125,9 +113,6 @@ def sRGB_to_CIELab(image):
   See also:
     The reciprocal CIELab_to_sRGB function.
 
-  Note:
-    This function does not clip the input image to the [0, 1] range.
-
   Args:
     image (numpy.ndarray): The input sRGB image.
 
@@ -141,9 +126,6 @@ def CIELab_to_sRGB(image):
 
   See also:
     The reciprocal sRGB_to_CIELab function.
-
-  Note:
-    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input CIELab image (/100).
@@ -278,6 +260,38 @@ def HSL_to_RGB(image):
   """
   return skcolor.hsv2rgb(HSL_to_HSV(image), channel_axis = 0)
 
+############################
+# Lab <-> Lch conversions. #
+############################
+
+def Lab_to_Lch(image):
+  """Convert the input Lab image into a Lch image.
+
+  See also:
+    The reciprocal Lch_to_Lab function.
+
+  Args:
+    image (numpy.ndarray): The input Lab image.
+
+  Returns:
+    numpy.ndarray: The converted Lch image.
+  """
+  return skcolor.lab2lch(image, channel_axis = 0)
+
+def Lch_to_Lab(image):
+  """Convert the input Lch image into a Lab image.
+
+  See also:
+    The reciprocal Lab_to_Lch function.
+
+  Args:
+    image (numpy.ndarray): The input Lch image.
+
+  Returns:
+    numpy.ndarray: The converted Lab image.
+  """
+  return skcolor.lch2lab(image, channel_axis = 0)
+
 ######################################################
 # HSV and HSL hue, value, lightness and saturations. #
 ######################################################
@@ -313,7 +327,7 @@ def HSV_value(image):
 
   Note:
     Compatible with single channel grayscale images.
-    This function does not clip the input image to the [0, 1] range.
+    This function clips the input image below 0.
 
   Args:
     image (numpy.ndarray): The input RGB image.
@@ -321,7 +335,7 @@ def HSV_value(image):
   Returns:
     numpy.ndarray: The HSV value V.
   """
-  return image.max(axis = 0)
+  return np.maximum(image.max(axis = 0), 0.)
 
 def HSV_saturation(image):
   """Return the HSV saturation S = 1-min(RGB)/max(RGB) of the input RGB image.
@@ -348,7 +362,7 @@ def HSL_lightness(image):
 
   Note:
     Compatible with single channel grayscale images.
-    This function does not clip the input image to the [0, 1] range.
+    This function clips the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input RGB image.
@@ -356,7 +370,9 @@ def HSL_lightness(image):
   Returns:
     numpy.ndarray: The HSL lightness L'.
   """
-  return (image.min(axis = 0)+image.max(axis = 0))/2.
+  mini = np.clip(image.min(axis = 0), 0., 1.)
+  maxi = np.clip(image.max(axis = 0), 0., 1.)
+  return (mini+maxi)/2.
 
 def HSL_saturation(image):
   """Return the HSL saturation S' = (max(RGB)-min(RGB))/(1-|max(RGB)+min(RGB)-1|) of the input RGB image.
@@ -393,7 +409,6 @@ def luma(image):
 
   Note:
     Compatible with single channel grayscale images.
-    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input RGB image.
@@ -421,9 +436,6 @@ def luminance_to_lightness(Y):
   See also:
     The reciprocal lightness_to_luminance function.
 
-  Note:
-    This function does not clip the input luminance to the [0, 1] range.
-
   Args:
     Y (numpy.ndarray): The luminance Y.
 
@@ -440,9 +452,6 @@ def lightness_to_luminance(Lstar):
 
   See also:
     The reciprocal luminance_to_lightness function.
-
-  Note:
-    This function does not clip the input lightness to the [0, 1] range.
 
   Args:
     Lstar (numpy.ndarray): The CIE lightness L*/100.
@@ -462,7 +471,7 @@ def lRGB_luminance(image):
     Y = 0.2126*R+0.7152*G+0.0722*B
 
   It is equivalently the luma of the lRGB image for RGB weights (0.2126, 0.7152, 0.0722),
-  and is the basic ingredient of the perceptual lightness L*.
+  and is the basic ingredient of the perceptual lightness L* in the CIELab color space.
 
   See also:
     lRGB_lightness,
@@ -472,7 +481,6 @@ def lRGB_luminance(image):
 
   Note:
     Compatible with single channel grayscale images.
-    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input lRGB image.
@@ -501,7 +509,6 @@ def lRGB_lightness(image):
 
   Note:
     Compatible with single channel grayscale images.
-    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input lRGB image.
@@ -530,7 +537,6 @@ def sRGB_luminance(image):
 
   Note:
     Compatible with single channel grayscale images.
-    This function does not clip the input image to the [0, 1] range.
 
   Args:
     image (numpy.ndarray): The input sRGB image.
@@ -621,15 +627,13 @@ class MixinImage:
     """Convert the image to the linear RGB color space.
 
     Warning:
-      Does not apply to the HSV and HSL color models.
-
-    Note:
-      This method does not clip the image to the [0, 1] range.
+      Does not apply to the HSV, HSL and Lch color models.
 
     Returns:
       Image: The converted lRGB image (a copy of the original image if already lRGB).
     """
     if self.colorspace == "lRGB":
+      self.check_color_model("RGB", "gray")
       return self.copy()
     elif self.colorspace == "sRGB":
       self.check_color_model("RGB", "gray")
@@ -644,10 +648,7 @@ class MixinImage:
     """Convert the image to the sRGB color space.
 
     Warning:
-      Does not apply to the HSV and HSL color models.
-
-    Note:
-      This method does not clip the image to the [0, 1] range.
+      Does not apply to the HSV, HSL and Lch color models.
 
     Returns:
       Image: The converted sRGB image (a copy of the original image if already sRGB).
@@ -656,6 +657,7 @@ class MixinImage:
       self.check_color_model("RGB", "gray")
       return self.newImage(lRGB_to_sRGB(self.image), colorspace = "sRGB")
     elif self.colorspace == "sRGB":
+      self.check_color_model("RGB", "gray")
       return self.copy()
     elif self.colorspace == "CIELab":
       self.check_color_model("Lab")
@@ -671,10 +673,7 @@ class MixinImage:
     This function actually returns L*/100, a*/100 and b*/100.
 
     Warning:
-      Does not apply to the HSV and HSL color models.
-
-    Note:
-      This method does not clip the image to the [0, 1] range.
+      Does not apply to the HSV, HSL and Lch color models, and to grayscale images.
 
     Returns:
       Image: The converted CIELab image (/100) (a copy of the original image if already CIELab).
@@ -686,6 +685,7 @@ class MixinImage:
       self.check_color_model("RGB")
       return self.newImage(sRGB_to_CIELab(self.image), colorspace = "CIELab", colormodel = "Lab")
     elif self.colorspace == "CIELab":
+      self.check_color_model("Lab")
       return self.copy()
     else:
       self.color_space_error()
@@ -764,6 +764,40 @@ class MixinImage:
     else:
       self.color_model_error()
 
+  def Lab(self):
+    """Convert the image to the Lab color model.
+
+    Warning:
+      Only applies in the CIELab color space.
+
+    Returns:
+      Image: The converted Lab image (a copy of the original image if already Lab).
+    """
+    self.check_color_space("CIELab")
+    if self.colormodel == "Lab":
+      return self.copy()
+    elif self.colormodel == "Lch":
+      return self.newImage(Lch_to_Lab(self.image), colormodel = "Lab")
+    else:
+      self.color_model_error()
+
+  def Lch(self):
+    """Convert the image to the Lch color model.
+
+    Warning:
+      Only applies in the CIELab color space.
+
+    Returns:
+      Image: The converted Lch image (a copy of the original image if already Lch).
+    """
+    self.check_color_space("CIELab")
+    if self.colormodel == "Lab":
+      return self.newImage(Lab_to_Lch(self.image), colormodel = "Lch")
+    elif self.colormodel == "Lch":
+      return self.copy()
+    else:
+      self.color_model_error()
+
   ##########################
   # Arbitrary conversions. #
   ##########################
@@ -780,7 +814,7 @@ class MixinImage:
       colorspace (str, optional): The target color space ("lRGB", "sRGB", or "CIELab").
         If None (default), keep the original color space.
       colormodel (str, optional): The target color model ("RGB", "HSV" or "HSL"
-        in the lRGB and sRGB color spaces, "Lab" in the CIELab color space).
+        in the lRGB and sRGB color spaces, "Lab" or "Lch" in the CIELab color space).
         If None (default), keep (if possible) the original color model.
 
     Returns:
@@ -792,11 +826,18 @@ class MixinImage:
       csconv = self
       copied = False
     else:
-      if self.colormodel not in ["RGB", "gray", "Lab"]:
-        if colormodel == None and colorspace != "CIELab": colormodel = self.colormodel
-        imconv = self.RGB()
-      else:
-        imconv = self
+      if self.colorspace in ["sRGB", "lRGB"]:
+        if self.colormodel not in ["RGB", "gray"]:
+          if colormodel == None and colorspace != "CIELab": colormodel = self.colormodel
+          imconv = self.RGB()
+        else:
+          imconv = self
+      elif self.colorspace == "CIELab":
+        if self.colormodel != "Lab":
+          if colormodel == None and colorspace == "CIELab": colormodel = self.colormodel
+          imconv = self.Lab()
+        else:
+          imconv = self
       if colorspace == "lRGB":
         csconv = imconv.lRGB()
       elif colorspace == "sRGB":
@@ -814,7 +855,9 @@ class MixinImage:
     elif colormodel == "HSL":
       return csconv.HSL()
     elif colormodel == "Lab":
-      if colorspace != "CIELab": csconv.color_model_error()
+      return csconv.Lab()
+    elif colormodel == "Lch":
+      return csconv.Lch()
     else:
       raise ValueError(f"Error, unknown color model {colormodel}.")
 
@@ -844,9 +887,6 @@ class MixinImage:
     Warning:
       Available only for RGB and HSV images.
 
-    Note:
-      The HSV value may be outside the [0, 1] range if the image does not fit within this range.
-
     Returns:
       numpy.ndarray: The HSV value V.
     """
@@ -862,9 +902,6 @@ class MixinImage:
 
     Warning:
       Available only for RGB and HSV images.
-
-    Note:
-      The HSV saturation may be outside the [0, 1] range if the image does not fit within this range.
 
     Returns:
       numpy.ndarray: The HSV saturation S.
@@ -882,9 +919,6 @@ class MixinImage:
     Warning:
       Available only for RGB and HSL images.
 
-    Note:
-      The HSL lightness may be outside the [0, 1] range if the image does not fit within this range.
-
     Returns:
       numpy.ndarray: The HSL lightness L'.
     """
@@ -900,9 +934,6 @@ class MixinImage:
 
     Warning:
       Available only for RGB and HSL images.
-
-    Note:
-      The HSL saturation may be outside the [0, 1] range if the image does not fit within this range.
 
     Returns:
       numpy.ndarray: The HSL saturation S'.
@@ -924,9 +955,6 @@ class MixinImage:
     Warning:
       Available only for RGB and grayscale images.
 
-    Note:
-      The luma may be outside the [0, 1] range if the image does not fit within this range.
-
     Returns:
       numpy.ndarray: The luma L.
     """
@@ -939,19 +967,19 @@ class MixinImage:
     """Return the luminance Y of the image.
 
     Warning:
-      Available only for RGB and grayscale images.
-
-    Note:
-      The luminance may be outside the [0, 1] range if the image does not fit within this range.
+      Available only for RGB, grayscale and CIELab images.
 
     Returns:
       numpy.ndarray: The luminance Y.
     """
-    self.check_color_model("RGB", "gray")
     if self.colorspace == "lRGB":
+      self.check_color_model("RGB", "gray")
       return lRGB_luminance(self.image)
     elif self.colorspace == "sRGB":
+      self.check_color_model("RGB", "gray")
       return sRGB_luminance(self.image)
+    elif self.colorspace == "CIELab":
+      return lightness_to_luminance(self.image[0])
     else:
       self.color_space_error()
 
@@ -964,9 +992,6 @@ class MixinImage:
 
     Warning:
       Available only for RGB, grayscale and CIELab images.
-
-    Note:
-      The lightness may be outside the [0, 1] range if the image does not fit within this range.
 
     Returns:
       numpy.ndarray: The CIE lightness L*/100.

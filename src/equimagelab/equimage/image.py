@@ -51,7 +51,10 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   In the CIELab color space, the colormodel attribute can be:
 
     - "Lab": the 3 channels of the image are the CIELab components L*/100, a*/100 and b*/100.
-       L*/100 fits within [0, 1], but a* and b* are signed and technically unbounded.
+       The lightness L*/100 fits within [0, 1], but a* and b* are signed and technically unbounded.
+    - "Lch": the 3 channels of the image are the CIELab components L*/100, c*/100 and h*.
+       The lightness L*/100 fits within [0, 1], the hue angle h* fits within [0, 2pi], but the
+       chroma c*/100 is technically unbounded.
 
   The default color space is sRGB and the default color model is RGB.
 
@@ -72,15 +75,16 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
         Can be "lRGB" (linear RGB color space), "sRGB" (sRGB color space), or "CIELab" (CIELab color space).
       colormodel (str, optional): The color model of the image (default "RGB").
         In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL" (HSL color model)
-        or "gray" (grayscale image). In the CIELab colorspace, must be "Lab" (L*a*b* color model).
+        or "gray" (grayscale image). In the CIELab colorspace, can be "Lab" (L*a*b* color model) or "Lch" (L*c*h*
+        color model).
     """
     # Check color space and model.
     if colorspace in ["lRGB", "sRGB"]:
       if colormodel not in ["RGB", "HSV", "HSL", "gray"]:
         raise ValueError(f"Error, the color model of {colorspace} images must be 'RGB', 'HSV', 'HSL' or 'gray' (got '{colormodel}').")
     elif colorspace == "CIELab":
-      if colormodel != "Lab":
-        raise ValueError(f"Error, the color model of {colorspace} images must be 'Lab' (got '{colormodel}').")
+      if colormodel not in ["Lab", "Lch"]:
+        raise ValueError(f"Error, the color model of {colorspace} images must be 'Lab' or 'Lch' (got '{colormodel}').")
     else:
       raise ValueError(f"Error, the color space must be 'lRGB', 'sRGB' or 'CIELab' (got '{colorspace}').")
     # Convert the input image into an array.
