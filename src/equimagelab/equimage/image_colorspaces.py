@@ -944,8 +944,8 @@ class MixinImage:
         or "CIELuv"). If None (default), keep the original color space.
       colormodel (str, optional): The target color model ("RGB", "HSV" or "HSL"
         in the lRGB and sRGB color spaces, "Lab" or "Lch" in the CIELab color space,
-        "Luv" or "Lch" in the CIELuv color space).
-        If None (default), keep (if possible) the original color model.
+        "Luv" or "Lch" in the CIELuv color space).If None (default), keep (if possible)
+        the original color model.
 
     Returns:
       Image: The converted image (a copy of the original image if already
@@ -1210,7 +1210,7 @@ class MixinImage:
         - "L'": Update the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Update the HSL saturation (RGB and HSL images).
         - "L": Update the luma (RGB and grayscale images).
-        - "L*": Update the lightness L* (RGB, grayscale, CIELab and CIELuv images).
+        - "L*": Update the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
       data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height as the image.
       inplace (bool, optional): If True, update the image "in place"; if False (default), return a new image.
@@ -1371,6 +1371,7 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
         if False, the operation must be applied one channel at a time.
@@ -1585,6 +1586,7 @@ class MixinImage:
         - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
     Returns:
       Image: The clipped image.

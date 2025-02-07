@@ -38,6 +38,7 @@ class MixinImage:
         - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -85,6 +86,7 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -152,8 +154,9 @@ class MixinImage:
       amount (float): The full strength of the unsharp mask (must be > 0).
       threshold (float): The threshold for sharpening (expected in ]0, 1[).
         The image is blurred below the threshold, and sharpened above.
-      channels (str, optional): The channel(s) for LDBS (can be "" for all channels, "V" for HSV Value, "L'" for
-        HSL lightness, "L" for luma or "L*" for CIE lightness). Default is "L*".
+      channels (str, optional): The channel(s) for LDBS (can be "" for all channels, "V" for the HSV Value,
+       "L'" for the HSL lightness, "L" for the luma or "L*" for the lightness in the CIELab color space).
+       Default is "L*".
       mode (str, optional): How to extend the image across its boundaries (for the gaussian blur):
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).

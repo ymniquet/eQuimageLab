@@ -51,6 +51,7 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
     Returns:
       Image: The processed image.
@@ -95,6 +96,7 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
     Returns:
       Image: The processed image.
@@ -138,6 +140,7 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
     Returns:
       Image: The processed image.
@@ -207,6 +210,7 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
     Returns:
       Image: The processed image.
@@ -260,6 +264,7 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
     Returns:
       Image: The processed image.
@@ -312,6 +317,7 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
     Returns:
       Image: The processed image.
@@ -371,6 +377,7 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
     Returns:
       Image: The processed image.
@@ -413,6 +420,7 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
 
         However, CLAHE is only used, in principle, for the "V" (default), "L(s, b, n)" and L* channels.
 

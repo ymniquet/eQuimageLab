@@ -26,7 +26,7 @@ def parse_channels(channels, errors = True):
       - "L'" : The HSL lightness (RGB, HSL and grayscale images).
       - "S'" : The HSL saturation (RGB, HSL and grayscale images).
       - "L": The luma (RGB and grayscale images).
-      - "L*": The CIE lightness L* (RGB, grayscale and CIELab images).
+      - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
     errors (bool, optional): If False, discard unknown channel keys; If True (default), raise a ValueError.
 
@@ -78,11 +78,11 @@ class MixinImage:
         - "L'" : The HSL lightness (RGB, HSL and grayscale images).
         - "S'" : The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
-        - "L*": The CIE lightness L* (RGB, grayscale and CIELab images).
+        - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
         If it ends with a "+", channels gets appended with the keys already computed and stored in self.hists.
         Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images, "L" for grayscale images,
-        and "L*" for CIELab images.
+        and "L*" for CIELab and CIELuv images.
       nbins (int, optional): Number of bins within [0, 1] in the histograms. Set to `equimage.params.maxhistbins` if negative,
         and computed from the image statistics using Scott's rule if zero. If None, defaults to `equimage.params.defhistbins`.
       recompute (bool, optional): If False (default), the histograms already registered in self.hists are not recomputed
@@ -106,7 +106,7 @@ class MixinImage:
         channels = "V'S'"
       elif self.colormodel == "gray":
         channels = "L"
-      elif self.colormodel == "Lab":
+      elif self.colormodel in ["Lab", "Luv", "Lch"]:
         channels = "L*"
       else:
         self.color_model_error()
@@ -230,7 +230,7 @@ class MixinImage:
         - "L'" : The HSL lightness (RGB, HSL and grayscale images).
         - "S'" : The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
-        - "L*": The CIE lightness L* (RGB, grayscale and CIELab images).
+        - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
         If it ends with a "+", channels gets appended with the keys already computed and stored in self.stats.
         Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images, "L" for grayscale images,
@@ -266,7 +266,7 @@ class MixinImage:
         channels = "V'S'"
       elif self.colormodel == "gray":
         channels = "L"
-      elif self.colormodel == "Lab":
+      elif self.colormodel in ["Lab", "Luv", "Lch"]:
         channels = "L*"
       else:
         self.color_model_error()

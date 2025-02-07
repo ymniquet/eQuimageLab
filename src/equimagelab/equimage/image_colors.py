@@ -142,8 +142,9 @@ class MixinImage:
         - "cubic": Cubic spline interpolation.
         - "akima": Akima spline interpolation (default).
 
-      lightness (bool, optional): If True (default), preserve the CIE lightness L* of the original image.
-        This will however decrease color saturation in the bright areas of the image. Available only for RGB images.
+      lightness (bool, optional): If True (default), preserve the lightness L* of the original image in the CIELab
+        color space. This will however decrease color saturation in the bright areas of the image. Available only
+        for RGB images.
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
@@ -237,7 +238,8 @@ class MixinImage:
         "cyan" alias "C", "blue" alias "B", or "magenta" alias "M"].
       protection (str, optional): The protection mode ["avgneutral" (default), "maxneutral", "addmask" or "maxmask"].
       amount (float, optional): The parameter A for mask protection (protection = "addmask" or "maxmask", default 1).
-      lightness (bool, optional): If True (default), preserve the CIE lightness L* of the original image.
+      lightness (bool, optional): If True (default), preserve the lightness L* of the original image in the CIELab
+        color space.
 
     Returns:
       Image: The processed image.

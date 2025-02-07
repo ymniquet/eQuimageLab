@@ -205,8 +205,7 @@ class MixinImage:
         - "L'": Apply the filter to the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Apply the filter to the HSL saturation (RGB and HSL images).
         - "L": Apply the filter to the luma (RGB and grayscale images).
-        - "L*": Apply the filter to the lightness L* in the CIELab color space
-          (RGB, grayscale and CIELab images).
+        - "L*": Apply the filter to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
       filter (str): The filter:
 
