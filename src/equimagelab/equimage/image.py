@@ -53,17 +53,17 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
     - "Lab": the 3 channels of the image are the CIELab components L*/100, a*/100 and b*/100.
        The lightness L*/100 fits within [0, 1], but a* and b* are signed and not bounded.
-    - "Lch": the 3 channels of the image are the CIELab components L*/100, c*/100 and h*.
-       The lightness L*/100 fits within [0, 1], the hue angle h* fits within [0, 2pi], but
-       the chroma c*/100 is not bounded.
+    - "Lch": the 3 channels of the image are the CIELab components L*/100, c*/100 and h*/(2pi).
+       The lightness L*/100 fits within [0, 1], the reduced hue angle h*/(2pi) fits within [0, 1],
+       but the chroma c*/100 is not bounded.
 
   In the CIELuv color space, the colormodel attribute can be:
 
     - "Luv": the 3 channels of the image are the CIELuv components L*/100, u*/100 and v*/100.
        The lightness L*/100 fits within [0, 1], but u* and v* are signed and not bounded.
-    - "Lch": the 3 channels of the image are the CIELuv components L*/100, c*/100 and h*.
-       The lightness L*/100 fits within [0, 1], the hue angle h* fits within [0, 2pi], but
-       the chroma c*/100 is not bounded.
+    - "Lch": the 3 channels of the image are the CIELuv components L*/100, c*/100 and h*/(2pi).
+       The lightness L*/100 fits within [0, 1], the reduced hue angle h*/(2pi) fits within [0, 1],
+       but the chroma c*/100 is not bounded.
 
   The default color space is sRGB and the default color model is RGB.
 

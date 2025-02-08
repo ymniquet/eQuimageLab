@@ -128,8 +128,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -160,8 +164,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -192,8 +200,12 @@ class MixinImage:
         - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -236,10 +248,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -304,10 +318,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -356,10 +372,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -405,10 +423,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -476,10 +496,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -524,10 +546,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -583,10 +607,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -630,10 +656,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -666,10 +694,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -728,10 +758,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       trans(bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
@@ -745,7 +777,7 @@ class MixinImage:
         cmeds = {"V": np.median(image.HSV_value())}
       elif channels == "S":
         cmeds = {"S": np.median(image.HSV_saturation())}
-      elif channels in ["L", "Ls", "Lb", "Ln"]:
+      elif channels in ["L", "Ls", "Lb"]:
         cmeds = {"L": np.median(image.luma())}
       elif channels == "L*":
         cmeds = {"L*": np.median(image.lightness())}

@@ -345,8 +345,8 @@ def Lxx_to_Lch(image):
   output = np.empty_like(image)
   output[0] = image[0]
   output[1] = np.hypot(image[2], image[1])
-  output[2] = np.arctan2(image[2], image[1])
-  output[2] += np.where(output[2] < 0., 2.*np.pi, 0.)
+  output[2] = np.arctan2(image[2], image[1])/(2.*np.pi)
+  output[2] += np.where(output[2] < 0., 1., 0.)
   return output
 
 def Lch_to_Lxx(image):
@@ -361,10 +361,11 @@ def Lch_to_Lxx(image):
   Returns:
     numpy.ndarray: The converted Lab/Luv image.
   """
+  twopi = 2.*np.pi
   output = np.empty_like(image)
   output[0] = image[0]
-  output[1] = image[1]*np.cos(image[2])
-  output[2] = image[1]*np.sin(image[2])
+  output[1] = image[1]*np.cos(twopi*image[2])
+  output[2] = image[1]*np.sin(twopi*image[2])
   return output
 
 ######################################################
@@ -893,23 +894,6 @@ class MixinImage:
     else:
       self.color_model_error()
 
-  def Lch(self):
-    """Convert the image to the Lch color model.
-
-    Warning:
-      Only applies in the CIELab and CIELuv color spaces.
-
-    Returns:
-      Image: The converted Lch image (a copy of the original image if already Lch).
-    """
-    self.check_color_space("CIELab", "CIELuv")
-    if self.colormodel == "Lab" or self.colormodel == "Luv":
-      return self.newImage(Lxx_to_Lch(self.image), colormodel = "Lch")
-    elif self.colormodel == "Lch":
-      return self.copy()
-    else:
-      self.color_model_error()
-
   def Luv(self):
     """Convert the image to the Luv color model.
 
@@ -924,6 +908,23 @@ class MixinImage:
       return self.copy()
     elif self.colormodel == "Lch":
       return self.newImage(Lch_to_Lxx(self.image), colormodel = "Luv")
+    else:
+      self.color_model_error()
+
+  def Lch(self):
+    """Convert the image to the Lch color model.
+
+    Warning:
+      Only applies in the CIELab and CIELuv color spaces.
+
+    Returns:
+      Image: The converted Lch image (a copy of the original image if already Lch).
+    """
+    self.check_color_space("CIELab", "CIELuv")
+    if self.colormodel == "Lab" or self.colormodel == "Luv":
+      return self.newImage(Lxx_to_Lch(self.image), colormodel = "Lch")
+    elif self.colormodel == "Lch":
+      return self.copy()
     else:
       self.color_model_error()
 
@@ -964,13 +965,11 @@ class MixinImage:
           imconv = self
       elif self.colorspace == "CIELab":
         if self.colormodel != "Lab":
-          if colormodel == None and colorspace == "CIELab": colormodel = self.colormodel
           imconv = self.Lab()
         else:
           imconv = self
       elif self.colorspace == "CIELuv":
         if self.colormodel != "Luv":
-          if colormodel == None and colorspace == "CIELuv": colormodel = self.colormodel
           imconv = self.Luv()
         else:
           imconv = self
@@ -1210,7 +1209,10 @@ class MixinImage:
         - "L'": Update the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Update the HSL saturation (RGB and HSL images).
         - "L": Update the luma (RGB and grayscale images).
-        - "L*": Update the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+        - "L*": Update the CIE lightness L* (CIELab and CIELuv images; equivalent to L*ab for RGB and
+          grayscale images).
+        - "L*ab": Update the CIE lightness L* in the CIELab color space (CIELab, RGB and grayscale images).
+        - "L*uv": Update the CIE lightness L* in the CIELuv color space (CIELuv, RGB and grayscale images).
 
       data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height as the image.
       inplace (bool, optional): If True, update the image "in place"; if False (default), return a new image.
@@ -1299,7 +1301,7 @@ class MixinImage:
       else:
         self.color_model_error()
       return output
-    elif channel == "L*":
+    elif channel in ["L*", "L*ab", "L*uv"]:
       if is_gray:
         luminance = lightness_to_luminance(data)
         if self.colorspace == "lRGB":
@@ -1309,18 +1311,23 @@ class MixinImage:
         else:
           self.color_space_error()
       elif is_RGB:
+        if channel == "L*": channel = "L*ab"
         if self.colorspace == "lRGB":
-          lab = lRGB_to_CIELab(self.image)
+          lab = lRGB_to_CIELab(self.image) if channel == "L*ab" else lRGB_to_CIELuv(self.image)
         elif self.colorspace == "sRGB":
-          lab = sRGB_to_CIELab(self.image)
+          lab = sRGB_to_CIELab(self.image) if channel == "L*ab" else sRGB_to_CIELuv(self.image)
         else:
           self.color_space_error()
         lab[0] = data
         if self.colorspace == "lRGB":
-          output.image[:] = CIELab_to_lRGB(lab)
+          output.image[:] = CIELab_to_lRGB(lab) if channel == "L*ab" else CIELuv_to_lRGB(lab)
         else:
-          output.image[:] = CIELab_to_sRGB(lab)
-      elif self.colorspace == "CIELab" or self.colorspace == "CIELuv":
+          output.image[:] = CIELab_to_sRGB(lab) if channel == "L*ab" else CIELuv_to_sRGB(lab)
+      elif self.colorspace == "CIELab":
+        if channel == "L*uv": self.color_space_error()
+        output.image[0] = data
+      elif self.colorspace == "CIELuv":
+        if channel == "L*ab": self.color_space_error()
         output.image[0] = data
       else:
         self.color_model_error()
@@ -1343,8 +1350,6 @@ class MixinImage:
       - "blending": The out-of-range pixels are blended with f(RGB) (the operation applied to the
         RGB channels). This tends to whiten the out-of-range pixels too.
         f(RGB) must fit within [0, 1] to make use of this highlights protection method.
-      - "normalization": The whole image is normalized so that all pixels are brought back in
-        the [0, 1] range.
 
     Alternatively, applying the operation to the HSV value V also preserves the hue and HSV saturation
     and can not produce out-of-range pixels if f([0, 1]) fits within [0, 1]. However, this may strongly
@@ -1368,10 +1373,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
         if False, the operation must be applied one channel at a time.
@@ -1492,28 +1499,22 @@ class MixinImage:
       else:
         self.color_model_error()
       return output
-    elif channels in ["L", "Ls", "Lb", "Ln"]:
+    elif channels in ["L", "Ls", "Lb"]:
       if is_gray:
         output = self.newImage(f(self.image))
         if trans: output.trans = transformation(f, self.image, "L")
       elif is_RGB:
         luma = self.luma()
         output = self.scale_pixels(luma, f(luma))
-        if trans: t = transformation(f, luma, "L")
         if channels == "Ls":
           output = output.protect_highlights_saturation()
         elif channels == "Lb":
           output = output.protect_highlights_blend(self.apply_channels(f, "RGB", multi))
-        elif channels == "Ln":
-          maximum = np.max(output.image)
-          if maximum > 1:
-            output.image /= maximum
-            if trans: t.y /= maximum
-        if trans: output.trans = t
+        if trans: output.trans = transformation(f, luma, "L")
       else:
         self.color_model_error()
       return output
-    elif channels == "L*":
+    elif channels in ["L*", "L*ab", "L*uv"]:
       if is_gray:
         lightness = self.lightness()
         flightness = f(lightness)
@@ -1524,24 +1525,34 @@ class MixinImage:
           output = self.newImage(lRGB_to_sRGB(fluminance))
         else:
           self.color_space_error()
+        if trans: output.trans = transformation(f, lightness, "L*")
       elif is_RGB:
+        if channel == "L*": channel = "L*ab"
         if self.colorspace == "lRGB":
-          lab = lRGB_to_CIELab(self.image)
+          lab = lRGB_to_CIELab(self.image) if channel == "L*ab" else lRGB_to_CIELuv(self.image)
         elif self.colorspace == "sRGB":
-          lab = sRGB_to_CIELab(self.image)
+          lab = sRGB_to_CIELab(self.image) if channel == "L*ab" else sRGB_to_CIELuv(self.image)
         else:
           self.color_space_error()
-        lab[0] = f(lightness)
+        if trans: t = transformation(f, lab[0], "L*")
+        lab[0] = f(lab[0])
         if self.colorspace == "lRGB":
-          output = self.newImage(CIELab_to_lRGB(lab))
+          output = self.newImage(CIELab_to_lRGB(lab)) if channel == "L*ab" else self.newImage(CIELuv_to_lRGB(lab))
         else:
-          output = self.newImage(CIELab_to_sRGB(lab))
-      elif self.colorspace == "CIELab" or self.colorspace == "CIELuv":
+          output = self.newImage(CIELab_to_sRGB(lab)) if channel == "L*ab" else self.newImage(CIELuv_to_sRGB(lab))
+        if trans: output.trans = t
+      elif self.colorspace == "CIELab":
+        if channel == "L*uv": self.color_space_error()
         output = self.copy()
         output.image[0] = f(self.image[0])
+        if trans: output.trans = transformation(f, self.image[0], "L*")
+      elif self.colorspace == "CIELuv":
+        if channel == "L*ab": self.color_space_error()
+        output = self.copy()
+        output.image[0] = f(self.image[0])
+        if trans: output.trans = transformation(f, self.image[0], "L*")
       else:
         self.color_model_error()
-      if trans: output.trans = transformation(f, lightness, "L*")
       return output
     else:
       selected = nc*[False]
@@ -1585,8 +1596,12 @@ class MixinImage:
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
     Returns:
       Image: The clipped image.

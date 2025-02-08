@@ -37,8 +37,12 @@ class MixinImage:
         - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
         - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -83,10 +87,12 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-          RGB and grayscale images are converted back and forth to the CIELab color space for that purpose.
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to L*ab for RGB and grayscale images).
+        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
+          and grayscale images).
+        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
+          and grayscale images).
 
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -155,7 +161,7 @@ class MixinImage:
       threshold (float): The threshold for sharpening (expected in ]0, 1[).
         The image is blurred below the threshold, and sharpened above.
       channels (str, optional): The channel(s) for LDBS (can be "" for all channels, "V" for the HSV Value,
-       "L'" for the HSL lightness, "L" for the luma or "L*" for the lightness in the CIELab color space).
+       "L'" for the HSL lightness, "L" for the luma, or "L*"/"L*ab"/"L*uv" for the CIE lightness).
        Default is "L*".
       mode (str, optional): How to extend the image across its boundaries (for the gaussian blur):
 
@@ -168,13 +174,15 @@ class MixinImage:
         the processed image, as well as:
 
         - The blurred image if channels = "".
-        - The input, blurred and output channel as grayscale images if channels = "V", "L", "L'" or "L*".
+        - The input, blurred and output channel as grayscale images if channels = "V", "L", "L'", "L*", "L*ab"
+          or "L*uv".
 
     Returns:
       Image: The processed image(s) (see the full_output argument).
     """
     channels = channels.strip()
-    if channels not in ["", "V", "L'", "L", "L*"]: raise ValueError("Error, channels must be '', 'V', 'L'', 'L' or 'L*'.")
+    if channels not in ["", "V", "L'", "L", "L*", "L*ab", "L*uv"]:
+      raise ValueError("Error, channels must be '', 'V', 'L'', 'L', 'L*', 'L*ab' or 'L*uv'.")
     if amount <= 0.: raise ValueError("Error amount must be > 0.")
     if threshold < .0001 or threshold >= .9999: raise ValueError("Error, threshold must be >= 0.0001 and <= 0.9999.")
     D = Dharmonic_through(threshold, 1./(1.+amount))
@@ -190,7 +198,7 @@ class MixinImage:
       cin = clipped.grayscale(channels)
       cblurred = cin.gaussian_filter(sigma, mode = mode)
       cout = cblurred.blend(cin, (1.+amount)*hms(cin, D)).clip()
-      output = clipped.set_channel(channels, cout.lightness() if channels == "L*" else cout.image[0])
+      output = clipped.set_channel(channels, cout.lightness() if channels in ["L*", "L*ab", "L*uv"] else cout.image[0])
       if full_output:
         return output, cin, cblurred, cout
       else:
