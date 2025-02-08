@@ -12,8 +12,8 @@ See the following methods of the :py:class:`Image <equimagelab.equimage.image.Im
    luminance
    lightness
    luma
-   value
-   saturation
+   HSV_value
+   HSV_saturation
 
 as well as the following functions of eQuimageLab, which can be applied either to an :py:class:`Image <equimagelab.equimage.image.Image>` object (with a RGB color model) or to a :py:class:`numpy.ndarray`:
 
@@ -22,8 +22,8 @@ as well as the following functions of eQuimageLab, which can be applied either t
 .. autosummary::
 
    luma
-   value
-   saturation
+   HSV_value
+   HSV_saturation
 
 Luminance, lightness, luma and value
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

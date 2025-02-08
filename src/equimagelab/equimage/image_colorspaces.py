@@ -14,7 +14,7 @@ from . import params
 from . import helpers
 
 #############################
-# lRGB <-> sRGB conversion. #
+# lRGB <→ sRGB conversion. #
 #############################
 
 def lRGB_to_sRGB(image):
@@ -52,10 +52,10 @@ def sRGB_to_lRGB(image):
   return output
 
 ###########################################
-# lRGB <-> CIELab and CIELuv conversions. #
+# lRGB <→ CIELab and CIELuv conversions. #
 ###########################################
 
-# RGB <-> XYZ conversion matrices.
+# RGB <→ XYZ conversion matrices.
 
 RGB2XYZ = np.array([[0.412453, 0.357580, 0.180423],
                     [0.212671, 0.715160, 0.072169],
@@ -134,7 +134,7 @@ def CIELuv_to_lRGB(image):
   return np.tensordot(np.asarray(XYZ2RGB, dtype = image.dtype), xyz, axes = 1)
 
 ###########################################
-# sRGB <-> CIELab and CIELuv conversions. #
+# sRGB <→ CIELab and CIELuv conversions. #
 ###########################################
 
 def sRGB_to_CIELab(image):
@@ -202,7 +202,7 @@ def CIELuv_to_sRGB(image):
   return lRGB_to_sRGB(CIELuv_to_lRGB(image))
 
 ###########################
-# RGB <-> HSV conversion. #
+# RGB <→ HSV conversion. #
 ###########################
 
 def RGB_to_HSV(image):
@@ -240,7 +240,7 @@ def HSV_to_RGB(image):
   return skcolor.hsv2rgb(np.clip(image, 0., 1.), channel_axis = 0)
 
 ############################
-# HSV <-> HSL conversions. #
+# HSV <→ HSL conversions. #
 ############################
 
 def HSV_to_HSL(image):
@@ -289,7 +289,7 @@ def HSL_to_HSV(image):
   return output
 
 ############################
-# RGB <-> HSL conversions. #
+# RGB <→ HSL conversions. #
 ############################
 
 def RGB_to_HSL(image):
@@ -327,7 +327,7 @@ def HSL_to_RGB(image):
   return skcolor.hsv2rgb(HSL_to_HSV(image), channel_axis = 0)
 
 ################################
-# Lab/Luv <-> Lch conversions. #
+# Lab/Luv <→ Lch conversions. #
 ################################
 
 def Lxx_to_Lch(image):
@@ -451,7 +451,7 @@ def HSL_lightness(image):
   return (mini+maxi)/2.
 
 def HSL_saturation(image):
-  """Return the HSL saturation S' = (max(RGB)-min(RGB))/(1-|max(RGB)+min(RGB)-1|) of the input RGB image.
+  """Return the HSL saturation S' = (max(RGB)-min(RGB))/(1-abs(max(RGB)+min(RGB)-1)) of the input RGB image.
 
   Note:
     Compatible with single channel grayscale images.
@@ -938,7 +938,7 @@ class MixinImage:
     This method is more versatile than the dedicated conversion functions such
     as Image.sRGB, Image.HSV, etc... In particular, it can chain conversions to
     reach the target color space and model. For example,
-    (sRGB, HSV) -> (lRGB, RGB) = (sRGB, HSV) -> (sRGB, RGB) -> (lRGB, RGB).
+    (sRGB, HSV) → (lRGB, RGB) = (sRGB, HSV) → (sRGB, RGB) → (lRGB, RGB).
 
     Args:
       colorspace (str, optional): The target color space ("lRGB", "sRGB", "CIELab"
@@ -1069,7 +1069,7 @@ class MixinImage:
       self.color_model_error()
 
   def HSL_saturation(self):
-    """Return the HSL saturation S' = (max(RGB)-min(RGB))/(1-|max(RGB)+min(RGB)-1|) of the image.
+    """Return the HSL saturation S' = (max(RGB)-min(RGB))/(1-abs(max(RGB)+min(RGB)-1)) of the image.
 
     Warning:
       Available only for RGB and HSL images.
@@ -1343,13 +1343,15 @@ class MixinImage:
     components out-of-range even though f(luma) fits within [0, 1]. These out-of-range components
     can be regularized with three highlights protection methods:
 
-      - "desaturation": The out-of-range pixels are desaturated at constant hue and luma (namely,
+      - "Desaturation": The out-of-range pixels are desaturated at constant hue and luma (namely,
         the out-of-range components are decreased while the in-range components are increased so
-        that the hue and luma are preserved). This tends to whiten the out-of-range pixels.
+        that the hue and luma are preserved). This tends to bleach the out-of-range pixels.
         f(luma) must fit within [0, 1] to make use of this highlights protection method.
-      - "blending": The out-of-range pixels are blended with f(RGB) (the operation applied to the
-        RGB channels). This tends to whiten the out-of-range pixels too.
+      - "Blending": The out-of-range pixels are blended with f(RGB) (the same operation applied to
+        the RGB channels). This tends to bleach the out-of-range pixels too.
         f(RGB) must fit within [0, 1] to make use of this highlights protection method.
+      - "Normalization": The whole output image is rescaled so that all pixels fit in the [0, 1]
+        range (output → output/max(1., np.max(output))).
 
     Alternatively, applying the operation to the HSV value V also preserves the hue and HSV saturation
     and can not produce out-of-range pixels if f([0, 1]) fits within [0, 1]. However, this may strongly
@@ -1373,6 +1375,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Lb": Apply the operation to the luma, and protect highlights by blending.
           (after the operation, the out-of-range pixels are blended with f(RGB)).
+        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall back in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
           to L*ab for RGB and grayscale images).
         - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
@@ -1499,18 +1503,23 @@ class MixinImage:
       else:
         self.color_model_error()
       return output
-    elif channels in ["L", "Ls", "Lb"]:
+    elif channels in ["L", "Ls", "Lb", "Ln"]:
       if is_gray:
         output = self.newImage(f(self.image))
         if trans: output.trans = transformation(f, self.image, "L")
       elif is_RGB:
         luma = self.luma()
         output = self.scale_pixels(luma, f(luma))
+        if trans: output.trans = transformation(f, luma, "L")
         if channels == "Ls":
           output = output.protect_highlights_saturation()
         elif channels == "Lb":
           output = output.protect_highlights_blend(self.apply_channels(f, "RGB", multi))
-        if trans: output.trans = transformation(f, luma, "L")
+        elif channels == "Ln":
+          maximum = np.max(output.image)
+          if maximum > 1.:
+            output.image /= maximum
+            if trans: output.trans.y /= maximum
       else:
         self.color_model_error()
       return output
@@ -1585,23 +1594,8 @@ class MixinImage:
     """Clip selected channels of the image in the [0, 1] range.
 
     Args:
-      channels (str): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
 
     Returns:
       Image: The clipped image.
@@ -1629,7 +1623,7 @@ class MixinImage:
     newimage = self.image/np.maximum(self.image.max(axis = 0), 1.) # Rescale maximum HSV value to 1.
     newluma = luma(newimage) # Updated luma.
     # Scale the saturation.
-    # Note: The following implementation is failsafe when newluma -> 1 (in which case luma is also 1 in principle),
+    # Note: The following implementation is failsafe when newluma → 1 (in which case luma is also 1 in principle),
     # at the cost of a small error.
     epsilon = helpers.fpepsilon(self.dtype)
     fs = ((1.-imgluma)+epsilon)/((1.-newluma)+epsilon)

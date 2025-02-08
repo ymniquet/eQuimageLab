@@ -27,29 +27,14 @@ class MixinImage:
 
     Args:
       ratio (float): The threshold for hot pixels detection.
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       mode (str, optional): How to extend the image across its boundaries:
 
-        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
-        - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
-        - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
-        - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
 
     Returns:
       Image: The processed image.
@@ -73,33 +58,14 @@ class MixinImage:
     """Apply a sharpening (Laplacian) convolution filter to selected channels of the image.
 
     Args:
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       mode (str, optional): How to extend the image across its boundaries:
 
-        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
-        - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
-        - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
-        - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
 
     Returns:
       Image: The sharpened image.
@@ -160,22 +126,22 @@ class MixinImage:
       amount (float): The full strength of the unsharp mask (must be > 0).
       threshold (float): The threshold for sharpening (expected in ]0, 1[).
         The image is blurred below the threshold, and sharpened above.
-      channels (str, optional): The channel(s) for LDBS (can be "" for all channels, "V" for the HSV Value,
-       "L'" for the HSL lightness, "L" for the luma, or "L*"/"L*ab"/"L*uv" for the CIE lightness).
-       Default is "L*".
+      channels (str, optional): The channel(s) for LDBS.
+        Can be "" (all channels), "V", "L'", "L", "L*" (default), S"L*ab" or "L*uv".
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       mode (str, optional): How to extend the image across its boundaries (for the gaussian blur):
 
-        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
-        - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
-        - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
-        - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
 
       full_output (bool, optional): If False (default), only return the processed image. If True, return
         the processed image, as well as:
 
         - The blurred image if channels = "".
-        - The input, blurred and output channel as grayscale images if channels = "V", "L", "L'", "L*", "L*ab"
-          or "L*uv".
+        - The input, blurred and output channel as grayscale images if channels = "V", "L", "L'", "L*",
+          "L*ab" or "L*uv".
 
     Returns:
       Image: The processed image(s) (see the full_output argument).
@@ -195,10 +161,11 @@ class MixinImage:
       else:
         return output
     else:
-      cin = clipped.grayscale(channels)
+      Lstar = channels in ["L*", "L*ab", "L*uv"]
+      cin = clipped.grayscale("L*" if Lstar else channels)
       cblurred = cin.gaussian_filter(sigma, mode = mode)
       cout = cblurred.blend(cin, (1.+amount)*hms(cin, D)).clip()
-      output = clipped.set_channel(channels, cout.lightness() if channels in ["L*", "L*ab", "L*uv"] else cout.image[0])
+      output = clipped.set_channel(channels, cout.lightness() if Lstar else cout.image[0])
       if full_output:
         return output, cin, cblurred, cout
       else:

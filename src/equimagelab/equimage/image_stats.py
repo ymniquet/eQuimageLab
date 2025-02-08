@@ -234,7 +234,7 @@ class MixinImage:
 
         If it ends with a "+", channels gets appended with the keys already computed and stored in self.stats.
         Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images, "L" for grayscale images,
-        and "L*" for CIELab images.
+        and "L*" for CIELab and CIELuv images.
       exclude01 (bool, optional): If True, exclude pixels <= 0 or >= 1 from the median and percentiles.
         Defaults to `equimage.params.exclude01` if None.
       recompute (bool, optional): If False (default), the statistics already registered in self.stats are not recomputed.

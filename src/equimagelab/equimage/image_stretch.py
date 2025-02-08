@@ -120,22 +120,9 @@ class MixinImage:
 
     Args:
       shadow (float): The black (shadow) level (expected < 1).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -156,22 +143,9 @@ class MixinImage:
     Args:
       shadow (float): The shadow level (expected < 1).
       highlight (float): The highlight level (expected > shadow).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -192,22 +166,9 @@ class MixinImage:
     Args:
       fr (a tuple or list of two floats such that fr[1] > fr[0]): The input range.
       to (a tuple or list of two floats such that 1 >= to[1] > to[0] >= 0): The output range.
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -234,28 +195,9 @@ class MixinImage:
     Args:
       D (float): The stretch parameter (expected > -1).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -304,28 +246,9 @@ class MixinImage:
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -358,28 +281,9 @@ class MixinImage:
     Args:
       midtone (float): The midtone level (expected in ]0, 1[).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -409,28 +313,9 @@ class MixinImage:
       highlight (float, optional): The input highlight level (default 1; expected > midtone).
       low (float, optional): The "low" output level (default 0; expected <= 0).
       high (float, optional): The "high" output level (default 1; expected >= 1).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -482,28 +367,9 @@ class MixinImage:
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -532,28 +398,9 @@ class MixinImage:
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -593,28 +440,9 @@ class MixinImage:
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -642,28 +470,9 @@ class MixinImage:
 
     Args:
       gamma (float): The stretch exponent (must be > 0).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -680,28 +489,9 @@ class MixinImage:
 
     Args:
       f (function): The function f(numpy.ndarray) → numpy.ndarray applied to the selected channels.
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -744,28 +534,9 @@ class MixinImage:
       maxiter (int, optional): The maximum number of harmonic stretches applied to reach the target median (default 5).
         For a single channel, the algorithm shall actually converge in one iteration.
       accuracy (float, optional): The target accuracy of the median (default 0.001).
-      channels (str, optional): The selected channels:
-
-        - An empty string: Apply the operation to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the operation to the first/second/third channel (all images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the operation to the HSL saturation (RGB and HSL images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation.
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending.
-          (after the operation, the out-of-range pixels are blended with f(RGB)).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to L*ab for RGB and grayscale images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab color space (CIELab, RGB
-          and grayscale images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv color space (CIELuv, RGB
-          and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -777,9 +548,13 @@ class MixinImage:
         cmeds = {"V": np.median(image.HSV_value())}
       elif channels == "S":
         cmeds = {"S": np.median(image.HSV_saturation())}
-      elif channels in ["L", "Ls", "Lb"]:
+      elif channels == "L'":
+        cmeds = {"L'": np.median(image.HSL_lightness())}
+      elif channels == "S'":
+        cmeds = {"S'": np.median(image.HSL_saturation())}
+      elif channels in ["L", "Ls", "Lb", "Ln"]:
         cmeds = {"L": np.median(image.luma())}
-      elif channels == "L*":
+      elif channels in ["L*", "L*ab", "L*uv"]:
         cmeds = {"L*": np.median(image.lightness())}
       else:
         cmeds = {}

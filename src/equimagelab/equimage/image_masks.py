@@ -58,11 +58,11 @@ def smooth_mask(mask, radius, mode = "zero"):
       smoothed over 2*radius pixels.
     mode (str, optional): How to extend the mask across its boundaries for the convolution:
 
-      - "reflect": the mask is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
-      - "mirror": the mask is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
-      - "nearest": the mask is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
-      - "zero" (default): the mask is padded with zeros (abcd -> 0000|abcd|0000).
-      - "one": the mask is padded with ones (abcd -> 1111|abcd|1111).
+      - "reflect": the mask is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+      - "mirror": the mask is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+      - "nearest": the mask is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+      - "zero" (default): the mask is padded with zeros (abcd → 0000|abcd|0000).
+      - "one": the mask is padded with ones (abcd → 1111|abcd|1111).
 
   Returns:
     numpy.ndarray: The smoothed, float mask.
@@ -122,11 +122,11 @@ def threshold_fmask(filtered, threshold, extend = 0, smooth = 0., mode = "zero")
       see smooth_mask).
     mode (str, optional): How to extend the mask across its boundaries for smoothing:
 
-      - "reflect": the mask is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
-      - "mirror": the mask is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
-      - "nearest": the mask is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
-      - "zero" (default): the mask is padded with zeros (abcd -> 0000|abcd|0000).
-      - "one": the mask is padded with ones (abcd -> 1111|abcd|1111).
+      - "reflect": the mask is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+      - "mirror": the mask is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+      - "nearest": the mask is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+      - "zero" (default): the mask is padded with zeros (abcd → 0000|abcd|0000).
+      - "one": the mask is padded with ones (abcd → 1111|abcd|1111).
 
   Returns:
     numpy.ndarray: The mask as a float array with the same shape as filtered.
@@ -191,21 +191,21 @@ class MixinImage:
     The main purpose of this method is to prepare masks for image processing.
 
     See also:
-      threshold_bmask
+      threshold_bmask,
       threshold_fmask
 
     Args:
       channel (str): The selected channel:
-        - An empty string: Apply the filter to all channels (all images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the filter to the first/second/third channel (all images).
-        - "H": Apply the filter to the HSV/HSL hue (RGB, HSV and HSL images).
-        - "V": Apply the filter to the HSV value (RGB, HSV and grayscale images).
-        - "S": Apply the filter to the HSV saturation (RGB and HSV images).
-        - "L'": Apply the filter to the HSL lightness (RGB, HSL and grayscale images).
-        - "S'": Apply the filter to the HSL saturation (RGB and HSL images).
-        - "L": Apply the filter to the luma (RGB and grayscale images).
-        - "L*": Apply the filter to the CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+
+        - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
+          The first/second/third channel (all images).
+        - "H": The HSV/HSL hue (RGB, HSV and HSL images).
+        - "V": The HSV value (RGB, HSV and grayscale images).
+        - "S": The HSV saturation (RGB, HSV and grayscale images).
+        - "L'" : The HSL lightness (RGB, HSL and grayscale images).
+        - "S'" : The HSL saturation (RGB, HSL and grayscale images).
+        - "L": The luma (RGB and grayscale images).
+        - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
       filter (str): The filter:
 
@@ -217,10 +217,10 @@ class MixinImage:
       radius (float): The radius of the disk (pixels). The standard deviation for gaussian average is radius/3.
       mode (str, optional): How to extend the image across its boundaries:
 
-        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
-        - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
-        - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
-        - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
 
     Returns:
       numpy.ndarray: The output of the filter as an array with shape (image height, image width).

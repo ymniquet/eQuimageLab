@@ -145,7 +145,7 @@ class MixinImage:
       lightness (bool, optional): If True (default), preserve the lightness L* of the original image in the CIELab
         color space. This will however decrease color saturation in the bright areas of the image. Available only
         for RGB images.
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
