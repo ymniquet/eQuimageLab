@@ -286,7 +286,7 @@ class MixinImage:
       nbins (int, optional): The number of bins in the local histograms (default 256).
       channels (str, optional): The selected channels (default "" = all channels).
         See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
-        CLAHE works best in the "V", "L" and "L*" channels.
+        CLAHE works best for the "V", "L" and "L*" channels.
 
     Returns:
       Image: The processed image.

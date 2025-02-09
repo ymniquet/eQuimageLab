@@ -1506,11 +1506,11 @@ class MixinImage:
     elif channels in ["L", "Ls", "Lb", "Ln"]:
       if is_gray:
         output = self.newImage(f(self.image))
-        if trans: output.trans = transformation(f, self.image, "L")
+        if trans: t = transformation(f, self.image, "L")
       elif is_RGB:
         luma = self.luma()
         output = self.scale_pixels(luma, f(luma))
-        if trans: output.trans = transformation(f, luma, "L")
+        if trans: t = transformation(f, luma, "L")
         if channels == "Ls":
           output = output.protect_highlights_saturation()
         elif channels == "Lb":
@@ -1519,7 +1519,8 @@ class MixinImage:
           maximum = np.max(output.image)
           if maximum > 1.:
             output.image /= maximum
-            if trans: output.trans.y /= maximum
+            if trans: t.y /= maximum
+        if trans: output.trans = t
       else:
         self.color_model_error()
       return output

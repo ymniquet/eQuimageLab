@@ -544,20 +544,22 @@ class MixinImage:
     """
     def compute_medians(image, channels):
       """Compute the medians of the channels of the input image, returned as a dictionary."""
-      if channels == "V":
-        cmeds = {"V": np.median(image.HSV_value())}
+      if channels == "H":
+        cmedians = {"H": np.median(image.HSX_hue())} # For completeness; not sure this is useful ;-)
+      elif channels == "V":
+        cmedians = {"V": np.median(image.HSV_value())}
       elif channels == "S":
-        cmeds = {"S": np.median(image.HSV_saturation())}
+        cmedians = {"S": np.median(image.HSV_saturation())}
       elif channels == "L'":
-        cmeds = {"L'": np.median(image.HSL_lightness())}
+        cmedians = {"L'": np.median(image.HSL_lightness())}
       elif channels == "S'":
-        cmeds = {"S'": np.median(image.HSL_saturation())}
+        cmedians = {"S'": np.median(image.HSL_saturation())}
       elif channels in ["L", "Ls", "Lb", "Ln"]:
-        cmeds = {"L": np.median(image.luma())}
+        cmedians = {"L": np.median(image.luma())}
       elif channels in ["L*", "L*ab", "L*uv"]:
-        cmeds = {"L*": np.median(image.lightness())}
+        cmedians = {"L*": np.median(image.lightness())}
       else:
-        cmeds = {}
+        cmedians = {}
         nc = self.get_nc()
         for c in channels:
           if c.isdigit():
@@ -570,17 +572,17 @@ class MixinImage:
             continue
           else:
             raise ValueError(f"Syntax errror in the channels string '{channels}'.")
-          if cmeds.get(c, None) is not None:
+          if cmedians.get(c, None) is not None:
             print(f"Warning, channel '{c}' selected twice or more...")
             continue
-          cmeds[c] = np.median(image.image[ic])
-      return cmeds
+          cmedians[c] = np.median(image.image[ic])
+      return cmedians
 
-    def print_medians(cmeds):
+    def print_medians(cmedians):
       """Print the input dictionary of medians."""
       spacer = ""
-      for key, med in cmeds.items():
-        print(f"{spacer}Median({key}) = {med:.5f}", end = "")
+      for key, cmedian in cmedians.items():
+        print(f"{spacer}Median({key}) = {cmedian:.5f}", end = "")
         spacer = "; "
       print()
 
@@ -596,40 +598,40 @@ class MixinImage:
     # This shall actually converge in one iteration for a single channel image.
     niter = 0
     output = self
-    ctrans = None
+    cumtrans = None
     while True:
       print(f"Iteration #{niter}:")
-      cmeds = compute_medians(output, channels) # Compute the medians of the channels.
-      print_medians(cmeds)
-      avgmed = np.mean(list(cmeds.values())) # Compute the average median.
-      if len(cmeds) > 1: print(f"Average median = {avgmed:.5f}.")
-      converged = (abs(avgmed-median) < .001) # Check convergence.
+      cmedians = compute_medians(output, channels) # Compute the medians of the channels.
+      print_medians(cmedians)
+      avgmedian = np.mean(list(cmedians.values())) # Compute the average median.
+      if len(cmedians) > 1: print(f"Average median = {avgmedian:.5f}.")
+      converged = (abs(avgmedian-median) < .001) # Check convergence.
       if converged or niter >= maxiter: break
       niter += 1
-      # Compute the effective stretch parameter D such that f(avgmed) = median, with f the harmonic stretch function.
-      D = Dharmonic_through(avgmed, median)
-      output = output.harmonic_stretch(D, channels = channels, trans = trans and ctrans is None) # Harmonic stretch.
+      # Compute the effective stretch parameter D such that f(avgmedian) = median, with f the harmonic stretch function.
+      D = Dharmonic_through(avgmedian, median)
+      output = output.harmonic_stretch(D, channels = channels, trans = trans and cumtrans is None) # Harmonic stretch.
       if trans: # Cumulative transformation.
-        if ctrans is None:
-          ctrans = copy.copy(output.trans)
-          ctrans.xticks = [avgmed]
+        if cumtrans is None:
+          cumtrans = copy.copy(output.trans)
+          cumtrans.xticks = [avgmedian]
         else:
-          ctrans.y = stf.harmonic_stretch_function(ctrans.y, D, False)
+          cumtrans.y = stf.harmonic_stretch_function(cumtrans.y, D, False)
     if converged:
       print(f"Converged in {niter} iteration(s).")
     else:
       print(f"Warning, did not converge within {maxiter} iteration(s).")
     if boost > 0.: # Boost contrast above the average median.
       print("Boosting constrast above the average median...")
-      x = [0., .5*avgmed, avgmed, .25+.75*avgmed, .75+.25*avgmed, 1.]
+      x = [0., .5*avgmedian, avgmedian, .25+.75*avgmedian, .75+.25*avgmedian, 1.]
       y = [x[0], x[1], x[2], x[3]**(1.-boost), (x[4]**(1.-boost))**(1.-boost), x[5]]
       fboost = Akima1DInterpolator(x, y) # Akima spline.
-      output = output.curve_stretch(fboost, channels = channels, trans = trans and ctrans is None) # Curve stretch.
+      output = output.curve_stretch(fboost, channels = channels, trans = trans and cumtrans is None) # Curve stretch.
       if trans:
-        if ctrans is None: # Cumulative transformation.
-          ctrans = copy.copy(output.trans)
-          ctrans.xticks = [avgmed]
+        if cumtrans is None: # Cumulative transformation.
+          cumtrans = copy.copy(output.trans)
+          cumtrans.xticks = [avgmedian]
         else:
-          ctrans.y = fboost(ctrans.y)
-    if ctrans is not None: output.trans = ctrans
+          cumtrans.y = fboost(cumtrans.y)
+    if cumtrans is not None: output.trans = cumtrans
     return output

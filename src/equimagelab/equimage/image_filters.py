@@ -127,7 +127,7 @@ class MixinImage:
       threshold (float): The threshold for sharpening (expected in ]0, 1[).
         The image is blurred below the threshold, and sharpened above.
       channels (str, optional): The channel(s) for LDBS.
-        Can be "" (all channels), "V", "L'", "L", "L*" (default), S"L*ab" or "L*uv".
+        Can be "" (for all channels), "V", "L'", "L", "L*" (default), "L*ab" or "L*uv".
         See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       mode (str, optional): How to extend the image across its boundaries (for the gaussian blur):
 
@@ -161,11 +161,11 @@ class MixinImage:
       else:
         return output
     else:
-      Lstar = channels in ["L*", "L*ab", "L*uv"]
-      cin = clipped.grayscale("L*" if Lstar else channels)
+      lightness = channels in ["L*", "L*ab", "L*uv"]
+      cin = clipped.grayscale("L*" if lightness else channels)
       cblurred = cin.gaussian_filter(sigma, mode = mode)
       cout = cblurred.blend(cin, (1.+amount)*hms(cin, D)).clip()
-      output = clipped.set_channel(channels, cout.lightness() if Lstar else cout.image[0])
+      output = clipped.set_channel(channels, cout.lightness() if lightness else cout.image[0])
       if full_output:
         return output, cin, cblurred, cout
       else:

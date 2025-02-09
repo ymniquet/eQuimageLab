@@ -11,3 +11,13 @@
 
 from .imports import *
 
+# NB : Here is the list of functions which explicitely deal with channels.
+# Please crosscheck/update these functions when adding new channels.
+#  - Image.get_channel
+#  - Image.set_channel
+#  - Image.apply_channel
+#  - Image.histograms
+#  - Image.statistics
+#  - Image.statistical_stretch
+#  - Image.LDBS
+#  - Image.filter
