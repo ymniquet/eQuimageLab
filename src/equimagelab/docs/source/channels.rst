@@ -6,7 +6,6 @@ Many operations in eQuimageLab can be applied to specific channels specified by 
 
   - An empty string: Apply the operation to all channels.
   - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the operation to the first/second/third channel.
-  - "H": Apply the operation to the HSV/HSL hue (RGB, HSV and HSL images).
   - "V": Apply the operation to the HSV value (RGB, HSV and grayscale images).
   - "S": Apply the operation to the HSV saturation (RGB and HSV images).
   - "L'": Apply the operation to the HSL lightness (RGB, HSL and grayscale images).
@@ -15,9 +14,10 @@ Many operations in eQuimageLab can be applied to specific channels specified by 
   - "Ls": Apply the operation to the luma, and protect highlights by desaturation (see below).
   - "Lb": Apply the operation to the luma, and protect highlights by blending (see below).
   - "Ln": Apply the operation to the luma, and protect highlights by normalization (see below).
-  - "L*": Apply the operation to the CIE lightness :math:`L^*` (CIELab and CIELuv images; equivalent to "L*ab" for RGB and grayscale images).
-  - "L*ab": Apply the operation to the CIE lightness :math:`L^*` in the CIELab color space (CIELab, RGB and grayscale images).
-  - "L*uv": Apply the operation to the CIE lightness :math:`L^*` in the CIELuv color space (CIELuv, RGB and grayscale images).
+  - "L*": Apply the operation to the CIE lightness :math:`L^*` (CIELab and CIELuv images; equivalent to "L*ab" for lRGB and sRGB images).
+  - "L*ab": Apply the operation to the CIE lightness :math:`L^*` in the CIELab/Lab color space and model (CIELab, lRGB and sRGB images).
+  - "L*uv": Apply the operation to the CIE lightness :math:`L^*` in the CIELuv/Luv color space and model (CIELuv, lRGB and sRGB images).
+  - "L*sh": Apply the operation to the CIE lightness :math:`L^*` in the CIELuv/Lsh color space and model (CIELuv, lRGB and sRGB images).
 
 Note on "Ls" and "Lb":
 """"""""""""""""""""""

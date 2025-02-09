@@ -55,7 +55,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
        The lightness L*/100 fits within [0, 1], but a* and b* are signed and not bounded.
     - "Lch": the 3 channels of the image are the CIELab components L*/100, c*/100 and h*/(2pi).
        The lightness L*/100 fits within [0, 1], the reduced hue angle h*/(2pi) fits within [0, 1],
-       but the chroma c*/100 is not bounded.
+       but the chroma c* is not bounded.
 
   In the CIELuv color space, the colormodel attribute can be:
 
@@ -63,7 +63,10 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
        The lightness L*/100 fits within [0, 1], but u* and v* are signed and not bounded.
     - "Lch": the 3 channels of the image are the CIELuv components L*/100, c*/100 and h*/(2pi).
        The lightness L*/100 fits within [0, 1], the reduced hue angle h*/(2pi) fits within [0, 1],
-       but the chroma c*/100 is not bounded.
+       but the chroma c* is not bounded.
+    - "Lsh": the 3 channels of the image are the CIELuv components L*/100, s*/100 and h*/(2pi).
+       The lightness L*/100 fits within [0, 1], the reduced hue angle h*/(2pi) fits within [0, 1],
+       but the saturation s* = c*/L* is not bounded.
 
   The default color space is sRGB and the default color model is RGB.
 
@@ -87,7 +90,8 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
         In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL"
         (HSL color model) or "gray" (grayscale image).
         In the CIELab color space, can be "Lab" (L*a*b* color model) or "Lch" (L*c*h* color model).
-        In the CIELuv color space, can be "Luv" (L*u*v* color model) or "Lch" (L*c*h* color model).
+        In the CIELuv color space, can be "Luv" (L*u*v* color model) ,  "Lch" (L*c*h* color model)
+        or "Lsh" (L*s*h* model).
     """
     # Check color space and model.
     if colorspace in ["lRGB", "sRGB"]:
@@ -97,8 +101,8 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
       if colormodel not in ["Lab", "Lch"]:
         raise ValueError(f"Error, the color model of {colorspace} images must be 'Lab' or 'Lch' (got '{colormodel}').")
     elif colorspace == "CIELuv":
-      if colormodel not in ["Luv", "Lch"]:
-        raise ValueError(f"Error, the color model of {colorspace} images must be 'Luv' or 'Lch' (got '{colormodel}').")
+      if colormodel not in ["Luv", "Lch", "Lsh"]:
+        raise ValueError(f"Error, the color model of {colorspace} images must be 'Luv', 'Lch' or 'Lsh' (got '{colormodel}').")
     else:
       raise ValueError(f"Error, the color space must be 'lRGB', 'sRGB', 'CIELab' or 'CIELuv' (got '{colorspace}').")
     # Convert the input image into an array.
@@ -135,8 +139,11 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
       colorspace (str, optional): The color space of the image (default self.colorspace).
         Can be "lRGB" (linear RGB color space), "sRGB" (sRGB color space), or "CIELab" (CIELab color space).
       colormodel (str, optional): The color model of the image (default self.colormodel).
-        In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL" (HSL color model)
-        or "gray" (grayscale image). In the CIELab colorspace, must be "Lab" (L*a*b* color model).
+        In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL"
+        (HSL color model) or "gray" (grayscale image).
+        In the CIELab color space, can be "Lab" (L*a*b* color model) or "Lch" (L*c*h* color model).
+        In the CIELuv color space, can be "Luv" (L*u*v* color model) ,  "Lch" (L*c*h* color model)
+        or "Lsh" (L*s*h* model).
 
     Returns:
       Image: The new Image object.

@@ -21,17 +21,3 @@ from .imports import *
 #  - Image.statistical_stretch
 #  - Image.LDBS
 #  - Image.filter
-
-# TODO:
-#
-# get_channel, set_channel:
-#  - Add a*, b*, u*, v*, c*, s*, h* for CIELab and CIELuv images.
-#
-# apply_channels:
-#  - L* : Apply to the lightness @ constant hue & chroma in the CIELab or CIELuv color space.
-#         Equivalent to L*/a*b* for RGB images.
-#  - L*/a*b* : Apply to the lightness @ constant a*/b* (constant CIELab hue & chroma) in the CIELab color space.
-#  - L*/u*v* : Apply to the lightness @ constant u*/v* (constant CIELuv hue & chroma) in the CIELuv color space.
-#  - L*/s*h* : Apply to the lightness @ constant hue & saturation in the CIELuv color space.
-#
-# CIE_color_saturation.
