@@ -14,7 +14,7 @@ from . import params
 from . import helpers
 
 #############################
-# lRGB <→ sRGB conversion. #
+# lRGB <-> sRGB conversion. #
 #############################
 
 def lRGB_to_sRGB(image):
@@ -52,10 +52,10 @@ def sRGB_to_lRGB(image):
   return output
 
 ###########################################
-# lRGB <→ CIELab and CIELuv conversions. #
+# lRGB <-> CIELab and CIELuv conversions. #
 ###########################################
 
-# RGB <→ XYZ conversion matrices.
+# RGB <-> XYZ conversion matrices.
 
 RGB2XYZ = np.array([[0.412453, 0.357580, 0.180423],
                     [0.212671, 0.715160, 0.072169],
@@ -134,7 +134,7 @@ def CIELuv_to_lRGB(image):
   return np.tensordot(np.asarray(XYZ2RGB, dtype = image.dtype), xyz, axes = 1)
 
 ###########################################
-# sRGB <→ CIELab and CIELuv conversions. #
+# sRGB <-> CIELab and CIELuv conversions. #
 ###########################################
 
 def sRGB_to_CIELab(image):
@@ -202,7 +202,7 @@ def CIELuv_to_sRGB(image):
   return lRGB_to_sRGB(CIELuv_to_lRGB(image))
 
 ###########################
-# RGB <→ HSV conversion. #
+# RGB <-> HSV conversion. #
 ###########################
 
 def RGB_to_HSV(image):
@@ -240,7 +240,7 @@ def HSV_to_RGB(image):
   return skcolor.hsv2rgb(np.clip(image, 0., 1.), channel_axis = 0)
 
 ############################
-# HSV <→ HSL conversions. #
+# HSV <-> HSL conversions. #
 ############################
 
 def HSV_to_HSL(image):
@@ -289,7 +289,7 @@ def HSL_to_HSV(image):
   return output
 
 ############################
-# RGB <→ HSL conversions. #
+# RGB <-> HSL conversions. #
 ############################
 
 def RGB_to_HSL(image):
@@ -327,7 +327,7 @@ def HSL_to_RGB(image):
   return skcolor.hsv2rgb(HSL_to_HSV(image), channel_axis = 0)
 
 ################################
-# Lab/Luv <→ Lch conversions. #
+# Lab/Luv <-> Lch conversions. #
 ################################
 
 def Lxx_to_Lch(image):
@@ -1145,6 +1145,54 @@ class MixinImage:
       return self.image[0]
     else:
       raise self.color_space_error()
+
+  def CIE_chroma(self):
+    """Return the CIE chroma c* of a CIELab/CIELuv image.
+
+    The CIE chroma is c* = sqrt(a*^2+b*^2) in the CIELab color space
+    and c* = sqrt(u*^2+v*^2) in the CIELuv color space. The values
+    of the CIE chroma thus differ in both color spaces.
+    This method actually returns the scaled CIE chroma c*/100.
+
+    Warning:
+      Available only for CIELab and CIELuv images.
+
+    Returns:
+      numpy.ndarray: The CIE chroma c*/100.
+    """
+    self.check_color_space("CIELab", "CIELuv")
+    if self.colormodel == "Lab" or self.colormodel == "Luv":
+      return np.hypot(self.image[1], self.image[2])
+    elif self.colormodel == "Lch":
+      return self.image[1]
+    else:
+      self.color_model_error()
+
+  def CIE_saturation(self):
+    """Return the CIE saturation s* of a CIELuv image.
+
+    The CIE saturation is s* = c*/L* = sqrt(u*^2+v*^2)/L* in the CIELuv
+    color space.
+    This method actually returns the scaled CIE saturation s*/100.
+
+    Warning:
+      Available only for CIELuv images.
+
+    Returns:
+      numpy.ndarray: The CIE saturation s*/100.
+    """
+    self.check_color_space("CIELuv")
+    if self.colormodel == "Luv":
+      cstar = np.hypot(self.image[1], self.image[2])
+    elif self.colormodel == "Lch":
+      cstar = self.image[1]
+    else:
+      self.color_model_error()
+    Lstar = self.image[0]
+    sstar = np.zeros_like(Lstar)
+    mask = (Lstar > 0.)
+    sstar[mask] = cstar[mask]/Lstar[mask]
+    return sstar
 
   #################################
   # Channel-selective operations. #

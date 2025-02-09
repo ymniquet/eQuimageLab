@@ -84,7 +84,7 @@ class MixinImage:
   # Color transformations. #
   ##########################
 
-  def color_balance(self, red = 1., green = 1., blue = 1.):
+  def RGB_color_balance(self, red = 1., green = 1., blue = 1.):
     """Adjust the color balance of a RGB image.
 
     Scales the red/green/blue channels by the input multipliers.
@@ -107,8 +107,8 @@ class MixinImage:
     if blue  != 1.: output.image[2] *= blue
     return output
 
-  def color_saturation(self, A = 0., mode = "midsat", interpolation = "akima", model = "HSV", lightness = False, trans = True, **kwargs):
-    """Adjust color saturation.
+  def HSX_color_saturation(self, A = 0., mode = "midsat", interpolation = "akima", model = "HSV", lightness = False, trans = True, **kwargs):
+    """Adjust color saturation in the HSV or HSL color models.
 
     The image is converted (if needed) to the HSV or HSL color model and the color saturation S is transformed according
     to the 'mode' kwarg:
@@ -182,7 +182,7 @@ class MixinImage:
     psat[3] = kwargs.pop("C", A)
     psat[4] = kwargs.pop("B", A)
     psat[5] = kwargs.pop("M", A)
-    if kwargs: print("Discarding extra keyword arguments in Image.color_saturation...")
+    if kwargs: print("Discarding extra keyword arguments in Image.HSX_color_saturation...")
     if model == "HSV":
       hsx = self.HSV()
     elif model == "HSL":
