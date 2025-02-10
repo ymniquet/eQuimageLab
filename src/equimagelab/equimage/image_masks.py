@@ -202,8 +202,8 @@ class MixinImage:
         - "H": The HSV/HSL hue (RGB, HSV and HSL images).
         - "V": The HSV value (RGB, HSV and grayscale images).
         - "S": The HSV saturation (RGB, HSV and grayscale images).
-        - "L'" : The HSL lightness (RGB, HSL and grayscale images).
-        - "S'" : The HSL saturation (RGB, HSL and grayscale images).
+        - "L'": The HSL lightness (RGB, HSL and grayscale images).
+        - "S'": The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
         - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 

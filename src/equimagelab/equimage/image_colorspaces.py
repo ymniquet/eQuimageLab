@@ -1308,8 +1308,8 @@ class MixinImage:
         - "H": The HSV/HSL hue (RGB, HSV and HSL images).
         - "V": The HSV value (RGB, HSV and grayscale images).
         - "S": The HSV saturation (RGB, HSV and grayscale images).
-        - "L'" : The HSL lightness (RGB, HSL and grayscale images).
-        - "S'" : The HSL saturation (RGB, HSL and grayscale images).
+        - "L'": The HSL lightness (RGB, HSL and grayscale images).
+        - "S'": The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
         - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
 
@@ -1589,7 +1589,7 @@ class MixinImage:
       return output
     elif channels == "S":
       if is_RGB:
-        hsv = HSV_to_RGB(self.image)
+        hsv = RGB_to_HSV(self.image)
         if trans: t = transformation(f, hsv[1], "S")
         hsv[1] = f(hsv[1])
         output = self.newImage(HSV_to_RGB(hsv))

@@ -22,8 +22,8 @@ def parse_channels(channels, errors = True):
         The first/second/third channel (all images).
       - "V": The HSV value (RGB, HSV and grayscale images).
       - "S": The HSV saturation (RGB, HSV and grayscale images).
-      - "L'" : The HSL lightness (RGB, HSL and grayscale images).
-      - "S'" : The HSL saturation (RGB, HSL and grayscale images).
+      - "L'": The HSL lightness (RGB, HSL and grayscale images).
+      - "S'": The HSL saturation (RGB, HSL and grayscale images).
       - "L": The luma (RGB and grayscale images).
       - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
       - "c*": The CIE chroma c* (CIELab and CIELuv images).
@@ -75,8 +75,8 @@ class MixinImage:
           The first/second/third channel (all images).
         - "V": The HSV value (RGB, HSV and grayscale images).
         - "S": The HSV saturation (RGB, HSV and grayscale images).
-        - "L'" : The HSL lightness (RGB, HSL and grayscale images).
-        - "S'" : The HSL saturation (RGB, HSL and grayscale images).
+        - "L'": The HSL lightness (RGB, HSL and grayscale images).
+        - "S'": The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
         - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
         - "c*": The CIE chroma c* (CIELab and CIELuv images).
@@ -237,8 +237,8 @@ class MixinImage:
           The first/second/third channel (all images).
         - "V": The HSV value (RGB, HSV and grayscale images).
         - "S": The HSV saturation (RGB, HSV and grayscale images).
-        - "L'" : The HSL lightness (RGB, HSL and grayscale images).
-        - "S'" : The HSL saturation (RGB, HSL and grayscale images).
+        - "L'": The HSL lightness (RGB, HSL and grayscale images).
+        - "S'": The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
         - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
         - "c*": The CIE chroma c* (CIELab and CIELuv images).

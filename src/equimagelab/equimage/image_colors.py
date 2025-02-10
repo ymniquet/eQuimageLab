@@ -19,6 +19,44 @@ from . import image_colorspaces as colorspaces
 # For inclusion in the Image class. #
 #####################################
 
+def interpolate(hue, psat, interpolation):
+  """Interpolate the saturation parameter psat[RYGCBM] for arbitrary hues.
+
+  Used by Image.HSX_color_saturation and Image.CIE_chroma_saturation.
+
+  Args:
+    hue (numpy.ndarray): The input hues.
+    psat (numpy.ndarray): The saturation parameter for the red, yellow, green, cyan, blue and magenta hues.
+    interpolation (str, optional): The interpolation method:
+
+      - "nearest": Nearest neighbor interpolation.
+      - "linear": Linear spline interpolation.
+      - "cubic": Cubic spline interpolation.
+      - "akima": Akima spline interpolation (default).
+
+  Returns:
+    numpy.ndarray: The saturation parameter interpolated for all input hues.
+  """
+  if np.all(psat == psat[0]):
+    return np.full_like(hue, psat[0]) # Short-cut if the saturation parameter is the same for RYGCBM.
+  if interpolation == "nearest":
+    hsat = np.linspace(0., 1., 7)
+    psat = np.append(psat, psat[0]) # Enforce periodic boundary conditions.
+    fsat = spint.interp1d(hsat, psat, kind = "nearest")
+  elif interpolation == "linear" or interpolation == "cubic":
+    hsat = np.linspace(0., 1., 7)
+    psat = np.append(psat, psat[0]) # Enforce periodic boundary conditions.
+    k = 3 if interpolation == "cubic" else 1
+    tck = spint.splrep(hsat, psat, k = k, per = True)
+    def fsat(x): spint.splev(x, tck)
+  elif interpolation == "akima":
+    hsat = np.linspace(-1./3., 4./3, 11)
+    psat = np.concatenate(([psat[-2], psat[-1]], psat, [psat[0], psat[1], psat[2]])) # Enforce periodic boundary conditions.
+    fsat = Akima1DInterpolator(hsat, psat)
+  else:
+    raise ValueError(f"Error, unknown interpolation method '{interpolation}'.")
+  return fsat(hue)
+
 class MixinImage:
   """To be included in the Image class."""
 
@@ -107,16 +145,17 @@ class MixinImage:
     if blue  != 1.: output.image[2] *= blue
     return output
 
-  def HSX_color_saturation(self, A = 0., mode = "midsat", interpolation = "akima", model = "HSV", lightness = False, trans = True, **kwargs):
+  def HSX_color_saturation(self, A = 0., mode = "midsat", model = "HSV", interpolation = "akima", lightness = False, trans = True, **kwargs):
     """Adjust color saturation in the HSV or HSL color models.
 
-    The image is converted (if needed) to the HSV or HSL color model and the color saturation S is transformed according
+    The image is converted (if needed) to the HSV or HSL color model, then the color saturation S is transformed according
     to the 'mode' kwarg:
 
       - "addsat": Shift the saturation S ← S+delta.
       - "mulsat": Scale the saturation S ← S*(1+delta).
       - "midsat": Apply a midtone stretch function S ← f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
-        This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1.
+        This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1, and thus leaves the saturation of
+        the least/most saturated pixels unchanged.
 
     The image is then converted back to the original color model after this operation.
     delta is expected in the [-1, 1] range (except in the "mulsat" mode, where it can be > 1). Whatever the saturation mode,
@@ -151,29 +190,6 @@ class MixinImage:
     Returns:
       Image: The processed image.
     """
-
-    def interpolate(hue, psat, interpolation):
-      """Interpolate the saturation parameter psat[RYGCBM] for arbitrary hues."""
-      if np.all(psat == psat[0]):
-        return np.full_like(hue, psat[0]) # Short-cut if the saturation parameter is the same for RYGCBM.
-      if interpolation == "nearest":
-        hsat = np.linspace(0., 1., 7)
-        psat = np.append(psat, psat[0]) # Enforce periodic boundary conditions.
-        fsat = spint.interp1d(hsat, psat, kind = "nearest")
-      elif interpolation == "linear" or interpolation == "cubic":
-        hsat = np.linspace(0., 1., 7)
-        psat = np.append(psat, psat[0]) # Enforce periodic boundary conditions.
-        k = 3 if interpolation == "cubic" else 1
-        tck = spint.splrep(hsat, psat, k = k, per = True)
-        def fsat(x): spint.splev(x, tck)
-      elif interpolation == "akima":
-        hsat = np.linspace(-1./3., 4./3, 11)
-        psat = np.concatenate(([psat[-2], psat[-1]], psat, [psat[0], psat[1], psat[2]])) # Enforce periodic boundary conditions.
-        fsat = Akima1DInterpolator(hsat, psat)
-      else:
-        raise ValueError(f"Error, unknown interpolation method '{interpolation}'.")
-      return fsat(hue)
-
     self.check_color_model("RGB", "HSV", "HSL")
     psat = np.empty(6)
     psat[0] = kwargs.pop("R", A)
@@ -191,6 +207,7 @@ class MixinImage:
       raise ValueError("Error, model must be 'HSV' or 'HSL'.")
     hue = hsx.image[0]
     sat = hsx.image[1]
+    print(f"Before operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
     delta = interpolate(hue, psat, interpolation)
     if mode == "addsat":
       sat += delta
@@ -201,9 +218,107 @@ class MixinImage:
       sat = (midsat-1.)*sat/((2.*midsat-1.)*sat-midsat)
     else:
       raise ValueError(f"Error, unknown saturation mode '{mode}.")
+    print(f"After   operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
     hsx.image[1] = np.clip(sat, 0., 1.)
     output = hsx.convert(colormodel = self.colormodel)
     if lightness: output.set_channel("L*", self.lightness(), inplace = True)
+    if trans:
+      t = helpers.Container()
+      t.type = "hue"
+      t.input = self
+      t.xm = np.linspace(0., 1., 7)
+      t.ym = np.append(psat, psat[0])
+      t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
+      t.x = np.linspace(0., 1., params.ntranslo)
+      t.y = interpolate(t.x, psat, interpolation)
+      t.ylabel = "\u0394"
+      output.trans = t
+    return output
+
+  def CIE_chroma_saturation(self, A = 0., mode = "midsat", model = "Lsh", interpolation = "akima", trans = True, **kwargs):
+    """Adjust color chroma or saturation in the CIELab or CIELuv color spaces.
+
+    The image is converted (if needed) to the CIELab or CIELuv colorspace, then the CIELab chroma CS = c* = sqrt(a*^2+b*^2)
+    (model = "Lab"), or the CIELuv chroma CS = c* = sqrt(u*^2+v*^2) (model = "Luv"), or the CIELuv saturation CS = s* = c*/L*
+    (model = "Lsh") is transformed according to the 'mode' kwarg:
+
+      - "addsat": Shift the chroma/saturation CS ← CS+delta.
+      - "mulsat": Scale the chroma/saturation CS ← CS*(1+delta).
+      - "midsat": Apply a midtone stretch function CS ← f(CS) = (m-1)CS/((2m-1)CS/CSmax-m) with midtone m = (1-delta)/2.
+        This function increases monotonously from f(0) = 0 to f(m*CSmax) = CSmax/2 and f(CSmax) = CSmax, with CSmax = max(CS).
+        It does not change the chroma/saturation of the least/most saturated pixels.
+
+    The image is then converted back to the original color model after this operation.
+    delta is expected in the [-1, 1] range (except in the "mulsat" mode, where it can be > 1). Whatever the saturation mode,
+    delta = 0 leaves the image unchanged, delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale.
+    delta is first set for all hues (with the 'A' kwarg), then can be updated for the red ('R'), yellow ('Y'), green ('G'),
+    cyan ('C'), blue ('B') and magenta ('M') hues by providing the corresponding kwarg. delta is interpolated for arbitrary
+    hue angles using nearest neighbor, linear, cubic or akima spline interpolation, according to the 'interpolation' kwarg.
+
+    Note:
+      Chroma and saturation are related, but different quantities (s* = c*/L* in the CIELuv color space). There is no strictly
+      valid definition of saturation in the CIELab color space.
+
+    Args:
+      A (float, optional): The delta for all hues (default 0).
+      R (float, optional): The red delta (default A).
+      Y (float, optional): The yellow delta (default A).
+      G (float, optional): The green delta (default A).
+      C (float, optional): The cyan delta (default A).
+      B (float, optional): The blue delta (default A).
+      M (float, optional): The magenta delta (default A).
+      mode (str, optional): The saturation mode ["addsat", "mulsat" or "midsat" (default)].
+      model (str, optional): The color model for saturation ["Lab", "Luv" or "Lsh"].
+      interpolation (str, optional): The interpolation method for delta(hue angle):
+
+        - "nearest": Nearest neighbor interpolation.
+        - "linear": Linear spline interpolation.
+        - "cubic": Cubic spline interpolation.
+        - "akima": Akima spline interpolation (default).
+
+      trans (bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see Image.apply_channels).
+
+    Returns:
+      Image: The processed image.
+    """
+    self.check_color_model("RGB", "Lab", "Luv", "Lch", "Lsh")
+    psat = np.empty(6)
+    psat[0] = kwargs.pop("R", A)
+    psat[1] = kwargs.pop("Y", A)
+    psat[2] = kwargs.pop("G", A)
+    psat[3] = kwargs.pop("C", A)
+    psat[4] = kwargs.pop("B", A)
+    psat[5] = kwargs.pop("M", A)
+    if kwargs: print("Discarding extra keyword arguments in Image.CIE_chroma_saturation...")
+    if model == "Lab":
+      name = "chroma"
+      CIE = self.convert(colorspace = "CIELab", colormodel = "Lch", copy = True)
+    elif model == "Luv":
+      name = "chroma"
+      CIE = self.convert(colorspace = "CIELuv", colormodel = "Lch", copy = True)
+    elif model == "Lsh":
+      name = "saturation"
+      CIE = self.convert(colorspace = "CIELuv", colormodel = "Lsh", copy = True)
+    else:
+      raise ValueError("Error, model must be 'Lab' or 'Luv' or 'Lsh'.")
+    hue = CIE.image[2]
+    sat = CIE.image[1]
+    maxsat = np.max(sat)
+    print(f"Before operation: min({name}) = {np.min(sat):.5f}; median({name}) = {np.median(sat):.5f}; max({name}) = {maxsat:.5f}.")
+    delta = interpolate(hue, psat, interpolation)
+    if mode == "addsat":
+      sat += delta
+    elif mode == "mulsat":
+      sat *= 1.+delta
+    elif mode == "midsat":
+      midsat = np.clip(.5*(1.-delta), .005, .995)
+      sat = (midsat-1.)*sat/((2.*midsat-1.)*sat/maxsat-midsat)
+    else:
+      raise ValueError(f"Error, unknown saturation mode '{mode}.")
+    print(f"After  operation: min({name}) = {np.min(sat):.5f}; median({name}) = {np.median(sat):.5f}; max({name}) = {np.max(sat):.5f}.")
+    CIE.image[1] = sat
+    output = CIE.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False)
     if trans:
       t = helpers.Container()
       t.type = "hue"
