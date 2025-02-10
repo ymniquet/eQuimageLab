@@ -22,7 +22,7 @@ Many operations in eQuimageLab can be applied to specific channels specified by 
 Note on "Ls" and "Lb":
 """"""""""""""""""""""
 
-When applying an operation `f` to the luma, the RGB components of the image are rescaled by the ratio `f` (luma)/luma. This preserves the hue and HSV saturation, but may bring some RGB components out-of-range even though `f`\(luma) fits within [0, 1]. These out-of-range components can be regularized with three highlights protection methods:
+When applying an operation `f` to the luma, the RGB components of the image are rescaled by the ratio `f` (luma)/luma. This preserves the hue and HSV saturation, but may result in out-of-range RGB components even though `f`\(luma) fits within [0, 1]. These out-of-range components can be regularized with three highlights protection methods:
 
   - "Desaturation": The out-of-range pixels are desaturated at constant hue and luma (namely, the out-of-range components are decreased while the in-range components are increased so that the hue and luma are preserved). This tends to bleach the out-of-range pixels. `f`\(luma) must fit within [0, 1] to make use of this highlights protection method.
   - "Blending": The out-of-range pixels are blended with `f`\(RGB) (the same operation applied to the RGB channels). This tends to bleach the out-of-range pixels too. `f`\(RGB) must fit within [0, 1] to make use of this highlights protection method.

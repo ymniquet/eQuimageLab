@@ -154,15 +154,18 @@ class MixinImage:
       - "addsat": Shift the saturation S ← S+delta.
       - "mulsat": Scale the saturation S ← S*(1+delta).
       - "midsat": Apply a midtone stretch function S ← f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
-        This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1, and thus leaves the saturation of
-        the least/most saturated pixels unchanged.
+        This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1, and thus leaves the saturation
+        of the least/most saturated pixels unchanged.
 
     The image is then converted back to the original color model after this operation.
-    delta is expected in the [-1, 1] range (except in the "mulsat" mode, where it can be > 1). Whatever the saturation mode,
-    delta = 0 leaves the image unchanged, delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale.
-    delta is first set for all hues (with the 'A' kwarg), then can be updated for the red ('R'), yellow ('Y'), green ('G'),
-    cyan ('C'), blue ('B') and magenta ('M') hues by providing the corresponding kwarg. delta is interpolated for arbitrary
-    hues using nearest neighbor, linear, cubic or akima spline interpolation, according to the 'interpolation' kwarg.
+    delta is expected to be > -1, and to be < 1 in the "midsat" mode. Whatever the mode, delta = 0 leaves the image
+    unchanged, delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale. delta is first set
+    for all hues (with the 'A' kwarg), then can be updated for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'),
+    blue ('B') and magenta ('M') hues by providing the corresponding kwarg. delta is interpolated for arbitrary hues
+    using nearest neighbor, linear, cubic or akima spline interpolation, according to the 'interpolation' kwarg.
+
+    See also:
+      CIE_chroma_saturation
 
     Args:
       A (float, optional): The delta for all hues (default 0).
@@ -181,9 +184,8 @@ class MixinImage:
         - "cubic": Cubic spline interpolation.
         - "akima": Akima spline interpolation (default).
 
-      lightness (bool, optional): If True (default), preserve the lightness L* of the original image in the CIELab
-        color space. This will however decrease color saturation in the bright areas of the image. Available only
-        for RGB images.
+      lightness (bool, optional): If True (default), preserve the lightness L* of the original image in the CIELuv
+        color space. Note that this may result in some out-of-range pixels. Available only for RGB images.
       trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
@@ -221,7 +223,7 @@ class MixinImage:
     print(f"After   operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
     hsx.image[1] = np.clip(sat, 0., 1.)
     output = hsx.convert(colormodel = self.colormodel)
-    if lightness: output.set_channel("L*", self.lightness(), inplace = True)
+    if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
     if trans:
       t = helpers.Container()
       t.type = "hue"
@@ -235,7 +237,7 @@ class MixinImage:
       output.trans = t
     return output
 
-  def CIE_chroma_saturation(self, A = 0., mode = "midsat", model = "Lsh", interpolation = "akima", trans = True, **kwargs):
+  def CIE_chroma_saturation(self, A = 0., mode = "midsat", model = "Lsh", interpolation = "akima", ref = None, trans = True, **kwargs):
     """Adjust color chroma or saturation in the CIELab or CIELuv color spaces.
 
     The image is converted (if needed) to the CIELab or CIELuv colorspace, then the CIELab chroma CS = c* = sqrt(a*^2+b*^2)
@@ -244,20 +246,30 @@ class MixinImage:
 
       - "addsat": Shift the chroma/saturation CS ← CS+delta.
       - "mulsat": Scale the chroma/saturation CS ← CS*(1+delta).
-      - "midsat": Apply a midtone stretch function CS ← f(CS) = (m-1)CS/((2m-1)CS/CSmax-m) with midtone m = (1-delta)/2.
-        This function increases monotonously from f(0) = 0 to f(m*CSmax) = CSmax/2 and f(CSmax) = CSmax, with CSmax = max(CS).
-        It does not change the chroma/saturation of the least/most saturated pixels.
+      - "midsat": Apply a midtone stretch function CS ← f(CS) = (m-1)CS/((2m-1)CS/ref-m) with midtone m = (1-delta)/2.
+        This function increases monotonously from f(0) = 0 to f(m*ref) = ref/2 and f(ref) = ref, where ref is a reference
+        chroma/saturation (ref = max(CS) by default).
 
-    The image is then converted back to the original color model after this operation.
-    delta is expected in the [-1, 1] range (except in the "mulsat" mode, where it can be > 1). Whatever the saturation mode,
-    delta = 0 leaves the image unchanged, delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale.
+    The image is then converted back to the original color space and model after this operation.
+    delta is expected to be > -1, and to be < 1 in the "midsat" mode. Whatever the mode, delta = 0 leaves the image unchanged,
+    delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale. However, please keep in mind that the
+    chroma/saturation in the CIELab/CIELuv color spaces is not bounded by 1 as it is in the lRGB and sRGB color spaces (HSV
+    and HSL color models). The choice of the reference can therefore be critical in the "midsat" mode. In particular, pixels
+    with chroma/saturation > ref get desaturated if delta > 0, and oversaturated if delta < 0 (with a possible singularity
+    at CS = -ref*(1-delta)/(2*delta)).
     delta is first set for all hues (with the 'A' kwarg), then can be updated for the red ('R'), yellow ('Y'), green ('G'),
     cyan ('C'), blue ('B') and magenta ('M') hues by providing the corresponding kwarg. delta is interpolated for arbitrary
     hue angles using nearest neighbor, linear, cubic or akima spline interpolation, according to the 'interpolation' kwarg.
+    Contrary to the saturation of HSV or HSL images, chroma/saturation transformations in the CIELab and CIELuv color spaces
+    preserve the lightness by design. They may, however, result in out-of-range pixels (as not all points of of these color
+    spaces correspond to physical RGB colors).
 
     Note:
       Chroma and saturation are related, but different quantities (s* = c*/L* in the CIELuv color space). There is no strictly
       valid definition of saturation in the CIELab color space.
+
+    See also:
+      HSX_color_saturation
 
     Args:
       A (float, optional): The delta for all hues (default 0).
@@ -276,6 +288,8 @@ class MixinImage:
         - "cubic": Cubic spline interpolation.
         - "akima": Akima spline interpolation (default).
 
+      ref (float, optional): The reference chroma/saturation for the "midsat" mode. If None, defaults to the maximum
+        chroma/saturation of the input image.
       trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
@@ -312,8 +326,9 @@ class MixinImage:
     elif mode == "mulsat":
       sat *= 1.+delta
     elif mode == "midsat":
+      if ref is None: ref = maxsat
       midsat = np.clip(.5*(1.-delta), .005, .995)
-      sat = (midsat-1.)*sat/((2.*midsat-1.)*sat/maxsat-midsat)
+      sat = (midsat-1.)*sat/((2.*midsat-1.)*sat/ref-midsat)
     else:
       raise ValueError(f"Error, unknown saturation mode '{mode}.")
     print(f"After  operation: min({name}) = {np.min(sat):.5f}; median({name}) = {np.median(sat):.5f}; max({name}) = {np.max(sat):.5f}.")
@@ -353,7 +368,7 @@ class MixinImage:
         "cyan" alias "C", "blue" alias "B", or "magenta" alias "M"].
       protection (str, optional): The protection mode ["avgneutral" (default), "maxneutral", "addmask" or "maxmask"].
       amount (float, optional): The parameter A for mask protection (protection = "addmask" or "maxmask", default 1).
-      lightness (bool, optional): If True (default), preserve the lightness L* of the original image in the CIELab
+      lightness (bool, optional): If True (default), preserve the lightness L* of the original image in the CIELuv
         color space.
 
     Returns:
@@ -392,5 +407,5 @@ class MixinImage:
       raise ValueError(f"Error, unknown protection mode '{protection}'.")
     if negative: image = 1.-image
     output = self.newImage(image)
-    if lightness: output.set_channel("L*", self.lightness(), inplace = True)
+    if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
     return output

@@ -1481,8 +1481,8 @@ class MixinImage:
     """Apply the operation f(channel) to selected channels of the image.
 
     Note: When applying an operation to the luma, the RGB components of the image are rescaled
-    by the ratio f(luma)/luma. This preserves the hue and HSV saturation, but may bring some RGB
-    components out-of-range even though f(luma) fits within [0, 1]. These out-of-range components
+    by the ratio f(luma)/luma. This preserves the hue and HSV saturation, but may result in some
+    out-of-range RGB components even though f(luma) fits within [0, 1]. These out-of-range components
     can be regularized with three highlights protection methods:
 
       - "Desaturation": The out-of-range pixels are desaturated at constant hue and luma (namely,
