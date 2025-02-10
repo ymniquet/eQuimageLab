@@ -206,6 +206,8 @@ class MixinImage:
         - "S'": The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
         - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+        - "c*": The CIE chroma c* (CIELab and CIELuv images).
+        - "s*": The CIE saturation s* (CIELuv images).
 
       filter (str): The filter:
 

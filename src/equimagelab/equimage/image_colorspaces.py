@@ -1264,6 +1264,8 @@ class MixinImage:
       return np.hypot(self.image[1], self.image[2])
     elif self.colormodel == "Lch":
       return self.image[1]
+    elif self.colormode == "Lsh":
+      return self.image[0]*self.image[1]
     else:
       self.color_model_error()
 
@@ -1285,10 +1287,12 @@ class MixinImage:
       cstar = np.hypot(self.image[1], self.image[2])
     elif self.colormodel == "Lch":
       cstar = self.image[1]
+    elif self.colormode == "Lsh":
+      return self.image[1]
     else:
       self.color_model_error()
+    sstar = np.zeros_like(cstar)
     Lstar = self.image[0]
-    sstar = np.zeros_like(Lstar)
     mask = (Lstar > 0.)
     sstar[mask] = cstar[mask]/Lstar[mask]
     return sstar
@@ -1312,6 +1316,8 @@ class MixinImage:
         - "S'": The HSL saturation (RGB, HSL and grayscale images).
         - "L": The luma (RGB and grayscale images).
         - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+        - "c*": The CIE chroma c* (CIELab and CIELuv images).
+        - "s*": The CIE saturation s* (CIELuv images).
 
     Returns:
       numpy.ndarray: The selected channel.
@@ -1339,6 +1345,10 @@ class MixinImage:
       return self.luma()
     elif channel == "L*":
       return self.lightness()
+    elif channel == "c*":
+      return self.CIE_chroma()
+    elif channel == "s*":
+      return self.CIE_saturation()
     else:
       raise ValueError(f"Error, unknown channel '{channel}'.")
 
@@ -1364,6 +1374,8 @@ class MixinImage:
           (CIELuv, lRGB and sRGB images).
         - "L*sh": Update the CIE lightness L* in the CIELuv/Lsh color space and model
           (CIELuv, lRGB and sRGB images).
+        - "c*": Update the CIE chroma c* (CIELab and CIELuv images).
+        - "s*": Update the CIE saturation s* (CIELuv images).
 
       data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height as the image.
       inplace (bool, optional): If True, update the image "in place"; if False (default), return a new image.
@@ -1474,6 +1486,27 @@ class MixinImage:
         CIE.image[0] = data
         output.image[:] = CIE.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False).image
       return output
+    elif channel == "c*":
+      self.check_color_space("CIELab", "CIELuv")
+      if self.colormodel == "Lab" or self.colormodel == "Luv":
+        output.image[1:3] = hepers.scale_pixels(self.image[1:3], np.hypot(self.image[1], self.image[2]), data)
+      elif self.colormodel == "Lch":
+        output.image[1] = data
+      elif self.colormodel == "Lsh":
+        mask = (self.image[0] > 0.)
+        output.image[1][mask] = data[mask]/self.image[0][mask]
+      else:
+        self.color_model_error()
+    elif channel == "s*":
+      self.check_color_space("CIELuv")
+      if self.colomodel == "Luv":
+        output.image[1:3] = hepers.scale_pixels(self.image[1:3], np.hypot(self.image[1], self.image[2]), self.image[0]*data)
+      elif self.colormodel == "Lch":
+        output.image[1] = self.image[0]*data
+      elif self.colormodel == "Lsh":
+        output.image[1] = data
+      else:
+        self.color_model_error()
     else:
       raise ValueError(f"Error, unknown channel '{channel}'.")
 
@@ -1526,6 +1559,8 @@ class MixinImage:
           (CIELuv, lRGB and sRGB images).
         - "L*sh": Apply the operation to the CIE lightness L* in the CIELuv/Lsh color space and model
           (CIELuv, lRGB and sRGB images).
+        - "c*": Apply the operation to the CIE chroma c* (CIELab and CIELuv images).
+        - "s*": Apply the operation to the CIE saturation s* (CIELuv images).
 
       multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
         if False, the operation must be applied one channel at a time.
@@ -1681,6 +1716,16 @@ class MixinImage:
         CIE.image[0] = f(CIE.image[0])
         output = CIE.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False)
         if trans: output.trans = t
+      return output
+    elif channel == "c*":
+      cstar = self.CIE_chroma()
+      output = self.set_channel("c*", f(cstar))
+      if trans: output.trans = transformation(f, cstar, "c*")
+      return output
+    elif channel == "s*":
+      sstar = self.CIE_saturation()
+      output = self.set_channel("s*", f(star))
+      if trans: output.trans = transformation(f, sstar, "s*")
       return output
     else:
       selected = nc*[False]

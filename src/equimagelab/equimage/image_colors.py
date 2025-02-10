@@ -220,7 +220,7 @@ class MixinImage:
       sat = (midsat-1.)*sat/((2.*midsat-1.)*sat-midsat)
     else:
       raise ValueError(f"Error, unknown saturation mode '{mode}.")
-    print(f"After   operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
+    print(f"After  operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
     hsx.image[1] = np.clip(sat, 0., 1.)
     output = hsx.convert(colormodel = self.colormodel)
     if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)

@@ -60,6 +60,5 @@ Latest news:
 
     - HSL color model for lRGB and sRGB color spaces.
     - CIELab color space (with Lab and Lch color models).
-    - CIELuv color space (with Luv and Lch color models).
-    - Operations on HSL and HSV hue.
+    - CIELuv color space (with Luv, Lch and Lsh color models).
 

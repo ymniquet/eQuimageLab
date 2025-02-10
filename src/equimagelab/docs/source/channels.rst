@@ -18,6 +18,8 @@ Many operations in eQuimageLab can be applied to specific channels specified by 
   - "L*ab": Apply the operation to the CIE lightness :math:`L^*` in the CIELab/Lab color space and model (CIELab, lRGB and sRGB images).
   - "L*uv": Apply the operation to the CIE lightness :math:`L^*` in the CIELuv/Luv color space and model (CIELuv, lRGB and sRGB images).
   - "L*sh": Apply the operation to the CIE lightness :math:`L^*` in the CIELuv/Lsh color space and model (CIELuv, lRGB and sRGB images).
+  - "c*": Apply the operation to the CIE chroma c* (CIELab and CIELuv images).
+  - "s*": Apply the operation to the CIE saturation s* (CIELuv images).
 
 Note on "Ls" and "Lb":
 """"""""""""""""""""""
