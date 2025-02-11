@@ -215,7 +215,7 @@ class MixinImage:
         raise ValueError(f"Error, unknown channel '{key}'.")
       mmin = np.floor(np.min(channel)*nbins)
       mmax = np.ceil (np.max(channel)*nbins)
-      mbins = int(round(mmax-mmin))
+      mbins = max(int(round(mmax-mmin)), 1)
       hists[key] = helpers.Container()
       hists[key].name = name
       hists[key].nbins = nbins

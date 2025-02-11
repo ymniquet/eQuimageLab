@@ -40,6 +40,37 @@ def set_image_type(dtype):
   else:
     raise ValueError(f"Error, the image type must be 'float32' or 'float64' (got '{dtype}').")
 
+# CIE color spaces parameters.
+
+CIEilluminant = "D65" # Illuminant.
+CIEobserver = "2" # Observer.
+
+def get_CIE_params():
+  """Return CIE color spaces illuminant and observer.
+
+  Returns:
+    str: The CIE illuminant and observer.
+  """
+  return CIEilluminant, CIEobserver
+
+def set_CIE_params(illuminant, observer):
+  """Set CIE color spaces illuminant and observer.
+
+  Args:
+    illuminant: The name of the standard illuminant.
+      Can be "A", "B", "C", "D50", "D55", "D65", "D75", or "E".
+      See https://en.wikipedia.org/wiki/Standard_illuminant.
+    observer: The name of the observer.
+      Can be "2" (2-degree observer) or "10" (10-degree observer).
+  """
+  if illuminant not in ["A", "B", "C", "D50", "D55", "D65", "D75", "E"]:
+    raise ValueError("Error, the CIE illuminant must be 'A', 'B', 'C', 'D50', 'D55', 'D65', 'D75', 'E'.")
+  if observer not in ["2", "10"]:
+    raise ValueError("Error, the observer must be '2' or '10'.")
+  global CIEilluminant, CIEobserver
+  CIEilluminant = illuminant
+  CIEobserver = observer
+
 # Weights of the RGB components in the luma.
 
 rgbluma = (.212671, .715160, .072169)

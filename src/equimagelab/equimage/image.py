@@ -52,21 +52,21 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   In the CIELab color space, the colormodel attribute can be:
 
     - "Lab": the 3 channels of the image are the CIELab components L*/100, a*/100 and b*/100.
-       The lightness L*/100 fits within [0, 1], but a* and b* are signed and not bounded.
+       The lightness L*/100 fits within [0, 1], but a* and b* are signed.
     - "Lch": the 3 channels of the image are the CIELab components L*/100, c*/100 and h*/(2pi).
-       The lightness L*/100 fits within [0, 1], the reduced hue angle h*/(2pi) fits within [0, 1],
-       but the chroma c* is not bounded.
+       The lightness L*/100 and the reduced hue angle h*/(2pi) fit within [0, 1], but the
+       chroma c* is not bounded by 1.
 
   In the CIELuv color space, the colormodel attribute can be:
 
     - "Luv": the 3 channels of the image are the CIELuv components L*/100, u*/100 and v*/100.
-       The lightness L*/100 fits within [0, 1], but u* and v* are signed and not bounded.
+       The lightness L*/100 fits within [0, 1], but u* and v* are signed.
     - "Lch": the 3 channels of the image are the CIELuv components L*/100, c*/100 and h*/(2pi).
-       The lightness L*/100 fits within [0, 1], the reduced hue angle h*/(2pi) fits within [0, 1],
-       but the chroma c* is not bounded.
+       The lightness L*/100 and the reduced hue angle h*/(2pi) fit within [0, 1], but the
+       chroma c* is not bounded by 1.
     - "Lsh": the 3 channels of the image are the CIELuv components L*/100, s*/100 and h*/(2pi).
-       The lightness L*/100 fits within [0, 1], the reduced hue angle h*/(2pi) fits within [0, 1],
-       but the saturation s* = c*/L* is not bounded.
+       The lightness L*/100 and the reduced hue angle h*/(2pi) fit within [0, 1], but the
+       saturation s* = c*/L* is not bounded by 1.
 
   The default color space is sRGB and the default color model is RGB.
 

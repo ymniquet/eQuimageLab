@@ -145,7 +145,49 @@ class MixinImage:
     if blue  != 1.: output.image[2] *= blue
     return output
 
-  def HSX_color_saturation(self, A = 0., mode = "midsat", model = "HSV", interpolation = "akima", lightness = False, trans = True, **kwargs):
+  def set_color_temperature(self, T):
+    """Adjust the color temperature of a RGB image.
+
+    Adjusts the color balance assuming that the scene is (or is lit by) a black body source
+    whose temperature is changed from T = 6500K (white = D65 illuminant) to the input T.
+
+    Inspired from http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/.
+
+    This is not a rigorous transformation and is meant only for "cosmetic" purposes.
+    It is designed here for the sRGB color space (?).
+
+    Args:
+      T (float): The target temperature (K) between 1000 and 40000K.
+
+    Returns:
+      Image: The processed image.
+    """
+    self.check_color_model("RGB")
+    T = min(max(T, 1000.), 40000.)
+    Ti = T/100.
+    if Ti <= 66.:
+      red = 255.
+    else:
+      red = 329.698727446*(Ti-60.)**(-0.1332047592)
+    if Ti <= 66.:
+      green = 99.4708025861*np.log(Ti)-161.119568166
+    else:
+      green = 288.1221695283*(Ti-60.)**(-0.0755148492)
+    if Ti >= 66.:
+      blue = 255.
+    elif Ti <= 19.:
+      blue = 0.
+    else:
+      blue = 138.5177312231*np.log(Ti-10.)-305.0447927307
+    red = min(max(red/255., 0.), 1.)
+    green = min(max(green/255., 0.), 1.)
+    blue = min(max(blue/255., 0.), 1.)
+    print(f"Red multiplier = {red:.3f}.")
+    print(f"Green multiplier = {green:.3f}.")
+    print(f"Blue multiplier = {blue:.3f}.")
+    return self.RGB_color_balance(red, green, blue)
+
+  def HSX_color_saturation(self, A = 0., mode = "midsat", colormodel = "HSV", interpolation = "akima", lightness = False, trans = True, **kwargs):
     """Adjust color saturation in the HSV or HSL color models.
 
     The image is converted (if needed) to the HSV or HSL color model, then the color saturation S is transformed according
@@ -176,7 +218,7 @@ class MixinImage:
       B (float, optional): The blue delta (default A).
       M (float, optional): The magenta delta (default A).
       mode (str, optional): The saturation mode ["addsat", "mulsat" or "midsat" (default)].
-      model (str, optional): The color model for saturation ["HSV" (default) or "HSL"].
+      colormodel (str, optional): The color model for saturation ["HSV" (default) or "HSL"].
       interpolation (str, optional): The interpolation method for delta(hue):
 
         - "nearest": Nearest neighbor interpolation.
@@ -200,13 +242,13 @@ class MixinImage:
     psat[3] = kwargs.pop("C", A)
     psat[4] = kwargs.pop("B", A)
     psat[5] = kwargs.pop("M", A)
-    if kwargs: print("Discarding extra keyword arguments in Image.HSX_color_saturation...")
-    if model == "HSV":
+    if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
+    if colormodel == "HSV":
       hsx = self.HSV()
-    elif model == "HSL":
+    elif colormodel == "HSL":
       hsx = self.HSL()
     else:
-      raise ValueError("Error, model must be 'HSV' or 'HSL'.")
+      raise ValueError("Error, colormodel must be 'HSV' or 'HSL'.")
     hue = hsx.image[0]
     sat = hsx.image[1]
     print(f"Before operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
@@ -237,12 +279,12 @@ class MixinImage:
       output.trans = t
     return output
 
-  def CIE_chroma_saturation(self, A = 0., mode = "midsat", model = "Lsh", interpolation = "akima", ref = None, trans = True, **kwargs):
+  def CIE_chroma_saturation(self, A = 0., mode = "midsat", colormodel = "Lsh", interpolation = "akima", ref = None, trans = True, **kwargs):
     """Adjust color chroma or saturation in the CIELab or CIELuv color spaces.
 
     The image is converted (if needed) to the CIELab or CIELuv colorspace, then the CIELab chroma CS = c* = sqrt(a*^2+b*^2)
-    (model = "Lab"), or the CIELuv chroma CS = c* = sqrt(u*^2+v*^2) (model = "Luv"), or the CIELuv saturation CS = s* = c*/L*
-    (model = "Lsh") is transformed according to the 'mode' kwarg:
+    (colormodel = "Lab"), or the CIELuv chroma CS = c* = sqrt(u*^2+v*^2) (colormodel = "Luv"), or the CIELuv saturation
+    CS = s* = c*/L* (colormodel = "Lsh") is transformed according to the 'mode' kwarg:
 
       - "addsat": Shift the chroma/saturation CS ← CS+delta.
       - "mulsat": Scale the chroma/saturation CS ← CS*(1+delta).
@@ -280,7 +322,7 @@ class MixinImage:
       B (float, optional): The blue delta (default A).
       M (float, optional): The magenta delta (default A).
       mode (str, optional): The saturation mode ["addsat", "mulsat" or "midsat" (default)].
-      model (str, optional): The color model for saturation ["Lab", "Luv" or "Lsh"].
+      colormodel (str, optional): The color model for saturation ["Lab", "Luv" or "Lsh"].
       interpolation (str, optional): The interpolation method for delta(hue angle):
 
         - "nearest": Nearest neighbor interpolation.
@@ -304,18 +346,18 @@ class MixinImage:
     psat[3] = kwargs.pop("C", A)
     psat[4] = kwargs.pop("B", A)
     psat[5] = kwargs.pop("M", A)
-    if kwargs: print("Discarding extra keyword arguments in Image.CIE_chroma_saturation...")
-    if model == "Lab":
+    if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
+    if colormodel == "Lab":
       name = "chroma"
       CIE = self.convert(colorspace = "CIELab", colormodel = "Lch", copy = True)
-    elif model == "Luv":
+    elif colormodel == "Luv":
       name = "chroma"
       CIE = self.convert(colorspace = "CIELuv", colormodel = "Lch", copy = True)
-    elif model == "Lsh":
+    elif colormodel == "Lsh":
       name = "saturation"
       CIE = self.convert(colorspace = "CIELuv", colormodel = "Lsh", copy = True)
     else:
-      raise ValueError("Error, model must be 'Lab' or 'Luv' or 'Lsh'.")
+      raise ValueError("Error, colormodel must be 'Lab' or 'Luv' or 'Lsh'.")
     hue = CIE.image[2]
     sat = CIE.image[1]
     maxsat = np.max(sat)

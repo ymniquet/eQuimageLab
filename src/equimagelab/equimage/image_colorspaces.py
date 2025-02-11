@@ -69,7 +69,7 @@ def lRGB_to_CIELab(image):
   """Convert the input linear RGB image into a CIELab image.
 
   Note that the CIE lightness L* is conventionally defined within [0, 100],
-  and that the CIE chromatic components a*, b* are signed and not bounded.
+  and that the CIE chromatic components a*, b* are signed.
   This function actually returns L*/100, a*/100 and b*/100.
 
   See also:
@@ -82,7 +82,7 @@ def lRGB_to_CIELab(image):
     numpy.ndarray: The converted CIELab image (/100).
   """
   xyz = np.tensordot(np.asarray(RGB2XYZ, dtype = image.dtype), image, axes = 1)
-  return skcolor.xyz2lab(xyz, channel_axis = 0)/100.
+  return skcolor.xyz2lab(xyz, channel_axis = 0, illuminant = params.CIEilluminant, observer = params.CIEobserver)/100.
 
 def CIELab_to_lRGB(image):
   """Convert the input CIELab image into a linear RGB image.
@@ -96,14 +96,14 @@ def CIELab_to_lRGB(image):
   Returns:
     numpy.ndarray: The converted lRGB image.
   """
-  xyz = skcolor.lab2xyz(100.*image, channel_axis = 0)
+  xyz = skcolor.lab2xyz(100.*image, channel_axis = 0, illuminant = params.CIEilluminant, observer = params.CIEobserver)
   return np.tensordot(np.asarray(XYZ2RGB, dtype = image.dtype), xyz, axes = 1)
 
 def lRGB_to_CIELuv(image):
   """Convert the input linear RGB image into a CIELuv image.
 
   Note that the CIE lightness L* is conventionally defined within [0, 100],
-  and that the CIE chromatic components u*, v* are signed and not bounded.
+  and that the CIE chromatic components u*, v* are signed.
   This function actually returns L*/100, u*/100 and v²*/100.
 
   See also:
@@ -116,7 +116,7 @@ def lRGB_to_CIELuv(image):
     numpy.ndarray: The converted CIELuv image (/100).
   """
   xyz = np.tensordot(np.asarray(RGB2XYZ, dtype = image.dtype), image, axes = 1)
-  return skcolor.xyz2luv(xyz, channel_axis = 0)/100.
+  return skcolor.xyz2luv(xyz, channel_axis = 0, illuminant = params.CIEilluminant, observer = params.CIEobserver)/100.
 
 def CIELuv_to_lRGB(image):
   """Convert the input CIELuv image into a linear RGB image.
@@ -130,7 +130,7 @@ def CIELuv_to_lRGB(image):
   Returns:
     numpy.ndarray: The converted lRGB image.
   """
-  xyz = skcolor.luv2xyz(100.*image, channel_axis = 0)
+  xyz = skcolor.luv2xyz(100.*image, channel_axis = 0, illuminant = params.CIEilluminant, observer = params.CIEobserver)
   return np.tensordot(np.asarray(XYZ2RGB, dtype = image.dtype), xyz, axes = 1)
 
 ###########################################
@@ -141,7 +141,7 @@ def sRGB_to_CIELab(image):
   """Convert the input sRGB image into a CIELab image.
 
   Note that the CIE lightness L* is conventionally defined within [0, 100],
-  and that the CIE chromatic components a*, b* are signed and not bounded.
+  and that the CIE chromatic components a*, b* are signed.
   This function actually returns L*/100, a*/100 and b*/100.
 
   See also:
@@ -173,7 +173,7 @@ def sRGB_to_CIELuv(image):
   """Convert the input sRGB image into a CIELuv image.
 
   Note that the CIE lightness L* is conventionally defined within [0, 100],
-  and that the CIE chromatic components u*, v* are signed and not bounded.
+  and that the CIE chromatic components u*, v* are signed.
   This function actually returns L*/100, u*/100 and v*/100.
 
   See also:
@@ -821,7 +821,7 @@ class MixinImage:
     """Convert the image to the CIELab color space.
 
     Note that the CIE lightness L* is conventionally defined within [0, 100],
-    and that the CIE chromatic components a*, b* are signed and not bounded.
+    and that the CIE chromatic components a*, b* are signed.
     This function actually returns L*/100, a*/100 and b*/100.
 
     Warning:
@@ -849,7 +849,7 @@ class MixinImage:
     """Convert the image to the CIELuv color space.
 
     Note that the CIE lightness L* is conventionally defined within [0, 100],
-    and that the CIE chromatic components u*, v* are signed and not bounded.
+    and that the CIE chromatic components u*, v* are signed.
     This function actually returns L*/100, u*/100 and v*/100.
 
     Warning:
@@ -1717,12 +1717,12 @@ class MixinImage:
         output = CIE.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False)
         if trans: output.trans = t
       return output
-    elif channel == "c*":
+    elif channels == "c*":
       cstar = self.CIE_chroma()
       output = self.set_channel("c*", f(cstar))
       if trans: output.trans = transformation(f, cstar, "c*")
       return output
-    elif channel == "s*":
+    elif channels == "s*":
       sstar = self.CIE_saturation()
       output = self.set_channel("s*", f(star))
       if trans: output.trans = transformation(f, sstar, "s*")
