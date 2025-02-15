@@ -64,7 +64,7 @@ def set_CIE_params(illuminant, observer):
       Can be "2" (2-degree observer) or "10" (10-degree observer).
   """
   if illuminant not in ["A", "B", "C", "D50", "D55", "D65", "D75", "E"]:
-    raise ValueError("Error, the CIE illuminant must be 'A', 'B', 'C', 'D50', 'D55', 'D65', 'D75', 'E'.")
+    raise ValueError("Error, the CIE illuminant must be 'A', 'B', 'C', 'D50', 'D55', 'D65', 'D75' or 'E'.")
   if observer not in ["2", "10"]:
     raise ValueError("Error, the observer must be '2' or '10'.")
   global CIEilluminant, CIEobserver

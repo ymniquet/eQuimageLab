@@ -24,10 +24,12 @@ def parse_channels(channels, errors = True):
       - "S": The HSV saturation (RGB, HSV and grayscale images).
       - "L'": The HSL lightness (RGB, HSL and grayscale images).
       - "S'": The HSL saturation (RGB, HSL and grayscale images).
+      - "H": The HSV hue (RGB, HSV and grayscale images).
       - "L": The luma (RGB and grayscale images).
       - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
       - "c*": The CIE chroma c* (CIELab and CIELuv images).
       - "s*": The CIE saturation s* (CIELuv images).
+      - "h*": The CIE hue angle h* (CIELab and CIELuv images).
 
     errors (bool, optional): If False, discard unknown channel keys; If True (default), raise a ValueError.
 
@@ -38,7 +40,7 @@ def parse_channels(channels, errors = True):
   prevkey = None
   for key in channels:
     ok = False
-    if key in ["1", "2", "3", "R", "G", "B", "L", "V", "S", "c", "s"]:
+    if key in ["1", "2", "3", "R", "G", "B", "L", "V", "S", "H", "c", "s", "h"]:
       keys.append(key)
       ok = True
     elif key == "'":
@@ -46,7 +48,7 @@ def parse_channels(channels, errors = True):
         keys[-1] += key
         ok = True
     elif key == "*":
-      if prevkey in ["L", "c", "s"]:
+      if prevkey in ["L", "c", "s", "h"]:
         keys[-1] += key
         ok = True
     elif key == " ":
@@ -77,10 +79,12 @@ class MixinImage:
         - "S": The HSV saturation (RGB, HSV and grayscale images).
         - "L'": The HSL lightness (RGB, HSL and grayscale images).
         - "S'": The HSL saturation (RGB, HSL and grayscale images).
+        - "H": The HSV hue (RGB, HSV and grayscale images).
         - "L": The luma (RGB and grayscale images).
         - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
         - "c*": The CIE chroma c* (CIELab and CIELuv images).
         - "s*": The CIE saturation s* (CIELuv images).
+        - "h*": The CIE hue angle h* (CIELab and CIELuv images).
 
         If it ends with a "+", channels gets appended with the keys already computed and stored in self.hists.
         Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images, "L" for grayscale
@@ -195,6 +199,10 @@ class MixinImage:
         name = "HSL saturation"
         color = "orange"
         channel = self.HSL_saturation()
+      elif key == "H":
+        name = "HSX hue"
+        color = "limegreen"
+        channel = self.HSX_hue()
       elif key == "L":
         name = "Luma"
         color = "lightslategray"
@@ -211,6 +219,10 @@ class MixinImage:
         name = "CIE saturation"
         color = "orange"
         channel = self.CIE_saturation()
+      elif key == "h*":
+        name = "CIE hue"
+        color = "limegreen"
+        channel = self.CIE_hue()
       else:
         raise ValueError(f"Error, unknown channel '{key}'.")
       mmin = np.floor(np.min(channel)*nbins)
@@ -239,10 +251,12 @@ class MixinImage:
         - "S": The HSV saturation (RGB, HSV and grayscale images).
         - "L'": The HSL lightness (RGB, HSL and grayscale images).
         - "S'": The HSL saturation (RGB, HSL and grayscale images).
+        - "H": The HSV hue (RGB, HSV and grayscale images).
         - "L": The luma (RGB and grayscale images).
         - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
         - "c*": The CIE chroma c* (CIELab and CIELuv images).
         - "s*": The CIE saturation s* (CIELuv images).
+        - "h*": The CIE hue angle h* (CIELab and CIELuv images).
 
         If it ends with a "+", channels gets appended with the keys already computed and stored in self.stats.
         Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images, "L" for grayscale
@@ -351,6 +365,10 @@ class MixinImage:
         name = "HSL saturation"
         color = "orange"
         channel = self.HSL_saturation()
+      elif key == "H":
+        name = "HSX hue"
+        color = "limegreen"
+        channel = self.HSX_hue()
       elif key == "L":
         name = "Luma"
         color = "lightslategray"
@@ -367,6 +385,10 @@ class MixinImage:
         name = "CIE saturation"
         color = "orange"
         channel = self.CIE_saturation()
+      elif key == "h*":
+        name = "CIE hue"
+        color = "limegreen"
+        channel = self.CIE_hue()
       else:
         raise ValueError(f"Error, unknown channel '{key}'.")
       stats[key] = helpers.Container()

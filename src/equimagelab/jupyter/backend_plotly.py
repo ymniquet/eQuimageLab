@@ -310,10 +310,9 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, r
     print("There is no transformation embedded in the input image.")
     return
   reference = trans.input
-  if trans.type == "hist":
-    keys = parse_channels(channels)
-    for key in parse_channels(trans.channels, errors = False):
-      if not key in keys: channels += key
+  keys = parse_channels(channels)
+  for key in parse_channels(trans.channels, errors = False):
+    if not key in keys: channels += key
   show_histograms(reference, channels = channels, log = True, width = width, xlabel = "Input level", trans = trans, renderer = renderer)
   show_histograms(image, channels = channels, log = True, width = width, xlabel = "Output level", renderer = renderer)
   show(image, histograms = False, statistics = False, sampling = sampling, width = width, hover = hover, renderer = renderer)

@@ -15,18 +15,15 @@ from . import params
 from . import helpers
 from . import image_colorspaces as colorspaces
 
-#####################################
-# For inclusion in the Image class. #
-#####################################
+def interpolate_hue(hue, param, interpolation):
+  """Interpolate a parameter param[RYGCBM] for arbitrary hues.
 
-def interpolate(hue, psat, interpolation):
-  """Interpolate the saturation parameter psat[RYGCBM] for arbitrary hues.
-
-  Used by Image.HSX_color_saturation and Image.CIE_chroma_saturation.
+  Used by Image.HSX_color_saturation, Image.CIE_chroma_saturation, Image.rotate_HSX_hue
+  and Image.rotate_CIE_hue.
 
   Args:
-    hue (numpy.ndarray): The input hues.
-    psat (numpy.ndarray): The saturation parameter for the red, yellow, green, cyan, blue and magenta hues.
+    hue (numpy.ndarray): The hues the parameter must be interpolated for.
+    param (numpy.ndarray): The parameter for the red, yellow, green, cyan, blue and magenta hues.
     interpolation (str, optional): The interpolation method:
 
       - "nearest": Nearest neighbor interpolation.
@@ -35,27 +32,31 @@ def interpolate(hue, psat, interpolation):
       - "akima": Akima spline interpolation (default).
 
   Returns:
-    numpy.ndarray: The saturation parameter interpolated for all input hues.
+    numpy.ndarray: The parameter interpolated for all input hues.
   """
-  if np.all(psat == psat[0]):
-    return np.full_like(hue, psat[0]) # Short-cut if the saturation parameter is the same for RYGCBM.
+  if np.all(param == param[0]):
+    return np.full_like(hue, param[0]) # Short-cut if the parameter is the same for RYGCBM.
   if interpolation == "nearest":
-    hsat = np.linspace(0., 1., 7)
-    psat = np.append(psat, psat[0]) # Enforce periodic boundary conditions.
-    fsat = spint.interp1d(hsat, psat, kind = "nearest")
+    hgrid = np.linspace(0., 1., 7)
+    param = np.append(param, param[0]) # Enforce periodic boundary conditions.
+    finter = spint.interp1d(hgrid, param, kind = "nearest")
   elif interpolation == "linear" or interpolation == "cubic":
-    hsat = np.linspace(0., 1., 7)
-    psat = np.append(psat, psat[0]) # Enforce periodic boundary conditions.
+    hgrid = np.linspace(0., 1., 7)
+    param = np.append(param, param[0]) # Enforce periodic boundary conditions.
     k = 3 if interpolation == "cubic" else 1
-    tck = spint.splrep(hsat, psat, k = k, per = True)
-    def fsat(x): spint.splev(x, tck)
+    tck = spint.splrep(hgrid, param, k = k, per = True)
+    def finter(x): spint.splev(x, tck)
   elif interpolation == "akima":
-    hsat = np.linspace(-1./3., 4./3, 11)
-    psat = np.concatenate(([psat[-2], psat[-1]], psat, [psat[0], psat[1], psat[2]])) # Enforce periodic boundary conditions.
-    fsat = Akima1DInterpolator(hsat, psat)
+    hgrid = np.linspace(-1./3., 4./3, 11)
+    param = np.concatenate(([param[-2], param[-1]], param, [param[0], param[1], param[2]])) # Enforce periodic boundary conditions.
+    finter = Akima1DInterpolator(hgrid, param)
   else:
     raise ValueError(f"Error, unknown interpolation method '{interpolation}'.")
-  return fsat(hue)
+  return finter(hue)
+
+#####################################
+# For inclusion in the Image class. #
+#####################################
 
 class MixinImage:
   """To be included in the Image class."""
@@ -122,7 +123,7 @@ class MixinImage:
   # Color transformations. #
   ##########################
 
-  def RGB_color_balance(self, red = 1., green = 1., blue = 1.):
+  def RGB_color_balance(self, red = 1., green = 1., blue = 1):
     """Adjust the color balance of a RGB image.
 
     Scales the red/green/blue channels by the input multipliers.
@@ -145,47 +146,73 @@ class MixinImage:
     if blue  != 1.: output.image[2] *= blue
     return output
 
-  def set_color_temperature(self, T):
+  def set_color_temperature(self, T, T0 = 6650., lightness = False):
     """Adjust the color temperature of a RGB image.
 
     Adjusts the color balance assuming that the scene is (or is lit by) a black body source
-    whose temperature is changed from T = 6500K (white = D65 illuminant) to the input T.
+    whose temperature is changed from T0 (default 6650K) to T.
+    Setting T < T0 casts a red tint on the image, while setting T > T0 casts a blue tint.
 
-    Inspired from http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/.
-
-    This is not a rigorous transformation and is meant only for "cosmetic" purposes.
-    It is designed here for the sRGB color space (?).
+    This is not a rigorous transformation and is intended for "cosmetic" purposes.
+    The colors are balanced in the linear RGB color space.
 
     Args:
-      T (float): The target temperature (K) between 1000 and 40000K.
+      T (float): The target temperature between 1000K and 40000K.
+      T0 (float, optional): The initial temperature between 1000K and 40000K (default 6650K).
+      lightness (bool, optional): If True, preserve the lightness L* of the original image in the
+        CIELuv color space. Note that this may result in some out-of-range pixels. Default is False.
 
     Returns:
       Image: The processed image.
     """
+
+    def RGB_multipliers(T):
+      """Return RGB multipliers for a given temperature T.
+
+      These are fits to the data of:
+      http://www.vendian.org/mncharity/dir3/blackbody/
+      http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html
+
+      See equimagelab/misc/CTdata.py for the fits.
+
+      Args:
+        T (float): The temperature (K).
+
+      Returns:
+        float: The red, green, blue multipliers for temperature T.
+      """
+
+      def fitfunction(T, a, b, c, n):
+        """Fit function for the RGB multipliers."""
+        Tr = (T-6650.)/10000.
+        return max(0., 1.+a*Tr+b*Tr**2+c*Tr**3)**n
+
+      if T < 1000. or T > 40000.:
+        raise ValueError("Error, the temperature must range between 1000K and 40000K.")
+      if T < 6650.:
+        red = 1.
+        green = .955*fitfunction(T, 0.6328063016856568, -0.7554188937494166, 1.7905208976761535, 1.2444903530611828)
+        blue = fitfunction(T, 1.2773641159953395, -1.0621459476222992, 1.1594787131985838, 1.7962669751286322)
+      else:
+        red = fitfunction(T, 3.7874055198445142, -1.2956261274808025, 0.16818980687443094, -0.6136402157590004)
+        green = .955*fitfunction(T, 3.490058031650525, -1.1425871791667106, 0.14401832008759521, -0.42381907464549073)
+        blue = 1.
+      return red, green, blue
+
     self.check_color_model("RGB")
-    T = min(max(T, 1000.), 40000.)
-    Ti = T/100.
-    if Ti <= 66.:
-      red = 255.
-    else:
-      red = 329.698727446*(Ti-60.)**(-0.1332047592)
-    if Ti <= 66.:
-      green = 99.4708025861*np.log(Ti)-161.119568166
-    else:
-      green = 288.1221695283*(Ti-60.)**(-0.0755148492)
-    if Ti >= 66.:
-      blue = 255.
-    elif Ti <= 19.:
-      blue = 0.
-    else:
-      blue = 138.5177312231*np.log(Ti-10.)-305.0447927307
-    red = min(max(red/255., 0.), 1.)
-    green = min(max(green/255., 0.), 1.)
-    blue = min(max(blue/255., 0.), 1.)
+    red0, green0, blue0 = RGB_multipliers(T0)
+    red , green , blue  = RGB_multipliers(T)
+    red /= red0 ; green /= green0 ; blue /= blue0
+    maxi = np.max([red, green, blue])
+    red /= maxi ; green /= maxi ; blue /= maxi
     print(f"Red multiplier = {red:.3f}.")
     print(f"Green multiplier = {green:.3f}.")
     print(f"Blue multiplier = {blue:.3f}.")
-    return self.RGB_color_balance(red, green, blue)
+    image = self.convert(colorspace = "lRGB", copy = False)
+    balanced = image.RGB_color_balance(red, green, blue)
+    output = balanced.convert(colorspace = self.colorspace, copy = False)
+    if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
+    return output
 
   def HSX_color_saturation(self, A = 0., mode = "midsat", colormodel = "HSV", interpolation = "akima", lightness = False, trans = True, **kwargs):
     """Adjust color saturation in the HSV or HSL color models.
@@ -226,10 +253,10 @@ class MixinImage:
         - "cubic": Cubic spline interpolation.
         - "akima": Akima spline interpolation (default).
 
-      lightness (bool, optional): If True (default), preserve the lightness L* of the original image in the CIELuv
-        color space. Note that this may result in some out-of-range pixels. Available only for RGB images.
-      trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+      lightness (bool, optional): If True, preserve the lightness L* of the original image in the CIELuv color space.
+        Note that this may result in some out-of-range pixels. Default is False.
+      trans (bool, optional): If True (default), embed the transormation in the output image as output.trans
+        (see Image.apply_channels).
 
     Returns:
       Image: The processed image.
@@ -244,15 +271,17 @@ class MixinImage:
     psat[5] = kwargs.pop("M", A)
     if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
     if colormodel == "HSV":
+      channel = "S"
       hsx = self.HSV()
     elif colormodel == "HSL":
+      channel = "S'"
       hsx = self.HSL()
     else:
       raise ValueError("Error, colormodel must be 'HSV' or 'HSL'.")
     hue = hsx.image[0]
     sat = hsx.image[1]
     print(f"Before operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
-    delta = interpolate(hue, psat, interpolation)
+    delta = interpolate_hue(hue, psat, interpolation)
     if mode == "addsat":
       sat += delta
     elif mode == "mulsat":
@@ -264,17 +293,18 @@ class MixinImage:
       raise ValueError(f"Error, unknown saturation mode '{mode}.")
     print(f"After  operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
     hsx.image[1] = np.clip(sat, 0., 1.)
-    output = hsx.convert(colormodel = self.colormodel)
+    output = hsx.convert(colormodel = self.colormodel, copy = False)
     if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
     if trans:
       t = helpers.Container()
       t.type = "hue"
       t.input = self
+      t.channels = channel
       t.xm = np.linspace(0., 1., 7)
       t.ym = np.append(psat, psat[0])
       t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
       t.x = np.linspace(0., 1., params.ntranslo)
-      t.y = interpolate(t.x, psat, interpolation)
+      t.y = interpolate_hue(t.x, psat, interpolation)
       t.ylabel = "\u0394"
       output.trans = t
     return output
@@ -296,7 +326,7 @@ class MixinImage:
     delta is expected to be > -1, and to be < 1 in the "midsat" mode. Whatever the mode, delta = 0 leaves the image unchanged,
     delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale. However, please keep in mind that the
     chroma/saturation in the CIELab/CIELuv color spaces is not bounded by 1 as it is in the lRGB and sRGB color spaces (HSV
-    and HSL color models). The choice of the reference can therefore be critical in the "midsat" mode. In particular, pixels
+    and HSL color models). The choice of the reference can, therefore, be critical in the "midsat" mode. In particular, pixels
     with chroma/saturation > ref get desaturated if delta > 0, and oversaturated if delta < 0 (with a possible singularity
     at CS = -ref*(1-delta)/(2*delta)).
     delta is first set for all hues (with the 'A' kwarg), then can be updated for the red ('R'), yellow ('Y'), green ('G'),
@@ -332,13 +362,12 @@ class MixinImage:
 
       ref (float, optional): The reference chroma/saturation for the "midsat" mode. If None, defaults to the maximum
         chroma/saturation of the input image.
-      trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+      trans (bool, optional): If True (default), embed the transormation in the output image as output.trans
+        (see Image.apply_channels).
 
     Returns:
       Image: The processed image.
     """
-    self.check_color_model("RGB", "Lab", "Luv", "Lch", "Lsh")
     psat = np.empty(6)
     psat[0] = kwargs.pop("R", A)
     psat[1] = kwargs.pop("Y", A)
@@ -349,12 +378,15 @@ class MixinImage:
     if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
     if colormodel == "Lab":
       name = "chroma"
+      channel = "c*" if self.colorspace == "CIELab" else ""
       CIE = self.convert(colorspace = "CIELab", colormodel = "Lch", copy = True)
     elif colormodel == "Luv":
       name = "chroma"
+      channel = "c*" if self.colorspace == "CIELuv" else ""
       CIE = self.convert(colorspace = "CIELuv", colormodel = "Lch", copy = True)
     elif colormodel == "Lsh":
       name = "saturation"
+      channel = "s*" if self.colorspace == "CIELuv" else ""
       CIE = self.convert(colorspace = "CIELuv", colormodel = "Lsh", copy = True)
     else:
       raise ValueError("Error, colormodel must be 'Lab' or 'Luv' or 'Lsh'.")
@@ -362,7 +394,7 @@ class MixinImage:
     sat = CIE.image[1]
     maxsat = np.max(sat)
     print(f"Before operation: min({name}) = {np.min(sat):.5f}; median({name}) = {np.median(sat):.5f}; max({name}) = {maxsat:.5f}.")
-    delta = interpolate(hue, psat, interpolation)
+    delta = interpolate_hue(hue, psat, interpolation)
     if mode == "addsat":
       sat += delta
     elif mode == "mulsat":
@@ -380,11 +412,172 @@ class MixinImage:
       t = helpers.Container()
       t.type = "hue"
       t.input = self
+      t.channels = channel
       t.xm = np.linspace(0., 1., 7)
       t.ym = np.append(psat, psat[0])
       t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
       t.x = np.linspace(0., 1., params.ntranslo)
-      t.y = interpolate(t.x, psat, interpolation)
+      t.y = interpolate_hue(t.x, psat, interpolation)
+      t.ylabel = "\u0394"
+      output.trans = t
+    return output
+
+  def rotate_HSX_hue(self, A = 0., interpolation = "akima", lightness = False, trans = True, **kwargs):
+    """Rotate color hues in the HSV/HSL color models.
+
+    The image is converted (if RGB) to the HSV color model, and the hue H is rotated:
+
+      H ← (H+delta)%1.
+
+    The image is then converted back to the original color model after this operation.
+
+    delta is first set for all original hues (with the 'A' kwarg), then can be updated for the red ('R'),
+    yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues by providing the corresponding
+    kwarg. delta is interpolated for arbitrary hues using nearest neighbor, linear, cubic or akima spline
+    interpolation, according to the 'interpolation' kwarg.
+
+    Note:
+      H(red) = 0, H(yellow) = 1/6, H(green) = 1/3, H(cyan) = 1/2, H(blue) = 2/3, and H(magenta) = 5/6.
+      A rotation A = 1/6 converts red → yellow, yellow → green, green → cyan, cyan → blue, blue → magenta
+      and magenta → red.
+      A rotation A = -1/6 converts red → magenta, yellow → red, green → yellow, cyan → green, blue → cyan
+      and magenta → blue.
+
+    See also:
+      rotate_CIE_hue
+
+    Args:
+      A (float, optional): The delta for all hues (default 0).
+      R (float, optional): The red delta (default A).
+      Y (float, optional): The yellow delta (default A).
+      G (float, optional): The green delta (default A).
+      C (float, optional): The cyan delta (default A).
+      B (float, optional): The blue delta (default A).
+      M (float, optional): The magenta delta (default A).
+      interpolation (str, optional): The interpolation method for delta(hue):
+
+        - "nearest": Nearest neighbor interpolation.
+        - "linear": Linear spline interpolation.
+        - "cubic": Cubic spline interpolation.
+        - "akima": Akima spline interpolation (default).
+
+      lightness (bool, optional): If True, preserve the lightness L* of the original image in the CIELuv
+        color space. Note that this may result in some out-of-range pixels. Default is False.
+      trans (bool, optional): If True (default), embed the transormation in the output image as output.trans
+        (see Image.apply_channels).
+
+    Returns:
+      Image: The processed image.
+    """
+    self.check_color_model("RGB", "HSV", "HSL")
+    phue = np.empty(6)
+    phue[0] = kwargs.pop("R", A)
+    phue[1] = kwargs.pop("Y", A)
+    phue[2] = kwargs.pop("G", A)
+    phue[3] = kwargs.pop("C", A)
+    phue[4] = kwargs.pop("B", A)
+    phue[5] = kwargs.pop("M", A)
+    if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
+    if self.colormodel == "RGB":
+      hsv = self.HSV()
+    else:
+      hsv = self.copy()
+    hue = hsv.image[0]
+    delta = interpolate_hue(hue, phue, interpolation)
+    hsv.image[0] = (hue+delta)%1.
+    output = hsv.convert(colormodel = self.colormodel, copy = False)
+    if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
+    if trans:
+      t = helpers.Container()
+      t.type = "hue"
+      t.input = self
+      t.channels = "H"
+      t.xm = np.linspace(0., 1., 7)
+      t.ym = np.append(phue, phue[0])
+      t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
+      t.x = np.linspace(0., 1., params.ntranslo)
+      t.y = interpolate_hue(t.x, phue, interpolation)
+      t.ylabel = "\u0394"
+      output.trans = t
+    return output
+
+  def rotate_CIE_hue(self, A = 0., colorspace = "CIELuv", interpolation = "akima", trans = True, **kwargs):
+    """Rotate color hues in the CIELab or CIELuv color space.
+
+    The image is converted (if needed) to the CIELab or CIELuv color space, and the reduced hue angle h*
+    (within [0, 1]) is rotated:
+
+      h* ← (h*+delta)%1.
+
+    The image is then converted back to the original color model after this operation.
+
+    delta is first set for all original hues (with the 'A' kwarg), then can be updated for the red ('R'),
+    yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues by providing the corresponding
+    kwarg. delta is interpolated for arbitrary hues using nearest neighbor, linear, cubic or akima spline
+    interpolation, according to the 'interpolation' kwarg.
+
+    Contrary to the rotation of HSV or HSL images, rotations in the CIELab and CIELuv color spaces preserve the
+    lightness by design. They may, however, result in out-of-range pixels (as not all points of of these color
+    spaces correspond to physical RGB colors).
+
+    Note:
+      h*(red) ~ 0, h*(yellow) ~ 1/6, h*(green) ~ 1/3, h*(cyan) ~ 1/2, h*(blue) ~ 2/3, and h*(magenta) ~ 5/6.
+      A rotation A = 1/6 converts red → yellow, yellow → green, green → cyan, cyan → blue, blue → magenta
+      and magenta → red.
+      A rotation A = -1/6 converts red → magenta, yellow → red, green → yellow, cyan → green, blue → cyan
+      and magenta → blue.
+
+    See also:
+      rotate_HSX_hue
+
+    Args:
+      A (float, optional): The delta for all hues (default 0).
+      R (float, optional): The red delta (default A).
+      Y (float, optional): The yellow delta (default A).
+      G (float, optional): The green delta (default A).
+      C (float, optional): The cyan delta (default A).
+      B (float, optional): The blue delta (default A).
+      M (float, optional): The magenta delta (default A).
+      colorspace (str, optional): The color space for rotation ["CIELab" or "CIELuv"].
+      interpolation (str, optional): The interpolation method for delta(hue angle):
+
+        - "nearest": Nearest neighbor interpolation.
+        - "linear": Linear spline interpolation.
+        - "cubic": Cubic spline interpolation.
+        - "akima": Akima spline interpolation (default).
+
+      trans (bool, optional): If True (default), embed the transormation in the output image as output.trans
+        (see Image.apply_channels).
+
+    Returns:
+      Image: The processed image.
+    """
+    phue = np.empty(6)
+    phue[0] = kwargs.pop("R", A)
+    phue[1] = kwargs.pop("Y", A)
+    phue[2] = kwargs.pop("G", A)
+    phue[3] = kwargs.pop("C", A)
+    phue[4] = kwargs.pop("B", A)
+    phue[5] = kwargs.pop("M", A)
+    if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
+    if colorspace == "CIELab" or colorspace == "CIELuv":
+      CIE = self.convert(colorspace = colorspace, colormodel = "Lch", copy = True)
+    else:
+      raise ValueError("Error, colorspace must be 'CIELab' or 'CIELuv'.")
+    hue = CIE.image[2]
+    delta = interpolate_hue(hue, phue, interpolation)
+    CIE.image[2] = (hue+delta)%1.
+    output = CIE.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False)
+    if trans:
+      t = helpers.Container()
+      t.type = "hue"
+      t.input = self
+      t.channels = "h*" if self.colorspace == "CIELab" or self.colorspace == "CIELuv" else ""
+      t.xm = np.linspace(0., 1., 7)
+      t.ym = np.append(phue, phue[0])
+      t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
+      t.x = np.linspace(0., 1., params.ntranslo)
+      t.y = interpolate_hue(t.x, phue, interpolation)
       t.ylabel = "\u0394"
       output.trans = t
     return output

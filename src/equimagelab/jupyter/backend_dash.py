@@ -620,10 +620,9 @@ class Dashboard():
       print("There is no transformation embedded in the input image.")
       return
     reference = trans.input
-    if trans.type == "hist":
-      keys = parse_channels(channels)
-      for key in parse_channels(trans.channels, errors = False):
-        if not key in keys: channels += key
+    keys = parse_channels(channels)
+    for key in parse_channels(trans.channels, errors = False):
+      if not key in keys: channels += key
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
               sampling = sampling, filters = filters, click = click, select = select, synczoom = synczoom, trans = trans)
 
