@@ -5,21 +5,17 @@
 # Version: 1.2.0 / 2025.02.02
 # Sphinx OK.
 
-"""eQuimageLab."""
+"""Miscellaneous functions (test images, ...)."""
 
-__version__ = "1.2.0"
-__packagepath__ = __path__[0]
+import os
+from . import equimage
+from . import __packagepath__
 
-# Import top-level symbols.
+def HSV_wheel():
+  """Return a HSV wheel as an Image object, to test color transformations.
 
-from .equimage.imports import *
-from .jupyter.imports import *
-from .misc import HSV_wheel
-from . import params
-
-print("######################################"+len(__version__)*"#")
-print(f"# Welcome to eQuimageLab version {__version__}... #")
-print("######################################"+len(__version__)*"#")
-print("Documentation available at: https://astro.ymniquet.fr/codes/equimagelab/docs/")
-
-set_RGB_luma("human")
+  Returns:
+    Image: An image object with a HSV wheel.
+  """
+  image, meta = equimage.load_image(os.path.join(__packagepath__, "images", "HSVwheel.png"), verbose = False)
+  return image

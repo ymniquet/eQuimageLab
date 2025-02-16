@@ -1303,14 +1303,14 @@ class MixinImage:
     The hue angle is h* = atan2(b*, a*) in the CIELab color space
     and c* = atan2(v*, u*) in the CIELuv color space. The values
     of the hue angle thus differ in both color spaces.
-    This method actually returns the reduced hue angle h*/(2pi)
+    This method actually returns the reduced hue angle h*/(2π)
     within [0, 1].
 
     Warning:
       Available only for CIELab and CIELuv images.
 
     Returns:
-      numpy.ndarray: The reduced hue angle h*/(2pi).
+      numpy.ndarray: The reduced hue angle h*/(2π).
     """
     self.check_color_space("CIELab", "CIELuv")
     if self.colormodel == "Lab" or self.colormodel == "Luv":
@@ -1363,7 +1363,7 @@ class MixinImage:
       return self.HSV_saturation()
     elif channel == "L'":
       return self.HSL_lightness()
-    elif channel == "S":
+    elif channel == "S'":
       return self.HSL_saturation()
     elif channel == "H":
       return self.HSX_hue()

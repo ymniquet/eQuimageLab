@@ -53,19 +53,19 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
     - "Lab": the 3 channels of the image are the CIELab components L*/100, a*/100 and b*/100.
        The lightness L*/100 fits within [0, 1], but a* and b* are signed.
-    - "Lch": the 3 channels of the image are the CIELab components L*/100, c*/100 and h*/(2pi).
-       The lightness L*/100 and the reduced hue angle h*/(2pi) fit within [0, 1], but the
+    - "Lch": the 3 channels of the image are the CIELab components L*/100, c*/100 and h*/(2π).
+       The lightness L*/100 and the reduced hue angle h*/(2π) fit within [0, 1], but the
        chroma c* is not bounded by 1.
 
   In the CIELuv color space, the colormodel attribute can be:
 
     - "Luv": the 3 channels of the image are the CIELuv components L*/100, u*/100 and v*/100.
        The lightness L*/100 fits within [0, 1], but u* and v* are signed.
-    - "Lch": the 3 channels of the image are the CIELuv components L*/100, c*/100 and h*/(2pi).
-       The lightness L*/100 and the reduced hue angle h*/(2pi) fit within [0, 1], but the
+    - "Lch": the 3 channels of the image are the CIELuv components L*/100, c*/100 and h*/(2π).
+       The lightness L*/100 and the reduced hue angle h*/(2π) fit within [0, 1], but the
        chroma c* is not bounded by 1.
-    - "Lsh": the 3 channels of the image are the CIELuv components L*/100, s*/100 and h*/(2pi).
-       The lightness L*/100 and the reduced hue angle h*/(2pi) fit within [0, 1], but the
+    - "Lsh": the 3 channels of the image are the CIELuv components L*/100, s*/100 and h*/(2π).
+       The lightness L*/100 and the reduced hue angle h*/(2π) fit within [0, 1], but the
        saturation s* = c*/L* is not bounded by 1.
 
   The default color space is sRGB and the default color model is RGB.
@@ -298,7 +298,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
     Warning:
       This method maps [0., 1.] onto [0, 255].
-      Not suitable for the CIELab color space !
+      Not suitable for the CIELab and CIELuv color spaces !
 
     Returns:
       numpy.ndarray: The image as an array of 8 bits integers with shape (height, width, channels).
@@ -312,7 +312,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
     Warning:
       This method maps [0., 1.] onto [0, 65535].
-      Not suitable for the CIELab color space !
+      Not suitable for the CIELab and CIELuv color spaces !
 
     Returns:
       numpy.ndarray: The image as an array of 16 bits integers with shape (height, width, channels).
@@ -326,7 +326,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
     Warning:
       This method maps [0., 1.] onto [0, 4294967295].
-      Not suitable for the CIELab color space !
+      Not suitable for the CIELab and CIELuv color spaces !
 
     Returns:
       numpy.ndarray: The image as an array of 32 bits integers with shape (height, width, channels).

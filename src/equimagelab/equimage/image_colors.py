@@ -15,15 +15,72 @@ from . import params
 from . import helpers
 from . import image_colorspaces as colorspaces
 
-def interpolate_hue(hue, param, interpolation):
-  """Interpolate a parameter param[RYGCBM] for arbitrary hues.
+def parse_hue_kwargs(D, kwargs):
+  """Parse hue keywords in the kwargs.
 
-  Used by Image.HSX_color_saturation, Image.CIE_chroma_saturation, Image.rotate_HSX_hue
-  and Image.rotate_CIE_hue.
+  This function looks for the keywords 'R' (red, hue H = 0), 'Y' (yellow, H = 1/6), 'G' (green, H = 1/3),
+  'C' (cyan, H = 1/2), 'B' (blue, H = 2/3) and 'M' (magenta, H = 5/6) in the kwargs and returns the grid
+  of H's and the corresponding values of the kwargs as numpy arrays. Whenever a keyword is missing, its
+  value is replaced by the default, D.
+  Additional points may be inserted in the grid by providing the keywords 'RY' (red-yellow, H = 1/12),
+  'YG' (yellow-green, H = 1/4), 'GC' (green-cyan, H = 5/12), 'CB' (cyan-blue, H = 7/12), 'BM' (blue-
+  magenta, H = 3/4) and 'MR' (magenta-red, H = 11/12).
+
+  Note:
+    Used by Image.HSX_color_saturation, Image.CIE_chroma_saturation, Image.rotate_HSX_hue
+    and Image.rotate_CIE_hue.
 
   Args:
-    hue (numpy.ndarray): The hues the parameter must be interpolated for.
-    param (numpy.ndarray): The parameter for the red, yellow, green, cyan, blue and magenta hues.
+    D (float): The default value for the R/Y/G/C/B/M hues.
+    kwargs (dict): The dictionary of kwargs.
+
+  Returns:
+    The grid of hues (numpy.ndarray), the corresponding keyword values (numpy.ndarray), and the curated
+    kwargs (with the used keys deleted).
+  """
+  R = kwargs.pop("R", D)
+  Y = kwargs.pop("Y", D)
+  G = kwargs.pop("G", D)
+  C = kwargs.pop("C", D)
+  B = kwargs.pop("B", D)
+  M = kwargs.pop("M", D)
+  hgrid = [0., 1./6., 2./6., 3./6., 4./6., 5./6., 1.] # Enforce periodic boundary conditions.
+  value = [R, Y, G, C, B, M, R]
+  if (RY := kwargs.pop("RY", None)) is not None:
+    hgrid.append(1./12.)
+    value.append(RY)
+  if (YG := kwargs.pop("YG", None)) is not None:
+    hgrid.append(3./12.)
+    value.append(YG)
+  if (GC := kwargs.pop("GC", None)) is not None:
+    hgrid.append(5./12.)
+    value.append(GC)
+  if (CB := kwargs.pop("CB", None)) is not None:
+    hgrid.append(7./12.)
+    value.append(CB)
+  if (BM := kwargs.pop("BM", None)) is not None:
+    print(BM)
+    hgrid.append(9./12.)
+    value.append(BM)
+  if (MR := kwargs.pop("MR", None)) is not None:
+    hgrid.append(11./12.)
+    value.append(MR)
+  hgrid = np.array(hgrid)
+  value = np.array(value)
+  idx = np.argsort(hgrid)
+  return hgrid[idx], value[idx], kwargs
+
+def interpolate_hue(hue, hgrid, param, interpolation):
+  """Interpolate a parameter param defined on a grid of hues to arbitrary hues.
+
+  Note:
+    Used by Image.HSX_color_saturation, Image.CIE_chroma_saturation, Image.rotate_HSX_hue
+    and Image.rotate_CIE_hue.
+
+  Args:
+    hue (numpy.ndarray): The hues at which the parameter must be interpolated.
+    hgrid (numpy.ndarray): The grid of hues on which the parameter is defined.
+    param (numpy.ndarray): The parameter on the grid.
     interpolation (str, optional): The interpolation method:
 
       - "nearest": Nearest neighbor interpolation.
@@ -37,18 +94,14 @@ def interpolate_hue(hue, param, interpolation):
   if np.all(param == param[0]):
     return np.full_like(hue, param[0]) # Short-cut if the parameter is the same for RYGCBM.
   if interpolation == "nearest":
-    hgrid = np.linspace(0., 1., 7)
-    param = np.append(param, param[0]) # Enforce periodic boundary conditions.
     finter = spint.interp1d(hgrid, param, kind = "nearest")
   elif interpolation == "linear" or interpolation == "cubic":
-    hgrid = np.linspace(0., 1., 7)
-    param = np.append(param, param[0]) # Enforce periodic boundary conditions.
     k = 3 if interpolation == "cubic" else 1
     tck = spint.splrep(hgrid, param, k = k, per = True)
     def finter(x): spint.splev(x, tck)
   elif interpolation == "akima":
-    hgrid = np.linspace(-1./3., 4./3, 11)
-    param = np.concatenate(([param[-2], param[-1]], param, [param[0], param[1], param[2]])) # Enforce periodic boundary conditions.
+    hgrid = np.concatenate(([hgrid[-3]-1., hgrid[-2]-1.], hgrid, [hgrid[1]+1., hgrid[2]+1.])) # Enforce periodic boundary conditions.
+    param = np.concatenate(([param[-3], param[-2]], param, [param[1], param[2]]))
     finter = Akima1DInterpolator(hgrid, param)
   else:
     raise ValueError(f"Error, unknown interpolation method '{interpolation}'.")
@@ -152,7 +205,6 @@ class MixinImage:
     Adjusts the color balance assuming that the scene is (or is lit by) a black body source
     whose temperature is changed from T0 (default 6650K) to T.
     Setting T < T0 casts a red tint on the image, while setting T > T0 casts a blue tint.
-
     This is not a rigorous transformation and is intended for "cosmetic" purposes.
     The colors are balanced in the linear RGB color space.
 
@@ -214,7 +266,7 @@ class MixinImage:
     if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
     return output
 
-  def HSX_color_saturation(self, A = 0., mode = "midsat", colormodel = "HSV", interpolation = "akima", lightness = False, trans = True, **kwargs):
+  def HSX_color_saturation(self, D = 0., mode = "midsat", colormodel = "HSV", interpolation = "akima", lightness = False, trans = True, **kwargs):
     """Adjust color saturation in the HSV or HSL color models.
 
     The image is converted (if needed) to the HSV or HSL color model, then the color saturation S is transformed according
@@ -228,22 +280,24 @@ class MixinImage:
 
     The image is then converted back to the original color model after this operation.
     delta is expected to be > -1, and to be < 1 in the "midsat" mode. Whatever the mode, delta = 0 leaves the image
-    unchanged, delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale. delta is first set
-    for all hues (with the 'A' kwarg), then can be updated for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'),
-    blue ('B') and magenta ('M') hues by providing the corresponding kwarg. delta is interpolated for arbitrary hues
-    using nearest neighbor, linear, cubic or akima spline interpolation, according to the 'interpolation' kwarg.
+    unchanged, delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale. delta is set for the
+    red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues by the corresponding kwarg
+    (delta = D if missing). It is interpolated for arbitrary hues using nearest neighbor, linear, cubic or akima
+    spline interpolation according to the 'interpolation' kwarg. Midpoint deltas may also be specified for finer
+    interpolation by providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
+    'BM' (blue-magenta) and 'MR' (magenta-red).
 
     See also:
       CIE_chroma_saturation
 
     Args:
-      A (float, optional): The delta for all hues (default 0).
-      R (float, optional): The red delta (default A).
-      Y (float, optional): The yellow delta (default A).
-      G (float, optional): The green delta (default A).
-      C (float, optional): The cyan delta (default A).
-      B (float, optional): The blue delta (default A).
-      M (float, optional): The magenta delta (default A).
+      D (float, optional): The delta for all hues (default 0).
+      R (float, optional): The red delta (default D).
+      Y (float, optional): The yellow delta (default D).
+      G (float, optional): The green delta (default D).
+      C (float, optional): The cyan delta (default D).
+      B (float, optional): The blue delta (default D).
+      M (float, optional): The magenta delta (default D).
       mode (str, optional): The saturation mode ["addsat", "mulsat" or "midsat" (default)].
       colormodel (str, optional): The color model for saturation ["HSV" (default) or "HSL"].
       interpolation (str, optional): The interpolation method for delta(hue):
@@ -262,13 +316,7 @@ class MixinImage:
       Image: The processed image.
     """
     self.check_color_model("RGB", "HSV", "HSL")
-    psat = np.empty(6)
-    psat[0] = kwargs.pop("R", A)
-    psat[1] = kwargs.pop("Y", A)
-    psat[2] = kwargs.pop("G", A)
-    psat[3] = kwargs.pop("C", A)
-    psat[4] = kwargs.pop("B", A)
-    psat[5] = kwargs.pop("M", A)
+    hgrid, dgrid, kwargs = parse_hue_kwargs(D, kwargs)
     if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
     if colormodel == "HSV":
       channel = "S"
@@ -281,7 +329,7 @@ class MixinImage:
     hue = hsx.image[0]
     sat = hsx.image[1]
     print(f"Before operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
-    delta = interpolate_hue(hue, psat, interpolation)
+    delta = interpolate_hue(hue, hgrid, dgrid, interpolation)
     if mode == "addsat":
       sat += delta
     elif mode == "mulsat":
@@ -301,15 +349,15 @@ class MixinImage:
       t.input = self
       t.channels = channel
       t.xm = np.linspace(0., 1., 7)
-      t.ym = np.append(psat, psat[0])
+      t.ym = interpolate_hue(t.xm, hgrid, dgrid, interpolation)
       t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
       t.x = np.linspace(0., 1., params.ntranslo)
-      t.y = interpolate_hue(t.x, psat, interpolation)
+      t.y = interpolate_hue(t.x, hgrid, dgrid, interpolation)
       t.ylabel = "\u0394"
       output.trans = t
     return output
 
-  def CIE_chroma_saturation(self, A = 0., mode = "midsat", colormodel = "Lsh", interpolation = "akima", ref = None, trans = True, **kwargs):
+  def CIE_chroma_saturation(self, D = 0., mode = "midsat", colormodel = "Lsh", interpolation = "akima", ref = None, trans = True, **kwargs):
     """Adjust color chroma or saturation in the CIELab or CIELuv color spaces.
 
     The image is converted (if needed) to the CIELab or CIELuv colorspace, then the CIELab chroma CS = c* = sqrt(a*^2+b*^2)
@@ -329,9 +377,11 @@ class MixinImage:
     and HSL color models). The choice of the reference can, therefore, be critical in the "midsat" mode. In particular, pixels
     with chroma/saturation > ref get desaturated if delta > 0, and oversaturated if delta < 0 (with a possible singularity
     at CS = -ref*(1-delta)/(2*delta)).
-    delta is first set for all hues (with the 'A' kwarg), then can be updated for the red ('R'), yellow ('Y'), green ('G'),
-    cyan ('C'), blue ('B') and magenta ('M') hues by providing the corresponding kwarg. delta is interpolated for arbitrary
-    hue angles using nearest neighbor, linear, cubic or akima spline interpolation, according to the 'interpolation' kwarg.
+    delta is set for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues by the
+    corresponding kwarg (delta = D if missing). It is interpolated for arbitrary hues using nearest neighbor, linear, cubic
+    or akima spline interpolation according to the 'interpolation' kwarg. Midpoint deltas may also be specified for finer
+    interpolation by providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM'
+    (blue-magenta) and 'MR' (magenta-red).
     Contrary to the saturation of HSV or HSL images, chroma/saturation transformations in the CIELab and CIELuv color spaces
     preserve the lightness by design. They may, however, result in out-of-range pixels (as not all points of of these color
     spaces correspond to physical RGB colors).
@@ -344,15 +394,15 @@ class MixinImage:
       HSX_color_saturation
 
     Args:
-      A (float, optional): The delta for all hues (default 0).
-      R (float, optional): The red delta (default A).
-      Y (float, optional): The yellow delta (default A).
-      G (float, optional): The green delta (default A).
-      C (float, optional): The cyan delta (default A).
-      B (float, optional): The blue delta (default A).
-      M (float, optional): The magenta delta (default A).
+      D (float, optional): The delta for all hues (default 0).
+      R (float, optional): The red delta (default D).
+      Y (float, optional): The yellow delta (default D).
+      G (float, optional): The green delta (default D).
+      C (float, optional): The cyan delta (default D).
+      B (float, optional): The blue delta (default D).
+      M (float, optional): The magenta delta (default D).
       mode (str, optional): The saturation mode ["addsat", "mulsat" or "midsat" (default)].
-      colormodel (str, optional): The color model for saturation ["Lab", "Luv" or "Lsh"].
+      colormodel (str, optional): The color model for saturation ["Lab", "Luv" or "Lsh" (default)].
       interpolation (str, optional): The interpolation method for delta(hue angle):
 
         - "nearest": Nearest neighbor interpolation.
@@ -368,13 +418,7 @@ class MixinImage:
     Returns:
       Image: The processed image.
     """
-    psat = np.empty(6)
-    psat[0] = kwargs.pop("R", A)
-    psat[1] = kwargs.pop("Y", A)
-    psat[2] = kwargs.pop("G", A)
-    psat[3] = kwargs.pop("C", A)
-    psat[4] = kwargs.pop("B", A)
-    psat[5] = kwargs.pop("M", A)
+    hgrid, dgrid, kwargs = parse_hue_kwargs(D, kwargs)
     if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
     if colormodel == "Lab":
       name = "chroma"
@@ -394,7 +438,7 @@ class MixinImage:
     sat = CIE.image[1]
     maxsat = np.max(sat)
     print(f"Before operation: min({name}) = {np.min(sat):.5f}; median({name}) = {np.median(sat):.5f}; max({name}) = {maxsat:.5f}.")
-    delta = interpolate_hue(hue, psat, interpolation)
+    delta = interpolate_hue(hue, hgrid, dgrid, interpolation)
     if mode == "addsat":
       sat += delta
     elif mode == "mulsat":
@@ -414,15 +458,15 @@ class MixinImage:
       t.input = self
       t.channels = channel
       t.xm = np.linspace(0., 1., 7)
-      t.ym = np.append(psat, psat[0])
+      t.ym = interpolate_hue(t.xm, hgrid, dgrid, interpolation)
       t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
       t.x = np.linspace(0., 1., params.ntranslo)
-      t.y = interpolate_hue(t.x, psat, interpolation)
+      t.y = interpolate_hue(t.x, hgrid, dgrid, interpolation)
       t.ylabel = "\u0394"
       output.trans = t
     return output
 
-  def rotate_HSX_hue(self, A = 0., interpolation = "akima", lightness = False, trans = True, **kwargs):
+  def rotate_HSX_hue(self, D = 0., interpolation = "akima", lightness = False, trans = True, **kwargs):
     """Rotate color hues in the HSV/HSL color models.
 
     The image is converted (if RGB) to the HSV color model, and the hue H is rotated:
@@ -430,30 +474,30 @@ class MixinImage:
       H ← (H+delta)%1.
 
     The image is then converted back to the original color model after this operation.
-
-    delta is first set for all original hues (with the 'A' kwarg), then can be updated for the red ('R'),
-    yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues by providing the corresponding
-    kwarg. delta is interpolated for arbitrary hues using nearest neighbor, linear, cubic or akima spline
-    interpolation, according to the 'interpolation' kwarg.
+    delta is set for the original red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta
+    ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for arbitrary hues using
+    nearest neighbor, linear, cubic or akima spline interpolation according to the 'interpolation' kwarg.
+    Midpoint deltas may also be specified for finer interpolation by providing the kwargs 'RY' (red-yellow),
+    'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM' (blue-magenta) and 'MR' (magenta-red).
 
     Note:
       H(red) = 0, H(yellow) = 1/6, H(green) = 1/3, H(cyan) = 1/2, H(blue) = 2/3, and H(magenta) = 5/6.
-      A rotation A = 1/6 converts red → yellow, yellow → green, green → cyan, cyan → blue, blue → magenta
-      and magenta → red.
-      A rotation A = -1/6 converts red → magenta, yellow → red, green → yellow, cyan → green, blue → cyan
-      and magenta → blue.
+      A uniform rotation D = 1/6 converts red → yellow, yellow → green, green → cyan, cyan → blue,
+      blue → magenta, and magenta → red.
+      A uniform rotation D = -1/6 converts red → magenta, yellow → red, green → yellow, cyan → green,
+      blue → cyan, and magenta → blue.
 
     See also:
       rotate_CIE_hue
 
     Args:
-      A (float, optional): The delta for all hues (default 0).
-      R (float, optional): The red delta (default A).
-      Y (float, optional): The yellow delta (default A).
-      G (float, optional): The green delta (default A).
-      C (float, optional): The cyan delta (default A).
-      B (float, optional): The blue delta (default A).
-      M (float, optional): The magenta delta (default A).
+      D (float, optional): The delta for all hues (default 0).
+      R (float, optional): The red delta (default D).
+      Y (float, optional): The yellow delta (default D).
+      G (float, optional): The green delta (default D).
+      C (float, optional): The cyan delta (default D).
+      B (float, optional): The blue delta (default D).
+      M (float, optional): The magenta delta (default D).
       interpolation (str, optional): The interpolation method for delta(hue):
 
         - "nearest": Nearest neighbor interpolation.
@@ -470,20 +514,14 @@ class MixinImage:
       Image: The processed image.
     """
     self.check_color_model("RGB", "HSV", "HSL")
-    phue = np.empty(6)
-    phue[0] = kwargs.pop("R", A)
-    phue[1] = kwargs.pop("Y", A)
-    phue[2] = kwargs.pop("G", A)
-    phue[3] = kwargs.pop("C", A)
-    phue[4] = kwargs.pop("B", A)
-    phue[5] = kwargs.pop("M", A)
+    hgrid, dgrid, kwargs = parse_hue_kwargs(D, kwargs)
     if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
     if self.colormodel == "RGB":
       hsv = self.HSV()
     else:
       hsv = self.copy()
     hue = hsv.image[0]
-    delta = interpolate_hue(hue, phue, interpolation)
+    delta = interpolate_hue(hue, hgrid, dgrid, interpolation)
     hsv.image[0] = (hue+delta)%1.
     output = hsv.convert(colormodel = self.colormodel, copy = False)
     if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
@@ -493,15 +531,15 @@ class MixinImage:
       t.input = self
       t.channels = "H"
       t.xm = np.linspace(0., 1., 7)
-      t.ym = np.append(phue, phue[0])
+      t.ym = interpolate_hue(t.xm, hgrid, dgrid, interpolation)
       t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
       t.x = np.linspace(0., 1., params.ntranslo)
-      t.y = interpolate_hue(t.x, phue, interpolation)
+      t.y = interpolate_hue(t.x, hgrid, dgrid, interpolation)
       t.ylabel = "\u0394"
       output.trans = t
     return output
 
-  def rotate_CIE_hue(self, A = 0., colorspace = "CIELuv", interpolation = "akima", trans = True, **kwargs):
+  def rotate_CIE_hue(self, D = 0., colorspace = "CIELab", interpolation = "akima", trans = True, **kwargs):
     """Rotate color hues in the CIELab or CIELuv color space.
 
     The image is converted (if needed) to the CIELab or CIELuv color space, and the reduced hue angle h*
@@ -510,35 +548,34 @@ class MixinImage:
       h* ← (h*+delta)%1.
 
     The image is then converted back to the original color model after this operation.
-
-    delta is first set for all original hues (with the 'A' kwarg), then can be updated for the red ('R'),
-    yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues by providing the corresponding
-    kwarg. delta is interpolated for arbitrary hues using nearest neighbor, linear, cubic or akima spline
-    interpolation, according to the 'interpolation' kwarg.
-
+    delta is set for the original red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta
+    ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for arbitrary hues using
+    nearest neighbor, linear, cubic or akima spline interpolation according to the 'interpolation' kwarg.
+    Midpoint deltas may also be specified for finer interpolation by providing the kwargs 'RY' (red-yellow),
+    'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM' (blue-magenta) and 'MR' (magenta-red).
     Contrary to the rotation of HSV or HSL images, rotations in the CIELab and CIELuv color spaces preserve the
     lightness by design. They may, however, result in out-of-range pixels (as not all points of of these color
     spaces correspond to physical RGB colors).
 
     Note:
       h*(red) ~ 0, h*(yellow) ~ 1/6, h*(green) ~ 1/3, h*(cyan) ~ 1/2, h*(blue) ~ 2/3, and h*(magenta) ~ 5/6.
-      A rotation A = 1/6 converts red → yellow, yellow → green, green → cyan, cyan → blue, blue → magenta
-      and magenta → red.
-      A rotation A = -1/6 converts red → magenta, yellow → red, green → yellow, cyan → green, blue → cyan
-      and magenta → blue.
+      A uniform rotation D = 1/6 converts red → yellow, yellow → green, green → cyan, cyan → blue,
+      blue → magenta, and magenta → red.
+      A uniform rotation D = -1/6 converts red → magenta, yellow → red, green → yellow, cyan → green,
+      blue → cyan, and magenta → blue.
 
     See also:
       rotate_HSX_hue
 
     Args:
-      A (float, optional): The delta for all hues (default 0).
-      R (float, optional): The red delta (default A).
-      Y (float, optional): The yellow delta (default A).
-      G (float, optional): The green delta (default A).
-      C (float, optional): The cyan delta (default A).
-      B (float, optional): The blue delta (default A).
-      M (float, optional): The magenta delta (default A).
-      colorspace (str, optional): The color space for rotation ["CIELab" or "CIELuv"].
+      D (float, optional): The delta for all hues (default 0).
+      R (float, optional): The red delta (default D).
+      Y (float, optional): The yellow delta (default D).
+      G (float, optional): The green delta (default D).
+      C (float, optional): The cyan delta (default D).
+      B (float, optional): The blue delta (default D).
+      M (float, optional): The magenta delta (default D).
+      colorspace (str, optional): The color space for rotation ["CIELab" (default) or "CIELuv"].
       interpolation (str, optional): The interpolation method for delta(hue angle):
 
         - "nearest": Nearest neighbor interpolation.
@@ -552,20 +589,14 @@ class MixinImage:
     Returns:
       Image: The processed image.
     """
-    phue = np.empty(6)
-    phue[0] = kwargs.pop("R", A)
-    phue[1] = kwargs.pop("Y", A)
-    phue[2] = kwargs.pop("G", A)
-    phue[3] = kwargs.pop("C", A)
-    phue[4] = kwargs.pop("B", A)
-    phue[5] = kwargs.pop("M", A)
+    hgrid, dgrid, kwargs = parse_hue_kwargs(D, kwargs)
     if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
     if colorspace == "CIELab" or colorspace == "CIELuv":
       CIE = self.convert(colorspace = colorspace, colormodel = "Lch", copy = True)
     else:
       raise ValueError("Error, colorspace must be 'CIELab' or 'CIELuv'.")
     hue = CIE.image[2]
-    delta = interpolate_hue(hue, phue, interpolation)
+    delta = interpolate_hue(hue, hgrid, dgrid, interpolation)
     CIE.image[2] = (hue+delta)%1.
     output = CIE.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False)
     if trans:
@@ -574,10 +605,10 @@ class MixinImage:
       t.input = self
       t.channels = "h*" if self.colorspace == "CIELab" or self.colorspace == "CIELuv" else ""
       t.xm = np.linspace(0., 1., 7)
-      t.ym = np.append(phue, phue[0])
+      t.ym = interpolate_hue(t.xm, hgrid, dgrid, interpolation)
       t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
       t.x = np.linspace(0., 1., params.ntranslo)
-      t.y = interpolate_hue(t.x, phue, interpolation)
+      t.y = interpolate_hue(t.x, hgrid, dgrid, interpolation)
       t.ylabel = "\u0394"
       output.trans = t
     return output
