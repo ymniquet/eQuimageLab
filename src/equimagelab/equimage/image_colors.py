@@ -199,6 +199,20 @@ class MixinImage:
     if blue  != 1.: output.image[2] *= blue
     return output
 
+  def mix_RGB(self, M):
+    """Mix RGB channels.
+
+    Transforms each pixel P = (R, G, B) of the image into M@P, with M a 3x3 mixing matrix.^
+
+    Args:
+      M (numpy.ndarray): The mixing matrix.
+
+    Returns:
+      Image: The processed image.
+    """
+    self.check_color_model("RGB")
+    return self.newImage(np.tensordot(np.asarray(M, dtype = self.dtype), self.image, axes = 1))
+
   def set_color_temperature(self, T, T0 = 6650., lightness = False):
     """Adjust the color temperature of a RGB image.
 
