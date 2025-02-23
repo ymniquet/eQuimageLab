@@ -31,7 +31,12 @@ The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>
    negative
    grayscale
    RGB_color_balance
+   mix_RGB
+   set_color_temperature
    HSX_color_saturation
+   CIE_chroma_saturation
+   rotate_HSX_hue
+   rotate_CIE_hue
    SCNR
 
 Histogram stretching
