@@ -1687,7 +1687,7 @@ class MixinImage:
     elif channels in ["L", "Ls", "Lb", "Ln"]:
       if is_gray:
         output = self.newImage(f(self.image))
-        if trans: t = transformation(f, self.image, "L")
+        if trans: output.trans = transformation(f, self.image, "L")
       elif is_RGB:
         luma = self.luma()
         output = self.scale_pixels(luma, f(luma))

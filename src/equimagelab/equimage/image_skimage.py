@@ -73,7 +73,7 @@ class MixinImage:
     return self.apply_channels(lambda channel: skim.filters.butterworth(channel, channel_axis = 0, cutoff_frequency_ratio = (1.-cutoff)/2.,
                                order = order, npad = padding, squared_butterworth = True), channels)
 
-  def unsharp_mask(sigma, strength, channels = ""):
+  def unsharp_mask(self, sigma, strength, channels = ""):
     """Apply an unsharp mask to selected channels of the image.
 
     Given a channel Cin, returns

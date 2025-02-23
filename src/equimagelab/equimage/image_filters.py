@@ -51,7 +51,8 @@ class MixinImage:
     # Set-up the (unnormalized) kernel for nearest-neighbors average.
     kernel = np.array([[1., 1., 1.], [1., 0., 1.], [1., 1., 1.]], dtype = self.dtype)
     # Normalize with respect to the actual number of nearest neighbors.
-    nnn = ndimg.convolve(np.ones(*self.get_size(), dtype = self.dtype), kernel, mode = mode, cval = 0.)
+    width, height = self.get_size()
+    nnn = ndimg.convolve(np.ones((height, width), dtype = self.dtype), kernel, mode = mode, cval = 0.)
     return self.apply_channels(remove_hot_pixels_channel, channels, multi = False)
 
   def sharpen(self, mode = "reflect", channels = ""):
