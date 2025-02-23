@@ -8,8 +8,8 @@
 """Miscellaneous functions (test images, ...)."""
 
 import os
-from . import equimage
-from . import __packagepath__
+from .. import equimage
+from .. import __packagepath__
 
 def HSV_wheel():
   """Return a HSV wheel as an Image object, to test color transformations.

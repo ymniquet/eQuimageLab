@@ -39,6 +39,14 @@ The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>
    rotate_CIE_hue
    SCNR
 
+Also,the following function returns a HSV wheel as an :py:class:`Image <equimagelab.equimage.image.Image>` object to test color transformations:
+
+.. currentmodule:: equimagelab.misc
+
+.. autosummary::
+
+   HSV_wheel
+
 Histogram stretching
 ^^^^^^^^^^^^^^^^^^^^
 
