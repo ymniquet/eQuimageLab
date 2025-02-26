@@ -144,7 +144,7 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
           figure.add_vline(x = xtick, line = mlinedash1, secondary_y = True)
       ftitle = f"{trans.ylabel}({trans.channels})"
       ceftitle = f"log {trans.ylabel}'({trans.channels})"
-      figure.update_yaxes(title_text = ftitle, titlefont = mline, ticks = "inside", tickfont = mline, showgrid = False, rangemode = "tozero", secondary_y = True)
+      figure.update_yaxes(title_text = ftitle, title_font = mline, ticks = "inside", tickfont = mline, showgrid = False, rangemode = "tozero", secondary_y = True)
       # Add f/log f' toggle button.
       keepvisible = ntraces*[True]
       buttons = [dict(label = "f/log f'", method = "update",
@@ -161,7 +161,7 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
       figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = mlinedashdot1, showlegend = False),
                        secondary_y = True)
       figure.update_xaxes(range = [0., 1.])
-      figure.update_yaxes(title_text = trans.ylabel, titlefont = mline, ticks = "inside", tickfont = mline, showgrid = False, rangemode = "tozero", secondary_y = True)
+      figure.update_yaxes(title_text = trans.ylabel, title_font = mline, ticks = "inside", tickfont = mline, showgrid = False, rangemode = "tozero", secondary_y = True)
     else:
       print(f"Can not handle transformations of type '{trans.type}'.")
   # Finalize layout.
@@ -283,7 +283,7 @@ def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer =
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """
   figure = _figure_statistics_(image, channels = channels, width = width, rowheight = rowheight)
-  if figure is not None: figure.show(renderer)
+  if figure is not None: figure.show("jupyterlab")
 
 def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, renderer = None):
   """Show an image embedding an histogram transformation using plotly.

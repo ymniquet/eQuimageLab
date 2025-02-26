@@ -1345,6 +1345,10 @@ class MixinImage:
         - "s*": The CIE saturation s* (CIELuv images).
         - "h*": The CIE hue angle h* (CIELab and CIELuv images).
 
+    Also see:
+      The magic method Image.__getitem__, which returns self.image[ic] as self[ic],
+      with ic the Python channel index within [0, 1, 2].
+
     Returns:
       numpy.ndarray: The selected channel.
     """
@@ -1406,6 +1410,10 @@ class MixinImage:
 
       data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height as the image.
       inplace (bool, optional): If True, update the image "in place"; if False (default), return a new image.
+
+    Also see:
+      The magic method Image.__setitem__, which implements self.image[ic] = data as self[ic] = data,
+      with ic the Python channel index within [0, 1, 2].
 
     Returns:
       Image: The updated image.

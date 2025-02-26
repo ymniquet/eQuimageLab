@@ -169,6 +169,30 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     """Return the object representation."""
     return f"{self.__class__.__name__}(size = {self.image.shape[2]}x{self.image.shape[1]} pixels, colorspace = {self.colorspace}, colormodel = {self.colormodel}, type = {self.dtype})"
 
+  def __getitem__(self, channels):
+    """Return channel(s) of the image.
+
+    Implements the indexer operator self[channels] as self.image[channels].
+
+    Args:
+      channels (int or slice): The channels to be returned.
+
+    Returns
+      numpy.ndarray: The channels self.image[channels].
+    """
+    return self.image[channels]
+
+  def __setitem__(self, channels, data):
+    """Set channel(s) of the image.
+
+    Implements the operation self.image[channels] = data as self[channels] = data.
+
+    Args:
+      channels (int or slice): The channels to be set.
+      data (numpy.ndarray): The new channels data.
+    """
+    self.image[channels] = data
+
   def __array__(self, dtype = None, copy = None):
     """Expose the object as an numpy.ndarray."""
     return np.array(self.image, dtype = dtype, copy = copy)
