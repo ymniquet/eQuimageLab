@@ -1340,6 +1340,7 @@ class MixinImage:
         - "S'": The HSL saturation (RGB, HSL and grayscale images).
         - "H": The HSV/HSL hue (RGB, HSV and HSL images).
         - "L": The luma (RGB and grayscale images).
+        - "Y": The luminance (RGB, grayscale, CIELab and CIELuv images).
         - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
         - "c*": The CIE chroma c* (CIELab and CIELuv images).
         - "s*": The CIE saturation s* (CIELuv images).
@@ -1373,6 +1374,8 @@ class MixinImage:
       return self.HSX_hue()
     elif channel == "L":
       return self.luma()
+    elif channel == "Y":
+      return self.luminance()
     elif channel == "L*":
       return self.lightness()
     elif channel == "c*":

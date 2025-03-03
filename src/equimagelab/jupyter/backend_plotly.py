@@ -283,7 +283,7 @@ def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer =
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """
   figure = _figure_statistics_(image, channels = channels, width = width, rowheight = rowheight)
-  if figure is not None: figure.show("jupyterlab")
+  if figure is not None: figure.show(renderer)
 
 def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, renderer = None):
   """Show an image embedding an histogram transformation using plotly.
