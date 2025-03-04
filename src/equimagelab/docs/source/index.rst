@@ -58,7 +58,10 @@ Latest news:
 
   - Version 1.3.0.
 
-    - HSL color model for lRGB and sRGB color spaces.
+    - HSL color model in the lRGB and sRGB color spaces.
     - CIELab color space (with Lab and Lch color models).
     - CIELuv color space (with Luv, Lch and Lsh color models).
-
+    - RGB channels mixing.
+    - Color temperature adjustment.
+    - Color saturation with the HSV/HSL color models (lRGB and sRGB color spaces) and with the Lsh color model (CIELuv color space).
+    - Hue rotations.

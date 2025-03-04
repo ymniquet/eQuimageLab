@@ -1,7 +1,7 @@
-Composite channels
-------------------
+Channels
+--------
 
-As explained in :doc:`image`, the default color space and model of eQuimageLab is sRGB/RGB (the color space and model of most display devices). The "composite" channels are functions of the RGB components that bring specific informations about the image. This includes the luminance, lightness, luma, value, saturation, etc... Most of these composite channels are borrowed from other color spaces and models used by eQuimageLab (CIELab/CIELuv, HSV/HSL... see :doc:`image`). You can actually work with these composite channels without making explicit conversions to these color spaces and models yourself. This section introduces channels and their use in eQuimageLab.
+As explained in :doc:`image`, the default color space of eQuimageLab is sRGB (the color space of most display devices), and the default color model is RGB. The native channels of this color space and model are the red, blue and green components of the image. We may introduce additional "composite" channels that bring specific information about the image (and are functions of the RGB components). This includes the luma, the lightness, the value, the saturation, etc... Most of these composite channels are actually borrowed from the other color spaces and models used by eQuimageLab (CIELab/CIELuv, HSV/HSL...). You can actually work with such composite channels without making explicit conversions to those color spaces and models yourself. This section describes the available channels and their use in eQuimageLab.
 
 The following method of a :py:class:`Image <equimagelab.equimage.image.Image>` object returns an arbitrary (native or composite) channel of the image:
 
@@ -20,10 +20,10 @@ where ``channel`` can be:
   - "S'": The HSL saturation (RGB, HSL and grayscale images).
   - "H": The HSV/HSL hue (RGB, HSV and HSL images).
   - "L": The luma (RGB and grayscale images).
-  - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
-  - "c*": The CIE chroma c* (CIELab and CIELuv images).
-  - "s*": The CIE saturation s* (CIELuv images).
-  - "h*": The CIE hue angle h* (CIELab and CIELuv images).
+  - "L*": The CIE lightness :math:`L^*` (RGB, grayscale, CIELab and CIELuv images).
+  - "c*": The CIE chroma :math:`c^*` (CIELab and CIELuv images).
+  - "s*": The CIE saturation :math:`s^*` (CIELuv images).
+  - "h*": The CIE hue angle :math:`h^*` (CIELab and CIELuv images).
 
 Alternatively, the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class return specific channels:
 
@@ -41,7 +41,7 @@ Alternatively, the following methods of the :py:class:`Image <equimagelab.equima
    CIE_chroma
    CIE_saturation
 
-Moreover, the following functions of eQuimageLab return the luma and lightness of a :py:class:`numpy.ndarray` (or of a :py:class:`Image <equimagelab.equimage.image.Image>` object with a RGB color model):
+Moreover, the following functions of eQuimageLab return the luma and lightness of a :py:class:`numpy.ndarray` (or of an :py:class:`Image <equimagelab.equimage.image.Image>` object) containing a RGB image:
 
 .. currentmodule:: equimagelab.equimage.image_colorspaces
 
@@ -73,7 +73,7 @@ We describe below some of the above channels and their purposes.
 Luminance, lightness, luma and value
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Our eyes catch the "brightness" or "lightness" of an image more accurately than its colors. Therefore, it can be beneficial, for example, to reduce noise on the lightness agressively even if this slightly degrades color accuracy.
+Our eyes catch the "brightness" or "lightness" of an image more accurately than its colors. Therefore, it can be beneficial, for example, to reduce noise on the lightness more agressively than on the colors, or to preserve lightness when transforming colors.
 
 Yet how bright does an image or pixel look ?
 
@@ -89,17 +89,19 @@ where Y is the luminance:
 
   {\rm Y} = 0.2126{\rm lR}+0.7152{\rm lG}+0.0722{\rm lB}
 
-and lR, lG, lB are the linear RGB components of the image. The definitions of Y and :math:`L^*` account for the non-linear and non-homogeneous response of the eyes. They highlight, for example, that we are far more sentitive to green than to red and blue light. Note that :math:`L^*` conventionally ranges within [0, 100] instead of [0, 1].
+and lR, lG, lB are the linear RGB components of the image. The definitions of Y and :math:`L^*` account for the non-linear and non-homogeneous response of the eyes. They highlight, for example, that we are far more sentitive to green than to red and blue light. Note that :math:`L^*` conventionally ranges within [0, 100] instead of [0, 1]. It is the basic component of the CIE color spaces (`CIELab <https://en.wikipedia.org/wiki/CIELAB_color_space>`_ and `CIELuv <https://en.wikipedia.org/wiki/CIELUV>`_).
 
-The method :py:meth:`Image.lightness() <equimagelab.equimage.image_colorspaces.MixinImage.lightness>` returns the normalized lightness :math:`L^*/100` of all pixels of a lRGB or sRGB image (the sRGB components being converted to lRGB for that purpose).
+The method :py:meth:`Image.lightness() <equimagelab.equimage.image_colorspaces.MixinImage.lightness>` returns the normalized lightness :math:`L^*/100` of all pixels of a lRGB or a sRGB image (the latter being converted to lRGB for that purpose).
 
-While :math:`L^*` is the best measure of the brightness of a pixel, it is expensive to compute (since our images usually live in the sRGB color space, whereas :math:`L^*` is defined in the lRGB color space). Therefore, alternate, *approximate* measures of the brightness have been introduced:
+While :math:`L^*` is the best measure of the brightness of a pixel, it is expensive to compute (since our images usually live in the sRGB color space, whereas :math:`L^*` is defined in from the lRGB components). Therefore, alternate, *approximate* measures of the brightness have been introduced:
 
   - The *luma* of a pixel L = 0.2126R+0.7152G+0.0722B. In the lRGB color space, the luma is the luminance L = Y (but has nothing to do with the lightness !). In the sRGB color space, the luma (which somehow accounts for the non-linear and non-homogeneous response of the eye) is often used as a convenient substitute for the lightness :math:`L\equiv L^*/100` (but is not as accurate). The method :py:meth:`Image.luma() <equimagelab.equimage.image_colorspaces.MixinImage.luma>` returns the luma L of all pixels of an image (calculated from the lRGB or sRGB components depending on the color space). Also, the RGB coefficients of the luma can be tweaked with the :py:func:`set_RGB_luma() <equimagelab.equimage.params.set_RGB_luma>` function (and inquired with :py:func:`get_RGB_luma() <equimagelab.equimage.params.get_RGB_luma>`). Depending on your purposes, it may be more convenient to work with L = (R+G+B)/3.
 
-  - The *value* of a pixel V = max(R, G, B). This is a key component of the HSV color model, but a really poor measure of the lightness ! The method :py:meth:`Image.value() <equimagelab.equimage.image_colorspaces.MixinImage.value>` returns the value V of all pixels of an image (available for both RGB and HSV images).
+  - The *HSV value* of a pixel V = max(R, G, B). This is a key component of the HSV color model, but a really poor measure of the lightness ! The method :py:meth:`Image.HSV_value() <equimagelab.equimage.image_colorspaces.MixinImage.HSV_value>` returns the HSV value V of all pixels of an image (available for both RGB and HSV images).
 
-Note the the HSL lightness L' is different from the (CIE) lightness :math:`L^*` and also a poor approximation to the latter?
+  - The *HSL lighthess* of a pixel L' = (max(R, G, B)+min(R, G, B))/2. Despite its name, it is also a poor approximation to the CIE lightness :math:`L^*`. The method :py:meth:`Image.HSL_lightness() <equimagelab.equimage.image_colorspaces.MixinImage.HSL_lightness>` returns the HSL lightness L' of all pixels of an image (available for both RGB and HSL images)
+
+The `HSV and HSL color models <https://en.wikipedia.org/wiki/HSL_and_HSV>`_ were designed for numerical efficiency rather than for perceptual homogeneity and accuracy. They remain, nonetheless, well suited to the saturation of colors.
 
 Saturation
 ^^^^^^^^^^
@@ -121,7 +123,7 @@ The saturation is, therefore, a measure of the "purity" or "strength" of the col
 Histograms and statistics
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The histograms and statistics of the RGB and composite channels can be computed with the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+The histograms and statistics of all channels can be computed with the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
 
 .. currentmodule:: equimagelab.equimage.image_stats.MixinImage
 
@@ -169,7 +171,3 @@ There are four options to deal with the out-of-range pixels:
   4. Normalize the image so that all pixels fall back in the [0, 1] range (namely, divide the image by the maximum RGB value). This preserves the hue and saturation, but darkens the whole image.
 
 In eQuimageLab, these four options correspond to different choices for the kwarg `channels` of the transformation: 1) channels = "L", 2) channels = "Ls", 3) channels = "Lb", and 4) channels = "Ln".
-
-.. note::
-
-  eQuimageLab applies operations to the lightness :math:`L^*` in the :math:`L^*a^*b^*` `color space & model <https://en.wikipedia.org/wiki/CIELAB_color_space>`_. This color space & model is only used internally for that purpose, and is not available in the eQuimageLab interface (at present).

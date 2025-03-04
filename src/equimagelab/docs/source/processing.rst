@@ -165,7 +165,7 @@ The :py:class:`Image <equimagelab.equimage.image.Image>` class also features the
    blend
    scale_pixels
 
-The :py:meth:`scale_pixels` method can, in particular, be used to stretch the image without changing the hues (the R/G/B ratios) - but this may result in some out-of-range RGB components (see :doc:`composite`). Actually, the :py:class:`Image <equimagelab.equimage.image.Image>` class also provides the useful test:
+The :py:meth:`scale_pixels` method can, in particular, be used to stretch the image without changing the hues (the R/G/B ratios) - but this may result in some out-of-range RGB components (see :doc:`composite`). The presence of out-of-range pixels can be tested with:
 
 .. autosummary::
 
