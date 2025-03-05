@@ -92,7 +92,7 @@ def interpolate_hue(hue, hgrid, param, interpolation):
     numpy.ndarray: The parameter interpolated for all input hues.
   """
   if np.all(param == param[0]):
-    return np.full_like(hue, param[0]) # Short-cut if the parameter is the same for RYGCBM.
+    return np.full_like(hue, param[0]) # Short-cut if the parameter is the same for all points of the grid.
   if interpolation == "nearest":
     finter = spint.interp1d(hgrid, param, kind = "nearest")
   elif interpolation == "linear" or interpolation == "cubic":
@@ -225,8 +225,8 @@ class MixinImage:
     Args:
       T (float): The target temperature between 1000K and 40000K.
       T0 (float, optional): The initial temperature between 1000K and 40000K (default 6650K).
-      lightness (bool, optional): If True, preserve the lightness L* of the original image in the
-        CIELuv color space. Note that this may result in some out-of-range pixels. Default is False.
+      lightness (bool, optional): If True, preserve the lightness L* of the original image.
+        Note that this may result in some out-of-range pixels. Default is False.
 
     Returns:
       Image: The processed image.
@@ -265,7 +265,7 @@ class MixinImage:
         blue = 1.
       return red, green, blue
 
-    self.check_color_model("RGB")
+    self.check_color_space("lRGB", "sRGB")
     red0, green0, blue0 = RGB_multipliers(T0)
     red , green , blue  = RGB_multipliers(T)
     red /= red0 ; green /= green0 ; blue /= blue0
@@ -274,13 +274,12 @@ class MixinImage:
     print(f"Red multiplier = {red:.3f}.")
     print(f"Green multiplier = {green:.3f}.")
     print(f"Blue multiplier = {blue:.3f}.")
-    image = self.convert(colorspace = "lRGB", copy = False)
+    image = self.convert(colorspace = "lRGB", colormodel = "RGB", copy = False)
     balanced = image.RGB_color_balance(red, green, blue)
-    output = balanced.convert(colorspace = self.colorspace, copy = False)
-    if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
-    return output
+    if lightness: balanced.set_channel("L*sh", self.lightness(), inplace = True)
+    return balanced.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False)
 
-  def HSX_color_saturation(self, D = 0., mode = "midsat", colormodel = "HSV", interpolation = "akima", lightness = False, trans = True, **kwargs):
+  def HSX_color_saturation(self, D = 0., mode = "midsat", colormodel = "HSV", colorspace = None, interpolation = "akima", lightness = False, trans = True, **kwargs):
     """Adjust color saturation in the HSV or HSL color models.
 
     The image is converted (if needed) to the HSV or HSL color model, then the color saturation S is transformed according
@@ -314,6 +313,8 @@ class MixinImage:
       M (float, optional): The magenta delta (default D).
       mode (str, optional): The saturation mode ["addsat", "mulsat" or "midsat" (default)].
       colormodel (str, optional): The color model for saturation ["HSV" (default) or "HSL"].
+      colorspace (str, optional): The color space for saturation ["lRGB", "sRGB", or None (default) to use the color
+        space of the image].
       interpolation (str, optional): The interpolation method for delta(hue):
 
         - "nearest": Nearest neighbor interpolation.
@@ -321,25 +322,28 @@ class MixinImage:
         - "cubic": Cubic spline interpolation.
         - "akima": Akima spline interpolation (default).
 
-      lightness (bool, optional): If True, preserve the lightness L* of the original image in the CIELuv color space.
-        Note that this may result in some out-of-range pixels. Default is False.
+      lightness (bool, optional): If True, preserve the lightness L* of the original image. Note that this may result
+        in some out-of-range pixels. Default is False.
       trans (bool, optional): If True (default), embed the transormation in the output image as output.trans
         (see Image.apply_channels).
 
     Returns:
       Image: The processed image.
     """
-    self.check_color_model("RGB", "HSV", "HSL")
+    self.check_color_space("lRGB", "sRGB")
     hgrid, dgrid, kwargs = parse_hue_kwargs(D, kwargs)
     if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
+    if colorspace is None:
+      colorspace = self.colorspace
+    elif colorspace not in ["lRGB", "sRGB"]:
+      raise ValueError("Error, colorspace must be 'lRGB' or 'sRGB'.")
     if colormodel == "HSV":
       channel = "S"
-      hsx = self.HSV()
     elif colormodel == "HSL":
       channel = "S'"
-      hsx = self.HSL()
     else:
       raise ValueError("Error, colormodel must be 'HSV' or 'HSL'.")
+    hsx = self.convert(colorspace = colorspace, colormodel = colormodel, copy = True)
     hue = hsx.image[0]
     sat = hsx.image[1]
     print(f"Before operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
@@ -355,13 +359,13 @@ class MixinImage:
       raise ValueError(f"Error, unknown saturation mode '{mode}.")
     print(f"After  operation: min(saturation) = {np.min(sat):.5f}; median(saturation) = {np.median(sat):.5f}; max(saturation) = {np.max(sat):.5f}.")
     hsx.image[1] = np.clip(sat, 0., 1.)
-    output = hsx.convert(colormodel = self.colormodel, copy = False)
+    output = hsx.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False)
     if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
     if trans:
       t = helpers.Container()
       t.type = "hue"
       t.input = self
-      t.channels = channel
+      t.channels = channel if self.colorspace == colorspace else ""
       t.xm = np.linspace(0., 1., 7)
       t.ym = interpolate_hue(t.xm, hgrid, dgrid, interpolation)
       t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
@@ -397,7 +401,7 @@ class MixinImage:
     interpolation by providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM'
     (blue-magenta) and 'MR' (magenta-red).
     Contrary to the saturation of HSV or HSL images, chroma/saturation transformations in the CIELab and CIELuv color spaces
-    preserve the lightness by design. They may, however, result in out-of-range pixels (as not all points of of these color
+    preserve the lightness by design. They may, however, result in out-of-range RGB pixels (as not all points of of these color
     spaces correspond to physical RGB colors).
 
     Note:
@@ -480,7 +484,7 @@ class MixinImage:
       output.trans = t
     return output
 
-  def rotate_HSX_hue(self, D = 0., interpolation = "akima", lightness = False, trans = True, **kwargs):
+  def rotate_HSX_hue(self, D = 0., colorspace = None, interpolation = "akima", lightness = False, trans = True, **kwargs):
     """Rotate color hues in the HSV/HSL color models.
 
     The image is converted (if RGB) to the HSV color model, and the hue H is rotated:
@@ -512,6 +516,8 @@ class MixinImage:
       C (float, optional): The cyan delta (default D).
       B (float, optional): The blue delta (default D).
       M (float, optional): The magenta delta (default D).
+      colorspace (str, optional): The color space for saturation ["lRGB", "sRGB", or None (default) to use the
+        color space of the image].
       interpolation (str, optional): The interpolation method for delta(hue):
 
         - "nearest": Nearest neighbor interpolation.
@@ -519,31 +525,33 @@ class MixinImage:
         - "cubic": Cubic spline interpolation.
         - "akima": Akima spline interpolation (default).
 
-      lightness (bool, optional): If True, preserve the lightness L* of the original image in the CIELuv
-        color space. Note that this may result in some out-of-range pixels. Default is False.
+      lightness (bool, optional): If True, preserve the lightness L* of the original image. Note that this
+        may result in some out-of-range pixels. Default is False.
       trans (bool, optional): If True (default), embed the transormation in the output image as output.trans
         (see Image.apply_channels).
 
     Returns:
       Image: The processed image.
     """
-    self.check_color_model("RGB", "HSV", "HSL")
+    self.check_color_space("lRGB", "sRGB")
     hgrid, dgrid, kwargs = parse_hue_kwargs(D, kwargs)
     if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
-    if self.colormodel == "RGB":
-      hsv = self.HSV()
-    else:
-      hsv = self.copy()
-    hue = hsv.image[0]
+    if colorspace is None:
+      colorspace = self.colorspace
+    elif colorspace not in ["lRGB", "sRGB"]:
+      raise ValueError("Error, colorspace must be 'lRGB' or 'sRGB'.")
+    colormodel = self.colormodel if self.colormodel in ["HSV", "HSL"] else "HSV"
+    hsx = self.convert(colorspace = colorspace, colormodel = colormodel, copy = True)
+    hue = hsx.image[0]
     delta = interpolate_hue(hue, hgrid, dgrid, interpolation)
-    hsv.image[0] = (hue+delta)%1.
-    output = hsv.convert(colormodel = self.colormodel, copy = False)
+    hsx.image[0] = (hue+delta)%1.
+    output = hsx.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False)
     if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
     if trans:
       t = helpers.Container()
       t.type = "hue"
       t.input = self
-      t.channels = "H"
+      t.channels = "H" if self.colorspace == colorspace else ""
       t.xm = np.linspace(0., 1., 7)
       t.ym = interpolate_hue(t.xm, hgrid, dgrid, interpolation)
       t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
@@ -568,8 +576,8 @@ class MixinImage:
     Midpoint deltas may also be specified for finer interpolation by providing the kwargs 'RY' (red-yellow),
     'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM' (blue-magenta) and 'MR' (magenta-red).
     Contrary to the rotation of HSV or HSL images, rotations in the CIELab and CIELuv color spaces preserve the
-    lightness by design. They may, however, result in out-of-range pixels (as not all points of of these color
-    spaces correspond to physical RGB colors).
+    lightness by design. They may, however, result in out-of-range RGB pixels (as not all points of of these
+    color spaces correspond to physical RGB colors).
 
     Note:
       h*(red) ~ 0, h*(yellow) ~ 1/6, h*(green) ~ 1/3, h*(cyan) ~ 1/2, h*(blue) ~ 2/3, and h*(magenta) ~ 5/6.
@@ -605,7 +613,7 @@ class MixinImage:
     """
     hgrid, dgrid, kwargs = parse_hue_kwargs(D, kwargs)
     if kwargs: raise ValueError(f"Error, unknown keyword argument(s): {', '.join(kwargs.keys())}.")
-    if colorspace == "CIELab" or colorspace == "CIELuv":
+    if colorspace in ["CIELab", "CIELuv"]:
       CIE = self.convert(colorspace = colorspace, colormodel = "Lch", copy = True)
     else:
       raise ValueError("Error, colorspace must be 'CIELab' or 'CIELuv'.")
@@ -617,7 +625,7 @@ class MixinImage:
       t = helpers.Container()
       t.type = "hue"
       t.input = self
-      t.channels = "h*" if self.colorspace == "CIELab" or self.colorspace == "CIELuv" else ""
+      t.channels = "h*" if self.colorspace in ["CIELab", "CIELuv"] else ""
       t.xm = np.linspace(0., 1., 7)
       t.ym = interpolate_hue(t.xm, hgrid, dgrid, interpolation)
       t.cm = ["red", "yellow", "green", "cyan", "blue", "magenta", "red"]
@@ -631,7 +639,7 @@ class MixinImage:
   # Color noise reduction. #
   ##########################
 
-  def SCNR(self, hue = "green", protection = "avgneutral", amount = 1., lightness = True):
+  def SCNR(self, hue = "green", protection = "avgneutral", amount = 1., colorspace = None, lightness = True):
     """Subtractive Chromatic Noise Reduction of a given hue of a RGB image.
 
     The input hue is reduced according to the 'protection' kwarg. For the green hue for example,
@@ -648,13 +656,14 @@ class MixinImage:
         "cyan" alias "C", "blue" alias "B", or "magenta" alias "M"].
       protection (str, optional): The protection mode ["avgneutral" (default), "maxneutral", "addmask" or "maxmask"].
       amount (float, optional): The parameter A for mask protection (protection = "addmask" or "maxmask", default 1).
-      lightness (bool, optional): If True (default), preserve the lightness L* of the original image in the CIELuv
-        color space.
+      colorspace (str, optional): The color space for SCNR. ["lRGB", "sRGB", or None (default) to use the color
+        space of the image].
+      lightness (bool, optional): If True (default), preserve the lightness L* of the original image.
 
     Returns:
       Image: The processed image.
     """
-    self.check_color_model("RGB")
+    self.check_color_model("lRGB", "sRGB")
     if hue == "red" or hue == "R":
       icc, ic1, ic2, negative = 0, 1, 2, False
     elif hue == "yellow" or hue == "Y":
@@ -669,7 +678,12 @@ class MixinImage:
       icc, ic1, ic2, negative = 1, 0, 2, True
     else:
       raise ValueError(f"Error, unknown hue '{hue}'.")
-    image = np.clip(self.image, 0., 1.) # Clip before reducing color noise.
+    if colorspace is None:
+      colorspace = self.colorspace
+    elif colorspace not in ["lRGB", "sRGB"]:
+      raise ValueError("Error, colorspace must be 'lRGB' or 'sRGB'.")
+    converted = self.convert(colorspace = colorspace, colormodel = "RGB", copy = False)
+    image = np.clip(converted.image, 0., 1.) # Clip before reducing color noise.
     if negative: image = 1.-image
     if protection == "avgneutral":
       c = (image[ic1]+image[ic2])/2.
@@ -686,6 +700,6 @@ class MixinImage:
     else:
       raise ValueError(f"Error, unknown protection mode '{protection}'.")
     if negative: image = 1.-image
-    output = self.newImage(image)
+    output = converted.newImage(image)
     if lightness: output.set_channel("L*sh", self.lightness(), inplace = True)
-    return output
+    return output.convert(colorspace = self.colorspace, copy = False)
