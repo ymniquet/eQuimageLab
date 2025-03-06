@@ -120,12 +120,14 @@ class MixinImage:
     return np.clip(self, vmin, vmax)
 
   def scale_pixels(self, source, target, cutoff = None):
-    """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff, set all channels to target.
+    """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff,
+    set all channels to target.
 
     Args:
       source (numpy.ndarray): The source values for scaling (must be the same size as the image).
       target (numpy.ndarray): The target values for scaling (must be the same size as the image).
-      cutoff (float, optional): Threshold for scaling. If None, defaults to `equimage.helpers.fpepsilon(source.dtype)`.
+      cutoff (float, optional): Threshold for scaling. 80
+        If None, defaults to `equimage.helpers.fpepsilon(source.dtype)`.
 
     Returns:
       Image: The scaled image.

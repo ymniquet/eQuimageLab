@@ -115,8 +115,8 @@ class MixinImage:
   def set_black_point(self, shadow, channels = "", trans = True):
     """Set the black (shadow) level in selected channels of the image.
 
-    The selected channels are clipped below shadow and linearly stretched to map [shadow, 1] onto [0, 1].
-    The output, stretched image channels therefore fits in the [0, infty[ range.
+    The selected channels are clipped below shadow and linearly stretched to map [shadow, 1]
+    onto [0, 1]. The output, stretched image channels therefore fits in the [0, infty[ range.
 
     Args:
       shadow (float): The black (shadow) level (expected < 1).
@@ -137,8 +137,8 @@ class MixinImage:
     """Set shadow and highlight levels in selected channels of the image.
 
     The selected channels are clipped below shadow and above highlight and linearly stretched
-    to map [shadow, highlight] onto [0, 1].
-    The output, stretched channels therefore fits in the [0, 1] range.
+    to map [shadow, highlight] onto [0, 1]. The output, stretched channels therefore fits in
+    the [0, 1] range.
 
     Args:
       shadow (float): The shadow level (expected < 1).
@@ -217,9 +217,9 @@ class MixinImage:
       - f(x) = a4+b4*x when x >= HPP.
 
     The coefficients a and b are computed so that f is continuous and derivable.
-    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
-    the "highlight protection point". They can be tuned to preserve contrast in
-    the low and high brightness areas, respectively.
+    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is the "highlight
+    protection point". They can be tuned to preserve contrast in the low and high brightness
+    areas, respectively.
 
     f(x) falls back to the "usual" harmonic stretch function
 
@@ -227,8 +227,8 @@ class MixinImage:
 
     when SPP = SYP = 0 and HPP = 1 (the defaults).
 
-    Moreover, the generalized hyperbolic stretch function for local stretch
-    parameter b = 1 is the generalized harmonic stretch function.
+    Moreover, the generalized hyperbolic stretch function for local stretch parameter b = 1 is the
+    generalized harmonic stretch function.
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
@@ -299,7 +299,8 @@ class MixinImage:
 
     This method:
 
-      1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight] onto [0, 1].
+      1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight]
+         onto [0, 1].
       2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
          with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
       3) Maps [low, high] onto [0, 1] and clips the output data outside the [0, 1] range.
@@ -345,9 +346,9 @@ class MixinImage:
       - f(x) = a4+b4*x when x >= HPP.
 
     The coefficients a and b are computed so that f is continuous and derivable.
-    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
-    the "highlight protection point". They can be tuned to preserve contrast in
-    the low and high brightness areas, respectively.
+    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is the "highlight
+    protection point". They can be tuned to preserve contrast in the low and high brightness
+    areas, respectively.
 
     f(x) falls back to the "standard" arcsinh stretch function
 
@@ -382,7 +383,7 @@ class MixinImage:
     if HPP < SYP:
       HPP = SYP
       print("Warning, changed HPP = SYP !")
-    output =  self.apply_channels(lambda channel: stf.garcsinh_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
+    output = self.apply_channels(lambda channel: stf.garcsinh_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
 
@@ -428,9 +429,9 @@ class MixinImage:
       - f(x) = a4+b4*x when x >= HPP.
 
     The coefficients a and b are computed so that f is continuous and derivable.
-    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
-    the "highlight protection point". They can be tuned to preserve contrast in
-    the low and high brightness areas, respectively.
+    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is the "highlight
+    protection point". They can be tuned to preserve contrast in the low and high brightness
+    areas, respectively.
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
@@ -520,9 +521,10 @@ class MixinImage:
       See: https://www.setiastro.com/statistical-stretch.
 
     Hint:
-      You can apply the harmonic stretches and the final contrast boost separately by calling this method twice with
-      the same target median, first with boost = 0, then with boost > 0. As the average median of the image already
-      matches the target median, no harmonic stretch will be applied on second call.
+      You can apply the harmonic stretches and the final contrast boost separately by calling this
+      method twice with the same target median, first with boost = 0, then with boost > 0. As the
+      average median of the image already matches the target median, no harmonic stretch will be
+      applied on second call.
 
     See also:
       set_black_point,
@@ -531,8 +533,8 @@ class MixinImage:
     Args:
       median (float): The target median (expected in ]0, 1[).
       boost (float, optional): The contrast boost (expected >= 0; default 0 = no boost).
-      maxiter (int, optional): The maximum number of harmonic stretches applied to reach the target median (default 5).
-        For a single channel, the algorithm shall actually converge in one iteration.
+      maxiter (int, optional): The maximum number of harmonic stretches applied to reach the target
+        median (default 5). For a single channel, the algorithm shall actually converge in one iteration.
       accuracy (float, optional): The target accuracy of the median (default 0.001).
       channels (str, optional): The selected channels (default "" = all channels).
         See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.

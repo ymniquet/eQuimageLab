@@ -36,8 +36,8 @@ class Dashboard():
   def __init__(self, port = 8050, interval = 500, debug = False):
     """Initialize dashboard.
 
-    This dashboard uses Dash to display images, histograms, statistics, etc... in a separate browser tab or window.
-    It fetches updates from the Dash server at given intervals.
+    This dashboard uses Dash to display images, histograms, statistics, etc... in a separate browser
+    tab or window. It fetches updates from the Dash server at given intervals.
 
     Args:
       port (int, optional): The port bound to the Dash server (default 8050).
@@ -177,9 +177,9 @@ class Dashboard():
       current (str): The current shape.
 
     Returns:
-      A patch for the image figure, the content of the "selectdiv" div element with the
-      representation of the shape as a python method, and the content of the "shape" store
-      with the updated current shape.
+      A patch for the image figure, the content of the "selectdiv" div element with the epresentation
+      of the shape as a python method, and the content of the "shape" store with the updated current
+      shape.
     """
     shape = None
     patch = dash.no_update
@@ -233,8 +233,8 @@ class Dashboard():
   def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
 
-    Apply selected filters (R, G, B, L channel filters, shadowed/highlighted pixels, images differences) to
-    the current image.
+    Apply selected filters (R, G, B, L channel filters, shadowed/highlighted pixels, images
+    differences) to the current image.
 
     Args:
       current (list): The currently selected filters.
@@ -242,7 +242,8 @@ class Dashboard():
       updateid (integer): The unique ID of the displayed dashboard update.
 
     Returns:
-      The curated filters (twice, as currently selected and new previous), and a patch for the filtered figure.
+      The curated filters (twice, as currently selected and new previous), and a patch for the
+      filtered figure.
     """
 
     def filter_channels(image, channels):
@@ -307,8 +308,7 @@ class Dashboard():
   def __partial_histograms(self, n_clicks, is_open, figure, shape, updateid):
     """Callback for partial histograms.
 
-    Shows the histograms of the current selection (if any) or of the displayed
-    area of the image.
+    Shows the histograms of the current selection (if any) or of the displayed area of the image.
 
     Args:
       n_clicks (list): The number of clicks on the histograms button.
@@ -449,21 +449,25 @@ class Dashboard():
     """Show image(s) on the dashboard.
 
     Args:
-      images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
-        (for color images), (height, width, 1) or (height, width) (for grayscale images).
-        Each image is displayed in a separate tab. The tabs are labelled according to the keys for
-        a dictionary. Otherwise, the tabs are labelled "Image" & "Reference" if there are one or two images,
-        and "Image #1", "Image #2"... if there are more.
-      histograms (optional): If True or a string, show the histograms of the image(s). The string lists the
-        channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
-      statistics (optional): If True or a string, show the statistics of the image(s). The string lists the
-        channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
+      images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape
+        (height, width, 3) (for color images), (height, width, 1) or (height, width) (for
+        grayscale images). Each image is displayed in a separate tab. The tabs are labelled
+        according to the keys for a dictionary. Otherwise, the tabs are labelled "Image" &
+        "Reference" if there are one or two images, and "Image #1", "Image #2"... if there are
+        more.
+      histograms (optional): If True or a string, show the histograms of the image(s). The string
+        lists the channels of the histograms (e.g. "RGBL" for red, green, blue, luma).
+        Default is False.
+      statistics (optional): If True or a string, show the statistics of the image(s). The string
+        lists the channels of the statistics (e.g. "RGBL" for red, green, blue, luma).
+        Default is False.
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
         Only images[::sampling, ::sampling] are shown, to speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, partial histograms).
       click (bool, optional): If True (default), show image data on click.
-      select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on the image.
+      select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
+        the image.
       synczoom (bool, optional): If True (default), synchronize zooms over images.
         Zooms will be synchronized only if all images have the same size.
       trans (optional): A container with an histogram transformation (see `equimage.Image.apply_channels`),
@@ -609,7 +613,8 @@ class Dashboard():
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, partial histograms).
       click (bool, optional): If True (default), show image data on click.
-      select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on the image.
+      select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
+        the image.
       synczoom (bool, optional): If True (default), synchronize zooms over images.
     """
     if not issubclass(type(image), Image):
@@ -617,7 +622,7 @@ class Dashboard():
       return
     trans = getattr(image, "trans", None)
     if trans is None:
-      print("There is no transformation embedded in the input image.")
+      pr+int("There is no transformation embedded in the input image.")
       return
     reference = trans.input
     keys = parse_channels(channels)
@@ -714,7 +719,8 @@ def _table_statistics_(image, channels = ""):
   Args:
     image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
-    channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
+    channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green,
+      blue, luma).
 
   Returns:
     dbc.Table: A dash bootstrap components table with the statistics of the image.

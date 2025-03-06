@@ -18,10 +18,10 @@ from . import image_colorspaces as colorspaces
 def parse_hue_kwargs(D, kwargs):
   """Parse hue keywords in the kwargs.
 
-  This function looks for the keywords 'R' (red, hue H = 0), 'Y' (yellow, H = 1/6), 'G' (green, H = 1/3),
-  'C' (cyan, H = 1/2), 'B' (blue, H = 2/3) and 'M' (magenta, H = 5/6) in the kwargs and returns the grid
-  of H's and the corresponding values of the kwargs as numpy arrays. Whenever a keyword is missing, its
-  value is replaced by the default, D.
+  This function looks for the keywords 'R' (red, hue H = 0), 'Y' (yellow, H = 1/6), 'G' (green,
+  H = 1/3), 'C' (cyan, H = 1/2), 'B' (blue, H = 2/3) and 'M' (magenta, H = 5/6) in the kwargs and
+  returns the grid of H's and the corresponding values of the kwargs as numpy arrays. Whenever a
+  keyword is missing, its value is replaced by the default, D.
   Additional points may be inserted in the grid by providing the keywords 'RY' (red-yellow, H = 1/12),
   'YG' (yellow-green, H = 1/4), 'GC' (green-cyan, H = 5/12), 'CB' (cyan-blue, H = 7/12), 'BM' (blue-
   magenta, H = 3/4) and 'MR' (magenta-red, H = 11/12).
@@ -35,8 +35,8 @@ def parse_hue_kwargs(D, kwargs):
     kwargs (dict): The dictionary of kwargs.
 
   Returns:
-    The grid of hues (numpy.ndarray), the corresponding keyword values (numpy.ndarray), and the curated
-    kwargs (with the used keys deleted).
+    The grid of hues (numpy.ndarray), the corresponding keyword values (numpy.ndarray), and the
+    curated kwargs (with the used keys deleted).
   """
   R = kwargs.pop("R", D)
   Y = kwargs.pop("Y", D)
@@ -141,13 +141,13 @@ class MixinImage:
     self.check_color_model("RGB", "gray")
     return 1.-self
 
-  def grayscale(self, channel = "Y", RGB = False):
+  def grayscale(self, channel = "L*", RGB = False):
     """Convert the selected channel of a RGB image into a grayscale image.
 
     Args:
-      channel: The converted channel ("V" for the HSV value, "L'" for HSL lightness, "L" for the luma,
-        "Y" or "L*" for the luminance/lightness). Namely, the output grayscale image has the same
-        value/luma/luminance and lightness as the original RGB image.
+      channel: The converted channel ("V" for the HSV value, "L'" for HSL lightness, "L" for the
+        luma, "Y" or "L*" for the luminance/lightness). Namely, the output grayscale image has the
+        same value/luma/luminance and lightness as the original RGB image.
       RGB (bool, optional): If True, return the grayscale as a RGB image (with identical R/G/B
         channels). If False (default), return the grayscale as a single channel image.
 
@@ -202,7 +202,7 @@ class MixinImage:
   def mix_RGB(self, M):
     """Mix RGB channels.
 
-    Transforms each pixel P = (R, G, B) of the image into M@P, with M a 3x3 mixing matrix.^
+    Transforms each pixel P = (R, G, B) of the image into M@P, with M a 3x3 mixing matrix.
 
     Args:
       M (numpy.ndarray): The mixing matrix.
@@ -216,8 +216,8 @@ class MixinImage:
   def set_color_temperature(self, T, T0 = 6650., lightness = False):
     """Adjust the color temperature of a RGB image.
 
-    Adjusts the color balance assuming that the scene is (or is lit by) a black body source
-    whose temperature is changed from T0 (default 6650K) to T.
+    Adjusts the color balance assuming that the scene is (or is lit by) a black body source whose
+    temperature is changed from T0 (default 6650K) to T.
     Setting T < T0 casts a red tint on the image, while setting T > T0 casts a blue tint.
     This is not a rigorous transformation and is intended for "cosmetic" purposes.
     The colors are balanced in the linear RGB color space.
@@ -282,22 +282,23 @@ class MixinImage:
   def HSX_color_saturation(self, D = 0., mode = "midsat", colormodel = "HSV", colorspace = None, interpolation = "akima", lightness = False, trans = True, **kwargs):
     """Adjust color saturation in the HSV or HSL color models.
 
-    The image is converted (if needed) to the HSV or HSL color model, then the color saturation S is transformed according
-    to the 'mode' kwarg:
+    The image is converted (if needed) to the HSV or HSL color model, then the color saturation S is
+    transformed according to the 'mode' kwarg:
 
       - "addsat": Shift the saturation S ← S+delta.
       - "mulsat": Scale the saturation S ← S*(1+delta).
       - "midsat": Apply a midtone stretch function S ← f(S) = (m-1)S/((2m-1)S-m) with midtone m = (1-delta)/2.
-        This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1, and thus leaves the saturation
-        of the least/most saturated pixels unchanged.
+        This function increases monotonously from f(0) = 0 to f(m) = 1/2 and f(1) = 1, and thus leaves
+        the saturation of the least/most saturated pixels unchanged.
 
     The image is then converted back to the original color model after this operation.
-    delta is expected to be > -1, and to be < 1 in the "midsat" mode. Whatever the mode, delta = 0 leaves the image
-    unchanged, delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale. delta is set for the
-    red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues by the corresponding kwarg
-    (delta = D if missing). It is interpolated for arbitrary hues using nearest neighbor, linear, cubic or akima
-    spline interpolation according to the 'interpolation' kwarg. Midpoint deltas may also be specified for finer
-    interpolation by providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
+    delta is expected to be > -1, and to be < 1 in the "midsat" mode. Whatever the mode, delta = 0
+    leaves the image unchanged, delta > 0 saturates the colors, and delta < 0 turns the image into
+    a gray scale. delta is set for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B')
+    and magenta ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated
+    for arbitrary hues using nearest neighbor, linear, cubic or akima spline interpolation according
+    to the 'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by
+    providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
     'BM' (blue-magenta) and 'MR' (magenta-red).
 
     See also:
@@ -313,8 +314,8 @@ class MixinImage:
       M (float, optional): The magenta delta (default D).
       mode (str, optional): The saturation mode ["addsat", "mulsat" or "midsat" (default)].
       colormodel (str, optional): The color model for saturation ["HSV" (default) or "HSL"].
-      colorspace (str, optional): The color space for saturation ["lRGB", "sRGB", or None (default) to use the color
-        space of the image].
+      colorspace (str, optional): The color space for saturation ["lRGB", "sRGB", or None (default)
+        to use the color space of the image].
       interpolation (str, optional): The interpolation method for delta(hue):
 
         - "nearest": Nearest neighbor interpolation.
@@ -322,10 +323,10 @@ class MixinImage:
         - "cubic": Cubic spline interpolation.
         - "akima": Akima spline interpolation (default).
 
-      lightness (bool, optional): If True, preserve the lightness L* of the original image. Note that this may result
-        in some out-of-range pixels. Default is False.
-      trans (bool, optional): If True (default), embed the transormation in the output image as output.trans
-        (see Image.apply_channels).
+      lightness (bool, optional): If True, preserve the lightness L* of the original image.
+        Note that this may result in some out-of-range pixels. Default is False.
+      trans (bool, optional): If True (default), embed the transormation in the output image
+        as output.trans (see Image.apply_channels).
 
     Returns:
       Image: The processed image.
@@ -353,7 +354,7 @@ class MixinImage:
     elif mode == "mulsat":
       sat *= 1.+delta
     elif mode == "midsat":
-      midsat = np.clip(.5*(1.-delta), .005, .995)
+      midsat = np.clip(.5*(1.-delta), .001, .999)
       sat = (midsat-1.)*sat/((2.*midsat-1.)*sat-midsat)
     else:
       raise ValueError(f"Error, unknown saturation mode '{mode}.")
@@ -378,35 +379,38 @@ class MixinImage:
   def CIE_chroma_saturation(self, D = 0., mode = "midsat", colormodel = "Lsh", interpolation = "akima", ref = None, trans = True, **kwargs):
     """Adjust color chroma or saturation in the CIELab or CIELuv color spaces.
 
-    The image is converted (if needed) to the CIELab or CIELuv colorspace, then the CIELab chroma CS = c* = sqrt(a*^2+b*^2)
-    (colormodel = "Lab"), or the CIELuv chroma CS = c* = sqrt(u*^2+v*^2) (colormodel = "Luv"), or the CIELuv saturation
-    CS = s* = c*/L* (colormodel = "Lsh") is transformed according to the 'mode' kwarg:
+    The image is converted (if needed) to the CIELab or CIELuv colorspace, then the CIELab chroma
+    CS = c* = sqrt(a*^2+b*^2) (colormodel = "Lab"), or the CIELuv chroma CS = c* = sqrt(u*^2+v*^2)
+    (colormodel = "Luv"), or the CIELuv saturation CS = s* = c*/L* (colormodel = "Lsh") is transformed
+    according to the 'mode' kwarg:
 
       - "addsat": Shift the chroma/saturation CS ← CS+delta.
       - "mulsat": Scale the chroma/saturation CS ← CS*(1+delta).
       - "midsat": Apply a midtone stretch function CS ← f(CS) = (m-1)CS/((2m-1)CS/ref-m) with midtone m = (1-delta)/2.
-        This function increases monotonously from f(0) = 0 to f(m*ref) = ref/2 and f(ref) = ref, where ref is a reference
-        chroma/saturation (ref = max(CS) by default).
+        This function increases monotonously from f(0) = 0 to f(m*ref) = ref/2 and f(ref) = ref,
+        where ref is a reference chroma/saturation (ref = max(CS) by default).
 
     The image is then converted back to the original color space and model after this operation.
-    delta is expected to be > -1, and to be < 1 in the "midsat" mode. Whatever the mode, delta = 0 leaves the image unchanged,
-    delta > 0 saturates the colors, and delta < 0 turns the image into a gray scale. However, please keep in mind that the
-    chroma/saturation in the CIELab/CIELuv color spaces is not bounded by 1 as it is in the lRGB and sRGB color spaces (HSV
-    and HSL color models). The choice of the reference can, therefore, be critical in the "midsat" mode. In particular, pixels
-    with chroma/saturation > ref get desaturated if delta > 0, and oversaturated if delta < 0 (with a possible singularity
-    at CS = -ref*(1-delta)/(2*delta)).
-    delta is set for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta ('M') hues by the
-    corresponding kwarg (delta = D if missing). It is interpolated for arbitrary hues using nearest neighbor, linear, cubic
-    or akima spline interpolation according to the 'interpolation' kwarg. Midpoint deltas may also be specified for finer
-    interpolation by providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM'
+    delta is expected to be > -1, and to be < 1 in the "midsat" mode. Whatever the mode, delta = 0
+    leaves the image unchanged, delta > 0 saturates the colors, and delta < 0 turns the image into
+    a gray scale. However, please keep in mind that the chroma/saturation in the CIELab/CIELuv color
+    spaces is not bounded by 1 as it is in the lRGB and sRGB color spaces (HSV and HSL color models).
+    The choice of the reference can, therefore, be critical in the "midsat" mode. In particular,
+    pixels with chroma/saturation > ref get desaturated if delta > 0, and oversaturated if delta < 0
+    (with a possible singularity at CS = -ref*(1-delta)/(2*delta)).
+    delta is set for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta
+    ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for arbitrary
+    hues using nearest neighbor, linear, cubic or akima spline interpolation according to the
+    'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by providing
+    the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM'
     (blue-magenta) and 'MR' (magenta-red).
-    Contrary to the saturation of HSV or HSL images, chroma/saturation transformations in the CIELab and CIELuv color spaces
-    preserve the lightness by design. They may, however, result in out-of-range RGB pixels (as not all points of of these color
-    spaces correspond to physical RGB colors).
+    Contrary to the saturation of HSV or HSL images, chroma/saturation transformations in the CIELab
+    and CIELuv color spaces preserve the lightness by design. They may, however, result in out-of-
+    range RGB pixels (as not all points of of these color spaces correspond to physical RGB colors).
 
     Note:
-      Chroma and saturation are related, but different quantities (s* = c*/L* in the CIELuv color space). There is no strictly
-      valid definition of saturation in the CIELab color space.
+      Chroma and saturation are related, but different quantities (s* = c*/L* in the CIELuv color space). There is no rigorous
+      definition of saturation in the CIELab color space.
 
     See also:
       HSX_color_saturation
@@ -428,10 +432,10 @@ class MixinImage:
         - "cubic": Cubic spline interpolation.
         - "akima": Akima spline interpolation (default).
 
-      ref (float, optional): The reference chroma/saturation for the "midsat" mode. If None, defaults to the maximum
-        chroma/saturation of the input image.
-      trans (bool, optional): If True (default), embed the transormation in the output image as output.trans
-        (see Image.apply_channels).
+      ref (float, optional): The reference chroma/saturation for the "midsat" mode. If None,
+        defaults to the maximum chroma/saturation of the input image.
+      trans (bool, optional): If True (default), embed the transormation in the output image
+        as output.trans (see Image.apply_channels).
 
     Returns:
       Image: The processed image.
@@ -463,7 +467,7 @@ class MixinImage:
       sat *= 1.+delta
     elif mode == "midsat":
       if ref is None: ref = maxsat
-      midsat = np.clip(.5*(1.-delta), .005, .995)
+      midsat = np.clip(.5*(1.-delta), .001, .999)
       sat = (midsat-1.)*sat/((2.*midsat-1.)*sat/ref-midsat)
     else:
       raise ValueError(f"Error, unknown saturation mode '{mode}.")
@@ -492,11 +496,12 @@ class MixinImage:
       H ← (H+delta)%1.
 
     The image is then converted back to the original color model after this operation.
-    delta is set for the original red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta
-    ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for arbitrary hues using
-    nearest neighbor, linear, cubic or akima spline interpolation according to the 'interpolation' kwarg.
-    Midpoint deltas may also be specified for finer interpolation by providing the kwargs 'RY' (red-yellow),
-    'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM' (blue-magenta) and 'MR' (magenta-red).
+    delta is set for the original red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and
+    magenta ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for
+    arbitrary hues using nearest neighbor, linear, cubic or akima spline interpolation according to
+    the 'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by
+    providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
+    'BM' (blue-magenta) and 'MR' (magenta-red).
 
     Note:
       H(red) = 0, H(yellow) = 1/6, H(green) = 1/3, H(cyan) = 1/2, H(blue) = 2/3, and H(magenta) = 5/6.
@@ -516,8 +521,8 @@ class MixinImage:
       C (float, optional): The cyan delta (default D).
       B (float, optional): The blue delta (default D).
       M (float, optional): The magenta delta (default D).
-      colorspace (str, optional): The color space for saturation ["lRGB", "sRGB", or None (default) to use the
-        color space of the image].
+      colorspace (str, optional): The color space for saturation ["lRGB", "sRGB", or None (default)
+        to use the color space of the image].
       interpolation (str, optional): The interpolation method for delta(hue):
 
         - "nearest": Nearest neighbor interpolation.
@@ -525,10 +530,10 @@ class MixinImage:
         - "cubic": Cubic spline interpolation.
         - "akima": Akima spline interpolation (default).
 
-      lightness (bool, optional): If True, preserve the lightness L* of the original image. Note that this
-        may result in some out-of-range pixels. Default is False.
-      trans (bool, optional): If True (default), embed the transormation in the output image as output.trans
-        (see Image.apply_channels).
+      lightness (bool, optional): If True, preserve the lightness L* of the original image.
+        Note that this may result in some out-of-range pixels. Default is False.
+      trans (bool, optional): If True (default), embed the transormation in the output image
+        as output.trans (see Image.apply_channels).
 
     Returns:
       Image: The processed image.
@@ -564,20 +569,21 @@ class MixinImage:
   def rotate_CIE_hue(self, D = 0., colorspace = "CIELab", interpolation = "akima", trans = True, **kwargs):
     """Rotate color hues in the CIELab or CIELuv color space.
 
-    The image is converted (if needed) to the CIELab or CIELuv color space, and the reduced hue angle h*
-    (within [0, 1]) is rotated:
+    The image is converted (if needed) to the CIELab or CIELuv color space, and the reduced hue
+    angle h* (within [0, 1]) is rotated:
 
       h* ← (h*+delta)%1.
 
     The image is then converted back to the original color model after this operation.
-    delta is set for the original red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta
-    ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for arbitrary hues using
-    nearest neighbor, linear, cubic or akima spline interpolation according to the 'interpolation' kwarg.
-    Midpoint deltas may also be specified for finer interpolation by providing the kwargs 'RY' (red-yellow),
-    'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM' (blue-magenta) and 'MR' (magenta-red).
-    Contrary to the rotation of HSV or HSL images, rotations in the CIELab and CIELuv color spaces preserve the
-    lightness by design. They may, however, result in out-of-range RGB pixels (as not all points of of these
-    color spaces correspond to physical RGB colors).
+    delta is set for the original red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and
+    magenta ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for
+    arbitrary hues using nearest neighbor, linear, cubic or akima spline interpolation according to
+    the 'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by
+    providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
+    'BM' (blue-magenta) and 'MR' (magenta-red).
+    Contrary to the rotation of HSV or HSL images, rotations in the CIELab and CIELuv color spaces
+    preserve the lightness by design. They may, however, result in out-of-range RGB pixels (as not
+    all points of of these color spaces correspond to physical RGB colors).
 
     Note:
       h*(red) ~ 0, h*(yellow) ~ 1/6, h*(green) ~ 1/3, h*(cyan) ~ 1/2, h*(blue) ~ 2/3, and h*(magenta) ~ 5/6.
@@ -605,8 +611,8 @@ class MixinImage:
         - "cubic": Cubic spline interpolation.
         - "akima": Akima spline interpolation (default).
 
-      trans (bool, optional): If True (default), embed the transormation in the output image as output.trans
-        (see Image.apply_channels).
+      trans (bool, optional): If True (default), embed the transormation in the output image
+        as output.trans (see Image.apply_channels).
 
     Returns:
       Image: The processed image.
@@ -652,13 +658,16 @@ class MixinImage:
     The parameter A in [0, 1] controls the strength of the mask protection.
 
     Args:
-      hue (str, optional): The hue to be reduced ["red" alias "R", "yellow" alias "Y", "green" alias "G" (default),
-        "cyan" alias "C", "blue" alias "B", or "magenta" alias "M"].
-      protection (str, optional): The protection mode ["avgneutral" (default), "maxneutral", "addmask" or "maxmask"].
-      amount (float, optional): The parameter A for mask protection (protection = "addmask" or "maxmask", default 1).
-      colorspace (str, optional): The color space for SCNR. ["lRGB", "sRGB", or None (default) to use the color
-        space of the image].
+      hue (str, optional): The hue to be reduced ["red" alias "R", "yellow" alias "Y", "green"
+        alias "G" (default), "cyan" alias "C", "blue" alias "B", or "magenta" alias "M"].
+      protection (str, optional): The protection mode ["avgneutral" (default), "maxneutral",
+        "addmask" or "maxmask"].
+      amount (float, optional): The parameter A for mask protection (protection = "addmask"
+        or "maxmask", default 1).
+      colorspace (str, optional): The color space for SCNR ["lRGB", "sRGB", or None (default)
+        to use the color space of the image].
       lightness (bool, optional): If True (default), preserve the lightness L* of the original image.
+        Note that this may result in some out-of-range pixels.
 
     Returns:
       Image: The processed image.

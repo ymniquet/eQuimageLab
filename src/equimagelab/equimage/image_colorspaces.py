@@ -576,8 +576,8 @@ def luminance_to_lightness(Y):
 
     L* = 116*Y**(1/3)-16 if Y > 0.008856 and L* = 903.3*Y if Y < 0.008856.
 
-  Note that L* is conventionally defined within [0, 100]. However, this
-  function returns the scaled lightness L*/100 within [0, 1].
+  Note that L* is conventionally defined within [0, 100].
+  However, this function returns the scaled lightness L*/100 within [0, 1].
 
   See also:
     The reciprocal lightness_to_luminance function.
@@ -643,9 +643,9 @@ def lRGB_lightness(image):
 
     L* = 116*Y**(1/3)-16 if Y > 0.008856 and L* = 903.3*Y if Y < 0.008856.
 
-  It is a measure of the perceptual lightness of the image. Note that L* is
-  conventionally defined within [0, 100]. However, this function returns
-  the scaled lightness L*/100 within [0, 1].
+  It is a measure of the perceptual lightness of the image.
+  Note that L* is conventionally defined within [0, 100].
+  However, this function returns the scaled lightness L*/100 within [0, 1].
 
   See also:
     lRGB_luminance,
@@ -669,11 +669,10 @@ def sRGB_luminance(image):
 
   The image is converted to the lRGB color space to compute the luminance Y.
 
-  Note: Although they have the same functional forms, the luma and luminance are
-  different concepts for sRGB images: the luma is computed in the sRGB color space
-  as a *substitute* for the perceptual lightness, whereas the luminance is
-  computed after conversion in the lRGB color space and is the basic ingredient of
-  the *genuine* perceptual lightness (see lRGB_lightness).
+  Note: Although they have the same functional forms, the luma and luminance are different concepts
+  for sRGB images: the luma is computed in the sRGB color space as a *substitute* for the  perceptual
+  lightness, whereas the luminance is computed after conversion in the  lRGB color space and is the
+  basic ingredient of the *genuine* perceptual lightness (see lRGB_lightness).
 
   See also:
     sRGB_lightness,
@@ -696,9 +695,9 @@ def sRGB_lightness(image):
   """Return the CIE lightness L* of the input sRGB image.
 
   The image is converted to the lRGB color space to compute the CIE lightness L*.
-  L* is a measure of the perceptual lightness of the image. Note that L* is
-  conventionally defined within [0, 100]. However, this function returns
-  the scaled lightness L*/100 within [0, 1].
+  L* is a measure of the perceptual lightness of the image.
+  Note that L* is conventionally defined within [0, 100].
+  However, this function returns the scaled lightness L*/100 within [0, 1].
 
   See also:
     sRGB_luminance,
@@ -1028,21 +1027,18 @@ class MixinImage:
   def convert(self, colorspace = None, colormodel = None, copy = True):
     """Convert the image to the target color space and color model.
 
-    This method is more versatile than the dedicated conversion functions such
-    as Image.sRGB, Image.HSV, etc... In particular, it can chain conversions to
-    reach the target color space and model. For example,
-    (sRGB, HSV) → (lRGB, RGB) = (sRGB, HSV) → (sRGB, RGB) → (lRGB, RGB).
+    This method is more versatile than the dedicated conversion functions such as Image.sRGB,
+    Image.HSV, etc... In particular, it can chain conversions to reach the target color space
+    and model. For example, (sRGB, HSV) → (lRGB, RGB) = (sRGB, HSV) → (sRGB, RGB) → (lRGB, RGB).
 
     Args:
-      colorspace (str, optional): The target color space ("lRGB", "sRGB", "CIELab"
-        or "CIELuv"). If None (default), keep the original color space.
-      colormodel (str, optional): The target color model ("RGB", "HSV" or "HSL"
-        in the lRGB and sRGB color spaces, "Lab" or "Lch" in the CIELab color space,
-        "Luv", "Lch" or "Lsh" in the CIELuv color space). If None (default), keep
-        (if possible) the original color model.
-      copy (bool, optional): If True (default), return a copy of the original image
-        if already in the target color space and color model. If False, return the
-        original image.
+      colorspace (str, optional): The target color space ("lRGB", "sRGB", "CIELab" or "CIELuv").
+        If None (default), keep the original color space.
+      colormodel (str, optional): The target color model ("RGB", "HSV" or "HSL" in the lRGB and
+        sRGB color spaces, "Lab" or "Lch" in the CIELab color space, "Luv", "Lch" or "Lsh" in
+        the CIELuv color space). If None (default), keep (if possible) the original color model.
+      copy (bool, optional): If True (default), return a copy of the original image if already
+        in the target color space and color model. If False, return the original image.
 
     Returns:
       Image: The converted image.
@@ -1224,9 +1220,9 @@ class MixinImage:
   def lightness(self):
     """Return the CIE lightness L* of the image.
 
-    L* is a measure of the perceptual lightness of the image. Note that L*
-    is conventionally defined within [0, 100]. However, this method returns
-    the scaled lightness L*/100 within [0, 1].
+    L* is a measure of the perceptual lightness of the image.
+    Note that L* is conventionally defined within [0, 100].
+    However, this method returns the scaled lightness L*/100 within [0, 1].
 
     Warning:
       Available only for RGB, grayscale, CIELab and CIELuv images.
@@ -1248,9 +1244,8 @@ class MixinImage:
   def CIE_chroma(self):
     """Return the CIE chroma c* of a CIELab or CIELuv image.
 
-    The CIE chroma is c* = sqrt(a*^2+b*^2) in the CIELab color space
-    and c* = sqrt(u*^2+v*^2) in the CIELuv color space. The values
-    of the CIE chroma thus differ in both color spaces.
+    The CIE chroma is c* = sqrt(a*^2+b*^2) in the CIELab color space and c* = sqrt(u*^2+v*^2) in
+    the CIELuv color space. The values of the CIE chroma thus differ in both color spaces.
     This method actually returns the scaled CIE chroma c*/100.
 
     Warning:
@@ -1272,8 +1267,7 @@ class MixinImage:
   def CIE_saturation(self):
     """Return the CIE saturation s* of a CIELuv image.
 
-    The CIE saturation is s* = c*/L* = sqrt(u*^2+v*^2)/L* in the
-    CIELuv color space.
+    The CIE saturation is s* = c*/L* = sqrt(u*^2+v*^2)/L* in the CIELuv color space.
     This method actually returns the scaled CIE saturation s*/100.
 
     Warning:
@@ -1300,11 +1294,9 @@ class MixinImage:
   def CIE_hue(self):
     """Return the hue angle h* of a CIELab or CIELuv image.
 
-    The hue angle is h* = atan2(b*, a*) in the CIELab color space
-    and c* = atan2(v*, u*) in the CIELuv color space. The values
-    of the hue angle thus differ in both color spaces.
-    This method actually returns the reduced hue angle h*/(2π)
-    within [0, 1].
+    The hue angle is h* = atan2(b*, a*) in the CIELab color space and c* = atan2(v*, u*) in the
+    CIELuv color space. The values of the hue angle thus differ in both color spaces.
+    This method actually returns the reduced hue angle h*/(2π) within [0, 1].
 
     Warning:
       Available only for CIELab and CIELuv images.
@@ -1411,8 +1403,10 @@ class MixinImage:
         - "c*": Update the CIE chroma c* (CIELab and CIELuv images).
         - "s*": Update the CIE saturation s* (CIELuv images).
 
-      data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height as the image.
-      inplace (bool, optional): If True, update the image "in place"; if False (default), return a new image.
+      data (numpy.ndarray): The updated channel data, as a 2D array with the same width and height
+        as the image.
+      inplace (bool, optional): If True, update the image "in place"; if False (default), return a
+        new image.
 
     Also see:
       The magic method Image.__setitem__, which implements self.image[ic] = data as self[ic] = data,
@@ -1579,8 +1573,8 @@ class MixinImage:
           (after the operation, the out-of-range pixels are blended with f(RGB)).
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall back in the [0, 1] range).
-        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent to "L*ab"
-          for lRGB and sRGB images).
+        - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
+          to "L*ab" for lRGB and sRGB images).
         - "L*ab": Apply the operation to the CIE lightness L* in the CIELab/Lab color space and model
           (CIELab, lRGB and sRGB images).
         - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv/Luv color space and model
@@ -1590,10 +1584,10 @@ class MixinImage:
         - "c*": Apply the operation to the CIE chroma c* (CIELab and CIELuv images).
         - "s*": Apply the operation to the CIE saturation s* (CIELuv images).
 
-      multi (bool, optional): if True (default), the operation can be applied to the whole image at once;
-        if False, the operation must be applied one channel at a time.
-      trans (bool, optional): If True (default False), embeds the transformation y = f(x in [0, 1]) in the
-        output image as output.trans, where:
+      multi (bool, optional): if True (default), the operation can be applied to the whole image at
+        once; if False, the operation must be applied one channel at a time.
+      trans (bool, optional): If True (default False), embeds the transformation y = f(x in [0, 1])
+        in the output image as output.trans, where:
 
         - output.trans.type = "hist".
         - output.trans.input is a reference to the input image (self).
@@ -1795,10 +1789,12 @@ class MixinImage:
     return self.apply_channels(lambda channel: np.clip(channel, 0., 1.), channels)
 
   def protect_highlights_saturation(self):
-    """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant hue and luma.
+    """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant hue
+    and luma.
 
-    The out-of-range RGB components of the pixels are decreased while the in-range RGB components are increased
-    so that the hue and luma are conserved. This desaturates (whitens) the pixels with out-of-range components.
+    The out-of-range RGB components of the pixels are decreased while the in-range RGB components
+    are increased so that the hue and luma are conserved. This desaturates (whitens) the pixels
+    with out-of-range components.
     This aims at protecting the highlights from overflowing when stretching the luma.
 
     Warning:
@@ -1825,10 +1821,11 @@ class MixinImage:
     return self.newImage(output)
 
   def protect_highlights_blend(self, inrange):
-    """Normalize out-of-range pixels with HSV value > 1 by blending with an "in-range" image with HSV values <= 1.
+    """Normalize out-of-range pixels with HSV value > 1 by blending with an "in-range" image with
+    HSV values <= 1.
 
-    Each pixel of the image with out-of-range RGB components is brought back in the [0, 1] range by blending with the
-    corresponding pixel of the input "in-range" image.
+    Each pixel of the image with out-of-range RGB components is brought back in the [0, 1] range by
+    blending with the corresponding pixel of the input "in-range" image.
     This aims at protecting the highlights from overflowing when stretching the luma.
 
     Args:

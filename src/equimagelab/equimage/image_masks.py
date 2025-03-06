@@ -25,9 +25,9 @@ def float_mask(mask):
     mask (numpy.ndarray): The input binary mask.
 
   Returns:
-    numpy.ndarray: A float mask with datatype `equimagelab.equimage.params.imagetype`
-      and values 1 where mask is True and 0 where mask is False. If already a float
-      array, the input mask is returned as is.
+    numpy.ndarray: A float mask with datatype `equimagelab.equimage.params.imagetype` and values 1
+    where mask is True and 0 where mask is False. If already a float array, the input mask is
+    returned as is.
   """
   return np.asarray(mask, dtype = params.imagetype)
 
@@ -54,8 +54,8 @@ def smooth_mask(mask, radius, mode = "zero"):
 
   Args:
     mask (numpy.ndarray): The input binary or float mask.
-    radius (float): The smoothing radius (pixels). The edges of the output float mask get
-      smoothed over 2*radius pixels.
+    radius (float): The smoothing radius (pixels). The edges of the output float mask get smoothed
+      over 2*radius pixels.
     mode (str, optional): How to extend the mask across its boundaries for the convolution:
 
       - "reflect": the mask is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
@@ -93,8 +93,10 @@ def threshold_bmask(filtered, threshold, extend = 0):
     threshold_fmask
 
   Args:
-    filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image (see Image.filter).
-    threshold (float): The threshold for the mask. The mask is True wherever filtered >= threshold, and False elsewhere.
+    filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image
+      (see Image.filter).
+    threshold (float): The threshold for the mask. The mask is True wherever filtered >= threshold,
+      and False elsewhere.
     extend (int, optional): Once computed, the mask is extended/eroded by extend pixels (default 0).
       The mask is is extended if extend > 0, and eroded if extend < 0.
 
@@ -114,12 +116,14 @@ def threshold_fmask(filtered, threshold, extend = 0, smooth = 0., mode = "zero")
     threshold_bmask
 
   Args:
-    filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image (see Image.filter).
-    threshold (float): The threshold for the mask. The mask is 1 wherever filtered >= threshold, and 0 elsewhere.
+    filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image
+      (see Image.filter).
+    threshold (float): The threshold for the mask. The mask is 1 wherever filtered >= threshold,
+      and 0 elsewhere.
     extend (int, optional): Once computed, the mask is extended/eroded by extend pixels (default 0).
       The mask is is extended if extend > 0, and eroded if extend < 0.
-    smooth (float, optional): Once extended, the edges of the mask are smoothed over 2*smooth pixels (default 0;
-      see smooth_mask).
+    smooth (float, optional): Once extended, the edges of the mask are smoothed over 2*smooth pixels
+      (default 0; see smooth_mask).
     mode (str, optional): How to extend the mask across its boundaries for smoothing:
 
       - "reflect": the mask is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
@@ -137,7 +141,8 @@ def shape_bmask(shape, x, y, width, height):
     """Return a binary mask defined by the input shape.
 
     Args:
-      shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for a polygon.
+      shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for
+        a polygon.
       x (tuple, list or numpy.ndarray) : The x coordinates of the shape (pixels, along the width).
       y (tuple, list or numpy.ndarray) : The y coordinates of the shape (pixels, along the height):
 
@@ -152,7 +157,8 @@ def shape_bmask(shape, x, y, width, height):
       height (int): The height of the mask (pixels).
 
     Returns:
-      numpy.ndarray: A boolean array with shape (height, width), and values True in the shape and False outside.
+      numpy.ndarray: A boolean array with shape (height, width), and values True in the shape and
+      False outside.
     """
     if shape == "rectangle":
       if len(x) != 2 or len(y) != 2: raise ValueError("Error, x and y must have exactly two elements for shape = 'rect'.")
@@ -216,7 +222,8 @@ class MixinImage:
         - "gaussian": Return the gaussian average of the channel around each pixel.
         - "maximum": Return the maximum of the channel within a disk around each pixel.
 
-      radius (float): The radius of the disk (pixels). The standard deviation for gaussian average is radius/3.
+      radius (float): The radius of the disk (pixels). The standard deviation for gaussian average
+        is radius/3.
       mode (str, optional): How to extend the image across its boundaries:
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
@@ -246,7 +253,8 @@ class MixinImage:
     """Return a binary mask defined by the input shape.
 
     Args:
-      shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for a polygon.
+      shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for
+        a polygon.
       x (tuple, list or numpy.ndarray) : The x coordinates of the shape (pixels, along the width).
       y (tuple, list or numpy.ndarray) : The y coordinates of the shape (pixels, along the height):
 
@@ -258,8 +266,8 @@ class MixinImage:
           the polygon.
 
     Returns:
-      numpy.ndarray: A boolean array with shape (image height, image width), and values True in the shape
-      and False outside.
+      numpy.ndarray: A boolean array with shape (image height, image width), and values True in the
+      shape and False outside.
     """
     width, height = self.get_size()
     return shape_bmask(shape, x, y, width, height)

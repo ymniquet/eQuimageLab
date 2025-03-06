@@ -84,7 +84,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
       image: The input image (numpy.ndarray or Image).
       channels (int, optional): The position of the channel axis for color images (default 0).
       colorspace (str, optional): The color space of the image (default "sRGB").
-        Can be "lRGB" (linear RGB color space), "sRGB" (sRGB color space), "CIELab" (CIELab color space),
+        Can be "lRGB" (linear RGB color space), "sRGB" (sRGB color space), "CIELab" (CIELab colorspace),
         or "CIELuv" (CIELuv color space).
       colormodel (str, optional): The color model of the image (default "RGB").
         In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL"

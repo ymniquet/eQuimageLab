@@ -67,8 +67,8 @@ class MixinImage:
   def histograms(self, channels = None, nbins = None, recompute = False):
     """Compute histograms of selected channels of the image.
 
-    The histograms are both returned and embedded in the object as self.hists. Histograms already registered in self.hists
-    are not recomputed unless required.
+    The histograms are both returned and embedded in the object as self.hists. Histograms already
+    registered in self.hists are not recomputed unless required.
 
     Args:
       channels (str, optional): A combination of keys for the selected channels:
@@ -86,13 +86,14 @@ class MixinImage:
         - "s*": The CIE saturation s* (CIELuv images).
         - "h*": The CIE hue angle h* (CIELab and CIELuv images).
 
-        If it ends with a "+", channels gets appended with the keys already computed and stored in self.hists.
-        Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images, "L" for grayscale
-        images, "L*c*" for CIELab and "L*s*" for CIELuv images.
-      nbins (int, optional): Number of bins within [0, 1] in the histograms. Set to `equimage.params.maxhistbins` if negative,
-        and computed from the image statistics using Scott's rule if zero. If None, defaults to `equimage.params.defhistbins`.
-      recompute (bool, optional): If False (default), the histograms already registered in self.hists are not recomputed
-        (provided they match nbins). If True, all histograms are recomputed.
+        If it ends with a "+", channels gets appended with the keys already computed and stored
+        in self.hists. Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for
+        HSL images, "L" for grayscale images, "L*c*" for CIELab and "L*s*" for CIELuv images.
+      nbins (int, optional): Number of bins within [0, 1] in the histograms.
+        Set to `equimage.params.maxhistbins` if negative, and computed from the image statistics
+        using Scott's rule if zero. If None, defaults to `equimage.params.defhistbins`.
+      recompute (bool, optional): If False (default), the histograms already registered in self.hists
+        are not recomputed (provided they match nbins). If True, all histograms are recomputed.
 
     Returns:
       dict: hists[key] for key in channels, with:
@@ -239,8 +240,8 @@ class MixinImage:
   def statistics(self, channels = None, exclude01 = None, recompute = False):
     """Compute statistics of selected channels of the image.
 
-    The statistics are both returned and embedded in the object as self.stats. Statistics already registered in self.stats are
-    not recomputed unless required.
+    The statistics are both returned and embedded in the object as self.stats. Statistics already
+      registered in self.stats are not recomputed unless required.
 
     Args:
       channels (str, optional): A combination of keys for the selected channels:
@@ -258,13 +259,13 @@ class MixinImage:
         - "s*": The CIE saturation s* (CIELuv images).
         - "h*": The CIE hue angle h* (CIELab and CIELuv images).
 
-        If it ends with a "+", channels gets appended with the keys already computed and stored in self.stats.
-        Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images, "L" for grayscale
-        images, "L*c*" for CIELab and "L*s*" for CIELuv images.
+        If it ends with a "+", channels gets appended with the keys already computed and stored
+        in self.stats. Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for
+        HSL images, "L" for grayscale images, "L*c*" for CIELab and "L*s*" for CIELuv images.
       exclude01 (bool, optional): If True, exclude pixels <= 0 or >= 1 from the median and percentiles.
         Defaults to `equimage.params.exclude01` if None.
-      recompute (bool, optional): If False (default), the statistics already registered in self.stats are not recomputed.
-        If True, all statistics are recomputed.
+      recompute (bool, optional): If False (default), the statistics already registered in self.stats
+        are not recomputed. If True, all statistics are recomputed.
 
     Returns:
       dict: stats[key] for key in channels, with:
@@ -272,14 +273,16 @@ class MixinImage:
         - stats[key].name = channel name (provided for convenience).
         - stats[key].width = image width (provided for convenience).
         - stats[key].height = image height (provided for convenience).
-        - stats[key].npixels = number of image pixels = image width*image height (provided for convenience).
+        - stats[key].npixels = number of image pixels = image width*image height (provided for
+          convenience).
         - stats[key].minimum = minimum level.
         - stats[key].maximum = maximum level.
         - stats[key].percentiles = (pr25, pr50, pr75) = the 25th, 50th and 75th percentiles.
         - stats[key].median = pr50 = median level.
         - stats[key].zerocount = number of pixels <= 0.
         - stats[key].outcount = number of pixels > 1 (out-of-range).
-        - stats[key].exclude01 = True if pixels >= 0 or <= 1 have been excluded from the median and percentiles, False otherwise.
+        - stats[key].exclude01 = True if pixels >= 0 or <= 1 have been excluded from the median and
+          percentiles, False otherwise.
         - stats[key].color = suggested text color for display.
     """
     epsilon = helpers.fpepsilon(self.dtype)

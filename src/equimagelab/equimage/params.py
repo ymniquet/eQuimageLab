@@ -93,12 +93,14 @@ def set_RGB_luma(rgb, verbose = True):
   Args:
     rgb: The RGB weights of the luma as:
 
-      - a tuple, list or array of the (red, green, blue) weights. They will be normalized so that their sum is 1.
+      - a tuple, list or array of the (red, green, blue) weights. They will be normalized so that
+        their sum is 1.
       - the string "uniform": the RGB weights are set to (1/3, 1/3, 1/3).
-      - the string "human": the RGB weights are set to (.212671, .715160, .072169). The luma is then the luminance
-        for lRGB images, and an approximate substitute for the lightness for sRGB images.
+      - the string "human": the RGB weights are set to (.212671, .715160, .072169). The luma is then
+        the luminance for lRGB images, and an approximate substitute for the lightness for sRGB images.
 
-    verbose (bool, optional): If True (default), print the updated definition of the luma.
+    verbose (bool, optional): If True (default), print the updated definition of
+      the luma.
   """
   if isinstance(rgb, str):
     if rgb == "uniform":
@@ -134,10 +136,10 @@ def set_default_hist_bins(n):
   """Set the default number of bins in the histograms.
 
   Args:
-    n (int): If strictly positive, the default number of bins within [0, 1].
-      (practically limited to `equimage.params.maxhistbins`). If zero, the number
-      of bins is computed according to the statistics of each image. If strictly
-      negative, the number of bins is set to `equimage.params.maxhistbins`.
+    n (int): If strictly positive, the default number of bins within [0, 1] (practically
+      limited to `equimage.params.maxhistbins`). If zero, the number of bins is computed
+      according to the statistics of each image. If strictly negative, the number of bins
+      is set to `equimage.params.maxhistbins`.
   """
   global defhistbins
   defhistbins = n if n >= 0 else maxhistbins

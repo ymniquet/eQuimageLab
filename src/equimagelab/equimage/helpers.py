@@ -42,7 +42,8 @@ def failsafe_divide(A, B):
   return C
 
 def scale_pixels(image, source, target, cutoff = None):
-  """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff, set all channels to target.
+  """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff,
+  set all channels to target.
 
   Args:
     image (numpy.ndarray): The input image.
@@ -63,7 +64,8 @@ def lookup(x, xlut, ylut, slut, nlut):
     x (float): The input abscissa for interpolation.
     xlut (numpy.ndarray): The x values of the look-up table (must be evenly spaced).
     ylut (numpy.ndarray): The y values of the look-up table ylut = f(xlut).
-    slut (numpy.ndarray): The slopes (ylut[1:]-ylut[:-1])/(xlut[1:]-xlut[:-1]) used for linear interpolation between the elements of ylut.
+    slut (numpy.ndarray): The slopes (ylut[1:]-ylut[:-1])/(xlut[1:]-xlut[:-1]) used for linear
+      interpolation between the elements of ylut.
     nlut (int): The number of elements in the look-up table.
 
   Returns:

@@ -100,7 +100,8 @@ def load_image(filename, colorspace = "sRGB", verbose = True):
 
   Args:
     filename (str): The file name.
-    colorspace (str, optional): The colorspace of the image [either "sRGB" (default) or "lRGB" for linear RGB images].
+    colorspace (str, optional): The colorspace of the image [either "sRGB" (default) or "lRGB" for
+      linear RGB images].
     verbose (bool, optional): If True (default), print information about the image.
 
   Returns:

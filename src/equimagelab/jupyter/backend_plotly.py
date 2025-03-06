@@ -76,7 +76,8 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
   Args:
     image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
-    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
+    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green,
+      blue, luma).
     log (bool, optional): If True (default), plot the histogram counts in log scale.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     xlabel (str, optional): The x axis label of the plot (default "Level").
@@ -179,7 +180,8 @@ def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, templa
   Args:
     image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
-    channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
+    channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green,
+      blue, luma).
     width (int, optional): The width of the table (defaults to `jupyter.params.maxwidth` if negative).
     rowheight (int, optional): The height of the rows (default to jupyter.params.rowheight if negative).
     template (str, optional): The template for the figure (default "plotly_dark").
@@ -234,10 +236,10 @@ def show(image, histograms = False, statistics = False, sampling = -1, width = -
   Args:
     image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
-    histograms (optional): If True or a string, show the histograms of the image. The string lists the
-      channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
-    statistics (optional): If True or a string, show the statistics of the image. The string lists the
-      channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
+    histograms (optional): If True or a string, show the histograms of the image. The string lists
+      the channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
+    statistics (optional): If True or a string, show the statistics of the image. The string lists
+      the channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
     sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only image[::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
@@ -260,7 +262,8 @@ def show_histograms(image, channels = "", log = True, width = -1, xlabel = "Leve
   Args:
     image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
-    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green, blue, luma).
+    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green,
+      blue, luma).
     log (bool, optional): If True (default), plot the histogram counts in log scale.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     xlabel (str, optional): The x axis label of the plot (default "Level").
@@ -277,7 +280,8 @@ def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer =
   Args:
     image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
-    channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green, blue, luma).
+    channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green,
+      blue, luma).
     width (int, optional): The width of the table (defaults to `jupyter.params.maxwidth` if negative).
     rowheight (int, optional): The height of the rows (default to `jupyter.params.rowheight` if negative).
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
@@ -293,8 +297,8 @@ def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, r
   Args:
     image (equimage.Image): The output image
       (must embed a transformation image.trans - see `equimage.Image.apply_channels`).
-    channels (str, optional): The channels of the histograms (default "RGBL" for red, green, blue, luma).
-      The channels of the transformation are added if needed.
+    channels (str, optional): The channels of the histograms (default "RGBL" for red, green,
+      blue, luma). The channels of the transformation are added if needed.
     sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only image[::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
@@ -323,8 +327,8 @@ def light_curve(image, reference, maxpoints = 32768, width = -1, renderer = None
   Args:
     image (numpy.ndarray): The output image channel (luma, ...) as an array with shape (height, width).
     reference (numpy.ndarray): The input reference channel as an array with shape (height, width).
-    maxpoints (int, optional): The maximum number of points in the scatter plot. The image and reference will be
-      sampled accordingly (default 32768).
+    maxpoints (int, optional): The maximum number of points in the scatter plot. The image and
+      reference will be sampled accordingly (default 32768).
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """

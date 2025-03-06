@@ -57,10 +57,11 @@ class MixinImage:
     The data are Fast-Fourier Transformed back and forth to apply the filter.
 
     Args:
-      cutoff (float): The normalized cutoff frequency in [0, 1] (fc = (1-cutoff)fs/2 with fs the FFT sampling frequency).
+      cutoff (float): The normalized cutoff frequency in [0, 1] (fc = (1-cutoff)fs/2 with fs the
+        FFT sampling frequency).
       order (int, optional): The order of the filter (default 2).
-      padding (int, optional): Number of pixels to pad the image with (default 0; increase if the filter leaves visible
-        artifacts on the edges).
+      padding (int, optional): Number of pixels to pad the image with (default 0; increase if the
+        filter leaves visible artifacts on the edges).
       channels (str, optional): The selected channels (default "" = all channels).
         See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
 
@@ -81,9 +82,9 @@ class MixinImage:
       Cout = Cin + strength*(Cin-BLUR(Cin))
 
     where BLUR(Cin) is the convolution of Cin with a gaussian of standard deviation sigma.
-    As BLUR(Cin) is a low-pass filter, Cin-BLUR(Cin) is a high-pass filter whose output is
-    admixed in the original image. This enhances details; the larger the mixing strength,
-    the sharper the image, at the expense of noise and fidelity.
+    As BLUR(Cin) is a low-pass filter, Cin-BLUR(Cin) is a high-pass filter whose output is admixed
+    in the original image. This enhances details; the larger the mixing strength, the sharper the
+    image, at the expense of noise and fidelity.
 
     Args:
       sigma (float): The standard deviation of the gaussian (pixels).
@@ -134,9 +135,9 @@ class MixinImage:
 
       mode (str, optional): Denoising method [either "soft" (default) or "hard"].
       method (str, optional): Thresholding method [either "BayesShrink" (default) or "VisuShrink"].
-        Separate thresholds are applied to the wavelets bands for "BayesShrink", whereas a
-        single threshold is applied for "VisuShrink" (best in principle for Gaussian noise,
-        but may appear overly smooth).
+        Separate thresholds are applied to the wavelets bands for "BayesShrink", whereas a single
+        threshold is applied for "VisuShrink" (best in principle for Gaussian noise, but may appear
+        overly smooth).
       shifts (int, optional): Number of spin cycles (default 0). The wavelets transform is not
         shift-invariant. To mimic a shift-invariant transform as best as possible, the output image
         is an average of the original image shifted shifts times in each direction, filtered, then
@@ -199,16 +200,17 @@ class MixinImage:
   def total_variation(self, weight = .1, algorithm = "Chambolle", channels = ""):
     r"""Total variation denoising of selected channels of the image.
 
-    Given a noisy channel Cin, the total variation filter finds an image Cout with less total variation than Cin
-    under the constraint that Cout remains similar to Cin. This can be expressed as the Rudin–Osher–Fatemi (ROF)
-    minimization problem:
+    Given a noisy channel Cin, the total variation filter finds an image Cout with less total
+    variation than Cin under the constraint that Cout remains similar to Cin. This can be expressed
+    as the Rudin–Osher–Fatemi (ROF) minimization problem:
 
     .. math::
       \text{Minimize} \sum_{\mathbf{r}} |\nabla C_{out}(\mathbf{r})| + (\lambda/2)[C_{out}(\mathbf{r})-C_{in}(\mathbf{r})]^2
 
-    where the weight 1/lambda controls denoising (the larger the weight, the stronger the denoising at the expense
-    of image fidelity). The minimization can either be performed with the Chambolle or split Bregman algorithm.
-    Total variation denoising tends to produce cartoon-like (piecewise-constant) images.
+    where the weight 1/lambda controls denoising (the larger the weight, the stronger the denoising
+    at the expense of image fidelity). The minimization can either be performed with the Chambolle
+    or split Bregman algorithm. Total variation denoising tends to produce cartoon-like (piecewise-
+    constant) images.
 
     Args:
       weight (float, optional): The weight 1/lambda (default 0.1).
@@ -252,9 +254,11 @@ class MixinImage:
     Args:
       size (int, optional): The size of the (square) patch used to compute M(r) (default 7).
       dist (int, optional): The maximal distance d between the patches (default 11).
-      h (float, optional): The cut-off in gray levels (default 0.01; the filter is applied to all channels independently).
-      sigma (float, optional): The standard deviation of the noise (if known), subtracted out when computing f(r, r').
-        This can lead to a modest improvement in image quality (keep default 0 if unknown).
+      h (float, optional): The cut-off in gray levels (default 0.01; the filter is applied to all
+        channels independently).
+      sigma (float, optional): The standard deviation of the noise (if known), subtracted out when
+        computing f(r, r'). This can lead to a modest improvement in image quality (keep default 0
+        if unknown).
       fast (bool, optional): If true (default), the pixels within the patch are averaged uniformly.
         If false, they are weighted by a gaussian (better yet slower).
       channels (str, optional): The selected channels (default "" = all channels).
@@ -279,9 +283,9 @@ class MixinImage:
     See https://en.wikipedia.org/wiki/Adaptive_histogram_equalization.
 
     Args:
-      size (optional): The size of the tiles (in pixels) used to sample local histograms,
-        given as a single integer or as pair of integers (width, height of the tiles).
-        If None (default), the tile size defaults to 1/8 of the image width and height.
+      size (optional): The size of the tiles (in pixels) used to sample local histograms, given as
+        a single integer or as pair of integers (width, height of the tiles). If None (default),
+        the tile size defaults to 1/8 of the image width and height.
       clip (float, optional): The clip limit used to control contrast enhancement (default 0.01).
       nbins (int, optional): The number of bins in the local histograms (default 256).
       channels (str, optional): The selected channels (default "" = all channels).

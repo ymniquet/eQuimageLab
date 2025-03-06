@@ -28,12 +28,12 @@ In the lRGB and sRGB color spaces, the `colormodel` attribute can be:
 
 In the CIELab color space, the `colormodel` attribute can be:
 
-  - "Lab": the 3 channels of the image are the CIELab components :math:`L^*/100`, :math:`a^*/100`, and :math:`b^*/100`. The lightness :math:`L^*/100` fits within [0, 1], but the chromatic components :math:`a^*` and :math:`b^*` are signed and not bounded.
+  - "Lab": the 3 channels of the image are the CIELab components :math:`L^*/100`, :math:`a^*/100`, and :math:`b^*/100`. The lightness :math:`L^*/100` fits within [0, 1], but the chromatic components :math:`a^*` and :math:`b^*` are signed and not (univocally) bounded.
   - "Lch": the 3 channels of the image are the CIELab components :math:`L^*/100`, :math:`c^*/100` and :math:`h^*/2\pi`. The lightness :math:`L^*/100` and the reduced hue angle :math:`h^*/2\pi=\arctan_2(b^*, a^*)/2\pi` fit within [0, 1], but the chroma :math:`c^*=\sqrt{a^{*2}+b^{*2}}` is not bounded.
 
 In the CIELuv color space, the `colormodel` attribute can be:
 
-  - "Luv": the 3 channels of the image are the CIELuv components :math:`L^*/100`, :math:`u^*/100`, and :math:`v^*/100`. The lightness :math:`L^*/100` fits within [0, 1], but the chromatic components :math:`u^*` and :math:`v^*` are signed and not bounded.
+  - "Luv": the 3 channels of the image are the CIELuv components :math:`L^*/100`, :math:`u^*/100`, and :math:`v^*/100`. The lightness :math:`L^*/100` fits within [0, 1], but the chromatic components :math:`u^*` and :math:`v^*` are signed and not (univocally) bounded.
   - "Lch": the 3 channels of the image are the CIELuv components :math:`L^*/100`, :math:`c^*/100` and :math:`h^*/2\pi`. The lightness :math:`L^*/100` and the reduced hue angle :math:`h^*/2\pi=\arctan_2(v^*, u^*)/2\pi` fit within [0, 1], but the chroma :math:`c^*=\sqrt{u^{*2}+v^{*2}}` is not bounded.
   - "Lsh": the 3 channels of the image are the CIELuv components :math:`L^*/100`, :math:`s^*/100` and :math:`h^*/2\pi`. The lightness :math:`L^*/100` and the reduced hue angle :math:`h^*/2\pi=\arctan_2(v^*, u^*)/2\pi` fit within [0, 1], but the saturation :math:`s^* = c^*/L^*` is not bounded.
 
@@ -44,7 +44,7 @@ The data type of the images (:py:class:`numpy.float32` or :py:class:`numpy.float
 Creating and accessing images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An existing image represented as a :py:class:`numpy.ndarray` array `imgarray` can be embedded in an :py:class:`Image <equimagelab.equimage.image.Image>` object using the constructor ``image = Image(imgarray)``. You can specify the channel axis for color images [``image = Image(imgarray, channels = 0)`` if `imgarray` has (default) shape (3, H, W), and ``image = Image(imgarray, channels = -1)`` if `imgarray` has shape (H, W, 3)].
+An existing image represented as a :py:class:`numpy.ndarray` array `imgarray` can be embedded in an :py:class:`Image <equimagelab.equimage.image.Image>` object using the constructor ``image = Image(imgarray)``. You can specify the channel axis for color images [e.g., ``image = Image(imgarray, channels = -1)`` if `imgarray` has shape (H, W, 3) instead of the default shape (3, H, W)].
 
 The :py:class:`Image <equimagelab.equimage.image.Image>` class behaves as a :py:class:`numpy.ndarray` for basic and Numpy operations. Namely, you can add, substract, multiply :py:class:`Image <equimagelab.equimage.image.Image>` objects, and apply all Numpy functions:
 
@@ -159,9 +159,9 @@ where Y is the luminance:
 
 and lR, lG, lB are the linear RGB components of the image. Note the prefactors for primaries (red, green, blue) and the exponent (1/3) slightly different from the lRGB to sRGB conversion (1/2.4).
 
-In the `CIELab <https://en.wikipedia.org/wiki/CIELAB_color_space>`_ color space, the colors are characterized by the lightness :math:`L^*` and by the two chromatic components  :math:`a^*` (green-red axis) and :math:`b^*` (blue-yellow axis).
+In the `CIELab <https://en.wikipedia.org/wiki/CIELAB_color_space>`_ color space, the colors are characterized by the lightness :math:`L^*` and by the two chromatic components  :math:`a^*` (red-green axis) and :math:`b^*` (blue-yellow axis).
 
-In the `CIELuv <https://en.wikipedia.org/wiki/CIELUV>`_ color space, the colors are characterized by the lightness :math:`L^*` and by two other chromatic components :math:`u^*` and :math:`v^*`.
+In the `CIELuv <https://en.wikipedia.org/wiki/CIELUV>`_ color space, the colors are characterized by the lightness :math:`L^*` and by two other chromatic components :math:`u^*` (red-green axis) and :math:`v^*` (blue-yellow axis), that are different from :math:`a^*` and :math:`b^*`.
 
 The CIELab color space is, in principle, intended for colored surfaces (reflecting light), and the CIELuv for color displays (emitting light). These two color spaces are well suited to transformations that must leave the perceived brightness of the image unchanged (and practically give similar results). Moreover, a color saturation :math:`s^*=\sqrt{u^{*2}+v^{*2}}/L^*` can be defined in the CIELuv color space [#f1]_. It quantifies the "strength" of a color (:math:`s^*=0` for grays and is the larger the more vivid the color at given :math:`L^*`). See :doc:`composite` for more information about saturation.
 
@@ -174,9 +174,9 @@ RGB images can be converted into CIELab or CIELuv images with the :py:meth:`Imag
 The HSV and HSL color models
 """"""""""""""""""""""""""""
 
-The `HSV and HSL <https://en.wikipedia.org/wiki/HSL_and_HSV>`_ color models are alternatives to the RGB representation in the lRGB and sRGB color spaces. They characterize colors by a *hue* (red, yellow, green, cyan, blue, magenta), a *saturation* (degree of mixture with the complementary hue), and an intensity (either the *value* in HSV or the *lightness* in HSL). The HSL lightness has, however, nothing to do with (and is a very poor approximation to) the CIE lightness :math:`L^*`. The definition of the saturation is, moreover, different for the two color models (see the above link for details). Nonetheless, the saturation is 0 for grays in both cases, and is 1 for "pure" hues.
+The `HSV and HSL <https://en.wikipedia.org/wiki/HSL_and_HSV>`_ color models are alternatives to the RGB representation in the lRGB and sRGB color spaces. They characterize colors by a *hue* (red, yellow, green, cyan, blue, magenta), a *saturation* (strength of the color), and an intensity (either the *value* in HSV or the *lightness* in HSL). The HSL lightness has, however, nothing to do with (and is a very poor approximation to) the CIE lightness :math:`L^*`. The definition of the saturation is, moreover, different for the two color models (see the above link for details). Nonetheless, the saturation is 0 for grays in both cases, and is 1 for "pure" hues.
 
-While the color space and be represented as a cube within the RGB color model (with the red, green, and blue values as cartesian axes), it is more conveniently represented as a cylinder within the HSV and HSL color models (ses figures below). The hue is mapped to the polar angle :math:`\theta/2\pi`, the saturation to the radial coordinate :math:`r`, and the value or lightness to the :math:`z` axis.
+While the color space can be represented as a cube within the RGB color model (with the red, green, and blue values as cartesian axes), it is more conveniently represented as a cylinder within the HSV and HSL color models (ses figures below). The hue is mapped to the polar angle :math:`\theta/2\pi`, the saturation to the radial coordinate :math:`r`, and the value or lightness to the :math:`z` axis.
 
 .. figure:: images/RGBcube.png
    :figwidth: 40%
@@ -255,4 +255,4 @@ The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>
 
 .. rubric:: Footnotes
 
-.. [#f1] Indeed, :math:`u^*,\,v^*\to 0` when :math:`L^*\to 0`, so that :math:`s^*` remains well-defined. This is not the case for :math:`a^*,\,b^*`, so that the concept of saturation is ill-defined in the CIELab color space.
+.. [#f1] Indeed, :math:`u^*,\,v^*\to 0` when :math:`L^*\to 0`, so that :math:`s^*` remains well-defined. This is not the case for :math:`a^*,\,b^*`, so that the saturation is ill-defined in the CIELab color space.

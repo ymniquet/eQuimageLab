@@ -83,44 +83,45 @@ class MixinImage:
 
     Blurs low-brightness and sharpens high-brightness areas.
 
-    The background of astronomical images usually remains noisy. This is the Poisson (photon counting)
-    noise typical of low brightness areas. We may want to "blur" this background by applying a "low-pass"
-    filter that softens small scale features - such as a convolution with a gaussian:
+    The background of astronomical images usually remains noisy. This is the Poisson (photon
+    counting) noise typical of low brightness areas. We may want to "blur" this background by
+    applying a "low-pass" filter that softens small scale features - such as a convolution with
+    a gaussian:
 
       blurred = image.gaussian_filter(sigma = 5) # Gaussian blur with a std dev of 5 pixels.
 
     Yet this operation would also blur the objects of interest (the galaxy, nebula...) !
 
-    As a matter of fact, most of these objects already lack sharpness... We may thus want, on the opposite,
-    to apply a "high-pass" filter that enhances small scale features. Since the convolution with a gaussian
-    is a low-pass filter, the following operation:
+    As a matter of fact, most of these objects already lack sharpness... We may thus want, on the
+    opposite, to apply a "high-pass" filter that enhances small scale features. Since the convolution
+    with a gaussian is a low-pass filter, the following operation:
 
       sharpened = (1 + q) * image - q * blurred, q > 0
 
-    is a high-pass filter known as an "unsharp mask". We can also rewrite this operation as a conventional
-    blend with a mixing coefficient m > 1:
+    is a high-pass filter known as an "unsharp mask". We can also rewrite this operation as a
+    conventional blend with a mixing coefficient m > 1:
 
       sharpened = (1 - m) * blurred + m * image, m > 1
 
     Yet such an unsharp mask would also enhance the noise in the background !
 
-    We can meet both requirements by making m dependent on the lightness. Namely, we want m ~ 0 where
-    the lightness is "small" (the background), and m > 1 where the lightness is "large" (the object of
-    interest). We may use as a starting point:
+    We can meet both requirements by making m dependent on the lightness. Namely, we want m ~ 0
+    where the lightness is "small" (the background), and m > 1 where the lightness is "large" (the
+    object of interest). We may use as a starting point:
 
       m = (1 + a) * image
 
-    where a > 0 controls image sharpening in the bright areas. In practice, we gain flexibility by stretching
-    the image to control how fast we switch from blurring to sharpening, e.g.:
+    where a > 0 controls image sharpening in the bright areas. In practice, we gain flexibility by
+    stretching the image to control how fast we switch from blurring to sharpening, e.g.:
 
       m = (1 + a) * hms(image, D)
 
-    where hms is the harmonic stretch with strength D. The latter can be calculated to switch (m = 1) at a
-    given threshold.
+    where hms is the harmonic stretch with strength D. The latter can be calculated to switch (m = 1)
+    at a given threshold.
 
-    Application of the LDBS to all channels (as in the above equations) can lead to significant "color spilling".
-    It is preferable to apply LDBS to the lightness L*, luma L or value V (i.e. setting image = L*, L or V and
-    updating that channel with the output of the LDBS).
+    Application of the LDBS to all channels (as in the above equations) can lead to significant
+    color spilling. It is preferable to apply LDBS to the lightness L*, luma L or value V (i.e.
+    setting image = L*, L or V and updating that channel with the output of the LDBS).
 
     Args:
       sigma (float): The standard deviation of the gaussian blur (pixels).
@@ -137,8 +138,8 @@ class MixinImage:
         - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
         - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
 
-      full_output (bool, optional): If False (default), only return the processed image. If True, return
-        the processed image, as well as:
+      full_output (bool, optional): If False (default), only return the processed image. If True,
+        return the processed image, as well as:
 
         - The blurred image if channels = "".
         - The input, blurred and output channel as grayscale images otherwise.

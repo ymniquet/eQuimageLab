@@ -39,16 +39,17 @@ def prepare_images(images, sampling = 1, copy = False):
   or (height, width) (for grayscale images).
 
   Args:
-    images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
-      (for color images), (height, width, 1) or (height, width) (for grayscale images).
-    sampling (int, optional): The downsampling rate (default 1; set to `jupyter.params.sampling` if negative).
-      Only images[::sampling, ::sampling] are processed, to speed up operations.
-    copy (bool, optional): If False (default), the output images are (when possible) views of the original
-      images; If True, they are always copies.
+    images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape
+      (height, width, 3) (for color images), (height, width, 1) or (height, width) (for
+      grayscale images).
+    sampling (int, optional): The downsampling rate (default 1; set to `jupyter.params.sampling`
+      if negative). Only images[::sampling, ::sampling] are processed, to speed up operations.
+    copy (bool, optional): If False (default), the output images are (when possible) views of the
+      original images; If True, they are always copies.
 
   Returns:
-    A single/tuple/list of numpy.ndarray(s) with shape (height/sampling, width/sampling, 3) (for color images)
-    or (height/sampling, width/sampling) (for grayscale images).
+    A single/tuple/list of numpy.ndarray(s) with shape (height/sampling, width/sampling, 3) (for
+    color images) or (height/sampling, width/sampling) (for grayscale images).
   """
 
   def prepare(image, copy):
@@ -75,10 +76,11 @@ def prepare_images_as_b64strings(images, sampling = 1, compression = 4):
   Returns all images as PNGs encoded in base64 strings.
 
   Args:
-    images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
-      (for color images), (height, width, 1) or (height, width) (for grayscale images).
-    sampling (int, optional): The downsampling rate (default 1; set to `jupyter.params.sampling` if negative).
-      Only images[::sampling, ::sampling] are processed, to speed up operations.
+    images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape
+      (height, width, 3) (for color images), (height, width, 1) or (height, width) (for
+      grayscale images).
+    sampling (int, optional): The downsampling rate (default 1; set to `jupyter.params.sampling`
+      if negative). Only images[::sampling, ::sampling] are processed, to speed up operations.
     compression (int, optional): The PNG compression level (default 4).
 
   Returns:
@@ -110,14 +112,14 @@ def filter(image, channels):
   Returns a copy of the image with the selected red/green/blue channels set to zero.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
-    channels (str): The *displayed* channels. A combination of the letters "R" (red),
-      "G" (green), and "B" (blue).
+    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3) (for a color
+      image), (height, width, 1) or (height, width) (for a grayscale image).
+    channels (str): The *displayed* channels. A combination of the letters "R" (red), "G" (green),
+      and "B" (blue).
 
   Returns:
-    numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the
-    non-selected channels set to zero.
+    numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the non-selected
+    channels set to zero.
   """
   selected = np.array([False, False, False])
   for c in channels:
@@ -138,19 +140,19 @@ def shadowed(image, reference = None):
   """Highlight black pixels of an image.
 
   Highlight black pixels on the input image with color `jupyter.params.shadowcolor`.
-  If a reference image is provided, highlight pixels black on both input and reference images
-  with color 0.5 * `jupyter.params.shadowcolor`.
+  If a reference image is provided, highlight pixels black on both input and reference images with
+  color 0.5 * `jupyter.params.shadowcolor`.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3) (for a color
+      image), (height, width, 1) or (height, width) (for a grayscale image).
     reference (optional): An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
       Default is None.
 
   Returns:
-    numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the
-    black pixels highlighted with color `jupyter.params.shadowcolor`.
+    numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the black
+    pixels highlighted with color `jupyter.params.shadowcolor`.
   """
   image = prepare_images(image, copy = True)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
@@ -172,12 +174,12 @@ def highlighted(image, reference = None):
 
   A pixel is saturated if at least one channel is >= 1.
   Show pixels saturated on the input image with color `jupyter.params.highlightcolor`.
-  If a reference image is provided, show pixels saturated on both input and reference images
-  with color 0.5 * `jupyter.params.highlightcolor`.
+  If a reference image is provided, show pixels saturated on both input and reference images with
+  color 0.5 * `jupyter.params.highlightcolor`.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3) (for a color
+      image), (height, width, 1) or (height, width) (for a grayscale image).
     reference (optional): An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
       Default is None.
@@ -205,14 +207,14 @@ def differences(image, reference):
   """Highlight differences between an image and a reference.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3) (for a color
+      image), (height, width, 1) or (height, width) (for a grayscale image).
     reference (optional): An equimage.Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
 
   Returns:
-    numpy.ndarray: A copy of the image as an array with shape (height, width, 3)
-    and the differences with the reference highlighted with color `jupyter.params.diffcolor`.
+    numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the differences
+    with the reference highlighted with color `jupyter.params.diffcolor`.
   """
   image = prepare_images(image, copy = True)
   reference = prepare_images(reference)
