@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.2.0 / 2025.02.02
+# Version: 1.3.0 / 2025.03.07
 # Sphinx OK.
 
 """Image masks."""
@@ -25,9 +25,9 @@ def float_mask(mask):
     mask (numpy.ndarray): The input binary mask.
 
   Returns:
-    numpy.ndarray: A float mask with datatype `equimagelab.equimage.params.imagetype`
-      and values 1 where mask is True and 0 where mask is False. If already a float
-      array, the input mask is returned as is.
+    numpy.ndarray: A float mask with datatype `equimagelab.equimage.params.imagetype` and values 1
+    where mask is True and 0 where mask is False. If already a float array, the input mask is
+    returned as is.
   """
   return np.asarray(mask, dtype = params.imagetype)
 
@@ -54,15 +54,15 @@ def smooth_mask(mask, radius, mode = "zero"):
 
   Args:
     mask (numpy.ndarray): The input binary or float mask.
-    radius (float): The smoothing radius (pixels). The edges of the output float mask get
-      smoothed over 2*radius pixels.
+    radius (float): The smoothing radius (pixels). The edges of the output float mask get smoothed
+      over 2*radius pixels.
     mode (str, optional): How to extend the mask across its boundaries for the convolution:
 
-      - "reflect": the mask is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
-      - "mirror": the mask is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
-      - "nearest": the mask is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
-      - "zero" (default): the mask is padded with zeros (abcd -> 0000|abcd|0000).
-      - "one": the mask is padded with ones (abcd -> 1111|abcd|1111).
+      - "reflect": the mask is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+      - "mirror": the mask is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+      - "nearest": the mask is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+      - "zero" (default): the mask is padded with zeros (abcd → 0000|abcd|0000).
+      - "one": the mask is padded with ones (abcd → 1111|abcd|1111).
 
   Returns:
     numpy.ndarray: The smoothed, float mask.
@@ -93,8 +93,10 @@ def threshold_bmask(filtered, threshold, extend = 0):
     threshold_fmask
 
   Args:
-    filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image (see Image.filter).
-    threshold (float): The threshold for the mask. The mask is True wherever filtered >= threshold, and False elsewhere.
+    filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image
+      (see Image.filter).
+    threshold (float): The threshold for the mask. The mask is True wherever filtered >= threshold,
+      and False elsewhere.
     extend (int, optional): Once computed, the mask is extended/eroded by extend pixels (default 0).
       The mask is is extended if extend > 0, and eroded if extend < 0.
 
@@ -114,19 +116,21 @@ def threshold_fmask(filtered, threshold, extend = 0, smooth = 0., mode = "zero")
     threshold_bmask
 
   Args:
-    filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image (see Image.filter).
-    threshold (float): The threshold for the mask. The mask is 1 wherever filtered >= threshold, and 0 elsewhere.
+    filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image
+      (see Image.filter).
+    threshold (float): The threshold for the mask. The mask is 1 wherever filtered >= threshold,
+      and 0 elsewhere.
     extend (int, optional): Once computed, the mask is extended/eroded by extend pixels (default 0).
       The mask is is extended if extend > 0, and eroded if extend < 0.
-    smooth (float, optional): Once extended, the edges of the mask are smoothed over 2*smooth pixels (default 0;
-      see smooth_mask).
+    smooth (float, optional): Once extended, the edges of the mask are smoothed over 2*smooth pixels
+      (default 0; see smooth_mask).
     mode (str, optional): How to extend the mask across its boundaries for smoothing:
 
-      - "reflect": the mask is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
-      - "mirror": the mask is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
-      - "nearest": the mask is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
-      - "zero" (default): the mask is padded with zeros (abcd -> 0000|abcd|0000).
-      - "one": the mask is padded with ones (abcd -> 1111|abcd|1111).
+      - "reflect": the mask is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+      - "mirror": the mask is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+      - "nearest": the mask is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+      - "zero" (default): the mask is padded with zeros (abcd → 0000|abcd|0000).
+      - "one": the mask is padded with ones (abcd → 1111|abcd|1111).
 
   Returns:
     numpy.ndarray: The mask as a float array with the same shape as filtered.
@@ -137,7 +141,8 @@ def shape_bmask(shape, x, y, width, height):
     """Return a binary mask defined by the input shape.
 
     Args:
-      shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for a polygon.
+      shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for
+        a polygon.
       x (tuple, list or numpy.ndarray) : The x coordinates of the shape (pixels, along the width).
       y (tuple, list or numpy.ndarray) : The y coordinates of the shape (pixels, along the height):
 
@@ -152,7 +157,8 @@ def shape_bmask(shape, x, y, width, height):
       height (int): The height of the mask (pixels).
 
     Returns:
-      numpy.ndarray: A boolean array with shape (height, width), and values True in the shape and False outside.
+      numpy.ndarray: A boolean array with shape (height, width), and values True in the shape and
+      False outside.
     """
     if shape == "rectangle":
       if len(x) != 2 or len(y) != 2: raise ValueError("Error, x and y must have exactly two elements for shape = 'rect'.")
@@ -175,7 +181,7 @@ def shape_bmask(shape, x, y, width, height):
       if len(x) != len(y): raise ValueError("Error, x and y must have the same length for shape = 'polygon'.")
       bmask = skdraw.polygon2mask((height, width), np.column_stack((y, x)))
     else:
-      raise ValueError(f"Error, unknown shape {shape}.")
+      raise ValueError(f"Error, unknown shape '{shape}'.")
     return bmask
 
 #####################################
@@ -191,18 +197,23 @@ class MixinImage:
     The main purpose of this method is to prepare masks for image processing.
 
     See also:
-      threshold_bmask
+      threshold_bmask,
       threshold_fmask
 
     Args:
       channel (str): The selected channel:
 
         - "1", "2", "3" (or equivalently "R", "G", "B" for RGB images):
-          Apply the filter to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the filter to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the filter to the HSV saturation (RGB and HSV images).
-        - "L": Apply the filter to the luma (RGB and grayscale images).
-        - "L*": Apply the filter to the CIE lightness L* (RGB and grayscale images).
+          The first/second/third channel (all images).
+        - "H": The HSV/HSL hue (RGB, HSV and HSL images).
+        - "V": The HSV value (RGB, HSV and grayscale images).
+        - "S": The HSV saturation (RGB, HSV and grayscale images).
+        - "L'": The HSL lightness (RGB, HSL and grayscale images).
+        - "S'": The HSL saturation (RGB, HSL and grayscale images).
+        - "L": The luma (RGB and grayscale images).
+        - "L*": The CIE lightness L* (RGB, grayscale, CIELab and CIELuv images).
+        - "c*": The CIE chroma c* (CIELab and CIELuv images).
+        - "s*": The CIE saturation s* (CIELuv images).
 
       filter (str): The filter:
 
@@ -211,13 +222,14 @@ class MixinImage:
         - "gaussian": Return the gaussian average of the channel around each pixel.
         - "maximum": Return the maximum of the channel within a disk around each pixel.
 
-      radius (float): The radius of the disk (pixels). The standard deviation for gaussian average is radius/3.
+      radius (float): The radius of the disk (pixels). The standard deviation for gaussian average
+        is radius/3.
       mode (str, optional): How to extend the image across its boundaries:
 
-        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd -> dcba|abcd|dcba).
-        - "mirror": the image is reflected about the center of the last pixel (abcd -> dcb|abcd|cba).
-        - "nearest": the image is padded with the value of the last pixel (abcd -> aaaa|abcd|dddd).
-        - "zero": the image is padded with zeros (abcd -> 0000|abcd|0000).
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
 
     Returns:
       numpy.ndarray: The output of the filter as an array with shape (image height, image width).
@@ -241,7 +253,8 @@ class MixinImage:
     """Return a binary mask defined by the input shape.
 
     Args:
-      shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for a polygon.
+      shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for
+        a polygon.
       x (tuple, list or numpy.ndarray) : The x coordinates of the shape (pixels, along the width).
       y (tuple, list or numpy.ndarray) : The y coordinates of the shape (pixels, along the height):
 
@@ -253,8 +266,8 @@ class MixinImage:
           the polygon.
 
     Returns:
-      numpy.ndarray: A boolean array with shape (image height, image width), and values True in the shape
-      and False outside.
+      numpy.ndarray: A boolean array with shape (image height, image width), and values True in the
+      shape and False outside.
     """
     width, height = self.get_size()
     return shape_bmask(shape, x, y, width, height)

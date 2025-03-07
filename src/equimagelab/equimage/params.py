@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.2.0 / 2025.02.02
+# Version: 1.3.0 / 2025.03.07
 # Sphinx OK.
 
 """Image processing parameters."""
@@ -12,14 +12,6 @@ import numpy as np
 # Use imageio or imread module ?
 
 IMAGEIO = False
-
-# RGB <-> XYZ conversion matrices.
-
-RGB2XYZ = np.array([[0.412453, 0.357580, 0.180423],
-                    [0.212671, 0.715160, 0.072169],
-                    [0.019334, 0.119193, 0.950227]])
-
-XYZ2RGB = np.linalg.inv(RGB2XYZ)
 
 # Image type.
 
@@ -46,11 +38,42 @@ def set_image_type(dtype):
   elif dtype == "float64":
     imagetype = np.float64
   else:
-    raise ValueError(f"Error, the image type must be 'float32' or 'float64' (got {dtype}).")
+    raise ValueError(f"Error, the image type must be 'float32' or 'float64' (got '{dtype}').")
+
+# CIE color spaces parameters.
+
+CIEilluminant = "D65" # Illuminant.
+CIEobserver = "2" # Observer.
+
+def get_CIE_params():
+  """Return CIE color spaces illuminant and observer.
+
+  Returns:
+    str: The CIE illuminant and observer.
+  """
+  return CIEilluminant, CIEobserver
+
+def set_CIE_params(illuminant, observer):
+  """Set CIE color spaces illuminant and observer.
+
+  Args:
+    illuminant: The name of the standard illuminant.
+      Can be "A", "B", "C", "D50", "D55", "D65", "D75", or "E".
+      See https://en.wikipedia.org/wiki/Standard_illuminant.
+    observer: The name of the observer.
+      Can be "2" (2-degree observer) or "10" (10-degree observer).
+  """
+  if illuminant not in ["A", "B", "C", "D50", "D55", "D65", "D75", "E"]:
+    raise ValueError("Error, the CIE illuminant must be 'A', 'B', 'C', 'D50', 'D55', 'D65', 'D75' or 'E'.")
+  if observer not in ["2", "10"]:
+    raise ValueError("Error, the observer must be '2' or '10'.")
+  global CIEilluminant, CIEobserver
+  CIEilluminant = illuminant
+  CIEobserver = observer
 
 # Weights of the RGB components in the luma.
 
-rgbluma = (.2126, .7152, .0722)
+rgbluma = (.212671, .715160, .072169)
 
 def get_RGB_luma():
   """Return the RGB weights rgbluma of the luma.
@@ -70,23 +93,25 @@ def set_RGB_luma(rgb, verbose = True):
   Args:
     rgb: The RGB weights of the luma as:
 
-      - a tuple, list or array of the (red, green, blue) weights. They will be normalized so that their sum is 1.
+      - a tuple, list or array of the (red, green, blue) weights. They will be normalized so that
+        their sum is 1.
       - the string "uniform": the RGB weights are set to (1/3, 1/3, 1/3).
-      - the string "human": the RGB weights are set to (.2126, .7152, .0722). The luma is then the luminance for lRGB images,
-        and an approximate substitute for the lightness for sRGB images.
+      - the string "human": the RGB weights are set to (.212671, .715160, .072169). The luma is then
+        the luminance for lRGB images, and an approximate substitute for the lightness for sRGB images.
 
-    verbose (bool, optional): If True (default), print the updated definition of the luma.
+    verbose (bool, optional): If True (default), print the updated definition of
+      the luma.
   """
   if isinstance(rgb, str):
     if rgb == "uniform":
       set_RGB_luma((1./3., 1./3., 1./3.))
     elif rgb == "human":
-      set_RGB_luma((.2126, .7152, .0722))
+      set_RGB_luma((.212671, .715160, .072169))
     else:
-      raise ValueError("Error, the input rgb weights must be an array with three scalar elements, the string 'uniform' or the string 'human'.")
+      raise ValueError("Error, the input rgb weights must be a tuple/list/array with three scalar elements, the string 'uniform' or the string 'human'.")
   else:
     w = np.array(rgb)
-    if w.shape != (3,): raise ValueError("Error, the input rgb weights must be an array with three scalar elements, the string 'uniform' or the string 'human'.")
+    if w.shape != (3,): raise ValueError("Error, the input rgb weights must be a tuple/list/array with three scalar elements, the string 'uniform' or the string 'human'.")
     if any(w < 0.): raise ValueError("Error, the input rgb weights must be >= 0.")
     s = np.sum(w)
     if s == 0.: raise ValueError("Error, the sum of the input rgb weights must be > 0.")
@@ -111,10 +136,10 @@ def set_default_hist_bins(n):
   """Set the default number of bins in the histograms.
 
   Args:
-    n (int): If strictly positive, the default number of bins within [0, 1].
-      (practically limited to `equimage.params.maxhistbins`). If zero, the number
-      of bins is computed according to the statistics of each image. If strictly
-      negative, the number of bins is set to `equimage.params.maxhistbins`.
+    n (int): If strictly positive, the default number of bins within [0, 1] (practically
+      limited to `equimage.params.maxhistbins`). If zero, the number of bins is computed
+      according to the statistics of each image. If strictly negative, the number of bins
+      is set to `equimage.params.maxhistbins`.
   """
   global defhistbins
   defhistbins = n if n >= 0 else maxhistbins

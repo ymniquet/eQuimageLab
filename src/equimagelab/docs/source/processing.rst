@@ -30,9 +30,22 @@ The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>
 
    negative
    grayscale
-   color_balance
-   color_saturation
+   RGB_color_balance
+   mix_RGB
+   set_color_temperature
+   HSX_color_saturation
+   CIE_chroma_saturation
+   rotate_HSX_hue
+   rotate_CIE_hue
    SCNR
+
+Also,the following function returns a HSV wheel as an :py:class:`Image <equimagelab.equimage.image.Image>` object to test color transformations:
+
+.. currentmodule:: equimagelab.misc
+
+.. autosummary::
+
+   HSV_wheel
 
 Histogram stretching
 ^^^^^^^^^^^^^^^^^^^^
@@ -152,7 +165,7 @@ The :py:class:`Image <equimagelab.equimage.image.Image>` class also features the
    blend
    scale_pixels
 
-The :py:meth:`scale_pixels` method can, in particular, be used to stretch the image without changing the hues (the R/G/B ratios) - but this may result in some out-of-range RGB components (see :doc:`composite`). Actually, the :py:class:`Image <equimagelab.equimage.image.Image>` class also provides the useful test:
+The :py:meth:`scale_pixels` method can, in particular, be used to stretch the image without changing the hues (the R/G/B ratios) - but this may result in some out-of-range RGB components (see :doc:`composite`). The presence of out-of-range pixels can be tested with:
 
 .. autosummary::
 

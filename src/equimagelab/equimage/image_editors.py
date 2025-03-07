@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.2.0 / 2025.02.02
+# Version: 1.3.0 / 2025.03.07
 # Sphinx OK.
 
 """External image editors."""
@@ -42,11 +42,14 @@ class MixinImage:
         - "tiff" (default): TIFF file with depth = 8, 16 or 32 bits integer per channel.
         - "fits": FITS file width depth = 32 bits float per channel.
 
-      depth (int, optional): The color depth (bits per channel) used to export the image (see above; default 16).
+      depth (int, optional): The color depth (bits per channel) used to export the image
+        (see above; default 16).
       editor (str, optional): The name of the editor (for pretty-print purposes; default "<Editor>").
-      interactive (bool, optional): If True (default), the editor is interactive (awaits commands from the user);
-        if False, the editor processes the image autonomously and does not require inputs from the user.
-      cwd (str, optional): If not None (default), change working directory to cwd before running the editor.
+      interactive (bool, optional): If True (default), the editor is interactive (awaits commands
+        from the user); if False, the editor processes the image autonomously and does not require
+        inputs from the user.
+      cwd (str, optional): If not None (default), change working directory to cwd before running
+        the editor.
 
     Returns:
       Image: The edited image.
@@ -88,8 +91,8 @@ class MixinImage:
   def edit_with_gimp(self, export = "tiff", depth = 16):
     """Edit the image with Gimp.
 
-    The image is saved on disk; Gimp is then run on this file, which is finally
-    reloaded in eQuimageLab and returned.
+    The image is saved on disk; Gimp is then run on this file, which is finally reloaded in
+    eQuimageLab and returned.
 
     The user must simply overwrite the edited file when leaving Gimp.
 
@@ -102,7 +105,8 @@ class MixinImage:
         - "tiff" (default): TIFF file with depth = 8, 16 or 32 bits integer per channel.
         - "fits": FITS file width depth = 32 bits float per channel.
 
-      depth (int, optional): The color depth (bits per channel) used to export the image (see above; default 16).
+      depth (int, optional): The color depth (bits per channel) used to export the image
+        (see above; default 16).
 
     Returns:
       Image: The edited image.
@@ -129,9 +133,9 @@ class MixinImage:
 
     See: https://www.starnetastro.com/
 
-    The image is saved as a TIFF file (16 bits integer per channel) on disk; the stars on this
-    TIFF file are removed with StarNet++, and the starless image is finally reloaded in eQuimageLab
-    and returned.
+    The image is saved as a TIFF file (16 bits integer per channel) on disk; the stars on this TIFF
+    file are removed with StarNet++, and the starless image is finally reloaded in eQuimageLab and
+    returned.
 
     The command "starnet++" must be in the PATH.
 

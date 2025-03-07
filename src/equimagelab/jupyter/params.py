@@ -2,14 +2,14 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.2.0 / 2025.02.02
+# Version: 1.3.0 / 2025.03.07
 # Sphinx OK.
 
 """Jupyter Lab interface parameters."""
 
 import numpy as np
 
-IMGTOL = 1.e-6 # Expected floating-point accuracy of numpy.float32 images.
+IMGTOL = np.spacing(1, dtype = np.float32) # Expected floating-point accuracy of numpy.float32 images.
 
 # Images downsampling rate for display.
 # Only images[::sampling, ::sampling] are shown to speed up operations.

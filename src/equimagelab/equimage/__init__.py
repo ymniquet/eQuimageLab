@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.2.0 / 2025.02.02
+# Version: 1.3.0 / 2025.03.07
 # Sphinx OK.
 
 """Image processing tools."""
@@ -10,3 +10,14 @@
 # Import top-level symbols.
 
 from .imports import *
+
+# NB : Here is the list of functions which explicitely deal with channels.
+# Please crosscheck/update these functions when adding new channels.
+#  - Image.get_channel
+#  - Image.set_channel
+#  - Image.apply_channel
+#  - Image.histograms
+#  - Image.statistics
+#  - Image.statistical_stretch
+#  - Image.LDBS
+#  - Image.filter

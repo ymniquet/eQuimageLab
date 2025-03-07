@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.2.0 / 2025.02.02
+# Version: 1.3.0 / 2025.03.07
 # Sphinx OK.
 
 """Image processing helpers."""
@@ -15,22 +15,16 @@ class Container:
   """An empty container class."""
   pass # An empty container class.
 
-def fpaccuracy(dtype):
-  """Return the expected floating point accuracy for the input float class.
+def fpepsilon(dtype):
+  """Return the distance between 1 and the nearest number for the input float class.
 
   Args:
     dtype (class): A float class (numpy.float32 or numpy.float64).
 
   Returns:
-    float: The expected floating point accuracy for this class
-      (1.e-6 for numpy.float32 and 1.e-9 for numpy.float64).
+    float: The distance between 1 and the nearest number for the float class dtype.
   """
-  if dtype == np.float32:
-    return 1.e-6
-  elif dtype == np.float64:
-    return 1.e-9
-  else:
-    raise ValueError("Error, the input class must be numpy.float32 or numpy.float64.")
+  return np.spacing(1, dtype = dtype)
 
 def failsafe_divide(A, B):
   """Return A/B, ignoring errors (division by zero, ...).
@@ -48,18 +42,19 @@ def failsafe_divide(A, B):
   return C
 
 def scale_pixels(image, source, target, cutoff = None):
-  """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff, set all channels to target.
+  """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff,
+  set all channels to target.
 
   Args:
     image (numpy.ndarray): The input image.
     source (numpy.ndarray): The source values for scaling (must be the same size as the input image).
     target (numpy.ndarray): The target values for scaling (must be the same size as the input image).
-    cutoff (float, optional): Threshold for scaling. If None, defaults to `equimage.helpers.fpaccuracy(source.dtype)`.
+    cutoff (float, optional): Threshold for scaling. If None, defaults to `equimage.helpers.fpepsilon(source.dtype)`.
 
   Returns:
     numpy.ndarray: The scaled image.
   """
-  if cutoff is None: cutoff = fpaccuracy(source.dtype)
+  if cutoff is None: cutoff = fpepsilon(source.dtype)
   return np.where(abs(source) > cutoff, failsafe_divide(image*target, source), target)
 
 def lookup(x, xlut, ylut, slut, nlut):
@@ -69,7 +64,8 @@ def lookup(x, xlut, ylut, slut, nlut):
     x (float): The input abscissa for interpolation.
     xlut (numpy.ndarray): The x values of the look-up table (must be evenly spaced).
     ylut (numpy.ndarray): The y values of the look-up table ylut = f(xlut).
-    slut (numpy.ndarray): The slopes (ylut[1:]-ylut[:-1])/(xlut[1:]-xlut[:-1]) used for linear interpolation between the elements of ylut.
+    slut (numpy.ndarray): The slopes (ylut[1:]-ylut[:-1])/(xlut[1:]-xlut[:-1]) used for linear
+      interpolation between the elements of ylut.
     nlut (int): The number of elements in the look-up table.
 
   Returns:

@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.2.0 / 2025.02.02
+# Version: 1.3.0 / 2025.03.07
 # Sphinx OK.
 
 """Histogram stretch functions."""
@@ -12,8 +12,7 @@ import numpy as np
 def shadow_stretch_function(x, shadow):
   """Return the linear shadow stretch function f(x).
 
-  The input data x is clipped below shadow and linearly stretched
-  to map [shadow, 1] onto [0, 1].
+  The input data x is clipped below shadow and linearly stretched to map [shadow, 1] onto [0, 1].
   The output, stretched data therefore fits in the [0, infty[ range.
 
   Args:
@@ -29,9 +28,8 @@ def shadow_stretch_function(x, shadow):
 def shadow_highlight_stretch_function(x, shadow, highlight):
   """Return the linear shadow/highlight stretch function f(x).
 
-  The input data x is clipped below shadow and above highlight and linearly stretched
-  to map [shadow, highlight] onto [0, 1].
-  The output, stretched data therefore fits in the [0, 1] range.
+  The input data x is clipped below shadow and above highlight and linearly stretched to map
+  [shadow, highlight] onto [0, 1]. The output, stretched data therefore fits in the [0, 1] range.
 
   Args:
     x (numpy.ndarray): The input data.
@@ -47,8 +45,8 @@ def shadow_highlight_stretch_function(x, shadow, highlight):
 def dynamic_range_stretch_function(x, fr, to):
   """Return the linear dynamic range stretch function f(x).
 
-  The input data x is linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]],
-  then clipped outside the [to[0], to[1]] range.
+  The input data x is linearly stretched to map [fr[0], fr[1]] onto [to[0], to[1]], then clipped
+  outside the [to[0], to[1]] range.
 
   Args:
     x (numpy.ndarray): The input data.
@@ -100,8 +98,8 @@ def gharmonic_stretch_function(x, D, SYP, SPP, HPP, inverse):
 
   when SPP = SYP = 0 and HPP = 1.
 
-  Moreover, the generalized hyperbolic stretch function for local stretch
-  parameter b = 1 is the generalized harmonic stretch function.
+  Moreover, the generalized hyperbolic stretch function for local stretch parameter b = 1 is the
+  generalized harmonic stretch function.
 
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
@@ -196,7 +194,8 @@ def midtone_transfer_function(x, shadow, midtone, highlight, low, high):
 
   This function:
 
-    1) Clips the input data in the [shadow, highlight] range and maps [shadow, highlight] onto [0, 1].
+    1) Clips the input data in the [shadow, highlight] range and maps [shadow, highlight]
+       onto [0, 1].
     2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
        with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
     3) Maps [low, high] onto [0, 1] and clips the output data outside the [0, 1] range.

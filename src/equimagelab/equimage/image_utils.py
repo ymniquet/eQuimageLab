@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.2.0 / 2025.02.02
+# Version: 1.3.0 / 2025.03.07
 # Sphinx OK.
 
 """Image utils."""
@@ -81,8 +81,7 @@ class MixinImage:
     Returns:
       bool: True if the image is out-of-range, False otherwise.
     """
-    epsilon = helpers.fpaccuracy(self.dtype)
-    return np.any(self.image < -epsilon) or np.any(self.image > 1.+epsilon)
+    return np.any(self.image < 0.) or np.any(self.image > 1.)
 
   ##############
   # Templates. #
@@ -121,12 +120,14 @@ class MixinImage:
     return np.clip(self, vmin, vmax)
 
   def scale_pixels(self, source, target, cutoff = None):
-    """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff, set all channels to target.
+    """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff,
+    set all channels to target.
 
     Args:
       source (numpy.ndarray): The source values for scaling (must be the same size as the image).
       target (numpy.ndarray): The target values for scaling (must be the same size as the image).
-      cutoff (float, optional): Threshold for scaling. If None, defaults to `equimage.helpers.fpaccuracy(source.dtype)`.
+      cutoff (float, optional): Threshold for scaling. 80
+        If None, defaults to `equimage.helpers.fpepsilon(source.dtype)`.
 
     Returns:
       Image: The scaled image.

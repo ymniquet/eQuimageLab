@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.2.0 / 2025.02.02
+# Version: 1.3.0 / 2025.03.07
 # Sphinx OK.
 
 """Image I/O management."""
@@ -16,6 +16,7 @@ from PIL import Image as PILImage
 if params.IMAGEIO:
   import imageio.v3 as iio
 else:
+  import tifffile
   import skimage.io as skio
 import astropy.io.fits as pyfits
 
@@ -42,7 +43,8 @@ def load_image_as_array(filename, verbose = True):
   if fmt == "PNG": # Load with the FreeImage plugin to enable 16 bits color depth.
     image = iio.imread(filename, plugin = "PNG-FI") if params.IMAGEIO else skio.imread(filename)
   elif fmt == "TIFF":
-    image = iio.imread(filename, plugin = "TIFF") if params.IMAGEIO else skio.imread(filename, plugin = "tifffile")
+    # skimage.io plugin architecture deprecated from skimage 0.25.
+    image = iio.imread(filename, plugin = "TIFF") if params.IMAGEIO else tifffile.imread(filename) # skio.imread(filename, plugin = "tifffile")
   elif fmt == "FITS":
     hdus = pyfits.open(filename)
     image = hdus[0].data
@@ -57,7 +59,7 @@ def load_image_as_array(filename, verbose = True):
   elif image.ndim == 3:
     nc = image.shape[2]
   else:
-    raise ValueError(f"Error, invalid image shape = {image.shape}.")
+    raise ValueError(f"Error, invalid image shape {image.shape}.")
   if verbose: print(f"Image size = {image.shape[1]}x{image.shape[0]} pixels.")
   if verbose: print(f"Number of channels = {nc}.")
   if nc not in [1, 3, 4]: raise ValueError(f"Error, images with {nc} channels are not supported.")
@@ -100,7 +102,8 @@ def load_image(filename, colorspace = "sRGB", verbose = True):
 
   Args:
     filename (str): The file name.
-    colorspace (str, optional): The colorspace of the image [either "sRGB" (default) or "lRGB" for linear RGB images].
+    colorspace (str, optional): The colorspace of the image [either "sRGB" (default) or "lRGB" for
+      linear RGB images].
     verbose (bool, optional): If True (default), print information about the image.
 
   Returns:
@@ -156,7 +159,10 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
       if params.IMAGEIO:
         iio.imwrite(filename, image, plugin = "TIFF", metadata = {"compress": compress})
       else:
-        skio.imsave(filename, image, plugin = "tifffile", check_contrast = False, compression = "zlib" if compress > 0 else None)
+        # skimage.io plugin architecture deprecated from skimage 0.25.
+        # skio.imsave(filename, image, check_contrast = False, plugin = "tifffile",
+        #             compression = "zlib" if compress > 0 else None, compressionargs = {"level": compress})
+        tifffile.imwrite(filename, image, compression = "zlib" if compress > 0 else None, compressionargs = {"level": compress})
   elif ext in [".fit", ".fits", ".fts"]:
     if verbose: print(f"Color depth = 32 bits float per channel.")
     image = np.asarray(image.flipud().get_image(), dtype = np.float32) # Flip image upside down.
@@ -164,7 +170,7 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
     hdu = pyfits.PrimaryHDU(image)
     hdu.writeto(filename, overwrite = True)
   else:
-    raise ValueError("Error, file extension must be .png or .tif/.tiff., or .fit/.fits/.fts.")
+    raise ValueError("Error, file extension must be .png, .tif/.tiff, or .fit/.fits/.fts.")
 
 #####################################
 # For inclusion in the Image class. #

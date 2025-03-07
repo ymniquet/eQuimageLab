@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.2.0 / 2025.02.02
+# Version: 1.3.0 / 2025.03.07
 # Sphinx OK.
 
 """Histogram stretch."""
@@ -115,23 +115,14 @@ class MixinImage:
   def set_black_point(self, shadow, channels = "", trans = True):
     """Set the black (shadow) level in selected channels of the image.
 
-    The selected channels are clipped below shadow and linearly stretched to map [shadow, 1] onto [0, 1].
-    The output, stretched image channels therefore fits in the [0, infty[ range.
+    The selected channels are clipped below shadow and linearly stretched to map [shadow, 1]
+    onto [0, 1]. The output, stretched image channels therefore fits in the [0, infty[ range.
 
     Args:
       shadow (float): The black (shadow) level (expected < 1).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -146,24 +137,15 @@ class MixinImage:
     """Set shadow and highlight levels in selected channels of the image.
 
     The selected channels are clipped below shadow and above highlight and linearly stretched
-    to map [shadow, highlight] onto [0, 1].
-    The output, stretched channels therefore fits in the [0, 1] range.
+    to map [shadow, highlight] onto [0, 1]. The output, stretched channels therefore fits in
+    the [0, 1] range.
 
     Args:
       shadow (float): The shadow level (expected < 1).
       highlight (float): The highlight level (expected > shadow).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -184,24 +166,9 @@ class MixinImage:
     Args:
       fr (a tuple or list of two floats such that fr[1] > fr[0]): The input range.
       to (a tuple or list of two floats such that 1 >= to[1] > to[0] >= 0): The output range.
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -228,24 +195,9 @@ class MixinImage:
     Args:
       D (float): The stretch parameter (expected > -1).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -265,9 +217,9 @@ class MixinImage:
       - f(x) = a4+b4*x when x >= HPP.
 
     The coefficients a and b are computed so that f is continuous and derivable.
-    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
-    the "highlight protection point". They can be tuned to preserve contrast in
-    the low and high brightness areas, respectively.
+    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is the "highlight
+    protection point". They can be tuned to preserve contrast in the low and high brightness
+    areas, respectively.
 
     f(x) falls back to the "usual" harmonic stretch function
 
@@ -275,8 +227,8 @@ class MixinImage:
 
     when SPP = SYP = 0 and HPP = 1 (the defaults).
 
-    Moreover, the generalized hyperbolic stretch function for local stretch
-    parameter b = 1 is the generalized harmonic stretch function.
+    Moreover, the generalized hyperbolic stretch function for local stretch parameter b = 1 is the
+    generalized harmonic stretch function.
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
@@ -294,24 +246,9 @@ class MixinImage:
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -344,24 +281,9 @@ class MixinImage:
     Args:
       midtone (float): The midtone level (expected in ]0, 1[).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -377,7 +299,8 @@ class MixinImage:
 
     This method:
 
-      1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight] onto [0, 1].
+      1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight]
+         onto [0, 1].
       2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
          with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
       3) Maps [low, high] onto [0, 1] and clips the output data outside the [0, 1] range.
@@ -391,24 +314,9 @@ class MixinImage:
       highlight (float, optional): The input highlight level (default 1; expected > midtone).
       low (float, optional): The "low" output level (default 0; expected <= 0).
       high (float, optional): The "high" output level (default 1; expected >= 1).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -438,9 +346,9 @@ class MixinImage:
       - f(x) = a4+b4*x when x >= HPP.
 
     The coefficients a and b are computed so that f is continuous and derivable.
-    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
-    the "highlight protection point". They can be tuned to preserve contrast in
-    the low and high brightness areas, respectively.
+    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is the "highlight
+    protection point". They can be tuned to preserve contrast in the low and high brightness
+    areas, respectively.
 
     f(x) falls back to the "standard" arcsinh stretch function
 
@@ -460,24 +368,9 @@ class MixinImage:
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -490,7 +383,7 @@ class MixinImage:
     if HPP < SYP:
       HPP = SYP
       print("Warning, changed HPP = SYP !")
-    output =  self.apply_channels(lambda channel: stf.garcsinh_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
+    output = self.apply_channels(lambda channel: stf.garcsinh_stretch_function(channel, D, SYP, SPP, HPP, inverse), channels, trans = trans)
     if trans: output.trans.xticks = [SPP, SYP, HPP]
     return output
 
@@ -506,24 +399,9 @@ class MixinImage:
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -551,9 +429,9 @@ class MixinImage:
       - f(x) = a4+b4*x when x >= HPP.
 
     The coefficients a and b are computed so that f is continuous and derivable.
-    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is
-    the "highlight protection point". They can be tuned to preserve contrast in
-    the low and high brightness areas, respectively.
+    SYP is the "symmetry point"; SPP is the "shadow protection point" and HPP is the "highlight
+    protection point". They can be tuned to preserve contrast in the low and high brightness
+    areas, respectively.
 
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
@@ -563,24 +441,9 @@ class MixinImage:
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
       inverse (bool, optional): Return the inverse stretch if True (default False).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -608,24 +471,9 @@ class MixinImage:
 
     Args:
       gamma (float): The stretch exponent (must be > 0).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -642,24 +490,9 @@ class MixinImage:
 
     Args:
       f (function): The function f(numpy.ndarray) → numpy.ndarray applied to the selected channels.
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -688,9 +521,10 @@ class MixinImage:
       See: https://www.setiastro.com/statistical-stretch.
 
     Hint:
-      You can apply the harmonic stretches and the final contrast boost separately by calling this method twice with
-      the same target median, first with boost = 0, then with boost > 0. As the average median of the image already
-      matches the target median, no harmonic stretch will be applied on second call.
+      You can apply the harmonic stretches and the final contrast boost separately by calling this
+      method twice with the same target median, first with boost = 0, then with boost > 0. As the
+      average median of the image already matches the target median, no harmonic stretch will be
+      applied on second call.
 
     See also:
       set_black_point,
@@ -699,27 +533,12 @@ class MixinImage:
     Args:
       median (float): The target median (expected in ]0, 1[).
       boost (float, optional): The contrast boost (expected >= 0; default 0 = no boost).
-      maxiter (int, optional): The maximum number of harmonic stretches applied to reach the target median (default 5).
-        For a single channel, the algorithm shall actually converge in one iteration.
+      maxiter (int, optional): The maximum number of harmonic stretches applied to reach the target
+        median (default 5). For a single channel, the algorithm shall actually converge in one iteration.
       accuracy (float, optional): The target accuracy of the median (default 0.001).
-      channels (str, optional): The selected channels:
-
-        - An empty string (default): Apply the operation to all channels (RGB, HSV and grayscale images).
-        - A combination of "1", "2", "3" (or equivalently "R", "G", "B" for RGB images): Apply the
-          operation to the first/second/third channel (RGB, HSV and grayscale images).
-        - "V": Apply the operation to the HSV value (RGB, HSV and and grayscale images).
-        - "S": Apply the operation to the HSV saturation (RGB and HSV images).
-        - "L": Apply the operation to the luma (RGB and grayscale images).
-        - "Ls": Apply the operation to the luma, and protect highlights by desaturation
-          (after the operation, the out-of-range pixels are desaturated at constant luma).
-        - "Lb": Apply the operation to the luma, and protect highlights by blending
-          (after the operation, the out-of-range pixels are blended with channels = "RGB").
-        - "Ln": Apply the operation to the luma, and protect highlights by normalization.
-          (after the operation, the image is normalized so that all pixels fall in the [0, 1] range).
-        - "L*": Apply the operation to the lightness L* in the CIE L*a*b* color space.
-          (RGB and grayscale images).
-
-      trans(bool, optional): If True (default), embed the transormation in the output image as
+      channels (str, optional): The selected channels (default "" = all channels).
+        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see Image.apply_channels).
 
     Returns:
@@ -728,15 +547,19 @@ class MixinImage:
     def compute_medians(image, channels):
       """Compute the medians of the channels of the input image, returned as a dictionary."""
       if channels == "V":
-        cmeds = {"V": np.median(image.value())}
+        medians = {"V": np.median(image.HSV_value())}
       elif channels == "S":
-        cmeds = {"S": np.median(image.saturation())}
+        medians = {"S": np.median(image.HSV_saturation())}
+      elif channels == "L'":
+        medians = {"L'": np.median(image.HSL_lightness())}
+      elif channels == "S'":
+        medians = {"S'": np.median(image.HSL_saturation())}
       elif channels in ["L", "Ls", "Lb", "Ln"]:
-        cmeds = {"L": np.median(image.luma())}
-      elif channels == "L*":
-        cmeds = {"L*": np.median(image.lightness())}
+        medians = {"L": np.median(image.luma())}
+      elif channels in ["L*", "L*ab", "L*uv", "L*sh"]:
+        medians = {"L*": np.median(image.lightness())}
       else:
-        cmeds = {}
+        medians = {}
         nc = self.get_nc()
         for c in channels:
           if c.isdigit():
@@ -749,17 +572,17 @@ class MixinImage:
             continue
           else:
             raise ValueError(f"Syntax errror in the channels string '{channels}'.")
-          if cmeds.get(c, None) is not None:
+          if medians.get(c, None) is not None:
             print(f"Warning, channel '{c}' selected twice or more...")
             continue
-          cmeds[c] = np.median(image.image[ic])
-      return cmeds
+          medians[c] = np.median(image.image[ic])
+      return medians
 
-    def print_medians(cmeds):
+    def print_medians(medians):
       """Print the input dictionary of medians."""
       spacer = ""
-      for key, med in cmeds.items():
-        print(f"{spacer}Median({key}) = {med:.5f}", end = "")
+      for key, median in medians.items():
+        print(f"{spacer}Median({key}) = {median:.5f}", end = "")
         spacer = "; "
       print()
 
@@ -778,20 +601,20 @@ class MixinImage:
     ctrans = None
     while True:
       print(f"Iteration #{niter}:")
-      cmeds = compute_medians(output, channels) # Compute the medians of the channels.
-      print_medians(cmeds)
-      avgmed = np.mean(list(cmeds.values())) # Compute the average median.
-      if len(cmeds) > 1: print(f"Average median = {avgmed:.5f}.")
-      converged = (abs(avgmed-median) < .001) # Check convergence.
+      medians = compute_medians(output, channels) # Compute the medians of the channels.
+      print_medians(medians)
+      avgmedian = np.mean(list(medians.values())) # Compute the average median.
+      if len(medians) > 1: print(f"Average median = {avgmedian:.5f}.")
+      converged = (abs(avgmedian-median) < .001) # Check convergence.
       if converged or niter >= maxiter: break
       niter += 1
-      # Compute the effective stretch parameter D such that f(avgmed) = median, with f the harmonic stretch function.
-      D = Dharmonic_through(avgmed, median)
+      # Compute the effective stretch parameter D such that f(avgmedian) = median, with f the harmonic stretch function.
+      D = Dharmonic_through(avgmedian, median)
       output = output.harmonic_stretch(D, channels = channels, trans = trans and ctrans is None) # Harmonic stretch.
       if trans: # Cumulative transformation.
         if ctrans is None:
           ctrans = copy.copy(output.trans)
-          ctrans.xticks = [avgmed]
+          ctrans.xticks = [avgmedian]
         else:
           ctrans.y = stf.harmonic_stretch_function(ctrans.y, D, False)
     if converged:
@@ -800,14 +623,14 @@ class MixinImage:
       print(f"Warning, did not converge within {maxiter} iteration(s).")
     if boost > 0.: # Boost contrast above the average median.
       print("Boosting constrast above the average median...")
-      x = [0., .5*avgmed, avgmed, .25+.75*avgmed, .75+.25*avgmed, 1.]
+      x = [0., .5*avgmedian, avgmedian, .25+.75*avgmedian, .75+.25*avgmedian, 1.]
       y = [x[0], x[1], x[2], x[3]**(1.-boost), (x[4]**(1.-boost))**(1.-boost), x[5]]
       fboost = Akima1DInterpolator(x, y) # Akima spline.
       output = output.curve_stretch(fboost, channels = channels, trans = trans and ctrans is None) # Curve stretch.
       if trans:
         if ctrans is None: # Cumulative transformation.
           ctrans = copy.copy(output.trans)
-          ctrans.xticks = [avgmed]
+          ctrans.xticks = [avgmedian]
         else:
           ctrans.y = fboost(ctrans.y)
     if ctrans is not None: output.trans = ctrans
