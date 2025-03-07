@@ -51,8 +51,7 @@ exclude = ["equimagelab.docs*", "conf.py"]
 
 [tool.setuptools.package-data]
 "equimagelab.icons" = ["icon.png", "icon.ico"]
-"equimagelab.images" = ["splash.png"]
-"equimagelab.examples" = ["*.ipynb"]
+"equimagelab.images" = ["splash.png", "HSVwheel.png"]
 "equimagelab.launcher" = ["*.ipynb"]
 "equimagelab.jupyter" = ["assets/*"]
 

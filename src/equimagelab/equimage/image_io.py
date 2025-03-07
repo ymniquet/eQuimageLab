@@ -16,6 +16,7 @@ from PIL import Image as PILImage
 if params.IMAGEIO:
   import imageio.v3 as iio
 else:
+  import tifffile
   import skimage.io as skio
 import astropy.io.fits as pyfits
 
@@ -42,7 +43,8 @@ def load_image_as_array(filename, verbose = True):
   if fmt == "PNG": # Load with the FreeImage plugin to enable 16 bits color depth.
     image = iio.imread(filename, plugin = "PNG-FI") if params.IMAGEIO else skio.imread(filename)
   elif fmt == "TIFF":
-    image = iio.imread(filename, plugin = "TIFF") if params.IMAGEIO else skio.imread(filename, plugin = "tifffile")
+    # skimage.io plugin architecture deprecated from skimage 0.25.
+    image = iio.imread(filename, plugin = "TIFF") if params.IMAGEIO else tifffile.imread(filename) # skio.imread(filename, plugin = "tifffile")
   elif fmt == "FITS":
     hdus = pyfits.open(filename)
     image = hdus[0].data
@@ -157,7 +159,10 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
       if params.IMAGEIO:
         iio.imwrite(filename, image, plugin = "TIFF", metadata = {"compress": compress})
       else:
-        skio.imsave(filename, image, plugin = "tifffile", check_contrast = False, compression = "zlib" if compress > 0 else None)
+        # skimage.io plugin architecture deprecated from skimage 0.25.
+        # skio.imsave(filename, image, check_contrast = False, plugin = "tifffile",
+        #             compression = "zlib" if compress > 0 else None, compressionargs = {"level": compress})
+        tifffile.imwrite(filename, image, compression = "zlib" if compress > 0 else None, compressionargs = {"level": compress})
   elif ext in [".fit", ".fits", ".fts"]:
     if verbose: print(f"Color depth = 32 bits float per channel.")
     image = np.asarray(image.flipud().get_image(), dtype = np.float32) # Flip image upside down.
