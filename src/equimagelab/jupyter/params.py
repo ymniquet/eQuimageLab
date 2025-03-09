@@ -3,7 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Doc OK.
 
 """Jupyter Lab interface parameters."""
 
@@ -61,10 +61,10 @@ def set_figure_margins(left = None, right = None, bottom = None, top = None):
   """Set or update figure margins.
 
   Args:
-    left (int, optional): The left margin in pixels [if not None (default)].
-    right (int, optional): The right margin in pixels [if not None (default)].
-    bottom (int, optional): The bottom margin in pixels [if not None (default)].
-    top (int, optional): The top margin in pixels [if not None (default)].
+    left (int, optional): The left margin in pixels [unchanged if None (default)].
+    right (int, optional): The right margin in pixels [unchanged if None (default)].
+    bottom (int, optional): The bottom margin in pixels [unchanged if None (default)].
+    top (int, optional): The top margin in pixels [unchanged if None (default)].
   """
   global lmargin, rmargin, tmargin, bmargin
   if left is not None: lmargin = left

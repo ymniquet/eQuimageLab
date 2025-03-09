@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
+# Doc OK.
 
 """Launcher for eQuimageLab."""
 
@@ -18,18 +19,18 @@ from pathlib import Path
 from PIL import Image, ImageTk
 
 def run_CLI():
-  """Open a jupyter lab notebook from the command line."""
+  """Open a Jupyter Lab notebook from the command line."""
   if len(sys.argv) != 2:
     print("---")
     print("eQuimageLab launcher.")
     print("Usage: equimagelab [notebook]")
-    print("Starts jupyter lab and opens notebook, if provided.")
+    print("Starts Jupyter Lab and opens notebook, if provided.")
     print("Otherwise, starts a GUI to choose notebook/starting directory.")
     sys.exit(-1)
   try:
     subprocess.Popen(["jupyter", "lab", sys.argv[1]])
   except Exception as err:
-    print("Failed to run jupyter lab:")
+    print("Failed to run Jupyter Lab:")
     print(str(err))
     sys.exit(-2)
   sys.exit(0)
@@ -38,7 +39,7 @@ def run_GUI():
   """Run eQuimageLab launcher GUI."""
 
   def new_notebook():
-    """Create and open a new jupyter notebook."""
+    """Create and open a new Jupyter notebook."""
     # Open file selection dialog.
     notebook = tkinter.filedialog.asksaveasfilename(title = "Save new notebook as", filetypes = [("Jupyter notebooks", "*.ipynb")],
                                                     initialdir = Path.home(), initialfile = "eqlab.ipynb", defaultextension = ".ipynb")
@@ -51,36 +52,36 @@ def run_GUI():
     except Exception as err:
       tkinter.messagebox.showerror("Error", f"Failed to create notebook {notebook}:\n{str(err)}")
       return
-    # Run jupyter lab.
+    # Run Jupyter Lab.
     run_jupyter_lab(notebook)
 
   def open_notebook():
-    """Select and open a jupyter notebook."""
+    """Select and open a Jupyter notebook."""
     # Open file selection dialog.
     notebook = tkinter.filedialog.askopenfilename(title = "Open notebook", filetypes = [("Jupyter notebooks", "*.ipynb")], initialdir = Path.home())
     if not notebook: return
-    # Run jupyter lab.
+    # Run Jupyter Lab.
     run_jupyter_lab(notebook)
 
   def open_directory():
-    """Run jupyter lab in a selected directory."""
+    """Run Jupyter Lab in a selected directory."""
     # Open directory selection dialog.
     directory = tkinter.filedialog.askdirectory(title = "Open directory", initialdir = Path.home())
     if not directory: return
-    # Run jupyter lab.
+    # Run Jupyter Lab.
     run_jupyter_lab(f"--notebook-dir={directory}")
 
   def run_jupyter_lab(options = ""):
-    """Run jupyter lab.
+    """Run Jupyter Lab.
 
     Args:
-      options (str): Options for the jupyter lab command (default "").
+      options (str): Options for the Jupyter Lab command (default "").
     """
-    print(f"Running jupyter lab {options}...")
+    print(f"Running Jupyter Lab {options}...")
     try:
       subprocess.Popen(["jupyter", "lab", options])
     except Exception as err:
-      tkinter.messagebox.showerror("Error", f"Failed to run jupyter lab:\n{str(err)}")
+      tkinter.messagebox.showerror("Error", f"Failed to run Jupyter Lab:\n{str(err)}")
       return
     quit()
 

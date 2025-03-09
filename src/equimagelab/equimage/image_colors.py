@@ -3,7 +3,6 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
 
 """Color management."""
 
@@ -248,7 +247,7 @@ class MixinImage:
         float: The red, green, blue multipliers for temperature T.
       """
 
-      def fitfunction(T, a, b, c, n):
+      def fit_function(T, a, b, c, n):
         """Fit function for the RGB multipliers."""
         Tr = (T-6650.)/10000.
         return max(0., 1.+a*Tr+b*Tr**2+c*Tr**3)**n
@@ -257,11 +256,11 @@ class MixinImage:
         raise ValueError("Error, the temperature must range between 1000K and 40000K.")
       if T < 6650.:
         red = 1.
-        green = .955*fitfunction(T, 0.6328063016856568, -0.7554188937494166, 1.7905208976761535, 1.2444903530611828)
-        blue = fitfunction(T, 1.2773641159953395, -1.0621459476222992, 1.1594787131985838, 1.7962669751286322)
+        green = .955*fit_function(T, 0.6328063016856568, -0.7554188937494166, 1.7905208976761535, 1.2444903530611828)
+        blue = fit_function(T, 1.2773641159953395, -1.0621459476222992, 1.1594787131985838, 1.7962669751286322)
       else:
-        red = fitfunction(T, 3.7874055198445142, -1.2956261274808025, 0.16818980687443094, -0.6136402157590004)
-        green = .955*fitfunction(T, 3.490058031650525, -1.1425871791667106, 0.14401832008759521, -0.42381907464549073)
+        red = fit_function(T, 3.7874055198445142, -1.2956261274808025, 0.16818980687443094, -0.6136402157590004)
+        green = .955*fit_function(T, 3.490058031650525, -1.1425871791667106, 0.14401832008759521, -0.42381907464549073)
         blue = 1.
       return red, green, blue
 

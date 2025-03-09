@@ -56,7 +56,7 @@ Latest news:
     - Image mask from the selection.
     - Added lightness parameter in :py:meth:`color_saturation <equimagelab.equimage.image_colors.MixinImage.color_saturation>`.
 
-  - Version 1.3.0.
+  - March 7, 2025: Version 1.3.0.
 
     - HSL color model in the lRGB and sRGB color spaces.
     - CIELab color space (with Lab and Lch color models).

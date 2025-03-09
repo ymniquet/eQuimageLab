@@ -3,7 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Doc OK.
 
 """Image processing helpers."""
 
@@ -22,7 +22,7 @@ def fpepsilon(dtype):
     dtype (class): A float class (numpy.float32 or numpy.float64).
 
   Returns:
-    float: The distance between 1 and the nearest number for the float class dtype.
+    float: The distance between 1 and the nearest number for the input float class.
   """
   return np.spacing(1, dtype = dtype)
 
@@ -42,14 +42,16 @@ def failsafe_divide(A, B):
   return C
 
 def scale_pixels(image, source, target, cutoff = None):
-  """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff,
-  set all channels to target.
+  """Scale all pixels of the input image by the ratio target/source.
+
+  Wherever abs(source) < cutoff, set all channels to target.
 
   Args:
     image (numpy.ndarray): The input image.
     source (numpy.ndarray): The source values for scaling (must be the same size as the input image).
     target (numpy.ndarray): The target values for scaling (must be the same size as the input image).
-    cutoff (float, optional): Threshold for scaling. If None, defaults to `equimage.helpers.fpepsilon(source.dtype)`.
+    cutoff (float, optional): Threshold for scaling.
+      If None, defaults to `equimage.helpers.fpepsilon(source.dtype)`.
 
   Returns:
     numpy.ndarray: The scaled image.

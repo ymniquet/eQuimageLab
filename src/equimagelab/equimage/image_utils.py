@@ -3,7 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Doc OK.
 
 """Image utils."""
 
@@ -17,13 +17,13 @@ from . import helpers
 #####################
 
 def is_valid_image(image):
-  """Return True if the input is a valid image candidate, False otherwise.
+  """Return True if the input array is a valid image candidate, False otherwise.
 
   Args:
     image (numpy.ndarray): The image candidate.
 
   Returns:
-    bool: True if the input is a valid image candidate, False otherwise.
+    bool: True if the input array is a valid image candidate, False otherwise.
   """
   if not issubclass(type(image), np.ndarray): return False
   if image.ndim == 3:
@@ -110,6 +110,9 @@ class MixinImage:
   def clip(self, vmin = 0., vmax = 1.):
     """Clip the image in the range [vmin, vmax].
 
+    See also:
+      :meth:`Image.clip_channels() <.clip_channels>` to clip specific channels.
+
     Args:
       vmin (float, optional): The lower clip bound (default 0).
       vmax (float, optional): The upper clip bound (default 1).
@@ -120,13 +123,14 @@ class MixinImage:
     return np.clip(self, vmin, vmax)
 
   def scale_pixels(self, source, target, cutoff = None):
-    """Scale all pixels of the image by the ratio target/source. Wherever abs(source) < cutoff,
-    set all channels to target.
+    """Scale all pixels of the image by the ratio target/source.
+
+    Wherever abs(source) < cutoff, set all channels to target.
 
     Args:
       source (numpy.ndarray): The source values for scaling (must be the same size as the image).
       target (numpy.ndarray): The target values for scaling (must be the same size as the image).
-      cutoff (float, optional): Threshold for scaling. 80
+      cutoff (float, optional): Threshold for scaling.
         If None, defaults to `equimage.helpers.fpepsilon(source.dtype)`.
 
     Returns:
@@ -139,7 +143,7 @@ class MixinImage:
   #############
 
   def blend(self, image, mixing):
-    """Blend with the input image.
+    """Blend the object with the input image.
 
     Returns self*(1-mixing)+image*mixing.
     The images must share the same shape, color space and color model.

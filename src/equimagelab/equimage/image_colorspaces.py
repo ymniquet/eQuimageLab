@@ -3,7 +3,6 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
 
 """Color spaces and models management."""
 
@@ -1776,17 +1775,19 @@ class MixinImage:
       if trans: output.trans = transformation(f, self.image[selected], channels)
       return output
 
-  def clip_channels(self, channels):
-    """Clip selected channels of the image in the [0, 1] range.
+  def clip_channels(self, channels, vmin = 0., vmax = 1.):
+    """Clip selected channels of the image in the range [vmin, vmax].
 
     Args:
       channels (str, optional): The selected channels (default "" = all channels).
         See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      vmin (float, optional): The lower clip bound (default 0).
+      vmax (float, optional): The upper clip bound (default 1).
 
     Returns:
       Image: The clipped image.
     """
-    return self.apply_channels(lambda channel: np.clip(channel, 0., 1.), channels)
+    return self.apply_channels(lambda channel: np.clip(channel, vmin, vmax), channels)
 
   def protect_highlights_saturation(self):
     """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant hue
