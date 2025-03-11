@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
+# Doc OK.
 
 """Image class."""
 
@@ -51,25 +52,25 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   In the CIELab color space, the colormodel attribute can be:
 
     - "Lab": the 3 channels of the image are the CIELab components L*/100, a*/100 and b*/100.
-       The lightness L*/100 fits within [0, 1], but a* and b* are signed and not bounded.
+      The lightness L*/100 fits within [0, 1], but a* and b* are signed and not bounded.
     - "Lch": the 3 channels of the image are the CIELab components L*/100, c*/100 and h*/(2π).
-       The lightness L*/100 and the reduced hue angle h*/(2π) fit within [0, 1], but the
-       chroma c* is not bounded by 1.
+      The lightness L*/100 and the reduced hue angle h*/(2π) fit within [0, 1], but the
+      chroma c* is not bounded by 1.
 
   In the CIELuv color space, the colormodel attribute can be:
 
     - "Luv": the 3 channels of the image are the CIELuv components L*/100, u*/100 and v*/100.
-       The lightness L*/100 fits within [0, 1], but u* and v* are signed and not bounded.
+      The lightness L*/100 fits within [0, 1], but u* and v* are signed and not bounded.
     - "Lch": the 3 channels of the image are the CIELuv components L*/100, c*/100 and h*/(2π).
-       The lightness L*/100 and the reduced hue angle h*/(2π) fit within [0, 1], but the
-       chroma c* is not bounded by 1.
+      The lightness L*/100 and the reduced hue angle h*/(2π) fit within [0, 1], but the
+      chroma c* is not bounded by 1.
     - "Lsh": the 3 channels of the image are the CIELuv components L*/100, s*/100 and h*/(2π).
-       The lightness L*/100 and the reduced hue angle h*/(2π) fit within [0, 1], but the
-       saturation s* = c*/L* is not bounded by 1.
+      The lightness L*/100 and the reduced hue angle h*/(2π) fit within [0, 1], but the
+      saturation s* = c*/L* is not bounded by 1.
 
   The default color space is sRGB and the default color model is RGB.
 
-  The dtype of the images (numpy.float32 or numpy.float64) can be set with `equimage.params.set_image_type`.
+  The dtype of the images (numpy.float32 or numpy.float64) can be set with :meth:`params.set_image_type() <equimagelab.equimage.params.set_image_type>`.
   """
 
   ################
@@ -80,7 +81,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     """Initialize a new Image object with the input image.
 
     Args:
-      image: The input image (numpy.ndarray or Image).
+      image (numpy.ndarray or Image): The input image.
       channels (int, optional): The position of the channel axis for color images (default 0).
       colorspace (str, optional): The color space of the image (default "sRGB").
         Can be "lRGB" (linear RGB color space), "sRGB" (sRGB color space), "CIELab" (CIELab colorspace),
@@ -89,7 +90,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
         In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL"
         (HSL color model) or "gray" (grayscale image).
         In the CIELab color space, can be "Lab" (L*a*b* color model) or "Lch" (L*c*h* color model).
-        In the CIELuv color space, can be "Luv" (L*u*v* color model) ,  "Lch" (L*c*h* color model)
+        In the CIELuv color space, can be "Luv" (L*u*v* color model), "Lch" (L*c*h* color model)
         or "Lsh" (L*s*h* model).
     """
     # Check color space and model.
@@ -131,7 +132,8 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     self.colormodel = colormodel
 
   def newImage(self, image, **kwargs):
-    """Return a new Image object with the input image.
+    """Return a new Image object with the input image (with, by default, the same color space and
+    color model as self).
 
     Args:
       image (numpy.ndarray): The input image.
@@ -141,7 +143,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
         In the lRGB/SRGB color spaces, can be "RGB" (RGB color model), "HSV" (HSV color model), "HSL"
         (HSL color model) or "gray" (grayscale image).
         In the CIELab color space, can be "Lab" (L*a*b* color model) or "Lch" (L*c*h* color model).
-        In the CIELuv color space, can be "Luv" (L*u*v* color model) ,  "Lch" (L*c*h* color model)
+        In the CIELuv color space, can be "Luv" (L*u*v* color model), "Lch" (L*c*h* color model)
         or "Lsh" (L*s*h* model).
 
     Returns:
@@ -193,11 +195,11 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     self.image[channels] = data
 
   def __array__(self, dtype = None, copy = None):
-    """Expose the object as an numpy.ndarray."""
+    """Expose an Image object as an numpy.ndarray."""
     return np.array(self.image, dtype = dtype, copy = copy)
 
   def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-    """Apply numpy ufuncs to the object."""
+    """Apply numpy ufuncs to an Image object."""
     if method != "__call__": return
     inputs = []
     mixed = False
@@ -226,7 +228,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
       return output
 
   def __array_function__(self, func, types, args, kwargs):
-    """Apply numpy array functions to the object."""
+    """Apply numpy array functions to an Image object."""
     inputs = []
     mixed = False
     reference = None
@@ -317,7 +319,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
   ######################
 
   def int8(self):
-    """Return the image as an array of 8 bits integers in the range [0, 255], with shape (height, width, channels).
+    """Return the image as an array of 8 bits integers with shape (height, width, channels).
 
     Warning:
       This method maps [0., 1.] onto [0, 255].
@@ -331,7 +333,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     return np.rint(data).astype("uint8")
 
   def int16(self):
-    """Return the image as an array of 16 bits integers in the range [0, 65535], with shape (height, width, channels).
+    """Return the image as an array of 16 bits integers with shape (height, width, channels).
 
     Warning:
       This method maps [0., 1.] onto [0, 65535].
@@ -345,7 +347,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
     return np.rint(data).astype("uint16")
 
   def int32(self):
-    """Return the image as an array of 32 bits integers in the range [0, 4294967295], with shape (height, width, channels).
+    """Return the image as an array of 32 bits integers with shape (height, width, channels).
 
     Warning:
       This method maps [0., 1.] onto [0, 4294967295].

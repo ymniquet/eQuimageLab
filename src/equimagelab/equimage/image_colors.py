@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
+# Doc OK.
 
 """Color management."""
 
@@ -26,8 +27,8 @@ def parse_hue_kwargs(D, kwargs):
   magenta, H = 3/4) and 'MR' (magenta-red, H = 11/12).
 
   Note:
-    Used by Image.HSX_color_saturation, Image.CIE_chroma_saturation, Image.rotate_HSX_hue
-    and Image.rotate_CIE_hue.
+    Used by :meth:`Image.HSX_color_saturation() <.HSX_color_saturation>`, :meth:`Image.CIE_chroma_saturation() <.CIE_chroma_saturation>`,
+    :meth:`Image.rotate_HSX_hue() <.rotate_HSX_hue>`, :meth:`Image.rotate_CIE_hue() <.rotate_CIE_hue>`.
 
   Args:
     D (float): The default value for the R/Y/G/C/B/M hues.
@@ -70,16 +71,16 @@ def parse_hue_kwargs(D, kwargs):
   return hgrid[idx], value[idx], kwargs
 
 def interpolate_hue(hue, hgrid, param, interpolation):
-  """Interpolate a parameter param defined on a grid of hues to arbitrary hues.
+  """Interpolate a parameter param defined on a grid of hues.
 
   Note:
-    Used by Image.HSX_color_saturation, Image.CIE_chroma_saturation, Image.rotate_HSX_hue
-    and Image.rotate_CIE_hue.
+    Used by :meth:`Image.HSX_color_saturation() <.HSX_color_saturation>`, :meth:`Image.CIE_chroma_saturation() <.CIE_chroma_saturation>`,
+    :meth:`Image.rotate_HSX_hue() <.rotate_HSX_hue>`, :meth:`Image.rotate_CIE_hue() <.rotate_CIE_hue>`.
 
   Args:
-    hue (numpy.ndarray): The hues at which the parameter must be interpolated.
+    hue (numpy.ndarray): The input hues at which the parameter must be interpolated.
     hgrid (numpy.ndarray): The grid of hues on which the parameter is defined.
-    param (numpy.ndarray): The parameter on the grid.
+    param (numpy.ndarray): The parameter on the grid of hues.
     interpolation (str, optional): The interpolation method:
 
       - "nearest": Nearest neighbor interpolation.
@@ -282,7 +283,7 @@ class MixinImage:
     """Adjust color saturation in the HSV or HSL color models.
 
     The image is converted (if needed) to the HSV or HSL color model, then the color saturation S is
-    transformed according to the 'mode' kwarg:
+    transformed according to the `mode` kwarg:
 
       - "addsat": Shift the saturation S ← S+delta.
       - "mulsat": Scale the saturation S ← S*(1+delta).
@@ -296,12 +297,12 @@ class MixinImage:
     a gray scale. delta is set for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B')
     and magenta ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated
     for arbitrary hues using nearest neighbor, linear, cubic or akima spline interpolation according
-    to the 'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by
+    to the `interpolation` kwarg. Midpoint deltas may also be specified for finer interpolation by
     providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
     'BM' (blue-magenta) and 'MR' (magenta-red).
 
     See also:
-      CIE_chroma_saturation
+      :meth:`Image.CIE_chroma_saturation() <.CIE_chroma_saturation>`
 
     Args:
       D (float, optional): The delta for all hues (default 0).
@@ -325,7 +326,7 @@ class MixinImage:
       lightness (bool, optional): If True, preserve the lightness L* of the original image.
         Note that this may result in some out-of-range pixels. Default is False.
       trans (bool, optional): If True (default), embed the transormation in the output image
-        as output.trans (see Image.apply_channels).
+        as output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -381,7 +382,7 @@ class MixinImage:
     The image is converted (if needed) to the CIELab or CIELuv colorspace, then the CIELab chroma
     CS = c* = sqrt(a*^2+b*^2) (colormodel = "Lab"), or the CIELuv chroma CS = c* = sqrt(u*^2+v*^2)
     (colormodel = "Luv"), or the CIELuv saturation CS = s* = c*/L* (colormodel = "Lsh") is transformed
-    according to the 'mode' kwarg:
+    according to the `mode` kwarg:
 
       - "addsat": Shift the chroma/saturation CS ← CS+delta.
       - "mulsat": Scale the chroma/saturation CS ← CS*(1+delta).
@@ -400,7 +401,7 @@ class MixinImage:
     delta is set for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta
     ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for arbitrary
     hues using nearest neighbor, linear, cubic or akima spline interpolation according to the
-    'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by providing
+    `interpolation` kwarg. Midpoint deltas may also be specified for finer interpolation by providing
     the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM'
     (blue-magenta) and 'MR' (magenta-red).
     Contrary to the saturation of HSV or HSL images, chroma/saturation transformations in the CIELab
@@ -408,11 +409,11 @@ class MixinImage:
     range RGB pixels (as not all points of of these color spaces correspond to physical RGB colors).
 
     Note:
-      Chroma and saturation are related, but different quantities (s* = c*/L* in the CIELuv color space). There is no rigorous
-      definition of saturation in the CIELab color space.
+      Chroma and saturation are related, but different quantities (s* = c*/L* in the CIELuv color space).
+      There is no rigorous definition of saturation in the CIELab color space.
 
     See also:
-      HSX_color_saturation
+      :meth:`Image.HSX_color_saturation() <.HSX_color_saturation>`
 
     Args:
       D (float, optional): The delta for all hues (default 0).
@@ -434,7 +435,7 @@ class MixinImage:
       ref (float, optional): The reference chroma/saturation for the "midsat" mode. If None,
         defaults to the maximum chroma/saturation of the input image.
       trans (bool, optional): If True (default), embed the transormation in the output image
-        as output.trans (see Image.apply_channels).
+        as output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -498,7 +499,7 @@ class MixinImage:
     delta is set for the original red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and
     magenta ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for
     arbitrary hues using nearest neighbor, linear, cubic or akima spline interpolation according to
-    the 'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by
+    the `interpolation` kwarg. Midpoint deltas may also be specified for finer interpolation by
     providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
     'BM' (blue-magenta) and 'MR' (magenta-red).
 
@@ -510,7 +511,7 @@ class MixinImage:
       blue → cyan, and magenta → blue.
 
     See also:
-      rotate_CIE_hue
+      :meth:`Image.rotate_CIE_hue() <.rotate_CIE_hue>`
 
     Args:
       D (float, optional): The delta for all hues (default 0).
@@ -532,7 +533,7 @@ class MixinImage:
       lightness (bool, optional): If True, preserve the lightness L* of the original image.
         Note that this may result in some out-of-range pixels. Default is False.
       trans (bool, optional): If True (default), embed the transormation in the output image
-        as output.trans (see Image.apply_channels).
+        as output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -577,7 +578,7 @@ class MixinImage:
     delta is set for the original red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and
     magenta ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for
     arbitrary hues using nearest neighbor, linear, cubic or akima spline interpolation according to
-    the 'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by
+    the `interpolation` kwarg. Midpoint deltas may also be specified for finer interpolation by
     providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
     'BM' (blue-magenta) and 'MR' (magenta-red).
     Contrary to the rotation of HSV or HSL images, rotations in the CIELab and CIELuv color spaces
@@ -592,7 +593,7 @@ class MixinImage:
       blue → cyan, and magenta → blue.
 
     See also:
-      rotate_HSX_hue
+      :meth:`Image.rotate_HSX_hue() <.rotate_HSX_hue>`
 
     Args:
       D (float, optional): The delta for all hues (default 0).
@@ -611,7 +612,7 @@ class MixinImage:
         - "akima": Akima spline interpolation (default).
 
       trans (bool, optional): If True (default), embed the transormation in the output image
-        as output.trans (see Image.apply_channels).
+        as output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -647,12 +648,12 @@ class MixinImage:
   def SCNR(self, hue = "green", protection = "avgneutral", amount = 1., colorspace = None, lightness = True):
     """Subtractive Chromatic Noise Reduction of a given hue of a RGB image.
 
-    The input hue is reduced according to the 'protection' kwarg. For the green hue for example,
+    The input hue is reduced according to the `protection` kwarg. For the green hue for example,
 
-      - G ← min(G, C) with C = (R+B)/2 for average neutral protection (protection = "avgneutral").
-      - G ← min(G, C) with C = max(R, B) for maximum neutral protection (protection = "maxneutral").
-      - G ← G*[(1-A)+C*A] with C = (R+B)/2 for additive mask protection (protection = "addmask").
-      - G ← G*[(1-A)+C*A] with C = max(R, B) for maximum mask protection (protection = "maxmask").
+      - G ← min(G, C) with C = (R+B)/2 for average neutral protection (`protection` = "avgneutral").
+      - G ← min(G, C) with C = max(R, B) for maximum neutral protection (`protection` = "maxneutral").
+      - G ← G*[(1-A)+C*A] with C = (R+B)/2 for additive mask protection (`protection` = "addmask").
+      - G ← G*[(1-A)+C*A] with C = max(R, B) for maximum mask protection (`protection` = "maxmask").
 
     The parameter A in [0, 1] controls the strength of the mask protection.
 
@@ -661,7 +662,7 @@ class MixinImage:
         alias "G" (default), "cyan" alias "C", "blue" alias "B", or "magenta" alias "M"].
       protection (str, optional): The protection mode ["avgneutral" (default), "maxneutral",
         "addmask" or "maxmask"].
-      amount (float, optional): The parameter A for mask protection (protection = "addmask"
+      amount (float, optional): The parameter A for mask protection (`protection` = "addmask"
         or "maxmask", default 1).
       colorspace (str, optional): The color space for SCNR ["lRGB", "sRGB", or None (default)
         to use the color space of the image].

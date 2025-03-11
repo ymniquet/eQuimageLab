@@ -122,9 +122,9 @@ def save_image(image, filename, depth = 8, compress = 6, verbose = True):
     image (Image): The image.
     filename (str): The file name. The file format is chosen according to the extension:
 
-      - .png: PNG file with depth = 8 or 16 bit integers per channel.
-      - .tif, .tiff: TIFF file with depth = 8, 16 bit integers or 32 bit floats per channel.
-      - .fit, .fits, .fts: FITS file with 32 bit floats per channel (irrespective of depth).
+      - .png: PNG file with depth = 8 or 16 bits integer per channel.
+      - .tif, .tiff: TIFF file with depth = 8, 16 or 32 bits integer per channel.
+      - .fit, .fits, .fts: FITS file with 32 bits float per channel (irrespective of depth).
 
     depth (int, optional): The color depth of the file in bits per channel (default 8).
     compress (int, optional): The compression level for TIFF files
@@ -189,9 +189,9 @@ class MixinImage:
     Args:
       filename (str): The file name. The file format is chosen according to the extension:
 
-        - .png: PNG file with depth = 8 or 16 bit integers per channel.
-        - .tif, .tiff: TIFF file with depth = 8, 16 bit integers or 32 bit floats per channel.
-        - .fit, .fits, .fts: FITS file with 32 bit floats per channel (irrespective of depth).
+        - .png: PNG file with depth = 8 or 16 bits integer per channel.
+        - .tif, .tiff: TIFF file with depth = 8, 16 or 32 bits integer per channel.
+        - .fit, .fits, .fts: FITS file with 32 bits float per channel (irrespective of depth).
 
       depth (int, optional): The color depth of the file in bits per channel (default 8).
       compress (int, optional): The compression level for TIFF files

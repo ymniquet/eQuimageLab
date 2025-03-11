@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
+# Doc OK.
 
 """External image editors."""
 
@@ -30,7 +31,7 @@ class MixinImage:
     The image is saved on disk; the editor command is then run on this file, which is finally
     reloaded in eQuimageLab and returned.
 
-    The user/editor must simply overwrite the edited file when leaving.
+    The user/editor must simply overwrite the edited file on exit.
 
     Args:
       command (str): The command to be run (e.g., "gimp -n $").
@@ -47,7 +48,7 @@ class MixinImage:
       interactive (bool, optional): If True (default), the editor is interactive (awaits commands
         from the user); if False, the editor processes the image autonomously and does not require
         inputs from the user.
-      cwd (str, optional): If not None (default), change working directory to cwd before running
+      cwd (str, optional): If not None (default), change to this working directory before running
         the editor.
 
     Returns:
@@ -115,8 +116,8 @@ class MixinImage:
   def edit_with_siril(self):
     """Edit the image with Siril.
 
-    The image is saved as a FITS file (32 bits float per channel) on disk; Siril is then run on
-    this file, which is finally reloaded in eQuimageLab and returned.
+    The image is saved as a FITS file (32 bits float per channel); Siril is then run on this file,
+    which is finally reloaded in eQuimageLab and returned.
 
     The user must simply overwrite the edited file when leaving Siril.
 
@@ -132,9 +133,8 @@ class MixinImage:
 
     See: https://www.starnetastro.com/
 
-    The image is saved as a TIFF file (16 bits integer per channel) on disk; the stars on this TIFF
-    file are removed with StarNet++, and the starless image is finally reloaded in eQuimageLab and
-    returned.
+    The image is saved as a TIFF file (16 bits integer per channel); the stars are removed from this
+    TIFF file with StarNet++, and the starless image is finally reloaded in eQuimageLab and returned.
 
     The command "starnet++" must be in the PATH.
 
@@ -142,15 +142,15 @@ class MixinImage:
       midtone (float, optional): If different from 0.5 (default), apply a midtone stretch to the
         image before running StarNet++, then apply the inverse stretch to the output starless.
         This can help StarNet++ find stars on low contrast, linear RGB images.
-        See Image.midtone_stretch; midtone can either be "auto" (for automatic stretch) or a
-        float in ]0, 1[.
+        See :meth:`Image.midtone_stretch() <.midtone_stretch>`; midtone can either be "auto" (for
+        automatic stretch) or a float in ]0, 1[.
       starmask (bool, optional): If True, return both the starless image and the star mask.
         If False (default), only return the starless image [the star mask being the difference
         between the original image (self) and the starless].
 
     Returns:
-      Image: The starless image if starmask is False, and a tuple (starless image, star mask)
-      if starmask is True.
+      Image: The starless image if starmask is False, and both the starless image and star mask if
+      starmask is True.
     """
     # We need to cwd to the starnet++ directory to process the image.
     cmdpath = shutil.which("starnet++")
@@ -170,4 +170,4 @@ class MixinImage:
     if midtone != .5:
       starless = starless.midtone_stretch(midtone, inverse = True)
     # Return starless/star masks as appropriate.
-    return (starless, self-starless) if starmask else starless
+    return starless, self-starless if starmask else starless
