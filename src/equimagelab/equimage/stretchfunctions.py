@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
+# Doc OK.
 
 """Histogram stretch functions."""
 
@@ -67,7 +68,7 @@ def harmonic_stretch_function(x, D, inverse):
   is a rational interpolation from f(0) = 0 to f(1) = 1 with f'(0) = D+1.
 
   See also:
-    gharmonic_stretch_function
+    :func:`gharmonic_stretch_function`
 
   Args:
     x (numpy.ndarray): The input data.
@@ -103,8 +104,8 @@ def gharmonic_stretch_function(x, D, SYP, SPP, HPP, inverse):
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
   See also:
-    harmonic_stretch_function
-    ghyperbolic_stretch_function
+    :func:`harmonic_stretch_function`,
+    :func:`ghyperbolic_stretch_function`
 
   Note:
     Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
@@ -176,7 +177,7 @@ def midtone_stretch_function(x, midtone, inverse):
   It is nothing else than the harmonic stretch function with D = 1/midtone-2.
 
   See also:
-    harmonic_stretch_function
+    :func:`harmonic_stretch_function`
 
   Args:
     x (numpy.ndarray): The input data.
@@ -200,7 +201,7 @@ def midtone_transfer_function(x, shadow, midtone, highlight, low, high):
     3) Maps [low, high] onto [0, 1] and clips the output data outside the [0, 1] range.
 
   See also:
-    midtone_stretch_function
+    :func:`midtone_stretch_function`
 
   Args:
     x (numpy.ndarray): The input data.
@@ -227,7 +228,7 @@ def arcsinh_stretch_function(x, D):
     f(x) = arcsinh(D*x)/arcsinh(D)
 
   See also:
-    garcsinh_stretch_function
+    :func:`garcsinh_stretch_function`
 
   Args:
     x (numpy.ndarray): The input data.
@@ -259,7 +260,7 @@ def garcsinh_stretch_function(x, D, SYP, SPP, HPP, inverse):
   For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
   See also:
-    arcsinh_stretch_function
+    :func:`arcsinh_stretch_function`
 
   Note:
     Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js

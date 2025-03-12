@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
+# Doc OK.
 
 """Image masks."""
 
@@ -24,9 +25,8 @@ def float_mask(mask):
     mask (numpy.ndarray): The input binary mask.
 
   Returns:
-    numpy.ndarray: A float mask with datatype `equimagelab.equimage.params.imagetype` and values 1
-    where mask is True and 0 where mask is False. If already a float array, the input mask is
-    returned as is.
+    numpy.ndarray: A float mask with datatype `equimage.params.imagetype` and values 1 where mask
+    is True and 0 where mask is False. If already a float array, the input mask is returned as is.
   """
   return np.asarray(mask, dtype = params.imagetype)
 
@@ -34,7 +34,7 @@ def extend_bmask(mask, extend):
   """Extend or erode a binary mask.
 
   Args:
-    mask (numpy.ndarray): The input binary mask.
+    mask (bool numpy.ndarray): The input binary mask.
     extend (int): The number of pixels by which the mask is extended.
       The mask is extended if extend > 0, and eroded if extend < 0.
 
@@ -88,15 +88,15 @@ def threshold_bmask(filtered, threshold, extend = 0):
   Returns the pixels of the image such that filtered >= threshold as a binary mask.
 
   See also:
-    Image.filter,
-    threshold_fmask
+    :meth:`Image.filter() <.filter>`,
+    :func:`threshold_fmask`
 
   Args:
     filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image
-      (see Image.filter).
+      (see :meth:`Image.filter() <.filter>`).
     threshold (float): The threshold for the mask. The mask is True wherever filtered >= threshold,
       and False elsewhere.
-    extend (int, optional): Once computed, the mask is extended/eroded by extend pixels (default 0).
+    extend (int, optional): Once computed, the mask can be extended/eroded by extend pixels (default 0).
       The mask is is extended if extend > 0, and eroded if extend < 0.
 
   Returns:
@@ -110,19 +110,19 @@ def threshold_fmask(filtered, threshold, extend = 0, smooth = 0., mode = "zero")
   Returns the pixels of the image such that filtered >= threshold as a float mask.
 
   See also:
-    Image.filter,
-    smooth_mask,
-    threshold_bmask
+    :meth:`Image.filter() <.filter>`,
+    :func:`smooth_mask`,
+    :func:`threshold_bmask`
 
   Args:
     filtered (numpy.ndarray): The output of a filter (e.g., local average, ...) applied to the image
-      (see Image.filter).
+      (see :meth:`Image.filter() <.filter>`).
     threshold (float): The threshold for the mask. The mask is 1 wherever filtered >= threshold,
       and 0 elsewhere.
-    extend (int, optional): Once computed, the mask is extended/eroded by extend pixels (default 0).
+    extend (int, optional): Once computed, the mask can be extended/eroded by extend pixels (default 0).
       The mask is is extended if extend > 0, and eroded if extend < 0.
-    smooth (float, optional): Once extended, the edges of the mask are smoothed over 2*smooth pixels
-      (default 0; see smooth_mask).
+    smooth (float, optional): Once extended, the edges of the mask can be smoothed over 2*smooth pixels
+      (default 0; see :func:`smooth_mask`).
     mode (str, optional): How to extend the mask across its boundaries for smoothing:
 
       - "reflect": the mask is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
@@ -142,21 +142,21 @@ def shape_bmask(shape, x, y, width, height):
     Args:
       shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for
         a polygon.
-      x (tuple, list or numpy.ndarray) : The x coordinates of the shape (pixels, along the width).
-      y (tuple, list or numpy.ndarray) : The y coordinates of the shape (pixels, along the height):
+      x (tuple, list or numpy.ndarray) : The x coordinates of the shape (pixels along the width).
+      y (tuple, list or numpy.ndarray) : The y coordinates of the shape (pixels along the height):
 
-        - If shape == "rectangle", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
+        - If shape = "rectangle", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
           corners C1 = (x1, y1) and C2 = (x2, y2) of the rectangle.
-        - If shape == "ellipse", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
-          corners C1 = (x1, y1) and C2 = (x2, y2) or the rectangle that bounds the ellipse.
-        - If shape == "polygon", the points P[n] = (x[n], y[n]) (0 <= n < len(x)) are the vertices of
+        - If shape = "ellipse", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
+          corners C1 = (x1, y1) and C2 = (x2, y2) of the rectangle that bounds the ellipse.
+        - If shape = "polygon", the points P[n] = (x[n], y[n]) (0 <= n < len(x)) are the vertices of
           the polygon.
 
       width (int): The width of the mask (pixels).
       height (int): The height of the mask (pixels).
 
     Returns:
-      numpy.ndarray: A boolean array with shape (height, width), and values True in the shape and
+      numpy.ndarray: A boolean array with shape (height, width) and values True in the shape and
       False outside.
     """
     if shape == "rectangle":
@@ -196,8 +196,8 @@ class MixinImage:
     The main purpose of this method is to prepare masks for image processing.
 
     See also:
-      threshold_bmask,
-      threshold_fmask
+      :func:`threshold_bmask`,
+      :func:`threshold_fmask`
 
     Args:
       channel (str): The selected channel:
@@ -254,14 +254,14 @@ class MixinImage:
     Args:
       shape (str): Either "rectangle" for a rectangle, "ellipse" for an ellipse, or "polygon" for
         a polygon.
-      x (tuple, list or numpy.ndarray) : The x coordinates of the shape (pixels, along the width).
-      y (tuple, list or numpy.ndarray) : The y coordinates of the shape (pixels, along the height):
+      x (tuple, list or numpy.ndarray) : The x coordinates of the shape (pixels along the width).
+      y (tuple, list or numpy.ndarray) : The y coordinates of the shape (pixels along the height):
 
-        - If shape == "rectangle", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
+        - If shape = "rectangle", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
           corners C1 = (x1, y1) and C2 = (x2, y2) of the rectangle.
-        - If shape == "ellipse", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
-          corners C1 = (x1, y1) and C2 = (x2, y2) or the rectangle that bounds the ellipse.
-        - If shape == "polygon", the points P[n] = (x[n], y[n]) (0 <= n < len(x)) are the vertices of
+        - If shape = "ellipse", x = (x1, x2) and y = (y1, y2) define the coordinates of two opposite
+          corners C1 = (x1, y1) and C2 = (x2, y2) of the rectangle that bounds the ellipse.
+        - If shape = "polygon", the points P[n] = (x[n], y[n]) (0 <= n < len(x)) are the vertices of
           the polygon.
 
     Returns:
