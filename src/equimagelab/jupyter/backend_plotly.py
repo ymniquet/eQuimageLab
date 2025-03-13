@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
+# Doc OK.
 
 """Plotly backend for Jupyter Lab interface."""
 
@@ -14,7 +15,7 @@ from plotly.subplots import make_subplots
 pio.renderers.default = "jupyterlab"
 
 from . import params
-from .utils import prepare_images
+from .utils import format_images
 
 from ..equimage import Image
 from ..equimage.image_stats import parse_channels
@@ -23,16 +24,16 @@ from ..equimage.image_stats import parse_channels
 # Helper functions. #
 #####################
 
-def _figure_prepared_image_(image, dx = 1, dy = 1, width = -1, hover = False, template = "plotly_dark"):
-  """Prepare a ploty figure for the input (prepared) image.
+def _figure_formatted_image_(image, dx = 1, dy = 1, width = -1, hover = False, template = "plotly_dark"):
+  """Prepare a ploty figure for the input (formatted) image.
 
   Args:
-    image (numpy.ndarray): The prepared image (namely, processed by jupyter.utils.prepare_images).
+    image (numpy.ndarray): The prepared formatted (namely, processed by :meth:`jupyter.utils.format_images() <.format_images>`).
     dx (int, optional): The size of a pixel along x (default 1).
     dy (int, optional): The size of a pixel along y (default 1).
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
-      Warning: Setting hover = True can slow down display a lot !
+      Warning: setting hover = True can slow down display a lot !
     template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
@@ -54,33 +55,33 @@ def _figure_image_(image, sampling = -1, width = -1, hover = False, template = "
   """Prepare a ploty figure for the input image.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    image: An Image object or numpy.ndarray with shape (height, width, 3) (for a color image),
+      (height, width, 1) or (height, width) (for a grayscale image).
     sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only image[::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
-      Warning: Setting hover = True can slow down display a lot !
+      Warning: setting hover = True can slow down display a lot !
     template (str, optional): The template for the figure (default "plotly_dark").
 
   Returns:
     plotly.graph_objects.Figure: A plotly figure with the image.
   """
   if sampling <= 0: sampling = params.sampling
-  return _figure_prepared_image_(prepare_images(image, sampling = sampling), dx = sampling, dy = sampling, width = width, hover = hover, template = template)
+  return _figure_formatted_image_(format_images(image, sampling = sampling), dx = sampling, dy = sampling, width = width, hover = hover, template = template)
 
 def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "Level", trans = None, template = "plotly_dark"):
   """Prepare a plotly figure with the histograms of an image.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    image: An Image object or numpy.ndarray with shape (height, width, 3) (for a color image),
+      (height, width, 1) or (height, width) (for a grayscale image).
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green,
       blue, luma).
     log (bool, optional): If True (default), plot the histogram counts in log scale.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     xlabel (str, optional): The x axis label of the plot (default "Level").
-    trans (optional): A container with an histogram transformation (see `equimage.Image.apply_channels`),
+    trans (optional): A container with an histogram transformation (see :meth:`Image.apply_channels() <.apply_channels>`),
       plotted on top of the histograms (default None).
     template (str, optional): The template for the figure (default "plotly_dark").
 
@@ -177,8 +178,8 @@ def _figure_statistics_(image, channels = "", width = -1, rowheight = -1, templa
   """Prepare a plotly table with the statistics of an image.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    image: An Image object or numpy.ndarray with shape (height, width, 3) (for a color image),
+      (height, width, 1) or (height, width) (for a grayscale image).
     channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green,
       blue, luma).
     width (int, optional): The width of the table (defaults to `jupyter.params.maxwidth` if negative).
@@ -233,17 +234,19 @@ def show(image, histograms = False, statistics = False, sampling = -1, width = -
   """Show an image using plotly.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    image: An Image object or numpy.ndarray with shape (height, width, 3) (for a color image),
+      (height, width, 1) or (height, width) (for a grayscale image).
     histograms (optional): If True or a string, show the histograms of the image. The string lists
-      the channels of the histograms (e.g. "RGBL" for red, green, blue, luma). Default is False.
+      the channels of the histograms (see :meth:`Image.histograms() <.histograms>`). True is
+      substituted with "RGBL" (red, green, blue, luma). Default is False.
     statistics (optional): If True or a string, show the statistics of the image. The string lists
-      the channels of the statistics (e.g. "RGBL" for red, green, blue, luma). Default is False.
+      the channels of the statistics (see :meth:`Image.statistics() <.statistics>`). True is
+      substituted with "RGBL" (red, green, blue, luma). Default is False.
     sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only image[::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
-      Warning: Setting hover = True can slow down display a lot !
+      Warning: setting hover = True can slow down display a lot !
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """
   figure = _figure_image_(image, sampling = sampling, width = width, hover = hover)
@@ -259,14 +262,14 @@ def show_histograms(image, channels = "", log = True, width = -1, xlabel = "Leve
   """Plot the histograms of an image using plotly.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    image: An Image object or numpy.ndarray with shape (height, width, 3) (for a color image),
+      (height, width, 1) or (height, width) (for a grayscale image).
     channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green,
-      blue, luma).
+      blue, luma). See :meth:`Image.histograms() <.histograms>`.
     log (bool, optional): If True (default), plot the histogram counts in log scale.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     xlabel (str, optional): The x axis label of the plot (default "Level").
-    trans (optional): A container with an histogram transformation (see `equimage.Image.apply_channels`),
+    trans (optional): A container with an histogram transformation (see :meth:`Image.apply_channels() <.apply_channels>`),
       plotted on top of the histograms (default None).
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """
@@ -277,10 +280,10 @@ def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer =
   """Display a table with the statistics of an image using plotly.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    image: An Image object or numpy.ndarray with shape (height, width, 3) (for a color image),
+      (height, width, 1) or (height, width) (for a grayscale image).
     channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green,
-      blue, luma).
+      blue, luma). See :meth:`Image.statistics() <.statistics>`.
     width (int, optional): The width of the table (defaults to `jupyter.params.maxwidth` if negative).
     rowheight (int, optional): The height of the rows (default to `jupyter.params.rowheight` if negative).
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
@@ -291,18 +294,20 @@ def show_statistics(image, channels = "", width = -1, rowheight = -1, renderer =
 def show_t(image, channels = "RGBL", sampling = -1, width = -1, hover = False, renderer = None):
   """Show an image embedding an histogram transformation using plotly.
 
-  Displays the input histograms with the transformation curve, the output histograms, and the output image.
+  Displays the input histograms with the transformation curve, the output histograms, and the output
+  image.
 
   Args:
-    image (equimage.Image): The output image
-      (must embed a transformation image.trans - see `equimage.Image.apply_channels`).
-    channels (str, optional): The channels of the histograms (default "RGBL" for red, green,
-      blue, luma). The channels of the transformation are added if needed.
+    image (Image): The output image (must embed a transformation image.trans -
+      see :meth:`Image.apply_channels() <.apply_channels>`).
+    channels (str, optional): The channels of the histograms (default "" = "RGBL" for red, green,
+      blue, luma). The channels of the transformation are automatically appended.
+      See :meth:`Image.histograms() <.histograms>`.
     sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
       Only image[::sampling, ::sampling] is shown, to speed up display.
     width (int, optional): The width of the figure (defaults to `jupyter.params.maxwidth` if negative).
     hover (bool, optional): If True, show the image data on hover (default False).
-      Warning: Setting hover = True can slow down display a lot !
+      Warning: setting hover = True can slow down display a lot !
     renderer (str, optional): The plotly renderer (default None = "jupyterlab").
   """
   if not issubclass(type(image), Image):

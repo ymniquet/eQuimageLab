@@ -145,7 +145,7 @@ class MixinImage:
         - The input, blurred and output channel as grayscale images otherwise.
 
     Returns:
-      Image: The processed image(s) (see the `full_output` argument).
+      Image: The processed image(s) (see the full_output argument).
     """
     channels = channels.strip()
     if channels not in ["", "V", "L'", "L", "L*", "L*ab", "L*uv", "L*sh"]:

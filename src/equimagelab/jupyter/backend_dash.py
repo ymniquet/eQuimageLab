@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
+# Doc OK.
 
 """Dash backend for Jupyter Lab interface."""
 
@@ -19,8 +20,8 @@ import dash_bootstrap_components as dbc
 import dash_extensions as dxt
 
 from . import params
-from .utils import get_image_size, prepare_images, prepare_images_as_b64strings, shadowed, highlighted, differences
-from .backend_plotly import _figure_prepared_image_, _figure_histograms_
+from .utils import get_image_size, format_images, format_images_as_b64strings, shadowed, highlighted, differences
+from .backend_plotly import _figure_formatted_image_, _figure_histograms_
 
 from ..equimage import Image, load_image, get_RGB_luma
 from ..equimage.image_stats import parse_channels
@@ -176,7 +177,7 @@ class Dashboard():
       current (str): The current shape.
 
     Returns:
-      A patch for the image figure, the content of the "selectdiv" div element with the epresentation
+      A patch for the image figure, the content of the "selectdiv" div element with the representation
       of the shape as a python method, and the content of the "shape" store with the updated current
       shape.
     """
@@ -300,7 +301,7 @@ class Dashboard():
           image = differences(image, reference)
       # Return filtered image as a patch.
       patch = dash.Patch()
-      patch["data"][0]["source"] = prepare_images_as_b64strings(image, sampling = 1)
+      patch["data"][0]["source"] = format_images_as_b64strings(image, sampling = 1)
       current = list(current)
       return current, current, patch
 
@@ -448,28 +449,27 @@ class Dashboard():
     """Show image(s) on the dashboard.
 
     Args:
-      images: A single/tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape
-        (height, width, 3) (for color images), (height, width, 1) or (height, width) (for
-        grayscale images). Each image is displayed in a separate tab. The tabs are labelled
-        according to the keys for a dictionary. Otherwise, the tabs are labelled "Image" &
-        "Reference" if there are one or two images, and "Image #1", "Image #2"... if there are
-        more.
-      histograms (optional): If True or a string, show the histograms of the image(s). The string
-        lists the channels of the histograms (e.g. "RGBL" for red, green, blue, luma).
-        Default is False.
-      statistics (optional): If True or a string, show the statistics of the image(s). The string
-        lists the channels of the statistics (e.g. "RGBL" for red, green, blue, luma).
-        Default is False.
-      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
-        Only images[::sampling, ::sampling] are shown, to speed up display.
+      images: A single/tuple/list/dict of Image object(s) or numpy.ndarray(s) with shape (height,
+        width, 3) (for color images), (height, width, 1) or (height, width) (for grayscale images).
+        Each image is displayed in a separate tab. The tabs are labelled according to the keys for
+        a dictionary. Otherwise, the tabs are labelled "Image" & "Reference" if there are one or
+        two images, and "Image #1", "Image #2"... if there are more.
+      histograms (optional): If True or a string, show the histograms of the image. The string
+        lists the channels of the histograms (see :meth:`Image.histograms() <.histograms>`). True
+        is substituted with "RGBL" (red, green, blue, luma). Default is False.
+      statistics (optional): If True or a string, show the statistics of the image. The string
+        lists the channels of the statistics (see :meth:`Image.statistics() <.statistics>`). True
+        is substituted with "RGBL" (red, green, blue, luma). Default is False.
+      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
+        negative). Only images[::sampling, ::sampling] are shown, to speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, partial histograms).
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
         the image.
-      synczoom (bool, optional): If True (default), synchronize zooms over images.
-        Zooms will be synchronized only if all images have the same size.
-      trans (optional): A container with an histogram transformation (see `equimage.Image.apply_channels`),
+      synczoom (bool, optional): If True (default), synchronize zooms over images. Zooms will be
+        synchronized only if all images have the same size.
+      trans (optional): A container with an histogram transformation (see :meth:`Image.apply_channels() <.apply_channels>`),
         plotted on top of the histograms of the "Reference" tab (default None).
     """
     self.refresh = False # Stop refreshing dashboard.
@@ -513,12 +513,12 @@ class Dashboard():
     hrange = [None]*nimages # Histograms x ranges.
     # Prepare images.
     if sampling <= 0: sampling = params.sampling
-    pimages = prepare_images(images, sampling = sampling)
+    pimages = format_images(images, sampling = sampling)
     # Set-up tabs.
     tabs = []
     for n in range(nimages):
       tab = []
-      figure = _figure_prepared_image_(pimages[n], dx = sampling, dy = sampling, width = params.maxwidth, hover = False, template = "slate")
+      figure = _figure_formatted_image_(pimages[n], dx = sampling, dy = sampling, width = params.maxwidth, hover = False, template = "slate")
       if xrange is not None: figure.update_layout(xaxis_range = xrange)
       if yrange is not None: figure.update_layout(yaxis_range = yrange)
       if click: figure.update_layout(clickmode = "event+select")
@@ -599,16 +599,17 @@ class Dashboard():
   def show_t(self, image, channels = "RGBL", sampling = -1, filters = True, click = True, select = True, synczoom = True):
     """Show the input and output images of an histogram transformation on the dashboard.
 
-    Displays the input image, histograms, statistics, and transformation curve in tab "Reference",
+    Displays the input image, histograms, statistics, and the transformation curve in tab "Reference",
     and the output image, histograms, and statistics in tab "Image".
 
     Args:
-      image (equimage.Image): The output image
-        (must embed a transformation image.trans - see `equimage.Image.apply_channels`).
-      channels (str, optional): The channels of the histograms and statistics (default "RGBL" for red,
-        green, blue, luma). The channels of the transformation are added if needed.
-      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
-        Only image[::sampling, ::sampling] is shown, to speed up display.
+      image (Image): The output image (must embed a transformation image.trans -
+        see :meth:`Image.apply_channels() <.apply_channels>`).
+      channels (str, optional): The channels of the histograms and statistics (default "" = "RGBL"
+        for red, green, blue, luma). The channels of the transformation are automatically appended.
+        See :meth:`Image.histograms() <.histograms>`.
+      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
+        negative). Only image[::sampling, ::sampling] is shown, to speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, partial histograms).
       click (bool, optional): If True (default), show image data on click.
@@ -636,12 +637,13 @@ class Dashboard():
     """Show a carousel of images on the dashboard.
 
     Args:
-      images: A tuple/list of equimage.Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
-        (for color images), (height, width, 1) or (height, width) (for grayscale images).
-        The images are labelled according to the keys for a dictionary. Otherwise, the images are labelled
-        "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are more.
-      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
-        Only images[::sampling, ::sampling] are shown, to speed up display.
+      images: A tuple/list/dict of Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
+        (for color images), (height, width, 1) or (height, width) (for grayscale images). The images
+        are labelled according to the keys for a dictionary. Otherwise, the images are labelled
+        "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are
+        more.
+      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
+        negative). Only images[::sampling, ::sampling] are shown, to speed up display.
       interval (int, optional): The interval (ms) between image changes in the carousel (default 2000).
     """
     self.refresh = False # Stop refreshing dashboard.
@@ -663,7 +665,7 @@ class Dashboard():
       keys = ["Image"]
       images = [images]
     # Set-up carousel.
-    items = [dict(key = f"{n}", src = prepare_images_as_b64strings(images[n], sampling = sampling), header = keys[n]) for n in range(nimages)]
+    items = [dict(key = f"{n}", src = format_images_as_b64strings(images[n], sampling = sampling), header = keys[n]) for n in range(nimages)]
     widget = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
              style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
     tab = dbc.Tab([widget], label = "Carousel", className = "tab")
@@ -681,18 +683,19 @@ class Dashboard():
     """Compare two images with a "before/after" slider on the dashboard.
 
     Args:
-      image1: The "after" image, an equimage.Image object or numpy.ndarray with shape (height, width, 3)
+      image1: The "after" image, an Image object or numpy.ndarray with shape (height, width, 3)
         (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
-      image2: The "before" image, an equimage.Image object or numpy.ndarray with shape (height, width, 3)
+      image2: The "before" image, an Image object or numpy.ndarray with shape (height, width, 3)
        (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
       label1 (str, optional): The label of the first image (default "Image").
       label2 (str, optional): The label of the second image (default "Reference").
-      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if negative).
-        Only image1[::sampling, ::sampling] and image2[::sampling, ::sampling] are shown, to speed up display.
+      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
+        negative). Only image1[::sampling, ::sampling] and image2[::sampling, ::sampling] are shown,
+        to speed up display.
     """
     self.refresh = False # Stop refreshing dashboard.
     # Set-up before/after widget.
-    image1, image2 = prepare_images_as_b64strings((image1, image2), sampling = sampling)
+    image1, image2 = format_images_as_b64strings((image1, image2), sampling = sampling)
     baslider = dxt.BeforeAfter(after = dict(src = image1), before = dict(src = image2), width = f"{params.maxwidth}")
     left   = html.Div([label1], className = "ba-left", style = {"width": f"{params.lmargin}px"})
     middle = html.Div([baslider], className = "ba-middle", style = {"width": f"{params.maxwidth}px"})
@@ -716,7 +719,7 @@ def _table_statistics_(image, channels = ""):
   """Prepare a table with the statistics of an image.
 
   Args:
-    image: An equimage.Image object or numpy.ndarray with shape (height, width, 3)
+    image: An Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
     channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green,
       blue, luma).
