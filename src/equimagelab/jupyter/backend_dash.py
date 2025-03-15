@@ -23,7 +23,8 @@ from . import params
 from .utils import get_image_size, format_images, format_images_as_b64strings, shadowed, highlighted, differences
 from .backend_plotly import _figure_formatted_image_, _figure_histograms_
 
-from ..equimage import Image, load_image, get_RGB_luma
+from ..equimage import Image, load_image
+from ..equimage import image_colorspaces as cspaces
 from ..equimage.image_stats import parse_channels
 
 class Dashboard():
@@ -160,14 +161,24 @@ class Dashboard():
       y = click["points"][0]["y"]
       data = self.images[n][y//self.sampling, x//self.sampling]
       if data.size > 1:
-        rgbluma = get_RGB_luma()
-        luma = rgbluma[0]*data[0]+rgbluma[1]*data[1]+rgbluma[2]*data[2]
-        return [f"Data at (x = {x}, y = {y}): ", html.Span(f"R = {data[0]:.5f}", className = "red"), ", ",
-                                                 html.Span(f"G = {data[1]:.5f}", className = "green"), ", ",
-                                                 html.Span(f"B = {data[2]:.5f}", className = "blue"), ", ",
-                                                 html.Span(f"L = {luma:.5f}", className = "luma"), "."]
+        RGB = data[:, np.newaxis]
+        hsv = cspaces.RGB_to_HSV(RGB)
+        luma = cspaces.luma(RGB)
+        lightness = cspaces.sRGB_lightness(RGB)
+        return [html.Div([f"Data at (x = {x}, y = {y}):"], className = "rm2"),
+                html.Div([html.Span(f"R = {data[0]:.5f}", className = "red"), ", ",
+                          html.Span(f"G = {data[1]:.5f}", className = "green"), ", ",
+                          html.Span(f"B = {data[2]:.5f}", className = "blue"), ", ",
+                          html.Span(f"L = {luma[0]:.5f}", className = "luma"), ".", html.Br(),
+                          html.Span(f"H = {hsv[0, 0]:.5f}", className = "hue"), ", ",
+                          html.Span(f"S = {hsv[1, 0]:.5f}", className = "saturation"), ", ",
+                          html.Span(f"V = {hsv[2, 0]:.5f}", className = "value"), ", ",
+                          html.Span(f"L* = {lightness[0]:.5f}", className = "lightness"), "."])]
       else:
-        return [f"Data at (x = {x}, y = {y}): ", html.Span(f"L = {data:.5f}", className = "luma"), "."]
+        lightness = cspaces.sRGB_lightness(np.array([[data]]))
+        return [html.Div([f"Data at (x = {x}, y = {y}):"], className = "rm2"),
+                html.Div([html.Span(f"L = {data:.5f}", className = "luma"), ", ",
+                          html.Span(f"L* = {lightness[0]:.5f}", className = "lightness"), "."])]
 
   def __select_image(self, relayout, current):
     """Callback for image selection.
@@ -553,7 +564,7 @@ class Dashboard():
                    style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
         tab.append(html.Div([selected, offcanvas]))
       # Click data (keep defined for the callbacks even if click is False).
-      tab.append(html.Div([], id = {"type": "datadiv", "index": n}, className = "tm1 bm1",
+      tab.append(html.Div([], id = {"type": "datadiv", "index": n}, className = "flex tm1 bm1",
                  style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
       # Selection data (keep defined for the callbacks even if select is False).
       shape = dcc.Store(data = {}, id = {"type": "shape", "index": n})
