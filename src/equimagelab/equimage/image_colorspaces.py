@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
+# Doc OK.
 
 """Color spaces and models management."""
 
@@ -20,7 +21,7 @@ def lRGB_to_sRGB(image):
   """Convert the input linear RGB image into a sRGB image.
 
   See also:
-    The reciprocal sRGB_to_lRGB function.
+    The reciprocal :func:`sRGB_to_lRGB` function.
 
   Args:
     image (numpy.ndarray): The input lRGB image.
@@ -37,7 +38,7 @@ def sRGB_to_lRGB(image):
   """Convert the input sRGB image into a linear RGB image.
 
   See also:
-    The reciprocal lRGB_to_sRGB function.
+    The reciprocal :func:`lRGB_to_sRGB` function.
 
   Args:
     image (numpy.ndarray): The input sRGB image.
@@ -72,13 +73,13 @@ def lRGB_to_CIELab(image):
   This function actually returns L*/100, a*/100 and b*/100.
 
   See also:
-    The reciprocal CIELab_to_lRGB function.
+    The reciprocal :func:`CIELab_to_lRGB` function.
 
   Args:
     image (numpy.ndarray): The input lRGB image.
 
   Returns:
-    numpy.ndarray: The converted CIELab image (/100).
+    numpy.ndarray: The converted CIELab image.
   """
   xyz = np.tensordot(np.asarray(RGB2XYZ, dtype = image.dtype), image, axes = 1)
   return skcolor.xyz2lab(xyz, channel_axis = 0, illuminant = params.CIEilluminant, observer = params.CIEobserver)/100.
@@ -87,10 +88,10 @@ def CIELab_to_lRGB(image):
   """Convert the input CIELab image into a linear RGB image.
 
   See also:
-    The reciprocal lRGB_to_CIELab function.
+    The reciprocal :func:`lRGB_to_CIELab` function.
 
   Args:
-    image (numpy.ndarray): The input CIELab image (/100).
+    image (numpy.ndarray): The input CIELab image.
 
   Returns:
     numpy.ndarray: The converted lRGB image.
@@ -106,13 +107,13 @@ def lRGB_to_CIELuv(image):
   This function actually returns L*/100, u*/100 and v*/100.
 
   See also:
-    The reciprocal CIELuv_to_lRGB function.
+    The reciprocal :func:`CIELuv_to_lRGB` function.
 
   Args:
     image (numpy.ndarray): The input lRGB image.
 
   Returns:
-    numpy.ndarray: The converted CIELuv image (/100).
+    numpy.ndarray: The converted CIELuv image.
   """
   xyz = np.tensordot(np.asarray(RGB2XYZ, dtype = image.dtype), image, axes = 1)
   return skcolor.xyz2luv(xyz, channel_axis = 0, illuminant = params.CIEilluminant, observer = params.CIEobserver)/100.
@@ -121,10 +122,10 @@ def CIELuv_to_lRGB(image):
   """Convert the input CIELuv image into a linear RGB image.
 
   See also:
-    The reciprocal lRGB_to_CIELuv function.
+    The reciprocal :func:`lRGB_to_CIELuv` function.
 
   Args:
-    image (numpy.ndarray): The input CIELuv image (/100).
+    image (numpy.ndarray): The input CIELuv image.
 
   Returns:
     numpy.ndarray: The converted lRGB image.
@@ -144,13 +145,13 @@ def sRGB_to_CIELab(image):
   This function actually returns L*/100, a*/100 and b*/100.
 
   See also:
-    The reciprocal CIELab_to_sRGB function.
+    The reciprocal :func:`CIELab_to_sRGB` function.
 
   Args:
     image (numpy.ndarray): The input sRGB image.
 
   Returns:
-    numpy.ndarray: The converted CIELab image (/100).
+    numpy.ndarray: The converted CIELab image.
   """
   return lRGB_to_CIELab(sRGB_to_lRGB(image))
 
@@ -158,10 +159,10 @@ def CIELab_to_sRGB(image):
   """Convert the input CIELab image into a sRGB image.
 
   See also:
-    The reciprocal sRGB_to_CIELab function.
+    The reciprocal :func:`sRGB_to_CIELab` function.
 
   Args:
-    image (numpy.ndarray): The input CIELab image (/100).
+    image (numpy.ndarray): The input CIELab image.
 
   Returns:
     numpy.ndarray: The converted sRGB image.
@@ -176,13 +177,13 @@ def sRGB_to_CIELuv(image):
   This function actually returns L*/100, u*/100 and v*/100.
 
   See also:
-    The reciprocal CIELuv_to_sRGB function.
+    The reciprocal :func:`CIELuv_to_sRGB` function.
 
   Args:
     image (numpy.ndarray): The input sRGB image.
 
   Returns:
-    numpy.ndarray: The converted CIELuv image (/100).
+    numpy.ndarray: The converted CIELuv image.
   """
   return lRGB_to_CIELuv(sRGB_to_lRGB(image))
 
@@ -190,10 +191,10 @@ def CIELuv_to_sRGB(image):
   """Convert the input CIELuv image into a sRGB image.
 
   See also:
-    The reciprocal sRGB_to_CIELuv function.
+    The reciprocal :func:`sRGB_to_CIELuv` function.
 
   Args:
-    image (numpy.ndarray): The input CIELuv image (/100).
+    image (numpy.ndarray): The input CIELuv image.
 
   Returns:
     numpy.ndarray: The converted sRGB image.
@@ -208,7 +209,7 @@ def RGB_to_HSV(image):
   """Convert the input RGB image into a HSV image.
 
   See also:
-    The reciprocal HSV_to_RGB function.
+    The reciprocal :func:`HSV_to_RGB` function.
 
   Note:
     This function clips the input image to the [0, 1] range.
@@ -225,7 +226,7 @@ def HSV_to_RGB(image):
   """Convert the input HSV image into a RGB image.
 
   See also:
-    The reciprocal RGB_to_HSV function.
+    The reciprocal :func:`RGB_to_HSV` function.
 
   Note:
     This function clips the input image to the [0, 1] range.
@@ -246,7 +247,7 @@ def HSV_to_HSL(image):
   """Convert the input HSV image into a HSL image.
 
   See also:
-    The reciprocal HSL_to_HSV function.
+    The reciprocal :func:`HSL_to_HSV` function.
 
   Note:
     This function clips the input image to the [0, 1] range.
@@ -269,7 +270,7 @@ def HSL_to_HSV(image):
   """Convert the input HSL image into a HSV image.
 
   See also:
-    The reciprocal HSV_to_HSL function.
+    The reciprocal :func:`HSV_to_HSL` function.
 
   Note:
     This function clips the input image to the [0, 1] range.
@@ -295,7 +296,7 @@ def RGB_to_HSL(image):
   """Convert the input RGB image into a HSL image.
 
   See also:
-    The reciprocal HSL_to_RGB function.
+    The reciprocal :func:`HSL_to_RGB` function.
 
   Note:
     This function clips the input image to the [0, 1] range.
@@ -312,7 +313,7 @@ def HSL_to_RGB(image):
   """Convert the input HSL image into a RGB image.
 
   See also:
-    The reciprocal RGB_to_HSL function.
+    The reciprocal :func:`RGB_to_HSL` function.
 
   Note:
     This function clips the input image to the [0, 1] range.
@@ -333,7 +334,7 @@ def Lxx_to_Lch(image):
   """Convert the input Lab/Luv image into a Lch image.
 
   See also:
-    The reciprocal Lch_to_Lxx function.
+    The reciprocal :func:`Lch_to_Lxx` function.
 
   Args:
     image (numpy.ndarray): The input Lab/Luv image.
@@ -352,7 +353,7 @@ def Lch_to_Lxx(image):
   """Convert the input Lch image into a Lab/Luv image.
 
   See also:
-    The reciprocal Lxx_to_Lch function.
+    The reciprocal :func:`Lxx_to_Lch` function.
 
   Args:
     image (numpy.ndarray): The input Lch image.
@@ -375,7 +376,7 @@ def Lch_to_Lsh(image):
   """Convert the input Lch image into a Lsh image.
 
   See also:
-    The reciprocal Lsh_to_Lch function.
+    The reciprocal :func:`Lsh_to_Lch` function.
 
   Args:
     image (numpy.ndarray): The input Lch image.
@@ -393,7 +394,7 @@ def Lsh_to_Lch(image):
   """Convert the input Lsh image into a Lch image.
 
   See also:
-    The reciprocal Lch_to_Lsh function.
+    The reciprocal :func:`Lch_to_Lsh` function.
 
   Args:
     image (numpy.ndarray): The input Lsh image.
@@ -413,7 +414,7 @@ def Luv_to_Lsh(image):
   """Convert the input Luv image into a Lsh image.
 
   See also:
-    The reciprocal Lsh_to_Luv function.
+    The reciprocal :func:`Lsh_to_Luv` function.
 
   Args:
     image (numpy.ndarray): The input Luv image.
@@ -427,7 +428,7 @@ def Lsh_to_Luv(image):
   """Convert the input Lsh image into a Luv image.
 
   See also:
-    The reciprocal Luv_to_Lsh function.
+    The reciprocal :func:`Luv_to_Lsh` function.
 
   Args:
     image (numpy.ndarray): The input Lsh image.
@@ -579,7 +580,7 @@ def luminance_to_lightness(Y):
   However, this function returns the scaled lightness L*/100 within [0, 1].
 
   See also:
-    The reciprocal lightness_to_luminance function.
+    The reciprocal :func:`lightness_to_luminance` function.
 
   Args:
     Y (numpy.ndarray): The luminance Y.
@@ -596,7 +597,7 @@ def lightness_to_luminance(Lstar):
   """Compute the lRGB luminance Y from the CIE lightness L*.
 
   See also:
-    The reciprocal luminance_to_lightness function.
+    The reciprocal :func:`luminance_to_lightness` function.
 
   Args:
     Lstar (numpy.ndarray): The CIE lightness L*/100.
@@ -616,13 +617,13 @@ def lRGB_luminance(image):
     Y = 0.212671*R+0.715160*G+0.072169*B
 
   It is equivalently the luma of the lRGB image for RGB weights (0.212671, 0.715160, 0.072169),
-  and is the basic ingredient of the perceptual lightness L* in the CIELab color space.
+  and is the basic ingredient of the perceptual lightness L* in the CIELab and CIELuv color spaces.
 
   See also:
-    lRGB_lightness,
-    sRGB_luminance,
-    sRGB_lightness,
-    luma
+    :func:`lRGB_lightness`,
+    :func:`sRGB_luminance`,
+    :func:`sRGB_lightness`,
+    :func:`luma`
 
   Note:
     Compatible with single channel grayscale images.
@@ -647,10 +648,10 @@ def lRGB_lightness(image):
   However, this function returns the scaled lightness L*/100 within [0, 1].
 
   See also:
-    lRGB_luminance,
-    sRGB_luminance,
-    sRGB_lightness,
-    luma
+    :func:`lRGB_luminance`,
+    :func:`sRGB_luminance`,
+    :func:`sRGB_lightness`,
+    :func:`luma`
 
   Note:
     Compatible with single channel grayscale images.
@@ -670,14 +671,14 @@ def sRGB_luminance(image):
 
   Note: Although they have the same functional forms, the luma and luminance are different concepts
   for sRGB images: the luma is computed in the sRGB color space as a *substitute* for the  perceptual
-  lightness, whereas the luminance is computed after conversion in the  lRGB color space and is the
+  lightness, whereas the luminance is computed after conversion in the lRGB color space and is the
   basic ingredient of the *genuine* perceptual lightness (see lRGB_lightness).
 
   See also:
-    sRGB_lightness,
-    lRGB_luminance,
-    lRGB_lightness,
-    luma
+    :func:`sRGB_lightness`,
+    :func:`lRGB_luminance`,
+    :func:`lRGB_lightness`,
+    :func:`luma`
 
   Note:
     Compatible with single channel grayscale images.
@@ -699,10 +700,10 @@ def sRGB_lightness(image):
   However, this function returns the scaled lightness L*/100 within [0, 1].
 
   See also:
-    sRGB_luminance,
-    lRGB_luminance,
-    lRGB_lightness,
-    luma
+    :func:`sRGB_luminance`,
+    :func:`lRGB_luminance`,
+    :func:`lRGB_lightness`,
+    :func:`luma`
 
   Note:
     Compatible with single channel grayscale images.
@@ -743,7 +744,7 @@ class MixinImage:
     """Raise a color space error if the color space of the image is not in the arguments.
 
     See also:
-      color_space_error
+      :meth:`Image.color_space_error() <.color_space_error>`
     """
     if self.colorspace not in colorspaces: self.color_space_error()
 
@@ -751,7 +752,7 @@ class MixinImage:
     """Raise a color model error if the color model of the image is not in the arguments.
 
     See also:
-      color_model_error
+      :meth:`Image.color_model_error() <.color_model_error>`
     """
     if self.colormodel not in colormodels: self.color_model_error()
 
@@ -759,7 +760,7 @@ class MixinImage:
     """Raise a color model error if the image is a grayscale.
 
     See also:
-      color_model_error
+      :meth:`Image.color_model_error() <.color_model_error>`
     """
     if self.colormodel == "gray": self.color_model_error()
 
@@ -771,7 +772,7 @@ class MixinImage:
     """Convert the image to the linear RGB color space.
 
     Warning:
-      Does not apply to the HSV, HSL and Lch color models.
+      Does not apply to the HSV, HSL, Lch and Lsh color models.
 
     Returns:
       Image: The converted lRGB image (a copy of the original image if already lRGB).
@@ -795,7 +796,7 @@ class MixinImage:
     """Convert the image to the sRGB color space.
 
     Warning:
-      Does not apply to the HSV, HSL and Lch color models.
+      Does not apply to the HSV, HSL, Lch and Lsh color models.
 
     Returns:
       Image: The converted sRGB image (a copy of the original image if already sRGB).
@@ -823,10 +824,10 @@ class MixinImage:
     This function actually returns L*/100, a*/100 and b*/100.
 
     Warning:
-      Does not apply to the HSV, HSL and Lch color models, and to grayscale images.
+      Does not apply to the HSV, HSL, Lch and Lsh color models, and to grayscale images.
 
     Returns:
-      Image: The converted CIELab image (/100) (a copy of the original image if already CIELab).
+      Image: The converted CIELab image (a copy of the original image if already CIELab).
     """
     if self.colorspace == "lRGB":
       self.check_color_model("RGB")
@@ -851,10 +852,10 @@ class MixinImage:
     This function actually returns L*/100, u*/100 and v*/100.
 
     Warning:
-      Does not apply to the HSV, HSL and Lch color models, and to grayscale images.
+      Does not apply to the HSV, HSL, Lch and Lsh color models, and to grayscale images.
 
     Returns:
-      Image: The converted CIELuv image (/100) (a copy of the original image if already CIELuv).
+      Image: The converted CIELuv image (a copy of the original image if already CIELuv).
     """
     if self.colorspace == "lRGB":
       self.check_color_model("RGB")
@@ -1026,8 +1027,8 @@ class MixinImage:
   def convert(self, colorspace = None, colormodel = None, copy = True):
     """Convert the image to the target color space and color model.
 
-    This method is more versatile than the dedicated conversion functions such as Image.sRGB,
-    Image.HSV, etc... In particular, it can chain conversions to reach the target color space
+    This method is more versatile than the dedicated conversion methods such as :meth:`Image.sRGB() <.sRGB>`,
+    :meth:`Image.HSV() <.HSV>`, etc... In particular, it can chain conversions to reach the target color space
     and model. For example, (sRGB, HSV) → (lRGB, RGB) = (sRGB, HSV) → (sRGB, RGB) → (lRGB, RGB).
 
     Args:
@@ -1244,7 +1245,7 @@ class MixinImage:
     """Return the CIE chroma c* of a CIELab or CIELuv image.
 
     The CIE chroma is c* = sqrt(a*^2+b*^2) in the CIELab color space and c* = sqrt(u*^2+v*^2) in
-    the CIELuv color space. The values of the CIE chroma thus differ in both color spaces.
+    the CIELuv color space. The values of the CIE chroma thus differ in the two color spaces.
     This method actually returns the scaled CIE chroma c*/100.
 
     Warning:
@@ -1294,7 +1295,7 @@ class MixinImage:
     """Return the hue angle h* of a CIELab or CIELuv image.
 
     The hue angle is h* = atan2(b*, a*) in the CIELab color space and c* = atan2(v*, u*) in the
-    CIELuv color space. The values of the hue angle thus differ in both color spaces.
+    CIELuv color space. The values of the hue angle thus differ in the two color spaces.
     This method actually returns the reduced hue angle h*/(2π) within [0, 1].
 
     Warning:
@@ -1338,7 +1339,7 @@ class MixinImage:
         - "h*": The CIE hue angle h* (CIELab and CIELuv images).
 
     Also see:
-      The magic method Image.__getitem__, which returns self.image[ic] as self[ic],
+      The magic method :meth:`Image.__getitem__`, which returns self.image[ic] as self[ic],
       with ic the Python channel index within [0, 1, 2].
 
     Returns:
@@ -1408,8 +1409,8 @@ class MixinImage:
         new image.
 
     Also see:
-      The magic method Image.__setitem__, which implements self.image[ic] = data as self[ic] = data,
-      with ic the Python channel index within [0, 1, 2].
+      The magic method :meth:`Image.__setitem__`, which implements self.image[ic] = data
+      as self[ic] = data, with ic the Python channel index within [0, 1, 2].
 
     Returns:
       Image: The updated image.
@@ -1534,25 +1535,26 @@ class MixinImage:
   def apply_channels(self, f, channels, multi = True, trans = False):
     """Apply the operation f(channel) to selected channels of the image.
 
-    Note: When applying an operation to the luma, the RGB components of the image are rescaled
-    by the ratio f(luma)/luma. This preserves the hue and HSV saturation, but may result in some
-    out-of-range RGB components even though f(luma) fits within [0, 1]. These out-of-range components
-    can be regularized with three highlights protection methods:
+    Note:
+      When applying an operation to the luma, the RGB components of the image are rescaled
+      by the ratio f(luma)/luma. This preserves the hue and HSV saturation, but may result in some
+      out-of-range RGB components even though f(luma) fits within [0, 1]. These out-of-range
+      components can be regularized with three highlights protection methods:
 
-      - "Desaturation": The out-of-range pixels are desaturated at constant hue and luma (namely,
-        the out-of-range components are decreased while the in-range components are increased so
-        that the hue and luma are preserved). This tends to bleach the out-of-range pixels.
-        f(luma) must fit within [0, 1] to make use of this highlights protection method.
-      - "Blending": The out-of-range pixels are blended with f(RGB) (the same operation applied to
-        the RGB channels). This tends to bleach the out-of-range pixels too.
-        f(RGB) must fit within [0, 1] to make use of this highlights protection method.
-      - "Normalization": The whole output image is rescaled so that all pixels fit in the [0, 1]
-        range (output → output/max(1., np.max(output))).
+        - "Desaturation": The out-of-range pixels are desaturated at constant hue and luma (namely,
+          the out-of-range components are decreased while the in-range components are increased so
+          that the hue and luma are preserved). This tends to bleach the out-of-range pixels.
+          f(luma) must fit within [0, 1] to make use of this highlights protection method.
+        - "Blending": The out-of-range pixels are blended with f(RGB) (the same operation applied to
+          the RGB channels). This tends to bleach the out-of-range pixels too.
+          f(RGB) must fit within [0, 1] to make use of this highlights protection method.
+        - "Normalization": The whole output image is rescaled so that all pixels fit in the [0, 1]
+          range (output → output/max(1., numpy.max(output))).
 
-    Alternatively, applying the operation to the HSV value V also preserves the hue and HSV saturation
-    and can not produce out-of-range pixels if f([0, 1]) fits within [0, 1]. However, this may strongly
-    affect the balance of the image, the HSV value being a very poor approximation to the perceptual
-    lightness L*.
+      Alternatively, applying the operation to the HSV value V also preserves the hue and HSV
+      saturation and can not produce out-of-range pixels if f([0, 1]) fits within [0, 1]. However,
+      this may strongly affect the balance of the image, the HSV value being a very poor approximation
+      to the perceptual lightness L*.
 
     Args:
       f (function): The function f(numpy.ndarray) → numpy.ndarray applied to the selected channels.
@@ -1780,7 +1782,7 @@ class MixinImage:
 
     Args:
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       vmin (float, optional): The lower clip bound (default 0).
       vmax (float, optional): The upper clip bound (default 1).
 

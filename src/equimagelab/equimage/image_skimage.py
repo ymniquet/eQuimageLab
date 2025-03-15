@@ -3,6 +3,7 @@
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.0 / 2025.03.08
+# Doc OK.
 
 """Interface with scikit-image."""
 
@@ -33,13 +34,13 @@ class MixinImage:
         - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
 
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
 
     Returns:
       Image: The processed image.
 
     See also:
-      skimage.filters.gaussian
+      :func:`skimage.filters.gaussian`
     """
     if mode == "zero": mode = "constant" # Translate modes.
     return self.apply_channels(lambda channel: skim.filters.gaussian(channel, channel_axis = 0, sigma = sigma, mode = mode, cval = 0.), channels)
@@ -52,50 +53,51 @@ class MixinImage:
     .. math::
       H(f) = 1/(1+(f/f_c)^{2n})
 
-    where n is the order of the filter and fc the cut-off frequency.
+    where :math:`n` is the order of the filter and :math:`f_c` is the cut-off frequency.
     The data are Fast-Fourier Transformed back and forth to apply the filter.
 
     Args:
-      cutoff (float): The normalized cutoff frequency in [0, 1] (fc = (1-cutoff)fs/2 with fs the
-        FFT sampling frequency).
+      cutoff (float): The normalized cutoff frequency in [0, 1]. Namely, fc = (1-cutoff)fs/2 with fs
+        the FFT sampling frequency.
       order (int, optional): The order of the filter (default 2).
       padding (int, optional): Number of pixels to pad the image with (default 0; increase if the
         filter leaves visible artifacts on the edges).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
 
     Returns:
       Image: The processed image.
 
     See also:
-      skimage.filters.butterworth
+      :func:`skimage.filters.butterworth`
     """
     return self.apply_channels(lambda channel: skim.filters.butterworth(channel, channel_axis = 0, cutoff_frequency_ratio = (1.-cutoff)/2.,
                                order = order, npad = padding, squared_butterworth = True), channels)
 
   def unsharp_mask(self, sigma, strength, channels = ""):
-    """Apply an unsharp mask to selected channels of the image.
+    r"""Apply an unsharp mask to selected channels of the image.
 
-    Given a channel Cin, returns
+    Given a channel :math:`C_{in}`, returns
 
-      Cout = Cin + strength*(Cin-BLUR(Cin))
+    .. math::
+      C_{out} = C_{in}+\mathrm{strength}[C_{in}-\mathrm{BLUR}(C_{in})]
 
-    where BLUR(Cin) is the convolution of Cin with a gaussian of standard deviation sigma.
-    As BLUR(Cin) is a low-pass filter, Cin-BLUR(Cin) is a high-pass filter whose output is admixed
-    in the original image. This enhances details; the larger the mixing strength, the sharper the
-    image, at the expense of noise and fidelity.
+    where BLUR(:math:`C_{in}`) is the convolution of :math:`C_{in}` with a gaussian of standard
+    deviation sigma. As BLUR(:math:`C_{in}`) is a low-pass filter, :math:`C_{in}`-BLUR(:math:`C_{in}`)
+    is a high-pass filter whose output is admixed in the original image. This enhances details; the
+    larger the mixing strength, the sharper the image, at the expense of noise and fidelity.
 
     Args:
       sigma (float): The standard deviation of the gaussian (pixels).
       strength (float): The mixing strength.
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
 
     Returns:
       Image: The processed image.
 
     See also:
-      skimage.filters.unsharp_mask
+      :func:`skimage.filters.unsharp_mask`
     """
     return self.apply_channels(lambda channel: skim.filters.unsharp_mask(channel, channel_axis = 0, radius = radius, amount = strength), channels)
 
@@ -110,7 +112,7 @@ class MixinImage:
       float: The rms noise of the image, averaged over the channels.
 
     See also:
-      skimage.restoration.estimate_sigma
+      :func:`skimage.restoration.estimate_sigma`
 
     To do:
       Estimate the noise in arbitrary channels.
@@ -123,10 +125,10 @@ class MixinImage:
     Performs a wavelets transform on the selected channels and filters the wavelets to reduce noise.
 
     Args:
-      sigma: The estimated noise standard deviation used to compute the wavelets filter threshold.
-        The larger sigma, the smoother the output image.
+      sigma (float): The estimated noise standard deviation used to compute the wavelets filter
+        threshold. The larger sigma, the smoother the output image.
       wavelet (str, optional): The wavelets used to decompose the image (default "coif4").
-        Can be any of the orthogonal wavelets of `pywt.wavelist`. Recommended wavelets are:
+        Can be any of the orthogonal wavelets of `pywavelets.wavelist`. Recommended wavelets are:
 
           - Daubechies wavelets ("db1"..."db8"),
           - Symlets ("sym2"..."sym8"),
@@ -141,15 +143,15 @@ class MixinImage:
         shift-invariant. To mimic a shift-invariant transform as best as possible, the output image
         is an average of the original image shifted shifts times in each direction, filtered, then
         shifted back to the original position.
-      channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      channels (str, optional): The selected channels (default "L" = luma).
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
 
     Returns:
       Image: The processed image.
 
     See also:
-      skimage.restoration.denoise_wavelet,
-      skimage.restoration.cycle_spin
+      :func:`skimage.restoration.denoise_wavelet`,
+      :func:`skimage.restoration.cycle_spin`
     """
     kwargs = dict(channel_axis = -1, sigma = sigma, wavelet = wavelet, wavelet_levels = None, mode = mode,
                   method = method, convert2ycbcr = False, rescale_sigma = True)
@@ -159,11 +161,12 @@ class MixinImage:
   def bilateral_filter(self, sigma_space, sigma_color = .1, mode = "reflect", channels = ""):
     r"""Bilateral filter for denoising selected channels of the image.
 
-    The bilateral filter convolves the selected channel(s) Cin with a gaussian gs of standard deviation
-    sigma_space weighted by a gaussian gc in color space (with standard deviation sigma_color):
+    The bilateral filter convolves the selected channel(s) :math:`C_{in}` with a gaussian :math:`g_s`
+    of standard deviation sigma_space weighted by a gaussian :math:`g_c` in color space (with standard
+    deviation sigma_color):
 
     .. math::
-      C_{out}(\mathbf{r}) \sim \sum_{\mathbf{r}'} C_{in}(\mathbf{r}') g_s(|\mathbf{r}-\mathbf{r}'|) g_c(|C_{in}(\mathbf{r})-C_{in}(\mathbf{r}')|)
+      C_{out}(\mathbf{r}) \propto \sum_{\mathbf{r}'} C_{in}(\mathbf{r}') g_s(|\mathbf{r}-\mathbf{r}'|) g_c(|C_{in}(\mathbf{r})-C_{in}(\mathbf{r}')|)
 
     Therefore, the bilateral filter averages the neighboring pixels whose colors are sufficiently similar.
     The bilateral filter may tend to produce cartoon-like (piecewise-constant) images.
@@ -179,13 +182,13 @@ class MixinImage:
         - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
 
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
 
     Returns:
       Image: The processed image.
 
     See also:
-      skimage.restoration.denoise_bilateral
+      :func:`skimage.restoration.denoise_bilateral`
     """
     if mode == "mirror": # Translate modes.
       mode = "symmetric"
@@ -199,31 +202,32 @@ class MixinImage:
   def total_variation(self, weight = .1, algorithm = "Chambolle", channels = ""):
     r"""Total variation denoising of selected channels of the image.
 
-    Given a noisy channel Cin, the total variation filter finds an image Cout with less total
-    variation than Cin under the constraint that Cout remains similar to Cin. This can be expressed
-    as the Rudin–Osher–Fatemi (ROF) minimization problem:
+    Given a noisy channel :math:`C_{in}`, the total variation filter finds an image :math:`C_{out}`
+    with less total variation than :math:`C_{in}` under the constraint that :math:`C_{out}` remains
+    similar to :math:`C_{in}`. This can be expressed as the Rudin–Osher–Fatemi (ROF) minimization
+    problem:
 
     .. math::
       \text{Minimize} \sum_{\mathbf{r}} |\nabla C_{out}(\mathbf{r})| + (\lambda/2)[C_{out}(\mathbf{r})-C_{in}(\mathbf{r})]^2
 
-    where the weight 1/lambda controls denoising (the larger the weight, the stronger the denoising
-    at the expense of image fidelity). The minimization can either be performed with the Chambolle
-    or split Bregman algorithm. Total variation denoising tends to produce cartoon-like (piecewise-
-    constant) images.
+    where the weight :math:`1/\lambda` controls denoising (the larger the weight, the stronger the
+    denoising at the expense of image fidelity). The minimization can either be performed with the
+    Chambolle or split Bregman algorithm. Total variation denoising tends to produce cartoon-like
+    (piecewise-constant) images.
 
     Args:
       weight (float, optional): The weight 1/lambda (default 0.1).
       algorithm (str, optional): Either "Chambolle" (default) for the Chambolle algorithm
                                  or "Bregman" for the split Bregman algorithm.
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
 
     Returns:
       Image: The processed image.
 
     See also:
-      skimage.restoration.denoise_tv_chambolle,
-      skimage.restoration.denoise_tv_bregman
+      :func:`skimage.restoration.denoise_tv_chambolle`,
+      :func:`skimage.restoration.denoise_tv_bregman`
     """
     if algorithm == "Chambolle":
       return self.apply_channels(lambda channel: skim.restoration.denoise_tv_chambolle(channel, channel_axis = 0, weight = weight), channels)
@@ -235,17 +239,17 @@ class MixinImage:
   def non_local_means(self, size = 7, dist = 11, h = .01, sigma = 0., fast = True, channels = ""):
     r"""Non-local means filter for denoising selected channels of the image.
 
-    Given a channel Cin, returns
+    Given a channel :math:`C_{in}`, returns
 
     .. math::
-      C_{out}(\mathbf{r}) \sim \sum_{\mathbf{r}'} f(\mathbf{r},\mathbf{r}') C_{in}(\mathbf{r}')
+      C_{out}(\mathbf{r}) \propto \sum_{\mathbf{r}'} f(\mathbf{r},\mathbf{r}') C_{in}(\mathbf{r}')
 
     where:
 
     .. math::
       f(\mathbf{r},\mathbf{r}') = \exp[-(M(\mathbf{r})-M(\mathbf{r}'))^2/h^2]\text{ for }|\mathbf{r}-\mathbf{r}'| < d
 
-    and M(r) is an average of Cin in a patch around r.
+    and :math:`M(\mathbf{r})` is an average of :math:`C_{in}` in a patch around :math:`\mathbf{r}`.
     Therefore, the non-local means filter averages the neighboring pixels whose patches (texture) are
     sufficiently similar. The non-local means filter can restore textures that would be blurred by
     other denoising algorithms such as the bilateral and total variation filters.
@@ -261,13 +265,13 @@ class MixinImage:
       fast (bool, optional): If true (default), the pixels within the patch are averaged uniformly.
         If false, they are weighted by a gaussian (better yet slower).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
 
     Returns:
       Image: The processed image.
 
     See also:
-      skimage.restoration.denoise_nl_means
+      :func:`skimage.restoration.denoise_nl_means`
     """
     return self.apply_channels(lambda channel: skim.restoration.denoise_nl_means(channel, channel_axis = 0, patch_size = size,
                                patch_distance = dist, h = h, sigma = sigma, fast_mode = fast), channels)
@@ -282,20 +286,20 @@ class MixinImage:
     See https://en.wikipedia.org/wiki/Adaptive_histogram_equalization.
 
     Args:
-      size (optional): The size of the tiles (in pixels) used to sample local histograms, given as
-        a single integer or as pair of integers (width, height of the tiles). If None (default),
+      size (int, optional): The size of the tiles (in pixels) used to sample local histograms, given
+        as a single integer or as pair of integers (width, height of the tiles). If None (default),
         the tile size defaults to 1/8 of the image width and height.
       clip (float, optional): The clip limit used to control contrast enhancement (default 0.01).
       nbins (int, optional): The number of bins in the local histograms (default 256).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
         CLAHE works best for the "V", "L" and "L*" channels.
 
     Returns:
       Image: The processed image.
 
     See also:
-      skimage.exposure.equalize_adapthist
+      :func:`skimage.exposure.equalize_adapthist`
     """
     clipped = self.clip_channels(channels) # Clip relevant channels before CLAHE to avoid artifacts.
     return clipped.apply_channels(lambda channel: skim.exposure.equalize_adapthist(channel, kernel_size = size, clip_limit = clip, nbins = nbins),
