@@ -94,8 +94,7 @@ class MixinImage:
       # Save script.
       if script is not None:
         print(f"Writing file {scriptpath}...")
-        with open(scriptpath, "w") as f:
-          f.write(script)
+        with open(scriptpath, "w") as f: f.write(script)
       # Save image.
       print(f"Writing file {filepath} with depth = {depth} bpc...")
       self.save(filepath, depth = depth, compress = 0, verbose = False) # Don't compress image to ensure compatibility with the editor.
