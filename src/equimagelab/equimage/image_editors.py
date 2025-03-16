@@ -53,6 +53,7 @@ class MixinImage:
     Returns:
       Image: The edited image.
     """
+    self.check_color_model("RGB")
     if export not in ["png", "tiff", "fits"]:
       raise ValueError(f"Error, unknown export format '{export}'.")
     if depth not in [8, 16, 32]:
@@ -123,7 +124,8 @@ class MixinImage:
 
     The user must simply overwrite the edited file when leaving Gimp.
 
-    The command "gimp" must be in the PATH.
+    Warning:
+      The command "gimp" must be in the PATH.
 
     Args:
       export (str, optional): The format used to export the image. Can be:
@@ -148,7 +150,8 @@ class MixinImage:
 
     The user must simply overwrite the edited file when leaving Siril.
 
-    The command "siril" must be in the PATH.
+    Warning:
+      The command "siril" must be in the PATH.
 
     Returns:
       Image: The edited image.

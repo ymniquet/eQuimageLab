@@ -289,7 +289,8 @@ The stars can be removed from an image with `Starnet++ <https://www.starnetastro
 .. autosummary::
 
    starnet
-   synthetic_stars_siril
+   resynthetize_stars_siril
+   reduce_stars
 
 .. warning::
 

@@ -5,7 +5,7 @@
 # Version: 1.3.0 / 2025.03.08
 # Doc OK.
 
-"""Stars management."""
+"""Stars transformations."""
 
 import os
 import shutil
@@ -26,9 +26,10 @@ class MixinImage:
     See: https://www.starnetastro.com/
 
     The image is saved as a TIFF file (16 bits integer per channel); the stars are removed from this
-    TIFF file with StarNet++, and the starless image is finally reloaded in eQuimageLab and returned.
+    file with StarNet++, and the starless image is finally reloaded in eQuimageLab and returned.
 
-    The command "starnet++" must be in the PATH.
+    Warning:
+      The command "starnet++" must be in the PATH.
 
     Args:
       midtone (float, optional): If different from 0.5 (default), apply a midtone stretch to the
@@ -44,6 +45,7 @@ class MixinImage:
       Image: The starless image if starmask is False, and both the starless image and star mask if
       starmask is True.
     """
+    self.check_color_model("RGB")
     # We need to cwd to the starnet++ directory to process the image.
     cmdpath = shutil.which("starnet++")
     if cmdpath is None: raise FileNotFoundError("Error, starnet++ executable not found in the PATH.")
@@ -62,23 +64,29 @@ class MixinImage:
     if midtone != .5:
       starless = starless.midtone_stretch(midtone, inverse = True)
     # Return starless/star masks as appropriate.
-    return starless, self-starless if starmask else starless
+    if starmask:
+      return starless, self-starless
+    else:
+      return starless
 
-  def synthetic_stars_siril(self):
+  def resynthetize_stars_siril(self):
     """Resynthetize stars with Siril.
 
-    This method runs Siril to find the stars on the image and resynthetize them with "perfect"
-    Gaussian or Moffat shapes. This can be used to correct coma and other aberrations.
+    This method saves the image as a FITS file (32 bits float per channel) then runs Siril to find
+    the stars and resynthetize them with "perfect" Gaussian or Moffat shapes. It returns a synthetic
+    star mask that must be blended with the original or starless image. This can be used to correct
+    coma and other aberrations.
 
     Note:
-      Star resynthesis works best on a star mask produced by :meth:`Image.starnet() <.starnet>`.
-      The synthetic star mask and the starless image must then be blended together.
+      Star resynthesis works best on the star mask produced by :meth:`Image.starnet() <.starnet>`.
 
-    The command "siril-cli" must be in the PATH.
+    Warning:
+      The command "siril-cli" must be in the PATH.
 
     Returns:
-      Image: The edited image, with stars resynthetized by Siril.
+      Image: The synthetic star mask produced by Siril.
     """
+    self.check_color_model("RGB")
     script = ('requires 1.2.0\n'
               'load "$FILE$"\n'
               'setfindstar -roundness=0.10\n'
@@ -87,3 +95,31 @@ class MixinImage:
               'save "$FILE$"\n')
     return self.edit_with("siril-cli -s $SCRIPT$", export = "fits", depth = 32, script = script, editor = "Siril", interactive = False)
 
+  def reduce_stars(self, amount, starless = None):
+    """Reduce the size of the stars on the image.
+
+    This method makes use of the starless image produced by starnet++ to identify and unstretch
+    stars, thus effectively reducing their apparent diameter. It shall be applied to a streched
+    (non-linear) image.
+
+    Note:
+      Inspired from https://gitlab.com/free-astro/siril-scripts/-/blob/main/processing/DSA-Star_Reduction.py
+      by Rich Stevenson - Deep Space Astro.
+
+    See also:
+      :meth:`Image.starnet() <.starnet>`
+
+    Args:
+      amount (float): The strength of star reduction.
+        amount < 0.5 reduces star size, while amount > 0.5 increases star size.
+      starless (Image): The starless image. If None (default), the starless image is computed with
+        StarNet++. The command "starnet++" must then be in the PATH.
+
+    Returns:
+      Image: The edited image, with the stars reduced.
+    """
+    self.check_color_model("RGB")
+    if starless is None: starless = self.starnet(midtone = "auto", starmask = False)
+    fimage    = 1.-    self.midtone_stretch(1.-amount)
+    fstarless = 1.-starless.midtone_stretch(1.-amount)
+    return 1.-(fimage/fstarless)*(1.-starless)
