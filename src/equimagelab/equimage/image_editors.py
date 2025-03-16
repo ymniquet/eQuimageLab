@@ -8,15 +8,12 @@
 """External image editors."""
 
 import os
-import shutil
+import re
 import tempfile
 import subprocess
 import numpy as np
 
-from . import params
-
 from .image_io import load_image_as_array
-from .image_stretch import Dharmonic_through
 
 #####################################
 # For inclusion in the Image class. #
@@ -25,17 +22,18 @@ from .image_stretch import Dharmonic_through
 class MixinImage:
   """To be included in the Image class."""
 
-  def edit_with(self, command, export = "tiff", depth = 16, editor = "<Editor>", interactive = True, cwd = None):
+  def edit_with(self, command, export = "tiff", depth = 16, script = None, editor = "<Editor>", interactive = True, cwd = None):
     """Edit the image with an external tool.
 
-    The image is saved on disk; the editor command is then run on this file, which is finally
-    reloaded in eQuimageLab and returned.
+    The image is saved on disk; the editor is then run on this file, which is finally reloaded in
+    eQuimageLab and returned.
 
     The user/editor must simply overwrite the edited file on exit.
 
     Args:
-      command (str): The command to be run (e.g., "gimp -n $").
-        Any "$" is replaced by the name of the image file to be opened by the editor.
+      command (str): The editor command to be run (e.g., "gimp -n $FILE$").
+        Any "$FILE$" is replaced by the name of the image file to be opened by the editor.
+        Any "$SCRIPT$" is replaced by the name of the script file to be run by the editor.
       export (str, optional): The format used to export the image. Can be:
 
         - "png": PNG file with depth = 8 or 16 bits integer per channel.
@@ -44,7 +42,9 @@ class MixinImage:
 
       depth (int, optional): The color depth (bits per channel) used to export the image
         (see above; default 16).
-      editor (str, optional): The name of the editor (for pretty-print purposes; default "<Editor>").
+      script (str, optional): A string containing a script to be executed by the editor
+        (default None). Any "$FILE$" is replaced by the name of the image file.
+      editor (str, optional): The name of the editor (for pretty print; default "<Editor>").
       interactive (bool, optional): If True (default), the editor is interactive (awaits commands
         from the user); if False, the editor processes the image autonomously and does not require
         inputs from the user.
@@ -54,23 +54,44 @@ class MixinImage:
     Returns:
       Image: The edited image.
     """
-    if export not in ["png", "tiff", "fits"]: raise ValueError(f"Error, unknown export format '{export}'.")
-    if depth not in [8, 16, 32]: raise ValueError("Error, depth must be 8, 16 or 32 bpc.")
+    if export not in ["png", "tiff", "fits"]:
+      raise ValueError(f"Error, unknown export format '{export}'.")
+    if depth not in [8, 16, 32]:
+      raise ValueError("Error, depth must be 8, 16 or 32 bpc.")
     # Edit image.
     with tempfile.TemporaryDirectory(ignore_cleanup_errors = True) as tmpdir:
-      # Set tmp file name.
-      filename = "eQuimageLab."+export
+      filename = "eQuimageLab."+export # Set image tmp file name.
       filepath = os.path.join(tmpdir, filename)
+      filefound = False
+      # Process script.
+      if script is not None:
+        scriptname = "eQuimageLab.script" # Set script tmp file name.
+        scriptpath = os.path.join(tmpdir, scriptname)
+        scriptfound = False
+        filefound = len(re.findall("\$FILE\$", script)) > 0
+        if filefound: script = re.sub("\$FILE\$", filepath, script)
       # Process command.
       splitcmd = []
-      filefound = False
       for item in command.strip().split(" "):
-        if item == "$":
+        if item == "$FILE$":
           filefound = True
           splitcmd.append(filepath)
+        elif item == "$SCRIPT$":
+          if script is None:
+            raise ValueError("Error, there is a place holder for a script file ($SCRIPT$) in the command but no script provided.")
+          scriptfound = True
+          splitcmd.append(scriptpath)
         else:
           splitcmd.append(item)
-      if not filefound: raise ValueError("Error, no place holder for the image file ($) found in the command.")
+      # Check script & command consistency.
+      if script is None:
+        if not filefound:
+          raise ValueError("Error, no place holder for the image file ($FILE$) found in the command.")
+      else:
+        if not filefound:
+          raise ValueError("Error, no place holder for the image file ($FILE$) found in the command and in the script.")
+        if not scriptfound:
+          raise ValueError("Error, no place holder for the script file ($SCRIPT$) found in the command.")
       # Save image.
       print(f"Writing file {filepath} with depth = {depth} bpc...")
       self.save(filepath, depth = depth, compress = 0, verbose = False) # Don't compress image to ensure compatibility with the editor.
@@ -82,8 +103,11 @@ class MixinImage:
       # Load and return edited image.
       mtime = os.path.getmtime(filepath)
       if mtime == ctime:
-        print(f"The image has not been modified by {editor}; Returning the original...")
-        return self.copy()
+        if interactive:
+          print(f"The image has not been modified by {editor}; Returning the original...")
+          return self.copy()
+        else:
+          raise ValueError(f"Error, the image has not been modified by {editor}...")
       print(f"Reading file {filepath}...")
       image, meta = load_image_as_array(filepath, verbose = False)
       return self.newImage(image)
@@ -111,7 +135,7 @@ class MixinImage:
     Returns:
       Image: The edited image.
     """
-    return self.edit_with("gimp -n $", export = export, depth = depth, editor = "Gimp", interactive = True)
+    return self.edit_with("gimp -n $FILE$", export = export, depth = depth, editor = "Gimp", interactive = True)
 
   def edit_with_siril(self):
     """Edit the image with Siril.
@@ -126,48 +150,4 @@ class MixinImage:
     Returns:
       Image: The edited image.
     """
-    return self.edit_with("siril $", export = "fits", depth = 32, editor = "Siril", interactive = True)
-
-  def starnet(self, midtone = .5, starmask = False):
-    """Remove the stars from the image with StarNet++.
-
-    See: https://www.starnetastro.com/
-
-    The image is saved as a TIFF file (16 bits integer per channel); the stars are removed from this
-    TIFF file with StarNet++, and the starless image is finally reloaded in eQuimageLab and returned.
-
-    The command "starnet++" must be in the PATH.
-
-    Args:
-      midtone (float, optional): If different from 0.5 (default), apply a midtone stretch to the
-        image before running StarNet++, then apply the inverse stretch to the output starless.
-        This can help StarNet++ find stars on low contrast, linear RGB images.
-        See :meth:`Image.midtone_stretch() <.midtone_stretch>`; midtone can either be "auto" (for
-        automatic stretch) or a float in ]0, 1[.
-      starmask (bool, optional): If True, return both the starless image and the star mask.
-        If False (default), only return the starless image [the star mask being the difference
-        between the original image (self) and the starless].
-
-    Returns:
-      Image: The starless image if starmask is False, and both the starless image and star mask if
-      starmask is True.
-    """
-    # We need to cwd to the starnet++ directory to process the image.
-    cmdpath = shutil.which("starnet++")
-    if cmdpath is None: raise FileNotFoundError("Error, starnet++ executable not found in the PATH.")
-    path, cmd = os.path.split(cmdpath)
-    # Stretch the image if needed.
-    if midtone == "auto":
-      avgmedian = np.mean(np.median(self.image, axis = (-1, -2)))
-      midtone = 1./(Dharmonic_through(avgmedian, .33)+2.)
-    if midtone != .5:
-      image = self.midtone_stretch(midtone)
-    else:
-      image = self
-    # Run starnet++.
-    starless = image.edit_with("starnet++ $ $", export = "tiff", depth = 16, editor = "StarNet++", interactive = False, cwd = path)
-    # "Unstretch" the starless if needed.
-    if midtone != .5:
-      starless = starless.midtone_stretch(midtone, inverse = True)
-    # Return starless/star masks as appropriate.
-    return starless, self-starless if starmask else starless
+    return self.edit_with("siril $FILE$", export = "fits", depth = 32, editor = "Siril", interactive = True)

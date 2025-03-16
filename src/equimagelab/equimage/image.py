@@ -20,12 +20,14 @@ from . import image_skimage
 from . import image_masks
 from . import image_stats
 from . import image_editors
+from . import image_stars
 from . import image_io
 
 class Image(np.lib.mixins.NDArrayOperatorsMixin,
             image_colorspaces.MixinImage, image_utils.MixinImage, image_geometry.MixinImage,
             image_colors.MixinImage, image_stretch.MixinImage, image_filters.MixinImage, image_skimage.MixinImage,
-            image_masks.MixinImage, image_stats.MixinImage, image_editors.MixinImage, image_io.MixinImage):
+            image_masks.MixinImage, image_stats.MixinImage, image_editors.MixinImage, image_stars.MixinImage,
+            image_io.MixinImage):
   """Image class.
 
   The image is stored as self.image, a numpy.ndarray with dtype numpy.float32 or numpy.float64.
