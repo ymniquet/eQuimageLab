@@ -8,7 +8,6 @@
 """External image editors."""
 
 import os
-import re
 import tempfile
 import subprocess
 import numpy as np
@@ -68,8 +67,8 @@ class MixinImage:
         scriptname = "eQuimageLab.script" # Set script tmp file name.
         scriptpath = os.path.join(tmpdir, scriptname)
         scriptfound = False
-        filefound = len(re.findall("\$FILE\$", script)) > 0
-        if filefound: script = re.sub("\$FILE\$", filepath, script)
+        filefound = "$FILE$" in script
+        if filefound: script = script.replace("$FILE$", filepath)
       # Process command.
       splitcmd = []
       for item in command.strip().split(" "):
@@ -92,6 +91,11 @@ class MixinImage:
           raise ValueError("Error, no place holder for the image file ($FILE$) found in the command and in the script.")
         if not scriptfound:
           raise ValueError("Error, no place holder for the script file ($SCRIPT$) found in the command.")
+      # Save script.
+      if script is not None:
+        print(f"Writing file {scriptpath}...")
+        with open(scriptpath, "w") as f:
+          f.write(script)
       # Save image.
       print(f"Writing file {filepath} with depth = {depth} bpc...")
       self.save(filepath, depth = depth, compress = 0, verbose = False) # Don't compress image to ensure compatibility with the editor.

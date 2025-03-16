@@ -79,11 +79,11 @@ class MixinImage:
     Returns:
       Image: The edited image, with stars resynthetized by Siril.
     """
-    script = ("requires 1.2.0"
-              "load $FILE$"
-              "setfindstars -roundness=0.10"
-              "findstar"
-              "synthstar"
-              "save $FILE$")
+    script = ('requires 1.2.0\n'
+              'load "$FILE$"\n'
+              'setfindstar -roundness=0.10\n'
+              'findstar\n'
+              'synthstar\n'
+              'save "$FILE$"\n')
     return self.edit_with("siril-cli -s $SCRIPT$", export = "fits", depth = 32, script = script, editor = "Siril", interactive = False)
 
