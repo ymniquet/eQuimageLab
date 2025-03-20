@@ -110,8 +110,8 @@ class MixinImage:
       :meth:`Image.starnet() <.starnet>`
 
     Args:
-      amount (float): The strength of star reduction.
-        amount < 0.5 reduces star size, while amount > 0.5 increases star size.
+      amount (float): The strength of star reduction, expected in ]-1, 1[.
+        amount < 0 reduces star size, while amount > 0 increases star size.
       starless (Image): The starless image. If None (default), the starless image is computed with
         StarNet++. The command "starnet++" must then be in the PATH.
 
@@ -119,7 +119,9 @@ class MixinImage:
       Image: The edited image, with the stars reduced.
     """
     self.check_color_model("RGB")
+    if abs(amount) > .9999: raise ValueError("Error, |amount| must be < .9999.")
     if starless is None: starless = self.starnet(midtone = "auto", starmask = False)
-    fimage    = 1.-    self.midtone_stretch(1.-amount)
-    fstarless = 1.-starless.midtone_stretch(1.-amount)
+    midtone = (1.-amount)/2.
+    fimage    = 1.-    self.midtone_stretch(midtone)
+    fstarless = 1.-starless.midtone_stretch(midtone)
     return 1.-(fimage/fstarless)*(1.-starless)

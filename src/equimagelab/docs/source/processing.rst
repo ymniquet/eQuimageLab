@@ -30,9 +30,10 @@ The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>
 
    negative
    grayscale
-   RGB_color_balance
+   neutralize_background
+   color_balance
    mix_RGB
-   set_color_temperature
+   color_temperature
    HSX_color_saturation
    CIE_chroma_saturation
    rotate_HSX_hue
