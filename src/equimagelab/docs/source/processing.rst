@@ -69,6 +69,7 @@ The image histograms can be stretched with the following methods of the :py:clas
    gpowerlaw_stretch
    gamma_stretch
    curve_stretch
+   spline_stretch
 
 Additionally, the image histograms can be stretched with the following functions, which can be applied either to an :py:class:`Image <equimagelab.equimage.image.Image>` object or to a :py:class:`numpy.ndarray`:
 

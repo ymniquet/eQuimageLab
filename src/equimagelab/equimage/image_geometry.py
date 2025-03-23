@@ -124,8 +124,8 @@ class MixinImage:
     """Crop the image.
 
     Args:
-      xmin, xmax (integer or float): Crop from x = xmin to x = xmax (along the width).
-      ymin, ymax (integer or float): Crop from y = ymin to y = ymax (along the height).
+      xmin, xmax (float): Crop from x = xmin to x = xmax (along the width).
+      ymin, ymax (float): Crop from y = ymin to y = ymax (along the height).
 
     Returns:
       Image: The cropped image.

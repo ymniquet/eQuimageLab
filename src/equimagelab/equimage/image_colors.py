@@ -332,7 +332,7 @@ class MixinImage:
     print(f"Green multiplier = {green:.3f}.")
     print(f"Blue multiplier = {blue:.3f}.")
     image = self.convert(colorspace = "lRGB", colormodel = "RGB", copy = False)
-    balanced = image.RGB_color_balance(red, green, blue)
+    balanced = image.color_balance(red, green, blue)
     if lightness: balanced.set_channel("L*sh", self.lightness(), inplace = True)
     return balanced.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False)
 

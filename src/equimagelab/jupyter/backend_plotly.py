@@ -105,9 +105,8 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
   # Plot histograms.
   figure = make_subplots(specs = [[dict(secondary_y = trans is not None, r = -0.06)]])
   updatemenus = []
-  ntraces = 0
+  n = len(hists)
   for channel in hists.values():
-    ntraces += 1
     midpoints = (channel.edges[1:]+channel.edges[:-1])/2.
     figure.add_trace(go.Scatter(x = midpoints, y = channel.counts, name = channel.name, mode = "lines", line = dict(color = channel.color, width = 2)),
                      secondary_y = False)
@@ -131,6 +130,10 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
       cef = np.log(np.maximum(np.gradient(trans.y, trans.x), 1.e-12))
       figure.add_trace(go.Scatter(x = trans.x, y = trans.y, name = trans.ylabel, mode = "lines", line = mline2, showlegend = False),
                        secondary_y = True)
+      m = 2 if hasattr(trans, "xm") else 1
+      if m == 2:
+        figure.add_trace(go.Scatter(x = trans.xm, y = trans.ym, mode = "markers", marker = dict(size = 8, color = params.mlinecolor), showlegend = False),
+                         secondary_y = True)
       figure.add_trace(go.Scatter(x = trans.x, y = cef, name = f"log {trans.ylabel}'", mode = "lines", line = mline2, showlegend = False, visible = False),
                        secondary_y = True)
       figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 0.], name = "", mode = "lines", line = mlinedashdot1, showlegend = False),
@@ -139,18 +142,16 @@ def _figure_histograms_(image, channels = "", log = True, width = -1, xlabel = "
                        secondary_y = True)
       figure.add_trace(go.Scatter(x = [0., 1.], y = [0., 1.], name = "", mode = "lines", line = mlinedot1, showlegend = False),
                        secondary_y = True)
-      xticks = getattr(trans, "xticks", None)
-      if xticks is not None:
-        for xtick in xticks:
+      if hasattr(trans, "xticks"):
+        for xtick in trans.xticks:
           figure.add_vline(x = xtick, line = mlinedash1, secondary_y = True)
       ftitle = f"{trans.ylabel}({trans.channels})"
       ceftitle = f"log {trans.ylabel}'({trans.channels})"
       figure.update_yaxes(title_text = ftitle, title_font = mline, ticks = "inside", tickfont = mline, showgrid = False, rangemode = "tozero", secondary_y = True)
       # Add f/log f' toggle button.
-      keepvisible = ntraces*[True]
       buttons = [dict(label = "f/log f'", method = "update",
-                      args  = [{"visible": keepvisible+[False, True, True, False, False]}, {"yaxis2.title": ceftitle}],
-                      args2 = [{"visible": keepvisible+[True, False, True, True, True]}, {"yaxis2.title": ftitle}])]
+                      args  = [{"visible": n*[True]+m*[False]+[True , True, False, False]}, {"yaxis2.title": ceftitle}],
+                      args2 = [{"visible": n*[True]+m*[True ]+[False, True, True , True ]}, {"yaxis2.title": ftitle}])]
       xbutton = .066*1024./width
       updatemenus.append(dict(type = "buttons", buttons = buttons, active = -1, showactive = False,
                               xanchor = "left", x = xbutton, yanchor = "bottom", y = ybutton))

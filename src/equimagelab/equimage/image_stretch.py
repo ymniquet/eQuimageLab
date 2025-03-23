@@ -9,6 +9,7 @@
 
 import copy
 import numpy as np
+import scipy.interpolate as spint
 from scipy.interpolate import Akima1DInterpolator
 
 from . import stretchfunctions as stf
@@ -489,7 +490,7 @@ class MixinImage:
     """Apply a curve stretch, defined by an arbitrary function f, to selected channels of the image.
 
     f may be, e.g., an explicit function or a spline interpolator. It must be defined over the whole
-    range spanned by the image.
+    range spanned by the channel(s).
 
     Args:
       f (function): The function f(numpy.ndarray) → numpy.ndarray applied to the selected channels.
@@ -502,6 +503,36 @@ class MixinImage:
       Image: The stretched image.
     """
     return self.apply_channels(f, channels, trans = trans)
+
+  def spline_stretch(self, x, y, spline = "akima", channels = "", trans = True):
+    """Apply a spline curve stretch to selected channels of the image.
+
+    The spline must be defined over the whole range spanned by the channel(s).
+
+    Args:
+      x, y (numpy.ndarray): A sampling of the function y = f(x) interpolated by the spline.
+      spline (int or str, optional): The spline type. Either an integer (the order) for a B-spline,
+        or the string "akima" (for an Akima spline, default).
+      channels (str, optional): The selected channels (default "" = all channels).
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
+
+    Returns:
+      Image: The stretched image.
+    """
+    if isinstance(spline, int):
+      tck = spint.splrep(x, y, k = spline)
+      def fspline(x): spint.splev(x, tck)
+    elif spline == "akima":
+      fspline = Akima1DInterpolator(x, y)
+    else:
+      raise ValueError(f"Error, unknown spline '{spline}'.")
+    output = self.curve_stretch(fspline, channels = channels, trans = trans)
+    if trans:
+      output.trans.xm = x
+      output.trans.ym = y
+    return output
 
   ######################
   # Complex stretches. #
