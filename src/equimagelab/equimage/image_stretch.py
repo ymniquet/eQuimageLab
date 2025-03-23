@@ -492,6 +492,9 @@ class MixinImage:
     f may be, e.g., an explicit function or a spline interpolator. It must be defined over the whole
     range spanned by the channel(s).
 
+    Note:
+      This is practically a wrapper for :meth:`Image.apply_channels() <.apply_channels>`.
+
     Args:
       f (function): The function f(numpy.ndarray) → numpy.ndarray applied to the selected channels.
       channels (str, optional): The selected channels (default "" = all channels).
@@ -528,7 +531,7 @@ class MixinImage:
       fspline = Akima1DInterpolator(x, y)
     else:
       raise ValueError(f"Error, unknown spline '{spline}'.")
-    output = self.curve_stretch(fspline, channels = channels, trans = trans)
+    output = self.apply_channels(fspline, channels = channels, trans = trans)
     if trans:
       output.trans.xm = x
       output.trans.ym = y
