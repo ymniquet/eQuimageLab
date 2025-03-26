@@ -2,8 +2,8 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Version: 1.3.1 / 2025.03.26
+# Doc OK.
 
 """Image geometry management."""
 
@@ -124,8 +124,8 @@ class MixinImage:
     """Crop the image.
 
     Args:
-      xmin, xmax, ymin, ymax (integer or float): Crop from x = xmin to x = xmax (along the width)
-        and from y = ymin to y = ymax (along the height).
+      xmin, xmax (float): Crop from x = xmin to x = xmax (along the width).
+      ymin, ymax (float): Crop from y = ymin to y = ymax (along the height).
 
     Returns:
       Image: The cropped image.

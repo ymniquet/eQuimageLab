@@ -30,9 +30,10 @@ The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>
 
    negative
    grayscale
-   RGB_color_balance
+   neutralize_background
+   color_balance
    mix_RGB
-   set_color_temperature
+   color_temperature
    HSX_color_saturation
    CIE_chroma_saturation
    rotate_HSX_hue
@@ -68,6 +69,7 @@ The image histograms can be stretched with the following methods of the :py:clas
    gpowerlaw_stretch
    gamma_stretch
    curve_stretch
+   spline_stretch
 
 Additionally, the image histograms can be stretched with the following functions, which can be applied either to an :py:class:`Image <equimagelab.equimage.image.Image>` object or to a :py:class:`numpy.ndarray`:
 
@@ -118,6 +120,21 @@ From `Scikit-Image <https://scikit-image.org/>`_:
    gaussian_filter
    butterworth_filter
 
+Noise reduction
+"""""""""""""""
+
+From `Scikit-Image <https://scikit-image.org/>`_:
+
+.. currentmodule:: equimagelab.equimage.image_skimage.MixinImage
+
+.. autosummary::
+
+   estimate_noise
+   wavelets_filter
+   bilateral_filter
+   total_variation
+   non_local_means
+
 Image enhancement
 """""""""""""""""
 
@@ -136,21 +153,6 @@ and, from `Scikit-Image <https://scikit-image.org/>`_:
 .. autosummary::
 
    unsharp_mask
-
-Noise reduction
-"""""""""""""""
-
-From `Scikit-Image <https://scikit-image.org/>`_:
-
-.. currentmodule:: equimagelab.equimage.image_skimage.MixinImage
-
-.. autosummary::
-
-   estimate_noise
-   wavelets_filter
-   bilateral_filter
-   total_variation
-   non_local_means
 
 Miscellaneous operations
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -264,9 +266,9 @@ Binary masks are converted into float masks for that purpose.
 Edition with external softwares
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-External softwares (Gimp, Siril, Starnet++, ...) can be run from eQuimageLab to perform specialized operations.
+External softwares (Gimp, Siril, ...) can be run from eQuimageLab to perform specialized operations.
 
-The generic method to edit an :py:class:`Image <equimagelab.equimage.image.Image>` object with an external software is :py:meth:`Image.edit_with() <equimagelab.equimage.image_editors.MixinImage.edit_with>`. This method is implemented for `Gimp <https://www.gimp.org/>`_, `Siril <https://siril.org/>`_ and `Starnet++ <https://www.starnetastro.com/>`_:
+The generic method to edit an :py:class:`Image <equimagelab.equimage.image.Image>` object with an external software is :py:meth:`Image.edit_with() <equimagelab.equimage.image_editors.MixinImage.edit_with>`. This method is implemented for `Gimp <https://www.gimp.org/>`_ and `Siril <https://siril.org/>`_:
 
 .. currentmodule:: equimagelab.equimage.image_editors.MixinImage
 
@@ -274,8 +276,24 @@ The generic method to edit an :py:class:`Image <equimagelab.equimage.image.Image
 
    edit_with_gimp
    edit_with_siril
-   starnet
 
 .. warning::
 
-  The softwares Gimp, Siril and Starnet++ must be in the PATH to be run from eQuimageLab.
+  The softwares Gimp and Siril must be in the PATH to be run from eQuimageLab.
+
+Star transformations
+^^^^^^^^^^^^^^^^^^^^
+
+The stars can be removed from an image with `Starnet++ <https://www.starnetastro.com/>`_ and resynthetized with `Siril <https://siril.org/>`_ using the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+
+.. currentmodule:: equimagelab.equimage.image_stars.MixinImage
+
+.. autosummary::
+
+   starnet
+   resynthetize_stars_siril
+   reduce_stars
+
+.. warning::
+
+  The softwares Starnet++ and Siril must be in the PATH to be run from eQuimageLab.

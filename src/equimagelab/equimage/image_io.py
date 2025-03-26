@@ -2,8 +2,8 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Version: 1.3.1 / 2025.03.26
+# Doc OK.
 
 """Image I/O management."""
 
@@ -113,7 +113,7 @@ def load_image(filename, colorspace = "sRGB", verbose = True):
   image, meta = load_image_as_array(filename, verbose = verbose)
   return Image(image, colorspace = colorspace, colormodel = "RGB"), meta
 
-def save_image(image, filename, depth = 8, compress = 5, verbose = True):
+def save_image(image, filename, depth = 8, compress = 6, verbose = True):
   """Save a RGB or grayscale image as a file.
 
   Note: The color space is *not* embedded in the file at present.
@@ -121,13 +121,14 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
   Args:
     image (Image): The image.
     filename (str): The file name. The file format is chosen according to the extension:
-      - .png: PNG file with depth = 8 or 16 bit integers per channel.
-      - .tif, .tiff: TIFF file with depth = 8, 16 bit integers per channel, or 32 bit floats per channel.
-      - .fit, .fits, .fts: FITS file with 32 bit floats per channel (irrespective of depth).
+
+      - .png: PNG file with depth = 8 or 16 bits integer per channel.
+      - .tif, .tiff: TIFF file with depth = 8, 16 or 32 bits integer per channel.
+      - .fit, .fits, .fts: FITS file with 32 bits float per channel (irrespective of depth).
+
     depth (int, optional): The color depth of the file in bits per channel (default 8).
-    compress (int, optional): The compression level for TIFF files (Default 5; 0 = no compression;
-      actual compression if >0 depends whether ImageIO or scikit-image is used as I/O library -
-      see `equimage.params.IMAGEIO`).
+    compress (int, optional): The compression level for TIFF files
+      (Default 6; 0 = no zlib compression; 9 = maximum zlib compression).
     verbose (bool, optional): If True (default), print information about the file.
   """
   image.check_color_model("RGB", "gray")
@@ -179,7 +180,7 @@ def save_image(image, filename, depth = 8, compress = 5, verbose = True):
 class MixinImage:
   """To be included in the Image class."""
 
-  def save(self, filename, depth = 8, compress = 5, verbose = True):
+  def save(self, filename, depth = 8, compress = 6, verbose = True):
     """Save image as a file.
 
     Note: The color model must be "RGB" or "gray", but the color space is *not* embedded
@@ -187,13 +188,14 @@ class MixinImage:
 
     Args:
       filename (str): The file name. The file format is chosen according to the extension:
+
         - .png: PNG file with depth = 8 or 16 bits integer per channel.
-        - .tif, .tiff: TIFF file with depth = 8, 16 bits integer per channel, or 32 bits float per channel.
+        - .tif, .tiff: TIFF file with depth = 8, 16 or 32 bits integer per channel.
         - .fit, .fits, .fts: FITS file with 32 bits float per channel (irrespective of depth).
+
       depth (int, optional): The color depth of the file in bits per channel (default 8).
-      compress (int, optional): The compression level for TIFF files (Default 5; 0 = no compression;
-        actual compression if >0 depends whether ImageIO or scikit-image is used as I/O library -
-        see `equimage.params.IMAGEIO`).
+      compress (int, optional): The compression level for TIFF files
+        (Default 6; 0 = no zlib compression; 9 = maximum zlib compression).
       verbose (bool, optional): If True (default), print information about the file.
     """
     save_image(self, filename, depth = depth, compress = compress, verbose = verbose)

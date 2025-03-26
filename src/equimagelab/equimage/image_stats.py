@@ -2,8 +2,8 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Version: 1.3.1 / 2025.03.26
+# Doc OK.
 
 """Image statistics & histograms."""
 
@@ -31,7 +31,8 @@ def parse_channels(channels, errors = True):
       - "s*": The CIE saturation s* (CIELuv images).
       - "h*": The CIE hue angle h* (CIELab and CIELuv images).
 
-    errors (bool, optional): If False, discard unknown channel keys; If True (default), raise a ValueError.
+    errors (bool, optional): If False, discard unknown channel keys;
+      If True (default), raise a ValueError.
 
   Returns:
     list: The list of channel keys.
@@ -70,6 +71,10 @@ class MixinImage:
     The histograms are both returned and embedded in the object as self.hists. Histograms already
     registered in self.hists are not recomputed unless required.
 
+    See also:
+      :meth:`params.set_default_hist_bins() <equimagelab.equimage.params.set_default_hist_bins>`,
+      :meth:`params.set_max_hist_bins() <equimagelab.equimage.params.set_max_hist_bins>`
+
     Args:
       channels (str, optional): A combination of keys for the selected channels:
 
@@ -86,12 +91,12 @@ class MixinImage:
         - "s*": The CIE saturation s* (CIELuv images).
         - "h*": The CIE hue angle h* (CIELab and CIELuv images).
 
-        If it ends with a "+", channels gets appended with the keys already computed and stored
-        in self.hists. Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for
-        HSL images, "L" for grayscale images, "L*c*" for CIELab and "L*s*" for CIELuv images.
+        If it ends with a "+", channels gets appended with the keys already registered in self.hists.
+        Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images,
+        "L" for grayscale images, "L*c*" for CIELab and "L*s*" for CIELuv images.
       nbins (int, optional): Number of bins within [0, 1] in the histograms.
         Set to `equimage.params.maxhistbins` if negative, and computed from the image statistics
-        using Scott's rule if zero. If None, defaults to `equimage.params.defhistbins`.
+        using Scott's rule if zero. If None (default), set to `equimage.params.defhistbins`.
       recompute (bool, optional): If False (default), the histograms already registered in self.hists
         are not recomputed (provided they match nbins). If True, all histograms are recomputed.
 
@@ -102,7 +107,7 @@ class MixinImage:
         - hists[key].nbins = number of bins within [0, 1].
         - hists[key].edges = histogram bins edges.
         - hists[key].counts = histogram bins counts.
-        - hists[key].color = suggested line color for plots.
+        - hists[key].color = suggested line color for histogram plots.
     """
     if channels is None:
       if self.colorspace == "CIELab":
@@ -241,7 +246,7 @@ class MixinImage:
     """Compute statistics of selected channels of the image.
 
     The statistics are both returned and embedded in the object as self.stats. Statistics already
-      registered in self.stats are not recomputed unless required.
+    registered in self.stats are not recomputed unless required.
 
     Args:
       channels (str, optional): A combination of keys for the selected channels:
@@ -259,9 +264,9 @@ class MixinImage:
         - "s*": The CIE saturation s* (CIELuv images).
         - "h*": The CIE hue angle h* (CIELab and CIELuv images).
 
-        If it ends with a "+", channels gets appended with the keys already computed and stored
-        in self.stats. Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for
-        HSL images, "L" for grayscale images, "L*c*" for CIELab and "L*s*" for CIELuv images.
+        If it ends with a "+", channels gets appended with the keys already registered in self.stats.
+        Default (if None) is "RGBL" for RGB images, "VS" for HSV images, "L'S'" for HSL images,
+        "L" for grayscale images, "L*c*" for CIELab and "L*s*" for CIELuv images.
       exclude01 (bool, optional): If True, exclude pixels <= 0 or >= 1 from the median and percentiles.
         Defaults to `equimage.params.exclude01` if None.
       recompute (bool, optional): If False (default), the statistics already registered in self.stats

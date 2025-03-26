@@ -97,4 +97,7 @@
 .green { color: green }
 .blue { color: blue }
 .luma { color: lightslategray }
+.hue { color: limegreen }
+.saturation { color: orange }
+.value { color: darkslategray }
 .lightness { color: lightsteelblue }

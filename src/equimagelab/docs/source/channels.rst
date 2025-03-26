@@ -28,4 +28,4 @@ When applying an operation `f` to the luma, the RGB components of the image are 
 
   - "Desaturation": The out-of-range pixels are desaturated at constant hue and luma (namely, the out-of-range components are decreased while the in-range components are increased so that the hue and luma are preserved). This tends to bleach the out-of-range pixels. `f`\(luma) must fit within [0, 1] to make use of this highlights protection method.
   - "Blending": The out-of-range pixels are blended with `f`\(RGB) (the same operation applied to the RGB channels). This tends to bleach the out-of-range pixels too. `f`\(RGB) must fit within [0, 1] to make use of this highlights protection method.
-  - "Normalization": The whole ``output`` image is rescaled so that all pixels fall back in the [0, 1] range (``output`` → ``output/max(1., np.max(output))``).
+  - "Normalization": The whole ``output`` image is rescaled so that all pixels fall back in the [0, 1] range (``output`` → ``output/max(1., numpy.max(output))``).

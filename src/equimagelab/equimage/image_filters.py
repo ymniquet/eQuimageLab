@@ -2,8 +2,8 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Version: 1.3.1 / 2025.03.26
+# Doc OK.
 
 """Image filters."""
 
@@ -28,7 +28,7 @@ class MixinImage:
     Args:
       ratio (float): The threshold for hot pixels detection.
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       mode (str, optional): How to extend the image across its boundaries:
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
@@ -60,7 +60,7 @@ class MixinImage:
 
     Args:
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       mode (str, optional): How to extend the image across its boundaries:
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
@@ -83,7 +83,7 @@ class MixinImage:
 
     Blurs low-brightness and sharpens high-brightness areas.
 
-    The background of astronomical images usually remains noisy. This is the Poisson (photon
+    The background of astronomical images remains usually noisy. This is the Poisson (photon
     counting) noise typical of low brightness areas. We may want to "blur" this background by
     applying a "low-pass" filter that softens small scale features - such as a convolution with
     a gaussian:
@@ -120,8 +120,8 @@ class MixinImage:
     at a given threshold.
 
     Application of the LDBS to all channels (as in the above equations) can lead to significant
-    color spilling. It is preferable to apply LDBS to the lightness L*, luma L or value V (i.e.
-    setting image = L*, L or V and updating that channel with the output of the LDBS).
+    color spilling. It is preferable to apply LDBS to the lightness L* or luma L  (i.e. setting
+    image = L* or L and updating that channel with the output of the LDBS).
 
     Args:
       sigma (float): The standard deviation of the gaussian blur (pixels).
@@ -130,7 +130,7 @@ class MixinImage:
         The image is blurred below the threshold, and sharpened above.
       channels (str, optional): The channel(s) for LDBS.
         Can be "" (for all channels), "V", "L'", "L", "L*" (default), "L*ab", "L*uv" or "L*sh".
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       mode (str, optional): How to extend the image across its boundaries (for the gaussian blur):
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).

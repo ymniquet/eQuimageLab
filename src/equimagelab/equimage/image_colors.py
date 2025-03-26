@@ -2,8 +2,8 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Version: 1.3.1 / 2025.03.26
+# Doc OK.
 
 """Color management."""
 
@@ -27,8 +27,8 @@ def parse_hue_kwargs(D, kwargs):
   magenta, H = 3/4) and 'MR' (magenta-red, H = 11/12).
 
   Note:
-    Used by Image.HSX_color_saturation, Image.CIE_chroma_saturation, Image.rotate_HSX_hue
-    and Image.rotate_CIE_hue.
+    Used by :meth:`Image.HSX_color_saturation() <.HSX_color_saturation>`, :meth:`Image.CIE_chroma_saturation() <.CIE_chroma_saturation>`,
+    :meth:`Image.rotate_HSX_hue() <.rotate_HSX_hue>`, :meth:`Image.rotate_CIE_hue() <.rotate_CIE_hue>`.
 
   Args:
     D (float): The default value for the R/Y/G/C/B/M hues.
@@ -71,16 +71,16 @@ def parse_hue_kwargs(D, kwargs):
   return hgrid[idx], value[idx], kwargs
 
 def interpolate_hue(hue, hgrid, param, interpolation):
-  """Interpolate a parameter param defined on a grid of hues to arbitrary hues.
+  """Interpolate a parameter param defined on a grid of hues.
 
   Note:
-    Used by Image.HSX_color_saturation, Image.CIE_chroma_saturation, Image.rotate_HSX_hue
-    and Image.rotate_CIE_hue.
+    Used by :meth:`Image.HSX_color_saturation() <.HSX_color_saturation>`, :meth:`Image.CIE_chroma_saturation() <.CIE_chroma_saturation>`,
+    :meth:`Image.rotate_HSX_hue() <.rotate_HSX_hue>`, :meth:`Image.rotate_CIE_hue() <.rotate_CIE_hue>`.
 
   Args:
-    hue (numpy.ndarray): The hues at which the parameter must be interpolated.
+    hue (numpy.ndarray): The input hues at which the parameter must be interpolated.
     hgrid (numpy.ndarray): The grid of hues on which the parameter is defined.
-    param (numpy.ndarray): The parameter on the grid.
+    param (numpy.ndarray): The parameter on the grid of hues.
     interpolation (str, optional): The interpolation method:
 
       - "nearest": Nearest neighbor interpolation.
@@ -176,15 +176,59 @@ class MixinImage:
   # Color transformations. #
   ##########################
 
-  def RGB_color_balance(self, red = 1., green = 1., blue = 1):
+  def neutralize_background(self, neutral, mode = "additive", N = None):
+    """Neutralize the background of a RGB image.
+
+    Given a target neutral point (Rn, Gn, Bn), this method transforms the RGB channels as:
+
+      - R ← R-Rn+N
+      - G ← G-Gn+N
+      - B ← B-Bn+N
+
+    if mode = "additive", or as:
+
+      - R ← R*N/Rn
+      - G ← G*N/Gn
+      - B ← B*N/Bn
+
+    if mode = "multiplicative", with N = max(Rn, Gn, Bn) by default. On output, the neutral
+    point appears, therefore, as the gray (N, N, N) color.
+
+    Args:
+      neutral (float): The neutral point (tuple/list/array of the Rn, Gn, Bn levels).
+      mode (str, optional): The neutralization mode ["additive" (default) or "multiplicative"].
+      N (float, optional): The neutral gray level [max(Rn, Gn, Bn) if None (default)].
+
+    Returns:
+      Image: The processed image.
+    """
+    self.check_color_model("RGB")
+    neutral = np.array(neutral)
+    if neutral.shape != (3,): raise ValueError("Error, neutral must be a tuple/list/array of three elements.")
+    neutral = neutral.reshape((3, 1, 1))
+    if N is None: N = neutral.max()
+    if mode == "additive":
+      return self-(neutral+N)
+    elif mode == "multiplicative":
+      return self*(N/neutral)
+    else:
+      raise ValueError("Error, mode must be 'additive' or 'multiplicative'.")
+
+  def color_balance(self, red = 1., green = 1., blue = 1, neutral = 0.):
     """Adjust the color balance of a RGB image.
 
-    Scales the red/green/blue channels by the input multipliers.
+    Scales the RGB channels by the input multipliers:
+
+      - R ← red*(R-neutral)+neutral
+      - G ← green*(G-neutral)+neutral
+      - B ← blue*(B-neutral)+neutral
 
     Args:
       red (float, optional): The multiplier for the red channel (default 1).
       green (float, optional): The multiplier for the green channel (default 1).
       blue (float, optional): The multiplier for the blue channel (default 1).
+      neutral (float, optional): The neutral level (default 0).
+        Can be a scalar of a tuple/list/array of the neutral (R, G, B) levels.
 
     Returns:
       Image: The processed image.
@@ -193,27 +237,40 @@ class MixinImage:
     if red < 0.: raise ValueError("Error, red must be >= 0.")
     if green < 0.: raise ValueError("Error, green must be >= 0.")
     if blue < 0.: raise ValueError("Error, blue must be >= 0.")
+    neutral = np.array(neutral)
+    if neutral.ndim == 0: neutral = np.array([neutral, neutral, neutral])
+    if neutral.shape != (3,): raise ValueError("Error, neutral must be a scalar or a tuple/list/array of three elements.")
     output = self.copy()
-    if red   != 1.: output.image[0] *= red
-    if green != 1.: output.image[1] *= green
-    if blue  != 1.: output.image[2] *= blue
+    if red   != 1.: output.image[0] = red*  (self.image[0]-neutral[0])+neutral[0]
+    if green != 1.: output.image[1] = green*(self.image[1]-neutral[1])+neutral[1]
+    if blue  != 1.: output.image[2] = blue* (self.image[2]-neutral[2])+neutral[2]
     return output
 
-  def mix_RGB(self, M):
+  def mix_RGB(self, M, neutral = 0.):
     """Mix RGB channels.
 
-    Transforms each pixel P = (R, G, B) of the image into M@P, with M a 3x3 mixing matrix.
+    Transforms each pixel P = (R, G, B) of the image as:
+
+      P ← M@(P-neutral)+neutral,
+
+    with M a 3x3 mixing matrix.
 
     Args:
       M (numpy.ndarray): The mixing matrix.
+      neutral (float, optional): The neutral level (default 0).
+        Can be a scalar of a tuple/list/array of the neutral (R, G, B) levels.
 
     Returns:
       Image: The processed image.
     """
     self.check_color_model("RGB")
-    return self.newImage(np.tensordot(np.asarray(M, dtype = self.dtype), self.image, axes = 1))
+    neutral = np.array(neutral)
+    if neutral.ndim == 0: neutral = np.array([neutral, neutral, neutral])
+    if neutral.shape != (3,): raise ValueError("Error, neutral must be a scalar or a tuple/list/array of three elements.")
+    neutral = neutral.reshape((3, 1, 1))
+    return self.newImage(np.tensordot(np.asarray(M, dtype = self.dtype), self.image-neutral, axes = 1)+neutral)
 
-  def set_color_temperature(self, T, T0 = 6650., lightness = False):
+  def color_temperature(self, T, T0 = 6650., lightness = False):
     """Adjust the color temperature of a RGB image.
 
     Adjusts the color balance assuming that the scene is (or is lit by) a black body source whose
@@ -248,7 +305,7 @@ class MixinImage:
         float: The red, green, blue multipliers for temperature T.
       """
 
-      def fitfunction(T, a, b, c, n):
+      def fit_function(T, a, b, c, n):
         """Fit function for the RGB multipliers."""
         Tr = (T-6650.)/10000.
         return max(0., 1.+a*Tr+b*Tr**2+c*Tr**3)**n
@@ -257,11 +314,11 @@ class MixinImage:
         raise ValueError("Error, the temperature must range between 1000K and 40000K.")
       if T < 6650.:
         red = 1.
-        green = .955*fitfunction(T, 0.6328063016856568, -0.7554188937494166, 1.7905208976761535, 1.2444903530611828)
-        blue = fitfunction(T, 1.2773641159953395, -1.0621459476222992, 1.1594787131985838, 1.7962669751286322)
+        green = .955*fit_function(T, 0.6328063016856568, -0.7554188937494166, 1.7905208976761535, 1.2444903530611828)
+        blue = fit_function(T, 1.2773641159953395, -1.0621459476222992, 1.1594787131985838, 1.7962669751286322)
       else:
-        red = fitfunction(T, 3.7874055198445142, -1.2956261274808025, 0.16818980687443094, -0.6136402157590004)
-        green = .955*fitfunction(T, 3.490058031650525, -1.1425871791667106, 0.14401832008759521, -0.42381907464549073)
+        red = fit_function(T, 3.7874055198445142, -1.2956261274808025, 0.16818980687443094, -0.6136402157590004)
+        green = .955*fit_function(T, 3.490058031650525, -1.1425871791667106, 0.14401832008759521, -0.42381907464549073)
         blue = 1.
       return red, green, blue
 
@@ -275,7 +332,7 @@ class MixinImage:
     print(f"Green multiplier = {green:.3f}.")
     print(f"Blue multiplier = {blue:.3f}.")
     image = self.convert(colorspace = "lRGB", colormodel = "RGB", copy = False)
-    balanced = image.RGB_color_balance(red, green, blue)
+    balanced = image.color_balance(red, green, blue)
     if lightness: balanced.set_channel("L*sh", self.lightness(), inplace = True)
     return balanced.convert(colorspace = self.colorspace, colormodel = self.colormodel, copy = False)
 
@@ -283,7 +340,7 @@ class MixinImage:
     """Adjust color saturation in the HSV or HSL color models.
 
     The image is converted (if needed) to the HSV or HSL color model, then the color saturation S is
-    transformed according to the 'mode' kwarg:
+    transformed according to the mode kwarg:
 
       - "addsat": Shift the saturation S ← S+delta.
       - "mulsat": Scale the saturation S ← S*(1+delta).
@@ -297,12 +354,12 @@ class MixinImage:
     a gray scale. delta is set for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B')
     and magenta ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated
     for arbitrary hues using nearest neighbor, linear, cubic or akima spline interpolation according
-    to the 'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by
+    to the interpolation kwarg. Midpoint deltas may also be specified for finer interpolation by
     providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
     'BM' (blue-magenta) and 'MR' (magenta-red).
 
     See also:
-      CIE_chroma_saturation
+      :meth:`Image.CIE_chroma_saturation() <.CIE_chroma_saturation>`
 
     Args:
       D (float, optional): The delta for all hues (default 0).
@@ -326,7 +383,7 @@ class MixinImage:
       lightness (bool, optional): If True, preserve the lightness L* of the original image.
         Note that this may result in some out-of-range pixels. Default is False.
       trans (bool, optional): If True (default), embed the transormation in the output image
-        as output.trans (see Image.apply_channels).
+        as output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -382,7 +439,7 @@ class MixinImage:
     The image is converted (if needed) to the CIELab or CIELuv colorspace, then the CIELab chroma
     CS = c* = sqrt(a*^2+b*^2) (colormodel = "Lab"), or the CIELuv chroma CS = c* = sqrt(u*^2+v*^2)
     (colormodel = "Luv"), or the CIELuv saturation CS = s* = c*/L* (colormodel = "Lsh") is transformed
-    according to the 'mode' kwarg:
+    according to the mode kwarg:
 
       - "addsat": Shift the chroma/saturation CS ← CS+delta.
       - "mulsat": Scale the chroma/saturation CS ← CS*(1+delta).
@@ -401,7 +458,7 @@ class MixinImage:
     delta is set for the red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and magenta
     ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for arbitrary
     hues using nearest neighbor, linear, cubic or akima spline interpolation according to the
-    'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by providing
+    interpolation kwarg. Midpoint deltas may also be specified for finer interpolation by providing
     the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue), 'BM'
     (blue-magenta) and 'MR' (magenta-red).
     Contrary to the saturation of HSV or HSL images, chroma/saturation transformations in the CIELab
@@ -409,11 +466,11 @@ class MixinImage:
     range RGB pixels (as not all points of of these color spaces correspond to physical RGB colors).
 
     Note:
-      Chroma and saturation are related, but different quantities (s* = c*/L* in the CIELuv color space). There is no rigorous
-      definition of saturation in the CIELab color space.
+      Chroma and saturation are related, but different quantities (s* = c*/L* in the CIELuv color space).
+      There is no rigorous definition of saturation in the CIELab color space.
 
     See also:
-      HSX_color_saturation
+      :meth:`Image.HSX_color_saturation() <.HSX_color_saturation>`
 
     Args:
       D (float, optional): The delta for all hues (default 0).
@@ -435,7 +492,7 @@ class MixinImage:
       ref (float, optional): The reference chroma/saturation for the "midsat" mode. If None,
         defaults to the maximum chroma/saturation of the input image.
       trans (bool, optional): If True (default), embed the transormation in the output image
-        as output.trans (see Image.apply_channels).
+        as output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -499,7 +556,7 @@ class MixinImage:
     delta is set for the original red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and
     magenta ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for
     arbitrary hues using nearest neighbor, linear, cubic or akima spline interpolation according to
-    the 'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by
+    the interpolation kwarg. Midpoint deltas may also be specified for finer interpolation by
     providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
     'BM' (blue-magenta) and 'MR' (magenta-red).
 
@@ -511,7 +568,7 @@ class MixinImage:
       blue → cyan, and magenta → blue.
 
     See also:
-      rotate_CIE_hue
+      :meth:`Image.rotate_CIE_hue() <.rotate_CIE_hue>`
 
     Args:
       D (float, optional): The delta for all hues (default 0).
@@ -533,7 +590,7 @@ class MixinImage:
       lightness (bool, optional): If True, preserve the lightness L* of the original image.
         Note that this may result in some out-of-range pixels. Default is False.
       trans (bool, optional): If True (default), embed the transormation in the output image
-        as output.trans (see Image.apply_channels).
+        as output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -578,7 +635,7 @@ class MixinImage:
     delta is set for the original red ('R'), yellow ('Y'), green ('G'), cyan ('C'), blue ('B') and
     magenta ('M') hues by the corresponding kwarg (delta = D if missing). It is interpolated for
     arbitrary hues using nearest neighbor, linear, cubic or akima spline interpolation according to
-    the 'interpolation' kwarg. Midpoint deltas may also be specified for finer interpolation by
+    the interpolation kwarg. Midpoint deltas may also be specified for finer interpolation by
     providing the kwargs 'RY' (red-yellow), 'YG' (yellow-green), 'GC' (green-cyan), 'CB' (cyan-blue),
     'BM' (blue-magenta) and 'MR' (magenta-red).
     Contrary to the rotation of HSV or HSL images, rotations in the CIELab and CIELuv color spaces
@@ -593,7 +650,7 @@ class MixinImage:
       blue → cyan, and magenta → blue.
 
     See also:
-      rotate_HSX_hue
+      :meth:`Image.rotate_HSX_hue() <.rotate_HSX_hue>`
 
     Args:
       D (float, optional): The delta for all hues (default 0).
@@ -612,7 +669,7 @@ class MixinImage:
         - "akima": Akima spline interpolation (default).
 
       trans (bool, optional): If True (default), embed the transormation in the output image
-        as output.trans (see Image.apply_channels).
+        as output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -648,7 +705,7 @@ class MixinImage:
   def SCNR(self, hue = "green", protection = "avgneutral", amount = 1., colorspace = None, lightness = True):
     """Subtractive Chromatic Noise Reduction of a given hue of a RGB image.
 
-    The input hue is reduced according to the 'protection' kwarg. For the green hue for example,
+    The input hue is reduced according to the protection kwarg. For the green hue for example,
 
       - G ← min(G, C) with C = (R+B)/2 for average neutral protection (protection = "avgneutral").
       - G ← min(G, C) with C = max(R, B) for maximum neutral protection (protection = "maxneutral").

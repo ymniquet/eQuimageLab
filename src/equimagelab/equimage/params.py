@@ -2,8 +2,8 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Version: 1.3.1 / 2025.03.26
+# Doc OK.
 
 """Image processing parameters."""
 
@@ -46,21 +46,21 @@ CIEilluminant = "D65" # Illuminant.
 CIEobserver = "2" # Observer.
 
 def get_CIE_params():
-  """Return CIE color spaces illuminant and observer.
+  """Return the CIE illuminant and observer.
 
   Returns:
-    str: The CIE illuminant and observer.
+    str, str: The CIE illuminant and observer as a tuple of strings.
   """
   return CIEilluminant, CIEobserver
 
 def set_CIE_params(illuminant, observer):
-  """Set CIE color spaces illuminant and observer.
+  """Set CIE illuminant and observer.
 
   Args:
-    illuminant: The name of the standard illuminant.
+    illuminant (str): The name of the standard illuminant.
       Can be "A", "B", "C", "D50", "D55", "D65", "D75", or "E".
       See https://en.wikipedia.org/wiki/Standard_illuminant.
-    observer: The name of the observer.
+    observer (str): The name of the observer.
       Can be "2" (2-degree observer) or "10" (10-degree observer).
   """
   if illuminant not in ["A", "B", "C", "D50", "D55", "D65", "D75", "E"]:
@@ -83,7 +83,7 @@ def get_RGB_luma():
     L = rgbluma[0]*image[0]+rgbluma[1]*image[1]+rgbluma[2]*image[2]
 
   Returns:
-    tuple: The (red, blue, green) weights rgbluma of the luma.
+    float, float, float: The red, blue, green weights rgbluma of the luma.
   """
   return rgbluma
 

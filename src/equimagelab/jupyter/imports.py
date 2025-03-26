@@ -2,10 +2,10 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Version: 1.3.1 / 2025.03.26
+# Doc OK.
 
-"""Jupyter interface top-level symbols."""
+"""Jupyter Lab interface top-level symbols."""
 
 from .utils import filter, shadowed, highlighted, differences
 from .backend_plotly import show, show_t, show_histograms, show_statistics, light_curve

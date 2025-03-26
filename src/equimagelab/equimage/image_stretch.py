@@ -2,13 +2,14 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.0 / 2025.03.08
-# Sphinx OK.
+# Version: 1.3.1 / 2025.03.26
+# Doc OK.
 
 """Histogram stretch."""
 
 import copy
 import numpy as np
+import scipy.interpolate as spint
 from scipy.interpolate import Akima1DInterpolator
 
 from . import stretchfunctions as stf
@@ -46,7 +47,7 @@ def mts(image, midtone):
   It is nothing else than the harmonic stretch function with D = 1/midtone-2.
 
   See also:
-    hms
+    :func:`hms`
 
   Args:
     image (numpy.ndarray): The input image.
@@ -69,7 +70,7 @@ def ghs(image, lnD1, b, SYP, SPP = 0., HPP = 1.):
     SYP (float): The symmetry point (expected in [0, 1]).
     SPP (float, optional): The shadow protection point (default 0; expected in [0, SYP]).
     HPP (float, optional): The highlight protection point (default 1; expected in [SYP, 1]).
-    inverse (bool): Return the inverse stretch function if True.
+    inverse (bool): Return the inverse transformation function if True.
 
   Returns:
     numpy.ndarray: The stretched image.
@@ -91,6 +92,9 @@ def Dharmonic_through(x, y):
 
   This function provides an alternative parametrization of f.
   It returns D such that f(x) = y.
+
+  See also:
+    :func:`hms`
 
   Args:
     x (float): The target input level (expected in ]0, 1[).
@@ -116,14 +120,14 @@ class MixinImage:
     """Set the black (shadow) level in selected channels of the image.
 
     The selected channels are clipped below shadow and linearly stretched to map [shadow, 1]
-    onto [0, 1]. The output, stretched image channels therefore fits in the [0, infty[ range.
+    onto [0, 1]. The output, stretched image channels therefore fit in the [0, infty[ range.
 
     Args:
       shadow (float): The black (shadow) level (expected < 1).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -137,16 +141,16 @@ class MixinImage:
     """Set shadow and highlight levels in selected channels of the image.
 
     The selected channels are clipped below shadow and above highlight and linearly stretched
-    to map [shadow, highlight] onto [0, 1]. The output, stretched channels therefore fits in
+    to map [shadow, highlight] onto [0, 1]. The output, stretched channels therefore fit in
     the [0, 1] range.
 
     Args:
       shadow (float): The shadow level (expected < 1).
       highlight (float): The highlight level (expected > shadow).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -167,9 +171,9 @@ class MixinImage:
       fr (a tuple or list of two floats such that fr[1] > fr[0]): The input range.
       to (a tuple or list of two floats such that 1 >= to[1] > to[0] >= 0): The output range.
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The processed image.
@@ -183,22 +187,22 @@ class MixinImage:
   def harmonic_stretch(self, D, inverse = False, channels = "", trans = True):
     """Apply a harmonic stretch to selected channels of the image.
 
-    The harmonic stretch function f is applied to the selected channels:
+    The harmonic stretch function defined as
 
       f(x) = (D+1)*x/(D*x+1)
 
-    f is a rational interpolation from f(0) = 0 to f(1) = 1 with f'(0) = D+1.
+    is a rational interpolation from f(0) = 0 to f(1) = 1 with f'(0) = D+1.
 
     See also:
-      gharmonic_stretch
+      :meth:`Image.gharmonic_stretch() <.gharmonic_stretch>`
 
     Args:
       D (float): The stretch parameter (expected > -1).
-      inverse (bool, optional): Return the inverse stretch if True (default False).
+      inverse (bool, optional): Return the inverse transformation if True (default False).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The stretched image.
@@ -209,7 +213,7 @@ class MixinImage:
   def gharmonic_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
     """Apply a generalized harmonic stretch to selected channels of the image.
 
-    The generalized harmonic stretch function f is applied to the selected channels:
+    The generalized harmonic stretch function f is defined as:
 
       - f(x) = b1*x when x <= SPP,
       - f(x) = a2+b2/(1-D*(x-SYP)) when SPP <= x <= SYP,
@@ -233,8 +237,8 @@ class MixinImage:
     For details about generalized hyperbolic stretches, see: https://ghsastro.co.uk/.
 
     See also:
-      harmonic_stretch
-      ghyperbolic_stretch
+      :meth:`Image.harmonic_stretch() <.harmonic_stretch>`,
+      :meth:`Image.ghyperbolic_stretch() <.ghyperbolic_stretch>`
 
     Note:
       Code adapted from https://github.com/mikec1485/GHS/blob/main/src/scripts/GeneralisedHyperbolicStretch/lib/GHSStretch.js
@@ -245,11 +249,11 @@ class MixinImage:
       SYP (float): The symmetry point (expected in [0, 1]).
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
-      inverse (bool, optional): Return the inverse stretch if True (default False).
+      inverse (bool, optional): Return the inverse transformation if True (default False).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The stretched image.
@@ -268,23 +272,23 @@ class MixinImage:
   def midtone_stretch(self, midtone, inverse = False, channels = "", trans = True):
     """Apply a midtone stretch to selected channels of the image.
 
-    The midtone stretch function f is applied to the selected channels:
+    The midtone stretch function defined as
 
       f(x) = (midtone-1)*x/((2*midtone-1)*x-midtone)
 
-    f is a rational interpolation from f(0) = 0 to f(1) = 1 with f(midtone) = 0.5.
+    is a rational interpolation from f(0) = 0 to f(1) = 1 with f(midtone) = 0.5.
     It is nothing else than the harmonic stretch function with D = 1/midtone-2.
 
     See also:
-      harmonic_stretch
+      :meth:`Image.harmonic_stretch() <.harmonic_stretch>`
 
     Args:
       midtone (float): The midtone level (expected in ]0, 1[).
-      inverse (bool, optional): Return the inverse stretch if True (default False).
+      inverse (bool, optional): Return the inverse transformation if True (default False).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The stretched image.
@@ -299,14 +303,14 @@ class MixinImage:
 
     This method:
 
-      1) Clips the selected channels in the [shadow, highlight] range and maps [shadow, highlight]
+      1) Clips the input data in the [shadow, highlight] range and maps [shadow, highlight]
          onto [0, 1].
       2) Applies the midtone stretch function f(x) = (m-1)*x/((2*m-1)*x-m),
          with m = (midtone-shadow)/(highlight-shadow) the remapped midtone.
       3) Maps [low, high] onto [0, 1] and clips the output data outside the [0, 1] range.
 
     See also:
-      midtone_stretch
+      :meth:`Image.midtone_stretch() <.midtone_stretch>`
 
     Args:
       midtone (float): The input midtone level (expected in ]0, 1[).
@@ -315,9 +319,9 @@ class MixinImage:
       low (float, optional): The "low" output level (default 0; expected <= 0).
       high (float, optional): The "high" output level (default 1; expected >= 1).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The stretched image.
@@ -338,7 +342,7 @@ class MixinImage:
   def garcsinh_stretch(self, D, SYP = 0., SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
     """Apply a generalized arcsinh stretch to selected channels of the image.
 
-    The generalized arcsinh stretch function f is applied to the selected channels:
+    The generalized arcsinh stretch function f is defined as:
 
       - f(x) = b1*x when x <= SPP,
       - f(x) = a2+b2*arcsinh(-D*(x-SYP)) when SPP <= x <= SYP,
@@ -367,11 +371,11 @@ class MixinImage:
       SYP (float): The symmetry point (expected in [0, 1]).
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
-      inverse (bool, optional): Return the inverse stretch if True (default False).
+      inverse (bool, optional): Return the inverse transformation if True (default False).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The stretched image.
@@ -398,11 +402,11 @@ class MixinImage:
       SYP (float): The symmetry point (expected in [0, 1]).
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
-      inverse (bool, optional): Return the inverse stretch if True (default False).
+      inverse (bool, optional): Return the inverse transformation if True (default False).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       numpy.ndarray: The stretched image.
@@ -421,7 +425,7 @@ class MixinImage:
   def gpowerlaw_stretch(self, D, SYP, SPP = 0., HPP = 1., inverse = False, channels = "", trans = True):
     """Apply a generalized power law stretch to selected channels of the image.
 
-    The generalized power law stretch function f is applied to the selected channels:
+    The generalized power law stretch function f is defined as:
 
       - f(x) = b1*x when x <= SPP,
       - f(x) = a2+b2*(1+(x-SYP))**(D+1) when SPP <= x <= SYP,
@@ -440,11 +444,11 @@ class MixinImage:
       SYP (float): The symmetry point (expected in [0, 1]).
       SPP (float, optional): The shadow protection point (default 0, must be <= SYP).
       HPP (float, optional): The highlight protection point (default 1, must be >= SYP).
-      inverse (bool, optional): Return the inverse stretch if True (default False).
+      inverse (bool, optional): Return the inverse transformation if True (default False).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       numpy.ndarray: The stretched image.
@@ -463,7 +467,7 @@ class MixinImage:
   def gamma_stretch(self, gamma, channels = "", trans = True):
     """Apply a gamma stretch to selected channels of the image.
 
-    The gamma stretch function f is applied to the selected channels:
+    The gamma stretch function is defined as:
 
       f(x) = x**gamma
 
@@ -472,9 +476,9 @@ class MixinImage:
     Args:
       gamma (float): The stretch exponent (must be > 0).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The stretched image.
@@ -486,19 +490,52 @@ class MixinImage:
     """Apply a curve stretch, defined by an arbitrary function f, to selected channels of the image.
 
     f may be, e.g., an explicit function or a spline interpolator. It must be defined over the whole
-    range spanned by the image.
+    range spanned by the channel(s).
+
+    Note:
+      This is practically a wrapper for :meth:`Image.apply_channels() <.apply_channels>`.
 
     Args:
       f (function): The function f(numpy.ndarray) → numpy.ndarray applied to the selected channels.
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The stretched image.
     """
     return self.apply_channels(f, channels, trans = trans)
+
+  def spline_stretch(self, x, y, spline = "akima", channels = "", trans = True):
+    """Apply a spline curve stretch to selected channels of the image.
+
+    The spline must be defined over the whole range spanned by the channel(s).
+
+    Args:
+      x, y (numpy.ndarray): A sampling of the function y = f(x) interpolated by the spline.
+      spline (int or str, optional): The spline type. Either an integer (the order) for a B-spline,
+        or the string "akima" (for an Akima spline, default).
+      channels (str, optional): The selected channels (default "" = all channels).
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      trans (bool, optional): If True (default), embed the transormation in the output image as
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
+
+    Returns:
+      Image: The stretched image.
+    """
+    if isinstance(spline, int):
+      tck = spint.splrep(x, y, k = spline)
+      def fspline(x): spint.splev(x, tck)
+    elif spline == "akima":
+      fspline = Akima1DInterpolator(x, y)
+    else:
+      raise ValueError(f"Error, unknown spline '{spline}'.")
+    output = self.apply_channels(fspline, channels = channels, trans = trans)
+    if trans:
+      output.trans.xm = x
+      output.trans.ym = y
+    return output
 
   ######################
   # Complex stretches. #
@@ -513,7 +550,7 @@ class MixinImage:
          average median of these channels to the target level.
       2) Optionally, boosts contrast above the target median with a specially designed curve stretch.
 
-    It is recommended to set the black point of the image before the statistical stretch.
+    It is recommended to set the black point of the image before statistical stretch.
 
     Note:
       This is a Python implementation of the statistical stretch algorithm of Seti Astro,
@@ -527,23 +564,25 @@ class MixinImage:
       applied on second call.
 
     See also:
-      set_black_point,
-      harmonic_stretch
+      :meth:`Image.set_black_point() <.set_black_point>`,
+      :meth:`Image.harmonic_stretch() <.harmonic_stretch>`
 
     Args:
       median (float): The target median (expected in ]0, 1[).
       boost (float, optional): The contrast boost (expected >= 0; default 0 = no boost).
       maxiter (int, optional): The maximum number of harmonic stretches applied to reach the target
-        median (default 5). For a single channel, the algorithm shall actually converge in one iteration.
+        median (default 5). For a single channel, the algorithm shall actually converge in a single
+        iteration.
       accuracy (float, optional): The target accuracy of the median (default 0.001).
       channels (str, optional): The selected channels (default "" = all channels).
-        See Image.apply_channels or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
-        output.trans (see Image.apply_channels).
+        output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
 
     Returns:
       Image: The stretched image.
     """
+
     def compute_medians(image, channels):
       """Compute the medians of the channels of the input image, returned as a dictionary."""
       if channels == "V":

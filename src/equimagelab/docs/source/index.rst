@@ -54,9 +54,9 @@ Latest news:
     - Rectangle, ellipse & lasso (polygon) selections on the images.
     - Histograms of the selection.
     - Image mask from the selection.
-    - Added lightness parameter in :py:meth:`color_saturation <equimagelab.equimage.image_colors.MixinImage.color_saturation>`.
+    - Added lightness parameter in :py:meth:`HSX_color_saturation <equimagelab.equimage.image_colors.MixinImage.HSX_color_saturation>`.
 
-  - Version 1.3.0.
+  - March 7, 2025: Version 1.3.0.
 
     - HSL color model in the lRGB and sRGB color spaces.
     - CIELab color space (with Lab and Lch color models).
@@ -65,3 +65,9 @@ Latest news:
     - Color temperature adjustment.
     - Color saturation with the HSV/HSL color models (lRGB and sRGB color spaces) and with the Lsh color model (CIELuv color space).
     - Hue rotations.
+
+  - March 26, 2025: Version 1.3.1.
+
+    - Spline curve stretch.
+    - Background neutralization.
+    - Star resynthesis with Siril & star reduction.
