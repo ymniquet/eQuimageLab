@@ -176,59 +176,62 @@ class MixinImage:
   # Color transformations. #
   ##########################
 
-  def neutralize_background(self, neutral, mode = "additive", N = None):
-    """Neutralize the background of a RGB image.
+  def neutralize_background(self, source, neutral = None, mode = "additive"):
+    """Neutralize the background of a RGB image (turn a background color into gray).
 
-    Given a target neutral point (Rn, Gn, Bn), this method transforms the RGB channels as:
+    Given a source background color (Rs, Gs, Bs), and a target neutral level N, this method
+    transforms the RGB channels as:
 
-      - R ← R-Rn+N
-      - G ← G-Gn+N
-      - B ← B-Bn+N
+      - R ← R-Rs+N
+      - G ← G-Gs+N
+      - B ← B-Bs+N
 
     if mode = "additive", or as:
 
-      - R ← R*N/Rn
-      - G ← G*N/Gn
-      - B ← B*N/Bn
+      - R ← R*N/Rs
+      - G ← G*N/Gs
+      - B ← B*N/Bs
 
-    if mode = "multiplicative", with N = max(Rn, Gn, Bn) by default. On output, the neutral
-    point appears, therefore, as the gray (N, N, N) color.
+    if mode = "multiplicative", with N = max(Rs, Gs, Bs) by default. On output, the source
+    background color becomes, therefore, the gray (N, N, N) color in both cases.
 
     Args:
-      neutral (float): The neutral point (tuple/list/array of the Rn, Gn, Bn levels).
+      source (float): The source background color (tuple/list/array of the Rs, Gs, Bs levels).
+      neutral (float, optional): The target neutral level [max(Rs, Gs, Bs) if None (default)].
       mode (str, optional): The neutralization mode ["additive" (default) or "multiplicative"].
-      N (float, optional): The neutral gray level [max(Rn, Gn, Bn) if None (default)].
 
     Returns:
       Image: The processed image.
     """
     self.check_color_model("RGB")
-    neutral = np.array(neutral)
-    if neutral.shape != (3,): raise ValueError("Error, neutral must be a tuple/list/array of three elements.")
-    neutral = neutral.reshape((3, 1, 1))
-    if N is None: N = neutral.max()
+    source = np.array(source)
+    if source.shape != (3,): raise ValueError("Error, source must be a tuple/list/array of three elements.")
+    source = source.reshape((3, 1, 1))
+    if neutral is None: neutral = source.max()
     if mode == "additive":
-      return self-(neutral+N)
+      return self-(source+neutral)
     elif mode == "multiplicative":
-      return self*(N/neutral)
+      return self*(neutral/source)
     else:
       raise ValueError("Error, mode must be 'additive' or 'multiplicative'.")
 
-  def color_balance(self, red = 1., green = 1., blue = 1, neutral = 0.):
+  def color_balance(self, red = 1., green = 1., blue = 1., neutral = 0.):
     """Adjust the color balance of a RGB image.
 
-    Scales the RGB channels by the input multipliers:
+    This method linearly scales the RGB channels as:
 
       - R ← red*(R-neutral)+neutral
       - G ← green*(G-neutral)+neutral
       - B ← blue*(B-neutral)+neutral
 
+    The neutral color thus remains unchanged.
+
     Args:
       red (float, optional): The multiplier for the red channel (default 1).
       green (float, optional): The multiplier for the green channel (default 1).
       blue (float, optional): The multiplier for the blue channel (default 1).
-      neutral (float, optional): The neutral level (default 0).
-        Can be a scalar of a tuple/list/array of the neutral (R, G, B) levels.
+      neutral (float, optional): The neutral level or color (default 0).
+        Can be a scalar or a tuple/list/array of neutral (R, G, B) levels.
 
     Returns:
       Image: The processed image.
@@ -246,6 +249,39 @@ class MixinImage:
     if blue  != 1.: output.image[2] = blue* (self.image[2]-neutral[2])+neutral[2]
     return output
 
+  def match_RGB(self, source, target, neutral = 0.):
+    """Adjust the color balance of a RGB image to transform a source into a target color.
+
+    Given a source color (Rs, Gs, Bs), a target color (Rt, Gt, Bt), and a neutral level N, this
+    method linearly scales the RGB channels as:
+
+      - R ← (Rt-N)/(Rs-N)*(R-N)+N
+      - G ← (Gt-N)/(Gs-N)*(G-N)+N
+      - B ← (Bt-N)/(Bs-N)*(B-N)+N
+
+    On output, the source color becomes the target color, while the neutral color remains unchanged.
+
+    Args:
+      source (float): The source color (tuple/list/array of the Rs, Gs, Bs levels).
+      target (float): The target color (tuple/list/array of the Rt, Gt, Bt levels).
+      neutral (float, optional): The neutral level or color (default 0).
+        Can be a scalar or a tuple/list/array of neutral (R, G, B) levels.
+
+    Returns:
+      Image: The processed image.
+    """
+    neutral = np.array(neutral)
+    if neutral.ndim == 0: neutral = np.array([neutral, neutral, neutral])
+    if neutral.shape != (3,): raise ValueError("Error, neutral must be a scalar or a tuple/list/array of three elements.")
+    red   = (target[0]-neutral[0])/(source[0]-neutral[0])
+    green = (target[1]-neutral[1])/(source[1]-neutral[1])
+    blue  = (target[2]-neutral[2])/(source[2]-neutral[2])
+    output = self.empty()
+    output.image[0] = red*  (self.image[0]-neutral[0])+neutral[0]
+    output.image[1] = green*(self.image[1]-neutral[1])+neutral[1]
+    output.image[2] = blue* (self.image[2]-neutral[2])+neutral[2]
+    return output
+
   def mix_RGB(self, M, neutral = 0.):
     """Mix RGB channels.
 
@@ -253,12 +289,12 @@ class MixinImage:
 
       P ← M@(P-neutral)+neutral,
 
-    with M a 3x3 mixing matrix.
+    with M a 3x3 mixing matrix. The neutral color thus remains unchanged.
 
     Args:
       M (numpy.ndarray): The mixing matrix.
-      neutral (float, optional): The neutral level (default 0).
-        Can be a scalar of a tuple/list/array of the neutral (R, G, B) levels.
+      neutral (float, optional): The neutral level or color (default 0).
+        Can be a scalar or a tuple/list/array of neutral (R, G, B) levels.
 
     Returns:
       Image: The processed image.

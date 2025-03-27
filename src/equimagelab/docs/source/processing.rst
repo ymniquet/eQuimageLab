@@ -32,6 +32,7 @@ The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>
    grayscale
    neutralize_background
    color_balance
+   match_RGB
    mix_RGB
    color_temperature
    HSX_color_saturation
