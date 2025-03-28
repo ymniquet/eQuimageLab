@@ -204,12 +204,12 @@ class MixinImage:
       Image: The processed image.
     """
     self.check_color_model("RGB")
-    source = np.array(source)
+    source = np.asarray(source)
     if source.shape != (3,): raise ValueError("Error, source must be a tuple/list/array of three elements.")
     source = source.reshape((3, 1, 1))
     if neutral is None: neutral = source.max()
     if mode == "additive":
-      return self-(source+neutral)
+      return self+(neutral-source)
     elif mode == "multiplicative":
       return self*(neutral/source)
     else:
@@ -240,7 +240,7 @@ class MixinImage:
     if red < 0.: raise ValueError("Error, red must be >= 0.")
     if green < 0.: raise ValueError("Error, green must be >= 0.")
     if blue < 0.: raise ValueError("Error, blue must be >= 0.")
-    neutral = np.array(neutral)
+    neutral = np.asarray(neutral)
     if neutral.ndim == 0: neutral = np.array([neutral, neutral, neutral])
     if neutral.shape != (3,): raise ValueError("Error, neutral must be a scalar or a tuple/list/array of three elements.")
     output = self.copy()
@@ -270,17 +270,17 @@ class MixinImage:
     Returns:
       Image: The processed image.
     """
-    neutral = np.array(neutral)
+    source = np.asarray(source)
+    if source.shape != (3,): raise ValueError("Error, source must be a tuple/list/array of three elements.")
+    source = source.reshape((3, 1, 1))
+    target = np.asarray(target)
+    if target.shape != (3,): raise ValueError("Error, target must be a tuple/list/array of three elements.")
+    target = target.reshape((3, 1, 1))
+    neutral = np.asarray(neutral)
     if neutral.ndim == 0: neutral = np.array([neutral, neutral, neutral])
     if neutral.shape != (3,): raise ValueError("Error, neutral must be a scalar or a tuple/list/array of three elements.")
-    red   = (target[0]-neutral[0])/(source[0]-neutral[0])
-    green = (target[1]-neutral[1])/(source[1]-neutral[1])
-    blue  = (target[2]-neutral[2])/(source[2]-neutral[2])
-    output = self.empty()
-    output.image[0] = red*  (self.image[0]-neutral[0])+neutral[0]
-    output.image[1] = green*(self.image[1]-neutral[1])+neutral[1]
-    output.image[2] = blue* (self.image[2]-neutral[2])+neutral[2]
-    return output
+    neutral = neutral.reshape((3, 1, 1))
+    return ((target-neutral)/(source-neutral))*(self-neutral)+neutral
 
   def mix_RGB(self, M, neutral = 0.):
     """Mix RGB channels.
@@ -300,11 +300,13 @@ class MixinImage:
       Image: The processed image.
     """
     self.check_color_model("RGB")
-    neutral = np.array(neutral)
+    M = np.asarray(M)
+    if M.shape != (3, 3): raise ValueError("Error, M must be a 3x3 matrix.")
+    neutral = np.asarray(neutral)
     if neutral.ndim == 0: neutral = np.array([neutral, neutral, neutral])
     if neutral.shape != (3,): raise ValueError("Error, neutral must be a scalar or a tuple/list/array of three elements.")
     neutral = neutral.reshape((3, 1, 1))
-    return self.newImage(np.tensordot(np.asarray(M, dtype = self.dtype), self.image-neutral, axes = 1)+neutral)
+    return self.newImage(np.tensordot(M, self.image-neutral, axes = 1)+neutral)
 
   def color_temperature(self, T, T0 = 6650., lightness = False):
     """Adjust the color temperature of a RGB image.
