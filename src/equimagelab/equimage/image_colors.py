@@ -240,14 +240,12 @@ class MixinImage:
     if red < 0.: raise ValueError("Error, red must be >= 0.")
     if green < 0.: raise ValueError("Error, green must be >= 0.")
     if blue < 0.: raise ValueError("Error, blue must be >= 0.")
+    mult = np.array([[[red]], [[green]], [[blue]]])
     neutral = np.asarray(neutral)
     if neutral.ndim == 0: neutral = np.array([neutral, neutral, neutral])
     if neutral.shape != (3,): raise ValueError("Error, neutral must be a scalar or a tuple/list/array of three elements.")
-    output = self.copy()
-    if red   != 1.: output.image[0] = red*  (self.image[0]-neutral[0])+neutral[0]
-    if green != 1.: output.image[1] = green*(self.image[1]-neutral[1])+neutral[1]
-    if blue  != 1.: output.image[2] = blue* (self.image[2]-neutral[2])+neutral[2]
-    return output
+    neutral = neutral.reshape((3, 1, 1))
+    return mult*(self-neutral)+neutral
 
   def match_RGB(self, source, target, neutral = 0.):
     """Adjust the color balance of a RGB image to transform a source into a target color.
@@ -280,7 +278,8 @@ class MixinImage:
     if neutral.ndim == 0: neutral = np.array([neutral, neutral, neutral])
     if neutral.shape != (3,): raise ValueError("Error, neutral must be a scalar or a tuple/list/array of three elements.")
     neutral = neutral.reshape((3, 1, 1))
-    return ((target-neutral)/(source-neutral))*(self-neutral)+neutral
+    mult = (target-neutral)/(source-neutral)
+    return mult*(self-neutral)+neutral
 
   def mix_RGB(self, M, neutral = 0.):
     """Mix RGB channels.
