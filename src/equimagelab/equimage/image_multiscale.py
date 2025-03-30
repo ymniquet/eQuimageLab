@@ -7,37 +7,62 @@
 
 """Multiscale transformations."""
 
-import numpy as np
 import pywt
+import numpy as np
+from copy import deepcopy
 
-from .image import Image
-from .helpers import is_valid_image
+from . import params
+from . import image as img
+from . import image_utils as imgutils
 
 class WaveletTransform:
-  """Wavelet transform object."""
+  """Wavelet transform class."""
+
+  def scale_levels(self, mult, inplace = False):
+    """
+    """
+    if isinstance(mult, dict):
+      m = np.ones(self.levels)
+      for key, value in mult.items():
+        if not isinstance(key, int): raise ValueError("Error, mult dictionary keys must be integers.")
+        if key < 0 or key >= self.levels: raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
+        m[key] = value
+    else:
+      m = np.asarray(mult)
+      if m.ndim != 1: raise ValueError("Error, mult must be a dictionary or be mappable to a 1D array.")
+    if inplace:
+      output = self
+    else:
+      output = deepcopy(self)
+    for level in range(min(self.levels, m.size)):
+      cH, cV, cD = output.coeffs[level+1]
+      cH *= m[level]
+      cV *= m[level]
+      cD *= m[level]
+    return output
 
   def iwt(self):
     """
     """
-    if wt.type == "dwt":
+    if self.type == "dwt":
       data = pywt.waverec2(self.coeffs, wavelet = self.wavelet, mode = self.mode, axes = (-2, -1))
-    elif wt.type == "swt":
+    elif self.type == "swt":
       data = pywt.iswt2(self.coeffs, wavelet = self.wavelet, norm = self.norm, axes = (-2, -1))
       height, width = self.size
       ptop, pleft = self.padding
       data = data[..., ptop:ptop+height, pleft:pleft+width]
     else:
-      raise ValueError(f"Unknown wavelet transform type '{wt.type}'.")
-    return Image(data, self.colorspace, self.colormodel) if self.isImage else data
+      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
+    return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage else data
 
-def swt(image, level, wavelet = "coif4", mode = "symmetric", start = 0):
+def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
   """
   """
-  isImage = issubclass(image, Image)
+  isImage = issubclass(type(image), img.Image)
   if isImage:
     width, height = image.get_size()
     data = image.image
-  elif is_valid_image(image):
+  elif imgutils.is_valid_image(image):
     width, height = image.shape[-1], image.shape[-2]
     data = image
   else:
@@ -58,11 +83,14 @@ def swt(image, level, wavelet = "coif4", mode = "symmetric", start = 0):
     raise ValueError(f"Error, unknown boundary mode '{mode}'.")
   padded = np.pad(data, padding, mode = mode)
   # Compute the stationary wavelet transform.
+  if wavelet == "default": wavelet = params.defwavelet
   wt = WaveletTransform()
   wt.type = "swt"
   wt.wavelet = wavelet
+  wt.levels = levels
+  wt.start = start
   wt.norm = True
-  wt.coeffs = pywt.swt2(padded, wavelet = wavelet, level = level, start_level = start, trim_approx = True, norm = True, axes = (-2, -1))
+  wt.coeffs = pywt.swt2(padded, wavelet = wavelet, level = levels, start_level = start, trim_approx = True, norm = True, axes = (-2, -1))
   wt.size = (height, width)
   wt.padding = (ptop, pleft)
   wt.isImage = isImage
@@ -71,22 +99,25 @@ def swt(image, level, wavelet = "coif4", mode = "symmetric", start = 0):
     wt.colormodel = image.colormodel
   return wt
 
-def dwt(image, level, wavelet = "coif4", mode = "symmetric"):
+def dwt(image, levels, wavelet = "default", mode = "symmetric"):
   """
   """
-  isImage = issubclass(image, Image)
+  isImage = issubclass(type(image), img.Image)
   if isImage:
     data = image.image
-  elif is_valid_image(image):
+  elif imgutils.is_valid_image(image):
     data = image
   else:
     raise ValueError("Error, the input image is not valid.")
   # Compute the discrete wavelet transform.
+  if wavelet == "default": wavelet = params.defwavelet
   wt = WaveletTransform()
   wt.type = "dwt"
   wt.wavelet = wavelet
+  wt.levels = levels
+  wt.start = 0
   wt.mode = mode
-  wt.coeffs = pywt.wavedec2(data, wavelet = wavelet, level = level, mode = mode, axes = (-2, -1))
+  wt.coeffs = pywt.wavedec2(data, wavelet = wavelet, level = levels, mode = mode, axes = (-2, -1))
   wt.isImage = isImage
   if isImage:
     wt.colorspace = image.colorspace
@@ -100,12 +131,12 @@ def dwt(image, level, wavelet = "coif4", mode = "symmetric"):
 class MixinImage:
   """To be included in the Image class."""
 
-  def swt(self, level, wavelet = "coif4", mode = "symmetric", start = 0):
+  def swt(self, levels, wavelet = "default", mode = "symmetric", start = 0):
     """
     """
-    return swt(self.image, level, wavelet = wavelet, mode = mode, start = start)
+    return swt(self, levels, wavelet = wavelet, mode = mode, start = start)
 
-  def dwt(self, level, wavelet = "coif4", mode = "symmetric"):
+  def dwt(self, levels, wavelet = "default", mode = "symmetric"):
     """
     """
-    return dwt(self.image, level, wavelet = wavelet, mode = mode)
+    return dwt(self, levels, wavelet = wavelet, mode = mode)

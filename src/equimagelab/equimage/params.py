@@ -152,3 +152,7 @@ ntranshi = 256 # High resolution.
 # Exclude pixels <= 0 or >= 1 from the percentiles in image statistics ?
 
 exclude01 = False
+
+# Default wavelet.
+
+defwavelet = "coif4"
