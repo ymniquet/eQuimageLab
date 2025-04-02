@@ -18,6 +18,20 @@ from . import image_utils as imgutils
 class WaveletTransform:
   """Wavelet transform class."""
 
+  def iwt(self):
+    """
+    """
+    if self.type == "dwt":
+      data = pywt.waverec2(self.coeffs, wavelet = self.wavelet, mode = self.mode, axes = (-2, -1))
+    elif self.type == "swt":
+      data = pywt.iswt2(self.coeffs, wavelet = self.wavelet, norm = self.norm, axes = (-2, -1))
+      height, width = self.size
+      ptop, pleft = self.padding
+      data = data[..., ptop:ptop+height, pleft:pleft+width]
+    else:
+      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
+    return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage else data
+
   def scale_levels(self, mult, inplace = False):
     """
     """
@@ -41,20 +55,6 @@ class WaveletTransform:
       cD *= m[level]
     return output
 
-  def iwt(self):
-    """
-    """
-    if self.type == "dwt":
-      data = pywt.waverec2(self.coeffs, wavelet = self.wavelet, mode = self.mode, axes = (-2, -1))
-    elif self.type == "swt":
-      data = pywt.iswt2(self.coeffs, wavelet = self.wavelet, norm = self.norm, axes = (-2, -1))
-      height, width = self.size
-      ptop, pleft = self.padding
-      data = data[..., ptop:ptop+height, pleft:pleft+width]
-    else:
-      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
-    return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage else data
-
 def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
   """
   """
@@ -67,9 +67,10 @@ def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
     data = image
   else:
     raise ValueError("Error, the input image is not valid.")
-  # Pad the image so that the width and height of the image are powers of 2.
-  pwidth  = int(2**(np.ceil(np.log2(width))))
-  pheight = int(2**(np.ceil(np.log2(height))))
+  # Pad the image so that the width and height are multiples of 2**level.
+  length = 2**levels
+  pwidth  = int(np.ceil(width /length))*length
+  pheight = int(np.ceil(height/length))*length
   pleft = (pwidth-width)//2 ; pright = pwidth-width-pleft
   ptop = (pheight-height)//2 ; pbottom = pheight-height-ptop
   padding = (data.ndim-2)*((0, 0),)+((ptop, pbottom), (pleft, pright))
