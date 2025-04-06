@@ -28,6 +28,8 @@ class WaveletTransform:
       height, width = self.size
       ptop, pleft = self.padding
       data = data[..., ptop:ptop+height, pleft:pleft+width]
+    elif self.type == "slt":
+      data = np.sum(self.coeffs, axis = 0)
     else:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage else data
@@ -48,12 +50,44 @@ class WaveletTransform:
       output = self
     else:
       output = deepcopy(self)
-    for level in range(min(self.levels, m.size)):
-      cH, cV, cD = output.coeffs[level+1]
-      cH *= m[level]
-      cV *= m[level]
-      cD *= m[level]
+    if self.type in ["dwt", "swt"]:
+      for level in range(min(self.levels, m.size)):
+        cH, cV, cD = output.coeffs[-(level+1)]
+        cH *= m[level]
+        cV *= m[level]
+        cD *= m[level]
+    elif self.type == "slt":
+      for level in range(min(self.levels, m.size)):
+        cA = output.coeffs[-(level+1)]
+        cA *= m[level]
+    else:
+      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return output
+
+def dwt(image, levels, wavelet = "default", mode = "symmetric"):
+  """
+  """
+  isImage = issubclass(type(image), img.Image)
+  if isImage:
+    data = image.image
+  elif imgutils.is_valid_image(image):
+    data = image
+  else:
+    raise ValueError("Error, the input image is not valid.")
+  # Compute the discrete wavelet transform.
+  if wavelet == "default": wavelet = params.defwavelet
+  wt = WaveletTransform()
+  wt.type = "dwt"
+  wt.wavelet = wavelet
+  wt.levels = levels
+  wt.start = 0
+  wt.mode = mode
+  wt.coeffs = pywt.wavedec2(data, wavelet = wavelet, level = levels, mode = mode, axes = (-2, -1))
+  wt.isImage = isImage
+  if isImage:
+    wt.colorspace = image.colorspace
+    wt.colormodel = image.colormodel
+  return wt
 
 def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
   """
@@ -90,8 +124,9 @@ def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
   wt.wavelet = wavelet
   wt.levels = levels
   wt.start = start
+  wt.mode = mode
   wt.norm = True
-  wt.coeffs = pywt.swt2(padded, wavelet = wavelet, level = levels, start_level = start, trim_approx = True, norm = True, axes = (-2, -1))
+  wt.coeffs = pywt.swt2(padded, wavelet = wavelet, level = levels, start_level = start, trim_approx = True, norm = wt.norm, axes = (-2, -1))
   wt.size = (height, width)
   wt.padding = (ptop, pleft)
   wt.isImage = isImage
@@ -100,25 +135,54 @@ def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
     wt.colormodel = image.colormodel
   return wt
 
-def dwt(image, levels, wavelet = "default", mode = "symmetric"):
+def slt(image, levels, starlet = "cubic", mode = "symmetric"):
   """
   """
   isImage = issubclass(type(image), img.Image)
   if isImage:
+    width, height = image.get_size()
     data = image.image
   elif imgutils.is_valid_image(image):
+    width, height = image.shape[-1], image.shape[-2]
     data = image
   else:
     raise ValueError("Error, the input image is not valid.")
-  # Compute the discrete wavelet transform.
-  if wavelet == "default": wavelet = params.defwavelet
+  # Pad the image so that the width and height are multiples of 2**level.
+  length = 2**levels
+  pwidth  = int(np.ceil(width /length))*length
+  pheight = int(np.ceil(height/length))*length
+  pleft = (pwidth-width)//2 ; pright = pwidth-width-pleft
+  ptop = (pheight-height)//2 ; pbottom = pheight-height-ptop
+  padding = (data.ndim-2)*((0, 0),)+((ptop, pbottom), (pleft, pright))
+  if mode == "zero": # Translate pywt boundary modes.
+    mode = "constant"
+  elif mode == "constant":
+    mode = "edge"
+  elif mode == "periodic":
+    mode = "wrap"
+  elif mode not in ["symmetric", "reflect"]:
+    raise ValueError(f"Error, unknown boundary mode '{mode}'.")
+  padded = np.pad(data, padding, mode = mode)
+  # Compute the starlet transform.
+  if starlet == "linear": # Only the first (low pass) filter is relevant here.
+    wavelet = pywt.Wavelet("linear", filter_bank = [[1/4, 1/2, 1/4], [-1/4, 1/2, -1/4], [0., 0., 0.], [0., 0., 0.]])
+  elif starlet == "cubic":
+    wavelet = pywt.Wavelet("cubic", filter_bank = [[1/16, 1/4, 3/8, 1/4, 1/16], [-1/16, -1/8, 3/8, -1/8, -1/16], [0., 0., 0., 0., 0.], [0., 0., 0., 0., 0.]])
+  else:
+    raise ValueError("Error, starlet must be 'linear' or 'cubic'.")
+  coeffs = pywt.swt2(padded, wavelet = wavelet, level = levels, start_level = 0, trim_approx = False, norm = False, axes = (-2, -1))
   wt = WaveletTransform()
-  wt.type = "dwt"
-  wt.wavelet = wavelet
+  wt.type = "slt"
+  wt.wavelet = starlet
   wt.levels = levels
   wt.start = 0
   wt.mode = mode
-  wt.coeffs = pywt.wavedec2(data, wavelet = wavelet, level = levels, mode = mode, axes = (-2, -1))
+  wt.coeffs = (coeffs[0][0][..., ptop:ptop+height, pleft:pleft+width],)
+  for level in range(levels-1):
+    delta = coeffs[level+1][0]-coeffs[level][0]
+    wt.coeffs += (delta[..., ptop:ptop+height, pleft:pleft+width],)
+  delta = image-coeffs[levels-1][0]
+  wt.coeffs += (delta[..., ptop:ptop+height, pleft:pleft+width],)
   wt.isImage = isImage
   if isImage:
     wt.colorspace = image.colorspace
@@ -132,12 +196,18 @@ def dwt(image, levels, wavelet = "default", mode = "symmetric"):
 class MixinImage:
   """To be included in the Image class."""
 
+  def dwt(self, levels, wavelet = "default", mode = "symmetric"):
+    """
+    """
+    return dwt(self, levels, wavelet = wavelet, mode = mode)
+
   def swt(self, levels, wavelet = "default", mode = "symmetric", start = 0):
     """
     """
     return swt(self, levels, wavelet = wavelet, mode = mode, start = start)
 
-  def dwt(self, levels, wavelet = "default", mode = "symmetric"):
+  def slt(self, levels, starlet = "cubic", mode = "symmetric"):
     """
     """
-    return dwt(self, levels, wavelet = wavelet, mode = mode)
+    return slt(self, levels, starlet = starlet, mode = mode)
+
