@@ -7,6 +7,12 @@
 
 """Utils for Jupyter Lab interface."""
 
+# What to import in the equimagelab namespace:
+
+__all__ = ["filter", "shadowed", "highlighted", "differences"]
+
+#
+
 import base64
 from io import BytesIO
 from PIL import Image as PILImage

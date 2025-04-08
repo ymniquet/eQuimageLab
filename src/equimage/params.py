@@ -7,6 +7,12 @@
 
 """Image processing parameters."""
 
+# What to import in the equimage namespace:
+
+__all__ = ["get_RGB_luma", "set_RGB_luma"]
+
+#
+
 import numpy as np
 
 # Use imageio or imread module ?

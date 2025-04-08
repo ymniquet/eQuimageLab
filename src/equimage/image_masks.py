@@ -7,6 +7,12 @@
 
 """Image masks."""
 
+# What to import in the equimage namespace:
+
+__all__ = ["float_mask", "extend_bmask", "smooth_mask", "threshold_bmask", "threshold_fmask", "shape_bmask"]
+
+#
+
 import numpy as np
 import scipy.ndimage as ndimg
 import skimage.draw as skdraw

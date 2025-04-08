@@ -7,6 +7,8 @@
 
 """Image processing module."""
 
+__packagepath__ = __path__[0]
+
 # Import top-level symbols.
 
 from .imports import *

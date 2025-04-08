@@ -7,6 +7,12 @@
 
 """Histogram stretch."""
 
+# What to import in the equimage namespace:
+
+__all__ = ["hms", "mts", "ghs", "Dharmonic_through"]
+
+#
+
 import copy
 import numpy as np
 import scipy.interpolate as spint

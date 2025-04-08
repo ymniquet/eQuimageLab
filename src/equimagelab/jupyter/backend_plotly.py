@@ -7,6 +7,12 @@
 
 """Plotly backend for Jupyter Lab interface."""
 
+# What to import in the equimagelab namespace:
+
+__all__ = ["show", "show_t", "show_histograms", "show_statistics", "light_curve"]
+
+#
+
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go

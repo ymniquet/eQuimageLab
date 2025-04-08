@@ -7,6 +7,12 @@
 
 """Dash backend for Jupyter Lab interface."""
 
+# What to import in the equimagelab namespace:
+
+__all__ = ["Dashboard"]
+
+#
+
 # TODO:
 #  - Update tabs only if necessary.
 

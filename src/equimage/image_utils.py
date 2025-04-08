@@ -7,6 +7,12 @@
 
 """Image utils."""
 
+# What to import in the equimage namespace:
+
+__all__ = ["is_valid_image", "clip", "blend"]
+
+#
+
 import numpy as np
 
 from . import params

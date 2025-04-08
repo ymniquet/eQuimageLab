@@ -7,6 +7,12 @@
 
 """Image I/O management."""
 
+# What to import in the equimage namespace:
+
+__all__ = ["load_image", "save_image"]
+
+#
+
 import os
 import numpy as np
 

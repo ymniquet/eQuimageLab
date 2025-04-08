@@ -7,6 +7,12 @@
 
 """Color spaces and models management."""
 
+# What to import in the equimage namespace:
+
+__all__ = ["luma", "lRGB_lightness", "sRGB_lightness"]
+
+#
+
 import numpy as np
 import skimage.color as skcolor
 

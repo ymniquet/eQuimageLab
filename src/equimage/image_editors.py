@@ -12,7 +12,7 @@ import tempfile
 import subprocess
 import numpy as np
 
-from .image_io import load_image_as_array
+from . import image_io as io
 
 #####################################
 # For inclusion in the Image class. #
@@ -113,7 +113,7 @@ class MixinImage:
         else:
           raise ValueError(f"Error, the image has not been modified by {editor}...")
       print(f"Reading file {filepath}...")
-      image, meta = load_image_as_array(filepath, verbose = False)
+      image, meta = io.load_image_as_array(filepath, verbose = False)
       return self.newImage(image)
 
   def edit_with_gimp(self, export = "tiff", depth = 16):

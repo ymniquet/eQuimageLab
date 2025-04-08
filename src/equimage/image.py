@@ -7,6 +7,12 @@
 
 """Image class."""
 
+# What to import in the equimage namespace:
+
+__all__ = ["Image"]
+
+#
+
 import numpy as np
 
 from . import params

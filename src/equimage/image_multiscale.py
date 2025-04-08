@@ -7,6 +7,12 @@
 
 """Multiscale transformations."""
 
+# What to import in the equimage namespace:
+
+__all__ = ["dwt", "swt", "slt"]
+
+#
+
 import pywt
 import numpy as np
 import scipy.ndimage as ndimg

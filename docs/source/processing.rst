@@ -43,7 +43,7 @@ The following methods of the :py:class:`Image <equimage.image.Image>` class tran
 
 Also,the following function returns a HSV wheel as an :py:class:`Image <equimage.image.Image>` object to test color transformations:
 
-.. currentmodule:: equimagelab.misc
+.. currentmodule:: equimage.image_colors
 
 .. autosummary::
 

@@ -7,6 +7,13 @@
 
 """Color management."""
 
+# What to import in the equimage namespace:
+
+__all__ = ["HSV_wheel"]
+
+#
+
+import os
 import numpy as np
 import scipy.interpolate as spint
 from scipy.interpolate import Akima1DInterpolator
@@ -14,6 +21,25 @@ from scipy.interpolate import Akima1DInterpolator
 from . import params
 from . import helpers
 from . import image_colorspaces as colorspaces
+from . import image_io as io
+from . import __packagepath__
+
+##################
+# Test image(s). #
+##################
+
+def HSV_wheel():
+  """Return a HSV wheel as an Image object, to test color transformations.
+
+  Returns:
+    Image: An image object with a HSV wheel.
+  """
+  image, meta = io.load_image(os.path.join(__packagepath__, "images", "HSVwheel.png"), verbose = False)
+  return image
+
+#####################
+# Helper functions. #
+#####################
 
 def parse_hue_kwargs(D, kwargs):
   """Parse hue keywords in the kwargs.

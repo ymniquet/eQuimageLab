@@ -12,12 +12,10 @@ __packagepath__ = __path__[0]
 
 # Import top-level symbols.
 
-import equimage
 from equimage.imports import *
 
-from .jupyter.imports import *
-from .misc import HSV_wheel
 from . import params
+from .jupyter.imports import *
 
 print("######################################"+len(__version__)*"#")
 print(f"# Welcome to eQuimageLab version {__version__}... #")

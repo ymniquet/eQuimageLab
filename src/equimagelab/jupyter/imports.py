@@ -7,6 +7,8 @@
 
 """Jupyter Lab interface top-level symbols."""
 
-from .utils import filter, shadowed, highlighted, differences
-from .backend_plotly import show, show_t, show_histograms, show_statistics, light_curve
-from .backend_dash import Dashboard
+# What to import is defined by the __all__ variable in each file:
+
+from .utils import *
+from .backend_plotly import *
+from .backend_dash import *
