@@ -33,6 +33,6 @@ ax.set_xticklabels(["1/6", "0", "5/6", "2/3", "1/2", "1/3"], color = "white")
 ax.set_yticks([.2, .4, .6, .8])
 ax.set_yticklabels([])
 
-savefig("../images/HSVwheel.png", dpi = 200)
+savefig("../src/equimagelab/images/HSVwheel.png", dpi = 200)
 
 show()
