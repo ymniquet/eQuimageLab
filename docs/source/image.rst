@@ -4,7 +4,7 @@ The Image class
 Description
 ^^^^^^^^^^^
 
-An image is stored in an :py:class:`Image <equimagelab.equimage.image.Image>` object as ``Image.image``, a :py:class:`numpy.ndarray` with data type :py:class:`numpy.float32` (single precision 32 bits floats) or :py:class:`numpy.float64` (double precision 64 bits floats):
+An image is stored in an :py:class:`Image <equimage.image.Image>` object as ``Image.image``, a :py:class:`numpy.ndarray` with data type :py:class:`numpy.float32` (single precision 32 bits floats) or :py:class:`numpy.float64` (double precision 64 bits floats):
 
   - Color images are represented as arrays with shape (3, H, W), where W is the width and H the height of the image in pixels. The leading axis spans the color channels (see `colormodel` below).
   - Grayscale images are represented as arrays with shape (1, H, W).
@@ -12,7 +12,7 @@ An image is stored in an :py:class:`Image <equimagelab.equimage.image.Image>` ob
 .. note::
   This convention differs from the usual representation of images as arrays with shape (H, W, 3) or (H, W). It is, however, more convenient to represent an image as such a superposition of "layers" or "channels" for many operations.
 
-The :py:class:`Image <equimagelab.equimage.image.Image>` class also embeds ``Image.colorspace`` and ``Image.colormodel`` attributes for the color space and model of the image. The `colorspace` attribute can be:
+The :py:class:`Image <equimage.image.Image>` class also embeds ``Image.colorspace`` and ``Image.colormodel`` attributes for the color space and model of the image. The `colorspace` attribute can be:
 
   - "lRGB" for the linear RGB (lRGB) color space.
   - "sRGB" for the `sRGB <https://en.wikipedia.org/wiki/SRGB>`_ color space.
@@ -39,14 +39,14 @@ In the CIELuv color space, the `colormodel` attribute can be:
 
 The default color space of an image is "sRGB" and the default color model is "RGB". **You won't need to worry about the color space and model of your images for most operations**. See the section `More about color spaces and models`_ as well as :doc:`composite` for details.
 
-The data type of the images (:py:class:`numpy.float32` or :py:class:`numpy.float64`) can be set globally with :py:func:`equimagelab.params.set_image_type() <equimagelab.equimage.params.set_image_type>` and inquired with :py:func:`equimagelab.params.get_image_type() <equimagelab.equimage.params.get_image_type>`. The :py:class:`numpy.float64` type is more accurate, but doubles the memory footprint of the images and can increase computation times. The default data type is :py:class:`numpy.float32`. Note that some operations (image scaling, edition with external software...) are performed with :py:class:`numpy.float32` or even :py:class:`numpy.int16` precision whatever the choice of data type for the images.
+The data type of the images (:py:class:`numpy.float32` or :py:class:`numpy.float64`) can be set globally with :py:func:`equimagelab.params.set_image_type() <equimage.params.set_image_type>` and inquired with :py:func:`equimagelab.params.get_image_type() <equimage.params.get_image_type>`. The :py:class:`numpy.float64` type is more accurate, but doubles the memory footprint of the images and can increase computation times. The default data type is :py:class:`numpy.float32`. Note that some operations (image scaling, edition with external software...) are performed with :py:class:`numpy.float32` or even :py:class:`numpy.int16` precision whatever the choice of data type for the images.
 
 Creating and accessing images
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An existing image represented as a :py:class:`numpy.ndarray` array `imgarray` can be embedded in an :py:class:`Image <equimagelab.equimage.image.Image>` object using the constructor ``image = Image(imgarray)``. You can specify the channel axis for color images [e.g., ``image = Image(imgarray, channels = -1)`` if `imgarray` has shape (H, W, 3) instead of the default shape (3, H, W)].
+An existing image represented as a :py:class:`numpy.ndarray` array `imgarray` can be embedded in an :py:class:`Image <equimage.image.Image>` object using the constructor ``image = Image(imgarray)``. You can specify the channel axis for color images [e.g., ``image = Image(imgarray, channels = -1)`` if `imgarray` has shape (H, W, 3) instead of the default shape (3, H, W)].
 
-The :py:class:`Image <equimagelab.equimage.image.Image>` class behaves as a :py:class:`numpy.ndarray` for basic and Numpy operations. Namely, you can add, substract, multiply :py:class:`Image <equimagelab.equimage.image.Image>` objects, and apply all Numpy functions:
+The :py:class:`Image <equimage.image.Image>` class behaves as a :py:class:`numpy.ndarray` for basic and Numpy operations. Namely, you can add, substract, multiply :py:class:`Image <equimage.image.Image>` objects, and apply all Numpy functions:
 
 .. code-block:: ipython3
 
@@ -54,11 +54,11 @@ The :py:class:`Image <equimagelab.equimage.image.Image>` class behaves as a :py:
   maxRGB = np.max(image, axis = (1, 2)) # Maximum R/G/B levels.
   fancy = np.sin(image) # For fun...
 
-Therefore, you won't need to access the ``Image.image`` data for most purposes. If you need to do so anyway, we recommend that you use the :py:meth:`Image.get_image() <equimagelab.equimage.image.Image.get_image>` method, which returns the data as a :py:class:`numpy.ndarray` with shape (H, W, 3) or (3, H, W) (see the `channels` kwarg).
+Therefore, you won't need to access the ``Image.image`` data for most purposes. If you need to do so anyway, we recommend that you use the :py:meth:`Image.get_image() <equimage.image.Image.get_image>` method, which returns the data as a :py:class:`numpy.ndarray` with shape (H, W, 3) or (3, H, W) (see the `channels` kwarg).
 
 .. warning::
 
-  By default the :py:meth:`Image.get_image() <equimagelab.equimage.image.Image.get_image>` method returns (if possible) a **view** on the ``Image.image`` data. Therefore, the instructions
+  By default the :py:meth:`Image.get_image() <equimage.image.Image.get_image>` method returns (if possible) a **view** on the ``Image.image`` data. Therefore, the instructions
 
   .. code-block:: ipython3
 
@@ -69,9 +69,9 @@ Therefore, you won't need to access the ``Image.image`` data for most purposes. 
 
 You can also access the image as ``Image[:]`` (which returns a view on ``Image.image``), and specific channels of the image as, e.g., ``Image[0]`` (which returns a view on ``Image.image[0,:,:]``, the red channel for RGB images).
 
-You can inquire about the size, number of channels, color space and model of an image with the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+You can inquire about the size, number of channels, color space and model of an image with the following methods of the :py:class:`Image <equimage.image.Image>` class:
 
-.. currentmodule:: equimagelab.equimage.image.Image
+.. currentmodule:: equimage.image.Image
 
 .. autosummary::
 
@@ -81,7 +81,7 @@ You can inquire about the size, number of channels, color space and model of an 
    get_color_space
    get_color_model
 
-You can make a copy of an :py:class:`Image <equimagelab.equimage.image.Image>` object with the method:
+You can make a copy of an :py:class:`Image <equimage.image.Image>` object with the method:
 
 .. autosummary::
 
@@ -92,7 +92,7 @@ Loading and saving images
 
 Images can be loaded from/saved on disk with the functions:
 
-.. currentmodule:: equimagelab.equimage.image_io
+.. currentmodule:: equimage.image_io
 
 .. autosummary::
 
@@ -101,7 +101,7 @@ Images can be loaded from/saved on disk with the functions:
 
 eQuimageLab can handle png, tiff and fits files.
 
-The image in an :py:class:`Image <equimagelab.equimage.image.Image>` object can also be saved with the method :py:class:`Image.save <equimagelab.equimage.image_io.MixinImage.save>`.
+The image in an :py:class:`Image <equimage.image.Image>` object can also be saved with the method :py:class:`Image.save <equimage.image_io.MixinImage.save>`.
 
 More about color spaces and models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -125,11 +125,11 @@ where :math:`l \in [0, 1]` is a linear R, G, or B component and :math:`s` is the
 
 The sRGB color space appears more linear to the eyes (a green pixel with a value of 0.5 looks *approximately* five times brighter than a green pixel with a value of 0.1). It is the default working space in eQuimageLab.
 
-Linear RGB images can be converted into sRGB images with the :py:meth:`Image.sRGB() <equimagelab.equimage.image_colorspaces.MixinImage.sRGB>` method, and sRGB images into lRGB images with the :py:meth:`Image.lRGB() <equimagelab.equimage.image_colorspaces.MixinImage.lRGB>` method.
+Linear RGB images can be converted into sRGB images with the :py:meth:`Image.sRGB() <equimage.image_colorspaces.MixinImage.sRGB>` method, and sRGB images into lRGB images with the :py:meth:`Image.lRGB() <equimage.image_colorspaces.MixinImage.lRGB>` method.
 
 .. note::
 
-  In principle, a linear RGB image shall be converted into a sRGB image before processing. As this amounts (roughly) to a power law stretch, which would ultimately be lumped with the harmonic or hyperbolic stretches applied later, this conversion is often left out, and the lRGB image is direcly "imported" in the sRGB color space of the screen (that is, setting :math:`s\equiv l`). eQuimageLab actually does so, since all files are loaded as sRGB images by default, irrespective of their original color space (see `Loading and saving images`_ above). This can, however, alter the color balance of the image. If you wish to make a proper conversion of a lRGB into a sRGB image, use the :py:meth:`Image.sRGB() <equimagelab.equimage.image_colorspaces.MixinImage.sRGB>` method:
+  In principle, a linear RGB image shall be converted into a sRGB image before processing. As this amounts (roughly) to a power law stretch, which would ultimately be lumped with the harmonic or hyperbolic stretches applied later, this conversion is often left out, and the lRGB image is direcly "imported" in the sRGB color space of the screen (that is, setting :math:`s\equiv l`). eQuimageLab actually does so, since all files are loaded as sRGB images by default, irrespective of their original color space (see `Loading and saving images`_ above). This can, however, alter the color balance of the image. If you wish to make a proper conversion of a lRGB into a sRGB image, use the :py:meth:`Image.sRGB() <equimage.image_colorspaces.MixinImage.sRGB>` method:
 
   .. code-block:: ipython3
 
@@ -138,7 +138,7 @@ Linear RGB images can be converted into sRGB images with the :py:meth:`Image.sRG
 
 .. warning::
 
-  Linear RGB images are displayed "as is" in JupyterLab cells and on the dashboard, without conversion to the sRGB color space of the screen. If you need af faithful representation of a lRGB image, you must convert it into a sRGB image with the :py:meth:`Image.sRGB() <equimagelab.equimage.image_colorspaces.MixinImage.sRGB>` method before display.
+  Linear RGB images are displayed "as is" in JupyterLab cells and on the dashboard, without conversion to the sRGB color space of the screen. If you need af faithful representation of a lRGB image, you must convert it into a sRGB image with the :py:meth:`Image.sRGB() <equimage.image_colorspaces.MixinImage.sRGB>` method before display.
 
 The CIELab and CIELuv color spaces
 """"""""""""""""""""""""""""""""""
@@ -165,7 +165,7 @@ In the `CIELuv <https://en.wikipedia.org/wiki/CIELUV>`_ color space, the colors 
 
 The CIELab color space is, in principle, intended for colored surfaces (reflecting light), and the CIELuv for color displays (emitting light). These two color spaces are well suited to transformations that must leave the perceived brightness of the image unchanged (and practically give similar results). Moreover, a color saturation :math:`s^*=\sqrt{u^{*2}+v^{*2}}/L^*` can be defined in the CIELuv color space [#f1]_. It quantifies the "strength" of a color (:math:`s^*=0` for grays and is the larger the more vivid the color at given :math:`L^*`). See :doc:`composite` for more information about saturation.
 
-RGB images can be converted into CIELab or CIELuv images with the :py:meth:`Image.CIELab() <equimagelab.equimage.image_colorspaces.MixinImage.CIELab>` and :py:meth:`Image.CIELuv() <equimagelab.equimage.image_colorspaces.MixinImage.CIELuv>` methods. Conversely, CIELab and CIELuv images can be converted into lRGB or sRGB images with the :py:meth:`Image.lRGB() <equimagelab.equimage.image_colorspaces.MixinImage.lRGB>` and :py:meth:`Image.sRGB() <equimagelab.equimage.image_colorspaces.MixinImage.sRGB>` methods.
+RGB images can be converted into CIELab or CIELuv images with the :py:meth:`Image.CIELab() <equimage.image_colorspaces.MixinImage.CIELab>` and :py:meth:`Image.CIELuv() <equimage.image_colorspaces.MixinImage.CIELuv>` methods. Conversely, CIELab and CIELuv images can be converted into lRGB or sRGB images with the :py:meth:`Image.lRGB() <equimage.image_colorspaces.MixinImage.lRGB>` and :py:meth:`Image.sRGB() <equimage.image_colorspaces.MixinImage.sRGB>` methods.
 
 .. warning::
 
@@ -202,7 +202,7 @@ While the color space can be represented as a cube within the RGB color model (w
 
    The HSL cylinder of colors. The hue is mapped to the polar angle, the lightness increases from the bottom to the top, and the saturation from the axis to the edge of the cylinder.
 
-The HSV and HSL color models are best suited for some color transformations - in particular color saturation (making the colors more vivid or faded). Many operations can not, however, be applied to HSV/HSL images directly. Unless otherwise stated in the documentation, eQuimageLab does not automatically convert back and forth between the HSV/HSL and RGB color models for such operations. You need to do it yourself with the :py:meth:`Image.RGB() <equimagelab.equimage.image_colorspaces.MixinImage.RGB>`, :py:meth:`Image.HSV() <equimagelab.equimage.image_colorspaces.MixinImage.HSV>` and :py:meth:`Image.HSL() <equimagelab.equimage.image_colorspaces.MixinImage.HSL>` methods.
+The HSV and HSL color models are best suited for some color transformations - in particular color saturation (making the colors more vivid or faded). Many operations can not, however, be applied to HSV/HSL images directly. Unless otherwise stated in the documentation, eQuimageLab does not automatically convert back and forth between the HSV/HSL and RGB color models for such operations. You need to do it yourself with the :py:meth:`Image.RGB() <equimage.image_colorspaces.MixinImage.RGB>`, :py:meth:`Image.HSV() <equimage.image_colorspaces.MixinImage.HSV>` and :py:meth:`Image.HSL() <equimage.image_colorspaces.MixinImage.HSL>` methods.
 
 .. warning::
 
@@ -211,17 +211,17 @@ The HSV and HSL color models are best suited for some color transformations - in
 Color space and color model conversions
 """""""""""""""""""""""""""""""""""""""
 
-.. currentmodule:: equimagelab.equimage.image_colorspaces.MixinImage
+.. currentmodule:: equimage.image_colorspaces.MixinImage
 
 Here is a complete overview of the color space/color model conversion methods.
 
-The following method converts an :py:class:`Image <equimagelab.equimage.image.Image>` object to any compatible color space and model:
+The following method converts an :py:class:`Image <equimage.image.Image>` object to any compatible color space and model:
 
 .. autosummary::
 
   convert
 
-Additionally, the following methods convert an :py:class:`Image <equimagelab.equimage.image.Image>` object to a specific color space:
+Additionally, the following methods convert an :py:class:`Image <equimage.image.Image>` object to a specific color space:
 
 .. autosummary::
 
@@ -230,7 +230,7 @@ Additionally, the following methods convert an :py:class:`Image <equimagelab.equ
    CIELab
    CIELuv
 
-The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class convert a lRGB/sRGB image to a specific (compatible) color model:
+The following methods of the :py:class:`Image <equimage.image.Image>` class convert a lRGB/sRGB image to a specific (compatible) color model:
 
 .. autosummary::
 
@@ -238,14 +238,14 @@ The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>
    HSV
    HSL
 
-The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class convert a CIELab image to a specific (compatible) color model:
+The following methods of the :py:class:`Image <equimage.image.Image>` class convert a CIELab image to a specific (compatible) color model:
 
 .. autosummary::
 
    Lab
    Lch
 
-The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class convert a CIELuv image to a specific (compatible) color model:
+The following methods of the :py:class:`Image <equimage.image.Image>` class convert a CIELuv image to a specific (compatible) color model:
 
 .. autosummary::
 

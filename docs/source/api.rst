@@ -17,7 +17,7 @@ The equimage subpackage
 .. toctree::
    :maxdepth: 4
 
-   equimagelab.equimage
+   equimage
 
 .. _jupyter:
 

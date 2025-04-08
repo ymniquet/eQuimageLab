@@ -72,8 +72,8 @@ class MixinImage:
     registered in self.hists are not recomputed unless required.
 
     See also:
-      :meth:`params.set_default_hist_bins() <equimagelab.equimage.params.set_default_hist_bins>`,
-      :meth:`params.set_max_hist_bins() <equimagelab.equimage.params.set_max_hist_bins>`
+      :meth:`params.set_default_hist_bins() <equimage.params.set_default_hist_bins>`,
+      :meth:`params.set_max_hist_bins() <equimage.params.set_max_hist_bins>`
 
     Args:
       channels (str, optional): A combination of keys for the selected channels:

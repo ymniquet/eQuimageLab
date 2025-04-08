@@ -73,7 +73,7 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
   The default color space is sRGB and the default color model is RGB.
 
-  The dtype of the images (numpy.float32 or numpy.float64) can be set with :meth:`params.set_image_type() <equimagelab.equimage.params.set_image_type>`.
+  The dtype of the images (numpy.float32 or numpy.float64) can be set with :meth:`params.set_image_type() <equimage.params.set_image_type>`.
   """
 
   ################

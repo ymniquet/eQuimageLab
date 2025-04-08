@@ -333,8 +333,6 @@ class MixinImage:
       http://www.vendian.org/mncharity/dir3/blackbody/
       http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html
 
-      See equimagelab/misc/CTdata.py for the fits.
-
       Args:
         T (float): The temperature (K).
 

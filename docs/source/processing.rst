@@ -6,9 +6,9 @@ This section provides an overview of the capabilities of eQuimageLab.
 Image geometry
 ^^^^^^^^^^^^^^
 
-The geometry of the image (size, orientation, ...) can be transformed with the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+The geometry of the image (size, orientation, ...) can be transformed with the following methods of the :py:class:`Image <equimage.image.Image>` class:
 
-.. currentmodule:: equimagelab.equimage.image_geometry.MixinImage
+.. currentmodule:: equimage.image_geometry.MixinImage
 
 .. autosummary::
 
@@ -22,9 +22,9 @@ The geometry of the image (size, orientation, ...) can be transformed with the f
 Colors
 ^^^^^^
 
-The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class transform the colors of an image:
+The following methods of the :py:class:`Image <equimage.image.Image>` class transform the colors of an image:
 
-.. currentmodule:: equimagelab.equimage.image_colors.MixinImage
+.. currentmodule:: equimage.image_colors.MixinImage
 
 .. autosummary::
 
@@ -41,7 +41,7 @@ The following methods of the :py:class:`Image <equimagelab.equimage.image.Image>
    rotate_CIE_hue
    SCNR
 
-Also,the following function returns a HSV wheel as an :py:class:`Image <equimagelab.equimage.image.Image>` object to test color transformations:
+Also,the following function returns a HSV wheel as an :py:class:`Image <equimage.image.Image>` object to test color transformations:
 
 .. currentmodule:: equimagelab.misc
 
@@ -52,9 +52,9 @@ Also,the following function returns a HSV wheel as an :py:class:`Image <equimage
 Histogram stretching
 ^^^^^^^^^^^^^^^^^^^^
 
-The image histograms can be stretched with the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+The image histograms can be stretched with the following methods of the :py:class:`Image <equimage.image.Image>` class:
 
-.. currentmodule:: equimagelab.equimage.image_stretch.MixinImage
+.. currentmodule:: equimage.image_stretch.MixinImage
 
 .. autosummary::
 
@@ -72,9 +72,9 @@ The image histograms can be stretched with the following methods of the :py:clas
    curve_stretch
    spline_stretch
 
-Additionally, the image histograms can be stretched with the following functions, which can be applied either to an :py:class:`Image <equimagelab.equimage.image.Image>` object or to a :py:class:`numpy.ndarray`:
+Additionally, the image histograms can be stretched with the following functions, which can be applied either to an :py:class:`Image <equimage.image.Image>` object or to a :py:class:`numpy.ndarray`:
 
-.. currentmodule:: equimagelab.equimage.image_stretch
+.. currentmodule:: equimage.image_stretch
 
 .. autosummary::
 
@@ -88,17 +88,17 @@ The following function provides an alternative parametrization of the harmonic s
 
    Dharmonic_through
 
-Moreover, eQuimageLab provides an implementation of the `statistical stretch of SETI astro <https://www.setiastro.com/statistical-stretch>`_ as a method of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+Moreover, eQuimageLab provides an implementation of the `statistical stretch of SETI astro <https://www.setiastro.com/statistical-stretch>`_ as a method of the :py:class:`Image <equimage.image.Image>` class:
 
-.. currentmodule:: equimagelab.equimage.image_stretch.MixinImage
+.. currentmodule:: equimage.image_stretch.MixinImage
 
 .. autosummary::
 
    statistical_stretch
 
-Finally, eQuimageLab provides an interface to the `Scikit-Image <https://scikit-image.org/>`_ implementation of `CLAHE <https://en.wikipedia.org/wiki/Adaptive_histogram_equalization>`_ as a method of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+Finally, eQuimageLab provides an interface to the `Scikit-Image <https://scikit-image.org/>`_ implementation of `CLAHE <https://en.wikipedia.org/wiki/Adaptive_histogram_equalization>`_ as a method of the :py:class:`Image <equimage.image.Image>` class:
 
-.. currentmodule:: equimagelab.equimage.image_skimage.MixinImage
+.. currentmodule:: equimage.image_skimage.MixinImage
 
 .. autosummary::
 
@@ -107,14 +107,14 @@ Finally, eQuimageLab provides an interface to the `Scikit-Image <https://scikit-
 Image filters
 ^^^^^^^^^^^^^
 
-eQuimageLab provides filters for image convolution, enhancement or noise reduction as methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class. Some of them are interfaces to the `Scikit-Image <https://scikit-image.org/>`_ package.
+eQuimageLab provides filters for image convolution, enhancement or noise reduction as methods of the :py:class:`Image <equimage.image.Image>` class. Some of them are interfaces to the `Scikit-Image <https://scikit-image.org/>`_ package.
 
 Convolutions
 """"""""""""
 
 From `Scikit-Image <https://scikit-image.org/>`_:
 
-.. currentmodule:: equimagelab.equimage.image_skimage.MixinImage
+.. currentmodule:: equimage.image_skimage.MixinImage
 
 .. autosummary::
 
@@ -126,7 +126,7 @@ Noise reduction
 
 From `Scikit-Image <https://scikit-image.org/>`_:
 
-.. currentmodule:: equimagelab.equimage.image_skimage.MixinImage
+.. currentmodule:: equimage.image_skimage.MixinImage
 
 .. autosummary::
 
@@ -139,7 +139,7 @@ From `Scikit-Image <https://scikit-image.org/>`_:
 Image enhancement
 """""""""""""""""
 
-.. currentmodule:: equimagelab.equimage.image_filters.MixinImage
+.. currentmodule:: equimage.image_filters.MixinImage
 
 .. autosummary::
 
@@ -149,7 +149,7 @@ Image enhancement
 
 and, from `Scikit-Image <https://scikit-image.org/>`_:
 
-.. currentmodule:: equimagelab.equimage.image_skimage.MixinImage
+.. currentmodule:: equimage.image_skimage.MixinImage
 
 .. autosummary::
 
@@ -158,9 +158,9 @@ and, from `Scikit-Image <https://scikit-image.org/>`_:
 Miscellaneous operations
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :py:class:`Image <equimagelab.equimage.image.Image>` class also features the following methods that perform miscellaneous operations (clipping, blending images, ...):
+The :py:class:`Image <equimage.image.Image>` class also features the following methods that perform miscellaneous operations (clipping, blending images, ...):
 
-.. currentmodule:: equimagelab.equimage.image_utils.MixinImage
+.. currentmodule:: equimage.image_utils.MixinImage
 
 .. autosummary::
 
@@ -174,16 +174,16 @@ The :py:meth:`scale_pixels` method can, in particular, be used to stretch the im
 
    is_out_of_range
 
-Moreover, you can instantiate a new black or empty image with the same size as an :py:class:`Image <equimagelab.equimage.image.Image>` object with the methods:
+Moreover, you can instantiate a new black or empty image with the same size as an :py:class:`Image <equimage.image.Image>` object with the methods:
 
 .. autosummary::
 
    black
    empty
 
-You may also clip or blend images with the following functions, which can be applied either to an :py:class:`Image <equimagelab.equimage.image.Image>` object or to a :py:class:`numpy.ndarray`:
+You may also clip or blend images with the following functions, which can be applied either to an :py:class:`Image <equimage.image.Image>` object or to a :py:class:`numpy.ndarray`:
 
-.. currentmodule:: equimagelab.equimage.image_utils
+.. currentmodule:: equimage.image_utils
 
 .. autosummary::
 
@@ -193,13 +193,13 @@ You may also clip or blend images with the following functions, which can be app
 Image masks
 ^^^^^^^^^^^
 
-Binary and float masks can be used to apply operations to selected parts of an image. A binary mask is a boolean :py:class:`numpy.ndarray` with the same size as the image, which defines a False/True flag for each pixel. A float mask is a :py:class:`numpy.ndarray` with the same size as the image, which defines in the same spirit a 0/1 coefficient for each pixel (or, more generally, a weight ranging from 0 to 1). For example, given some :py:class:`Image <equimagelab.equimage.image.Image>` object `image` and binary mask `bmask`,
+Binary and float masks can be used to apply operations to selected parts of an image. A binary mask is a boolean :py:class:`numpy.ndarray` with the same size as the image, which defines a False/True flag for each pixel. A float mask is a :py:class:`numpy.ndarray` with the same size as the image, which defines in the same spirit a 0/1 coefficient for each pixel (or, more generally, a weight ranging from 0 to 1). For example, given some :py:class:`Image <equimage.image.Image>` object `image` and binary mask `bmask`,
 
 .. code-block:: python
 
   selection = np.where(bmask, image, 0.)
 
-returns a new :py:class:`Image <equimagelab.equimage.image.Image>` object `selection`, equal to `image` where `bmask` is True and to zero (black) where `bmask` is False. Likewise, given a float mask `fmask` and some transformation function `transform`,
+returns a new :py:class:`Image <equimage.image.Image>` object `selection`, equal to `image` where `bmask` is True and to zero (black) where `bmask` is False. Likewise, given a float mask `fmask` and some transformation function `transform`,
 
 .. code-block:: python
 
@@ -209,16 +209,16 @@ returns the transformed image where `fmask` is 1, and the original image where `
 
 eQuimageLab can construct "threshold" float and binary masks that are 1 or True wherever some function ``filter(image)`` is greater than a threshold:
 
-.. currentmodule:: equimagelab.equimage.image_masks
+.. currentmodule:: equimage.image_masks
 
 .. autosummary::
 
    threshold_fmask
    threshold_bmask
 
-The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimagelab.equimage.image.Image>` class provides the following useful filters (local average, median, ...):
+The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``filter(image)``. In particular, the :py:class:`Image <equimage.image.Image>` class provides the following useful filters (local average, median, ...):
 
-.. currentmodule:: equimagelab.equimage.image_masks.MixinImage
+.. currentmodule:: equimage.image_masks.MixinImage
 
 .. autosummary::
 
@@ -226,15 +226,15 @@ The input `filtered` argument is a 2D :py:class:`numpy.ndarray` that contains ``
 
 The function
 
-.. currentmodule:: equimagelab.equimage.image_masks
+.. currentmodule:: equimage.image_masks
 
 .. autosummary::
 
    shape_bmask
 
-and method of the :py:class:`Image <equimagelab.equimage.image.Image>` class
+and method of the :py:class:`Image <equimage.image.Image>` class
 
-.. currentmodule:: equimagelab.equimage.image_masks.MixinImage
+.. currentmodule:: equimage.image_masks.MixinImage
 
 .. autosummary::
 
@@ -244,7 +244,7 @@ enable the construction of binary masks with rectangular, elliptic and polygonal
 
 A binary mask can be extended/eroded with the function:
 
-.. currentmodule:: equimagelab.equimage.image_masks
+.. currentmodule:: equimage.image_masks
 
 .. autosummary::
 
@@ -269,9 +269,9 @@ Edition with external softwares
 
 External softwares (Gimp, Siril, ...) can be run from eQuimageLab to perform specialized operations.
 
-The generic method to edit an :py:class:`Image <equimagelab.equimage.image.Image>` object with an external software is :py:meth:`Image.edit_with() <equimagelab.equimage.image_editors.MixinImage.edit_with>`. This method is implemented for `Gimp <https://www.gimp.org/>`_ and `Siril <https://siril.org/>`_:
+The generic method to edit an :py:class:`Image <equimage.image.Image>` object with an external software is :py:meth:`Image.edit_with() <equimage.image_editors.MixinImage.edit_with>`. This method is implemented for `Gimp <https://www.gimp.org/>`_ and `Siril <https://siril.org/>`_:
 
-.. currentmodule:: equimagelab.equimage.image_editors.MixinImage
+.. currentmodule:: equimage.image_editors.MixinImage
 
 .. autosummary::
 
@@ -285,9 +285,9 @@ The generic method to edit an :py:class:`Image <equimagelab.equimage.image.Image
 Star transformations
 ^^^^^^^^^^^^^^^^^^^^
 
-The stars can be removed from an image with `Starnet++ <https://www.starnetastro.com/>`_ and resynthetized with `Siril <https://siril.org/>`_ using the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+The stars can be removed from an image with `Starnet++ <https://www.starnetastro.com/>`_ and resynthetized with `Siril <https://siril.org/>`_ using the following methods of the :py:class:`Image <equimage.image.Image>` class:
 
-.. currentmodule:: equimagelab.equimage.image_stars.MixinImage
+.. currentmodule:: equimage.image_stars.MixinImage
 
 .. autosummary::
 

@@ -27,15 +27,15 @@ where Y is the luminance:
 
 and lR, lG, lB are the linear RGB components of the image. The definitions of Y and :math:`L^*` account for the non-linear and non-homogeneous response of the eyes. They highlight, for example, that we are far more sentitive to green than to red and blue light. Note that :math:`L^*` conventionally ranges within [0, 100] instead of [0, 1]. It is a key component of the CIE color spaces (`CIELab <https://en.wikipedia.org/wiki/CIELAB_color_space>`_ and `CIELuv <https://en.wikipedia.org/wiki/CIELUV>`_).
 
-The method :py:meth:`Image.lightness() <equimagelab.equimage.image_colorspaces.MixinImage.lightness>` returns the normalized lightness :math:`L^*/100` of all pixels of a lRGB or a sRGB image (the latter being converted to lRGB for that purpose).
+The method :py:meth:`Image.lightness() <equimage.image_colorspaces.MixinImage.lightness>` returns the normalized lightness :math:`L^*/100` of all pixels of a lRGB or a sRGB image (the latter being converted to lRGB for that purpose).
 
 While :math:`L^*` is the best measure of the brightness of a pixel, it is expensive to compute (since our images usually live in the sRGB color space, whereas :math:`L^*` is defined from the lRGB components). Therefore, alternate, *approximate* measures of the brightness have been introduced:
 
-  - The *luma* of a pixel L = 0.2126R+0.7152G+0.0722B. In the lRGB color space, the luma is the luminance L = Y (but has nothing to do with the lightness !). In the sRGB color space, the luma (which somehow accounts for the non-linear and non-homogeneous response of the eye) is often used as a convenient substitute for the lightness :math:`L\equiv L^*/100` (but is not as accurate). The method :py:meth:`Image.luma() <equimagelab.equimage.image_colorspaces.MixinImage.luma>` returns the luma L of all pixels of an image (calculated from the lRGB or sRGB components depending on the color space). Also, the RGB coefficients of the luma can be tweaked with the :py:func:`set_RGB_luma() <equimagelab.equimage.params.set_RGB_luma>` function (and inquired with :py:func:`get_RGB_luma() <equimagelab.equimage.params.get_RGB_luma>`). Depending on your purposes, it may be more convenient to work with L = (R+G+B)/3.
+  - The *luma* of a pixel L = 0.2126R+0.7152G+0.0722B. In the lRGB color space, the luma is the luminance L = Y (but has nothing to do with the lightness !). In the sRGB color space, the luma (which somehow accounts for the non-linear and non-homogeneous response of the eye) is often used as a convenient substitute for the lightness :math:`L\equiv L^*/100` (but is not as accurate). The method :py:meth:`Image.luma() <equimage.image_colorspaces.MixinImage.luma>` returns the luma L of all pixels of an image (calculated from the lRGB or sRGB components depending on the color space). Also, the RGB coefficients of the luma can be tweaked with the :py:func:`set_RGB_luma() <equimage.params.set_RGB_luma>` function (and inquired with :py:func:`get_RGB_luma() <equimage.params.get_RGB_luma>`). Depending on your purposes, it may be more convenient to work with L = (R+G+B)/3.
 
-  - The *HSV value* of a pixel V = max(R, G, B). This is a component of the HSV color model, but a really poor measure of the lightness ! The method :py:meth:`Image.HSV_value() <equimagelab.equimage.image_colorspaces.MixinImage.HSV_value>` returns the HSV value V of all pixels of an image (available for both RGB and HSV images).
+  - The *HSV value* of a pixel V = max(R, G, B). This is a component of the HSV color model, but a really poor measure of the lightness ! The method :py:meth:`Image.HSV_value() <equimage.image_colorspaces.MixinImage.HSV_value>` returns the HSV value V of all pixels of an image (available for both RGB and HSV images).
 
-  - The *HSL lightness* of a pixel L' = (max(R, G, B)+min(R, G, B))/2. Despite its name, it is also a poor approximation to the CIE lightness :math:`L^*`. The method :py:meth:`Image.HSL_lightness() <equimagelab.equimage.image_colorspaces.MixinImage.HSL_lightness>` returns the HSL lightness L' of all pixels of an image (available for both RGB and HSL images)
+  - The *HSL lightness* of a pixel L' = (max(R, G, B)+min(R, G, B))/2. Despite its name, it is also a poor approximation to the CIE lightness :math:`L^*`. The method :py:meth:`Image.HSL_lightness() <equimage.image_colorspaces.MixinImage.HSL_lightness>` returns the HSL lightness L' of all pixels of an image (available for both RGB and HSL images)
 
 The `HSV and HSL color models <https://en.wikipedia.org/wiki/HSL_and_HSV>`_ were designed for numerical efficiency rather than for perceptual homogeneity and accuracy. They remain, nonetheless, well suited to the saturation of colors.
 
@@ -64,9 +64,9 @@ Usage
 Getting and setting channels
 """"""""""""""""""""""""""""
 
-The following method of an :py:class:`Image <equimagelab.equimage.image.Image>` object returns an arbitrary (native or composite) channel of the image as a :py:class:`numpy.ndarray`:
+The following method of an :py:class:`Image <equimage.image.Image>` object returns an arbitrary (native or composite) channel of the image as a :py:class:`numpy.ndarray`:
 
-.. currentmodule:: equimagelab.equimage.image_colorspaces.MixinImage
+.. currentmodule:: equimage.image_colorspaces.MixinImage
 
 .. autosummary::
 
@@ -86,7 +86,7 @@ where ``channel`` can be:
   - "s*": The CIE saturation :math:`s^*` (CIELuv images).
   - "h*": The CIE hue angle :math:`h^*` (CIELab and CIELuv images).
 
-Alternatively, the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class return specific channels:
+Alternatively, the following methods of the :py:class:`Image <equimage.image.Image>` class return specific channels:
 
 .. autosummary::
 
@@ -102,9 +102,9 @@ Alternatively, the following methods of the :py:class:`Image <equimagelab.equima
    CIE_chroma
    CIE_saturation
 
-Moreover, the following functions of eQuimageLab return the luma and lightness of a :py:class:`numpy.ndarray` (or of an :py:class:`Image <equimagelab.equimage.image.Image>` object) containing a RGB image:
+Moreover, the following functions of eQuimageLab return the luma and lightness of a :py:class:`numpy.ndarray` (or of an :py:class:`Image <equimage.image.Image>` object) containing a RGB image:
 
-.. currentmodule:: equimagelab.equimage.image_colorspaces
+.. currentmodule:: equimage.image_colorspaces
 
 .. autosummary::
 
@@ -112,9 +112,9 @@ Moreover, the following functions of eQuimageLab return the luma and lightness o
    lRGB_lightness
    sRGB_lightness
 
-A native or composite channel of an :py:class:`Image <equimagelab.equimage.image.Image>` object can be updated with the method:
+A native or composite channel of an :py:class:`Image <equimage.image.Image>` object can be updated with the method:
 
-.. currentmodule:: equimagelab.equimage.image_colorspaces.MixinImage
+.. currentmodule:: equimage.image_colorspaces.MixinImage
 
 .. autosummary::
 
@@ -131,9 +131,9 @@ Finally, a given transformation can be applied to specific channels of the image
 Histograms and statistics
 """""""""""""""""""""""""
 
-The histograms and statistics of all channels can be computed with the following methods of the :py:class:`Image <equimagelab.equimage.image.Image>` class:
+The histograms and statistics of all channels can be computed with the following methods of the :py:class:`Image <equimage.image.Image>` class:
 
-.. currentmodule:: equimagelab.equimage.image_stats.MixinImage
+.. currentmodule:: equimage.image_stats.MixinImage
 
 .. autosummary::
 
@@ -144,7 +144,7 @@ The histograms can be displayed in JupyterLab cells or on the dashboard with the
 
 Also see the following functions of eQuimageLab about histograms:
 
-.. currentmodule:: equimagelab.equimage
+.. currentmodule:: equimage
 
 .. autosummary::
 
@@ -160,7 +160,7 @@ Therefore, stretching the luma protects the colors of the image, whereas stretch
 
 However, acting on the luma L can bring some RGB components out of the [0, 1] range.
 
-Let us take the midtone transformation T(x) = 0.761x/(0.522x+0.239) as an example (see the :py:meth:`Image.midtone_stretch() <equimagelab.equimage.image_stretch.MixinImage.midtone_stretch>` method). The transformation T(x) maps [0, 1] onto [0, 1] and does not, therefore, produce out-of-range pixels when applied to the R, G, B channels separately.
+Let us take the midtone transformation T(x) = 0.761x/(0.522x+0.239) as an example (see the :py:meth:`Image.midtone_stretch() <equimage.image_stretch.MixinImage.midtone_stretch>` method). The transformation T(x) maps [0, 1] onto [0, 1] and does not, therefore, produce out-of-range pixels when applied to the R, G, B channels separately.
 
 Let us now consider a pixel with components (R = 0.4, G = 0.2, B = 0.6) and luma L = 0.2126R+0.7152G+0.0722B = 0.271. Under transformation T, the luma of this pixel doubles and becomes L' = T(L) = 0.543. Accordingly, the new RGB components of the pixel are (R' = 0.8, G' = 0.4, B' = 1.2). While L' is still within bounds, B' is not.
 
@@ -196,4 +196,4 @@ The following example increases the HSV saturation of the sRGB image *image* by 
   saturated = image.set_channel("S", S) # Create a new, saturated image.
   saturated.set_channel("L*", image.lightness(), inplace = True) # Correct the lightness.
 
-Also see :py:meth:`Image.HSX_color_saturation() <equimagelab.equimage.image_colors.MixinImage.HSX_color_saturation>` for a simpler implementation of this transformation.
+Also see :py:meth:`Image.HSX_color_saturation() <equimage.image_colors.MixinImage.HSX_color_saturation>` for a simpler implementation of this transformation.

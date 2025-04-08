@@ -47,14 +47,14 @@ Latest news:
     - Generalized arcsinh, harmonic and power law stretches.
     - Curve stretch.
     - Statistical stretch.
-    - Light-dependent blur and sharpen (:py:meth:`LDBS <equimagelab.equimage.image_filters.MixinImage.LDBS>`).
+    - Light-dependent blur and sharpen (:py:meth:`LDBS <equimage.image_filters.MixinImage.LDBS>`).
 
   - February 2, 2025: Version 1.2.0.
 
     - Rectangle, ellipse & lasso (polygon) selections on the images.
     - Histograms of the selection.
     - Image mask from the selection.
-    - Added lightness parameter in :py:meth:`HSX_color_saturation <equimagelab.equimage.image_colors.MixinImage.HSX_color_saturation>`.
+    - Added lightness parameter in :py:meth:`HSX_color_saturation <equimage.image_colors.MixinImage.HSX_color_saturation>`.
 
   - March 7, 2025: Version 1.3.0.
 
