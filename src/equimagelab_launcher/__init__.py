@@ -10,13 +10,15 @@
 import os
 import sys
 import shutil
-import inspect
 import tkinter
 import tkinter.filedialog
 import tkinter.messagebox
 import subprocess
 from pathlib import Path
 from PIL import Image, ImageTk
+
+__version__ = "1.3.1"
+__packagepath__ = __path__[0]
 
 def run_CLI():
   """Open a Jupyter Lab notebook from the command line."""
@@ -45,7 +47,7 @@ def run_GUI():
                                                     initialdir = Path.home(), initialfile = "eqlab.ipynb", defaultextension = ".ipynb")
     if not notebook: return
     # Create notebook.
-    template = os.path.join(launcherpath, "equimagelab.ipynb")
+    template = os.path.join(__packagepath__, "templates", "equimagelab.ipynb")
     print(f"Copying {template} as {notebook}...")
     try:
       shutil.copyfile(template, notebook)
@@ -90,11 +92,9 @@ def run_GUI():
     root.destroy()
     sys.exit(0)
 
-  # Get launcher path.
-  launcherpath = os.path.dirname(inspect.getabsfile(inspect.currentframe()))
   # Open root Tk window.
   root = tkinter.Tk()
-  root.title("eQuimageLab")
+  root.title(f"eQuimageLab v{__version__}")
   # Configure menu.
   menu = tkinter.Menu(root)
   menu.add_command(label = "New notebook", command = new_notebook)
@@ -106,7 +106,7 @@ def run_GUI():
   canvas = tkinter.Canvas(root, width = 800, height = 600)
   canvas.pack(side = "top")
   try:
-    image = Image.open(os.path.join(launcherpath, "..", "images", "splash.png")).resize((800, 600))
+    image = Image.open(os.path.join(__packagepath__, "images", "splash.png")).resize((800, 600))
   except:
     pass
   else:

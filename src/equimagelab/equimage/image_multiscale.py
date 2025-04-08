@@ -99,6 +99,38 @@ class WaveletTransform:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return output
 
+  def threshold_firm_levels(self, thresholds, inplace = False):
+    """
+    """
+    if isinstance(thresholds, dict):
+      ts = np.zeros(self.levels)
+      for key, value in thresholds.items():
+        if not isinstance(key, int): raise ValueError("Error, mult dictionary keys must be integers.")
+        if key < 0 or key >= self.levels: raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
+        ts[key] = value
+    else:
+      ts = np.asarray(thresholds)
+      if ts.ndim != 2: raise ValueError("Error, thresholds must be a dictionary or be mappable to a 2D array.")
+    if inplace:
+      output = self
+    else:
+      output = deepcopy(self)
+    if self.type in ["dwt", "swt"]:
+      for level in range(min(self.levels, ts.shape[0])):
+        t = ts[level]
+        cH, cV, cD = output.coeffs[-(level+1)]
+        cH[...] = pywt.threshold_firm(cH, t[0], t[1])
+        cV[...] = pywt.threshold_firm(cV, t[0], t[1])
+        cD[...] = pywt.threshold_firm(cD, t[0], t[1])
+    elif self.type == "slt":
+      for level in range(min(self.levels, ts.shape[0])):
+        t = ts[level]
+        cA = output.coeffs[-(level+1)]
+        cA[...] = pywt.threshold_firm(cA, t[0], t[1])
+    else:
+      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
+    return output
+
 def dwt(image, levels, wavelet = "default", mode = "symmetric"):
   """
   """
