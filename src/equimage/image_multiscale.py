@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Multiscale transformations."""
+"""Multiscale transformations.
 
-# What to import in the equimage namespace:
+The following symbols are imported in the equimage/equimagelab namespaces for convenience:
+  "dwt", "swt", "slt".
+"""
 
 __all__ = ["dwt", "swt", "slt"]
-
-#
 
 import pywt
 import numpy as np

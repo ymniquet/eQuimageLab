@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Image utils."""
+"""Image utils.
 
-# What to import in the equimage namespace:
+The following symbols are imported in the equimage/equimagelab namespaces for convenience:
+  "is_valid_image", "clip", "blend".
+"""
 
 __all__ = ["is_valid_image", "clip", "blend"]
-
-#
 
 import numpy as np
 

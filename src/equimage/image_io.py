@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Image I/O management."""
+"""Image I/O management.
 
-# What to import in the equimage namespace:
+The following symbols are imported in the equimage/equimagelab namespaces for convenience:
+  "load_image", "save_image".
+"""
 
 __all__ = ["load_image", "save_image"]
-
-#
 
 import os
 import numpy as np

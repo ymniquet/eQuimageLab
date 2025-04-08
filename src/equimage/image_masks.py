@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Image masks."""
+"""Image masks.
 
-# What to import in the equimage namespace:
+The following symbols are imported in the equimage/equimagelab namespaces for convenience:
+  "float_mask", "extend_bmask", "smooth_mask", "threshold_bmask", "threshold_fmask", "shape_bmask".
+"""
 
 __all__ = ["float_mask", "extend_bmask", "smooth_mask", "threshold_bmask", "threshold_fmask", "shape_bmask"]
-
-#
 
 import numpy as np
 import scipy.ndimage as ndimg

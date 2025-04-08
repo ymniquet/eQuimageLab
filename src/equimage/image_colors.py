@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Color management."""
+"""Color management.
 
-# What to import in the equimage namespace:
+The following symbols are imported in the equimage/equimagelab namespaces for convenience:
+  "HSV_wheel".
+"""
 
 __all__ = ["HSV_wheel"]
-
-#
 
 import os
 import numpy as np

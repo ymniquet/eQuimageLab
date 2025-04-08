@@ -5,7 +5,7 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Jupyter Lab interface parameters."""
+"""JupyterLab interface parameters."""
 
 import numpy as np
 

@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Dash backend for Jupyter Lab interface."""
+"""Dash backend for JupyterLab interface.
 
-# What to import in the equimagelab namespace:
+The following symbols are imported in the equimagelab namespace for convenience:
+  "Dashboard".
+"""
 
 __all__ = ["Dashboard"]
-
-#
 
 # TODO:
 #  - Update tabs only if necessary.

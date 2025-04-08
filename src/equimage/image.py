@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Image class."""
+"""Image class.
 
-# What to import in the equimage namespace:
+The following symbols are imported in the equimage/equimagelab namespaces for convenience:
+  "Image".
+"""
 
 __all__ = ["Image"]
-
-#
 
 import numpy as np
 

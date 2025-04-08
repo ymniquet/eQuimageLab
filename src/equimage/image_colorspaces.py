@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Color spaces and models management."""
+"""Color spaces and models management.
 
-# What to import in the equimage namespace:
+The following symbols are imported in the equimage/equimagelab namespaces for convenience:
+  "luma", "lRGB_lightness", "sRGB_lightness".
+"""
 
 __all__ = ["luma", "lRGB_lightness", "sRGB_lightness"]
-
-#
 
 import numpy as np
 import skimage.color as skcolor

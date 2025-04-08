@@ -5,9 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""eQuimage top-level symbols."""
+"""eQuimage top-level symbols.
 
-# What to import is defined by the __all__ variable in each file:
+This imports relevant symbols from the submodules into the equimage/equimagelab namespace.
+These symbols are defined by the :py:class:`__all__` dictionary (if any) of each submodule.
+
+Also, the methods of the :py:class:`MixInImage` class of each submodule are imported in the Image class.
+"""
 
 from .params import *
 from .image import *

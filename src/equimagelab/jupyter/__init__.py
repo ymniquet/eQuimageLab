@@ -4,7 +4,7 @@
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
 # Version: 1.3.1 / 2025.03.26
 
-"""Jupyter Lab interface."""
+"""JupyterLab interface."""
 
 # Import top-level symbols.
 

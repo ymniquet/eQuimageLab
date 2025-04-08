@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Utils for Jupyter Lab interface."""
+"""Utils for JupyterLab interface.
 
-# What to import in the equimagelab namespace:
+The following symbols are imported in the equimagelab namespace for convenience:
+  "filter", "shadowed", "highlighted", "differences".
+"""
 
 __all__ = ["filter", "shadowed", "highlighted", "differences"]
-
-#
 
 import base64
 from io import BytesIO

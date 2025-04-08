@@ -5,9 +5,11 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Jupyter Lab interface top-level symbols."""
+"""JupyterLab interface top-level symbols.
 
-# What to import is defined by the __all__ variable in each file:
+This imports relevant symbols from the jupyter submodules into the equimagelab namespace.
+These symbols are defined by the :py:class:`__all__` dictionary (if any) of each submodule.
+"""
 
 from .utils import *
 from .backend_plotly import *

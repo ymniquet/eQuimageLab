@@ -13,9 +13,8 @@ __packagepath__ = __path__[0]
 # Import top-level symbols.
 
 from equimage.imports import *
-
-from . import params
 from .jupyter.imports import *
+from . import params
 
 print("######################################"+len(__version__)*"#")
 print(f"# Welcome to eQuimageLab version {__version__}... #")

@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Image processing parameters."""
+"""Image processing parameters.
 
-# What to import in the equimage namespace:
+The following symbols are imported in the equimage/equimagelab namespaces for convenience:
+  "get_RGB_luma", "set_RGB_luma".
+"""
 
 __all__ = ["get_RGB_luma", "set_RGB_luma"]
-
-#
 
 import numpy as np
 

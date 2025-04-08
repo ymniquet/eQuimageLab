@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Histogram stretch."""
+"""Histogram stretch.
 
-# What to import in the equimage namespace:
+The following symbols are imported in the equimage/equimagelab namespaces for convenience:
+  "hms", "mts", "ghs", "Dharmonic_through".
+"""
 
 __all__ = ["hms", "mts", "ghs", "Dharmonic_through"]
-
-#
 
 import copy
 import numpy as np

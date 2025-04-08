@@ -5,13 +5,13 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Plotly backend for Jupyter Lab interface."""
+"""Plotly backend for JupyterLab interface.
 
-# What to import in the equimagelab namespace:
+The following symbols are imported in the equimagelab namespace for convenience:
+  "show", "show_t", "show_histograms", "show_statistics", "light_curve".
+"""
 
 __all__ = ["show", "show_t", "show_histograms", "show_statistics", "light_curve"]
-
-#
 
 import numpy as np
 import plotly.express as px
