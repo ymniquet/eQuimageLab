@@ -12,6 +12,7 @@ __packagepath__ = __path__[0]
 
 # Import top-level symbols.
 
+import equimage
 from equimage.imports import *
 
 from .jupyter.imports import *

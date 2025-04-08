@@ -1,18 +1,19 @@
 eQuimageLab API reference
 =========================
 
-eQuimageLab includes three subpackages:
+The eQuimageLab package provides a JupyterLab interface to the image processing package :ref:`equimage <equimage>`.
 
-  - :ref:`equimage <equimage>`, the image processing module.
+The eQuimageLab package includes two subpackages:
+
   - :ref:`jupyter <jupyter>`, the JupyterLab interface.
   - :ref:`misc <misc>`, miscellaneous functions and utilities (test images...).
 
-The ``import equimagelab`` command imports a relevant subset of these three subpackages in the ``equimagelab`` namespace.
+The ``import equimagelab`` command imports a relevant subset of equimage and the above two subpackages in the ``equimagelab`` namespace.
 
 .. _equimage:
 
-The equimage subpackage
------------------------
+The equimage package
+--------------------
 
 .. toctree::
    :maxdepth: 4

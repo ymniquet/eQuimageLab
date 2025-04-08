@@ -9,7 +9,7 @@ SOURCEDIR     = source
 BUILDDIR      = build
 
 SPHINXAPIDOC  = sphinx-apidoc
-PACKAGEDIR    = ../../
+PACKAGEDIR    = ../src
 
 # Put it first so that "make" without argument is like "make help".
 help:
