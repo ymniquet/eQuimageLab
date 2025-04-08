@@ -9,5 +9,6 @@
 
 # Import relevant parameters from the eQuimage and jupyter modules.
 
-from .equimage.params import get_image_type, set_image_type, get_CIE_params, set_CIE_params, set_max_hist_bins, set_default_hist_bins
+from equimage.params import get_image_type, set_image_type, get_CIE_params, set_CIE_params, set_max_hist_bins, set_default_hist_bins
+
 from .jupyter.params import set_image_sampling, set_figure_max_width, set_figure_margins, set_table_row_height

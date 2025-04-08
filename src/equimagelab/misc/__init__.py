@@ -8,7 +8,8 @@
 """Miscellaneous functions (test images, ...)."""
 
 import os
-from .. import equimage
+import equimage
+
 from .. import __packagepath__
 
 def HSV_wheel():

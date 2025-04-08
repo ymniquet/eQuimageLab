@@ -14,11 +14,11 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 pio.renderers.default = "jupyterlab"
 
+from equimage import Image
+from equimage.image_stats import parse_channels
+
 from . import params
 from .utils import format_images
-
-from ..equimage import Image
-from ..equimage.image_stats import parse_channels
 
 #####################
 # Helper functions. #

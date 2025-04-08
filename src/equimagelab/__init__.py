@@ -12,7 +12,8 @@ __packagepath__ = __path__[0]
 
 # Import top-level symbols.
 
-from .equimage.imports import *
+from equimage.imports import *
+
 from .jupyter.imports import *
 from .misc import HSV_wheel
 from . import params

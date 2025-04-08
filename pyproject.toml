@@ -47,7 +47,6 @@ eQuimageLab = "equimagelab_launcher:run"
 [tool.setuptools.packages.find]
 namespaces = true
 where = ["src"]
-exclude = ["equimagelab.docs*", "conf.py"]
 
 [tool.setuptools.package-data]
 "equimagelab.images" = ["splash.png", "HSVwheel.png"]

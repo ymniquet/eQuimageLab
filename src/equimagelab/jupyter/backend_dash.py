@@ -19,13 +19,13 @@ import dash_bootstrap_templates as dbt
 import dash_bootstrap_components as dbc
 import dash_extensions as dxt
 
+from equimage import Image, load_image, get_RGB_luma
+from equimage import image_colorspaces as cspaces
+from equimage.image_stats import parse_channels
+
 from . import params
 from .utils import get_image_size, format_images, format_images_as_b64strings, shadowed, highlighted, differences
 from .backend_plotly import _figure_formatted_image_, _figure_histograms_
-
-from ..equimage import Image, load_image, get_RGB_luma
-from ..equimage import image_colorspaces as cspaces
-from ..equimage.image_stats import parse_channels
 
 class Dashboard():
   """Dashboad class."""

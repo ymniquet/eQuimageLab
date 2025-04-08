@@ -18,7 +18,7 @@ release = version
 
 # -- Path to sources ---------------------------------------------------------
 
-sys.path.insert(0, os.path.abspath("../../.."))
+sys.path.insert(0, os.path.abspath("../src"))
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -32,7 +32,7 @@ nbsphinx_execute = "auto"
 
 html_baseurl = "https://astro.ymniquet.fr/codes/equimagelab/docs/"
 sitemap_url_scheme = "{link}"
-sitemap_excludes = ["equimagelab.launcher.html", "modules.html",
+sitemap_excludes = ["equimagelab_launcher.html", "modules.html",
                     "search.html", "genindex.html", "py-modindex.html"]
 
 googleanalytics_id = "GTM-TBRJL3X9"

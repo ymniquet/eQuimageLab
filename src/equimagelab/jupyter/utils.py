@@ -12,9 +12,9 @@ from io import BytesIO
 from PIL import Image as PILImage
 import numpy as np
 
-from . import params
+from equimage import Image
 
-from ..equimage import Image
+from . import params
 
 def get_image_size(image):
   """Return the width and height of the input image.
