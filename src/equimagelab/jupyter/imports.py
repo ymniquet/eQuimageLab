@@ -8,7 +8,8 @@
 """JupyterLab interface top-level symbols.
 
 This imports relevant symbols from the jupyter submodules into the equimagelab namespace.
-These symbols are defined by the :py:class:`__all__` dictionary (if any) of each submodule.
+These symbols are defined by the :py:class:`__all__` dictionary (if any) of each submodule, and
+listed in their docstring.
 """
 
 from .utils import *

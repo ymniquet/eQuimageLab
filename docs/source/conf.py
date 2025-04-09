@@ -28,6 +28,7 @@ extensions = ["sphinx.ext.napoleon", "sphinx.ext.autodoc", "sphinx.ext.autosumma
 
 html_show_sourcelink = False
 autodoc_member_order = "bysource"
+autodoc_default_options = {"ignore-module-all": True}
 nbsphinx_execute = "auto"
 
 html_baseurl = "https://astro.ymniquet.fr/codes/equimagelab/docs/"

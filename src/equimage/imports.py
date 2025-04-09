@@ -8,9 +8,10 @@
 """eQuimage top-level symbols.
 
 This imports relevant symbols from the submodules into the equimage/equimagelab namespace.
-These symbols are defined by the :py:class:`__all__` dictionary (if any) of each submodule.
+These symbols are defined by the :py:class:`__all__` dictionary (if any) of each submodule, and
+listed in their docstring.
 
-Also, the methods of the :py:class:`MixInImage` class of each submodule are imported in the Image class.
+Also, the methods of the :py:class:`MixinImage` class of each submodule are imported in the Image class.
 """
 
 from .params import *
