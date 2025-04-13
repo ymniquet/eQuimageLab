@@ -53,7 +53,7 @@ class MixinImage:
     Returns:
       Image: The edited image.
     """
-    self.check_color_model("RGB")
+    self.check_color_model("RGB", "gray")
     if export not in ["png", "tiff", "fits"]:
       raise ValueError(f"Error, unknown export format '{export}'.")
     if depth not in [8, 16, 32]:

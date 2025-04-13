@@ -11,7 +11,7 @@ import os
 import shutil
 import numpy as np
 
-from .image_stretch import Dharmonic_through
+from .image_stretch import mts
 
 #####################################
 # For inclusion in the Image class. #
@@ -45,7 +45,7 @@ class MixinImage:
       Image: The starless image if starmask is False, and both the starless image and star mask if
       starmask is True.
     """
-    self.check_color_model("RGB")
+    self.check_color_model("RGB", "gray")
     # We need to cwd to the starnet++ directory to process the image.
     cmdpath = shutil.which("starnet++")
     if cmdpath is None: raise FileNotFoundError("Error, starnet++ executable not found in the PATH.")
@@ -53,7 +53,7 @@ class MixinImage:
     # Stretch the input image if needed.
     if midtone == "auto":
       avgmedian = np.mean(np.median(self.image, axis = (-1, -2)))
-      midtone = 1./(Dharmonic_through(avgmedian, .33)+2.)
+      midtone = min(1./mts(avgmedian, .25), .5)
     if midtone != .5:
       image = self.midtone_stretch(midtone)
     else:
@@ -86,7 +86,7 @@ class MixinImage:
     Returns:
       Image: The synthetic star mask produced by Siril.
     """
-    self.check_color_model("RGB")
+    self.check_color_model("RGB", "gray")
     script = ('requires 1.2.0\n'
               'load "$FILE$"\n'
               'setfindstar -roundness=0.10\n'
@@ -118,7 +118,7 @@ class MixinImage:
     Returns:
       Image: The edited image, with the stars reduced.
     """
-    self.check_color_model("RGB")
+    self.check_color_model("RGB", "gray")
     if abs(amount) > .9999: raise ValueError("Error, |amount| must be < .9999.")
     if starless is None: starless = self.starnet(midtone = "auto", starmask = False)
     midtone = (1.-amount)/2.

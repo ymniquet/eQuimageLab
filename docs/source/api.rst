@@ -11,7 +11,7 @@ The eQuimage package
 --------------------
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 6
 
    equimage
 
@@ -21,7 +21,7 @@ The eQuimageLab package
 -----------------------
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 6
 
    equimagelab
 

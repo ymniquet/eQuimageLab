@@ -26,7 +26,10 @@ class WaveletTransform:
   """Wavelet transform class."""
 
   def iwt(self):
-    """
+    """Inverse wavelet transform.
+
+    Returns:
+      Image or numpy.ndarray: The inverse wavelet transform of the object.
     """
     if self.type == "dwt":
       data = pywt.waverec2(self.coeffs, wavelet = self.wavelet, mode = self.mode, axes = (-2, -1))
@@ -42,7 +45,17 @@ class WaveletTransform:
     return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage else data
 
   def scale_levels(self, mult, inplace = False):
-    """
+    """Scale wavelet levels.
+
+    Args:
+      mult (numpy.ndarray or dict): The scaling factor for each wavelet level. Level 0 is the smallest
+        scale. If a dictionary, must be of the form {level: scaling factor, ...} (e.g. {0: .8, 1: 1.5}).
+        Default scaling factor is 1 for all unspecified wavelet levels.
+      inplace (bool, optional): If True, update the object "in place"; if False (default), return a
+        new WaveletTransform object.
+
+    Returns:
+      WaveletTransform: The updated WaveletTransform object.
     """
     if isinstance(mult, dict):
       ms = np.ones(self.levels)
@@ -74,12 +87,39 @@ class WaveletTransform:
     return output
 
   def threshold_levels(self, threshold, mode = "soft", substitute = 0., inplace = False):
-    """
+    """Threshold wavelet levels.
+
+    See also:
+      :py:meth:`threshold_firm_levels <WaveletTransform.threshold_firm_levels>`
+
+    Args:
+      threshold (numpy.ndarray or dict): The threshold for each wavelet level. Level 0 is the smallest
+        scale. If a dictionary, must be of the form {level: threshold, ...} (e.g. {0: 1.e-2, 1: 1.e-3}).
+        Default threshold is 0 for all unspecified wavelet levels.
+      mode (string, optional): The thresholding mode:
+
+        - "soft" (default): Wavelet coefficients with absolute value < threshold are replaced by
+          substitute, while those with absolute value >= threshold are shrunk toward zero by
+          threshold.
+        - "hard": Wavelet coefficients with absolute value < threshold are replaced by substitute,
+          while those with absolute value >= threshold are left unchanged.
+        - "garrote": Non-negative Garotte threshold (soft for small wavelet coefficients, and hard
+          for large wavelet coefficients).
+        - "greater": Wavelet coefficients < threshold are replaced by substitute.
+        - "less": Wavelet coefficients > threshold are replaced by substitute.
+
+      substitute (float, optional): The substitute value for thresholded wavelet coefficients
+        (default 0).
+      inplace (bool, optional): If True, update the object "in place"; if False (default), return a
+        new WaveletTransform object.
+
+    Returns:
+      WaveletTransform: The updated WaveletTransform object.
     """
     if isinstance(threshold, dict):
       ts = np.zeros(self.levels)
       for key, value in threshold.items():
-        if not isinstance(key, int): raise ValueError("Error, mult dictionary keys must be integers.")
+        if not isinstance(key, int): raise ValueError("Error, threshold dictionary keys must be integers.")
         if key < 0 or key >= self.levels: raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
         ts[key] = value
     else:
@@ -106,17 +146,36 @@ class WaveletTransform:
     return output
 
   def threshold_firm_levels(self, thresholds, inplace = False):
-    """
+    """Firm threshold of wavelet levels.
+
+    Firm threshold behaves the same as soft-thresholding for wavelet coefficients below threshold_low
+    and the same as hard-thresholding for wavelet coefficients above threshold_high. For intermediate
+    values, the outcome is in between that of soft and hard thresholding.
+
+    See also:
+      :py:meth:`threshold <WaveletTransform.threshold>`
+
+    Args:
+      thresholds (numpy.ndarray or dict): The thresholds for each wavelet level. Level 0 is the smallest
+        scale. If a dictionary, must be of the form {level: (threshold_low, threshold_high), ...}
+        (e.g. {0: (1.e-2, 5e-2), 1: (1.e-3, 5e-3)}). If an array, the first column is threshold_low
+        and the second column is threshold_high. Default thresholds are (0, 0) for all unspecified
+        wavelet levels.
+      inplace (bool, optional): If True, update the object "in place"; if False (default), return a
+        new WaveletTransform object.
+
+    Returns:
+      WaveletTransform: The updated WaveletTransform object.
     """
     if isinstance(thresholds, dict):
-      ts = np.zeros(self.levels)
+      ts = np.zeros((self.levels, 2))
       for key, value in thresholds.items():
-        if not isinstance(key, int): raise ValueError("Error, mult dictionary keys must be integers.")
+        if not isinstance(key, int): raise ValueError("Error, thresholds dictionary keys must be integers.")
         if key < 0 or key >= self.levels: raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
-        ts[key] = value
+        ts[key, :] = value[0], value[1]
     else:
       ts = np.asarray(thresholds)
-      if ts.ndim != 2: raise ValueError("Error, thresholds must be a dictionary or be mappable to a 2D array.")
+      if ts.ndim != 2: raise ValueError("Error, thresholds must be a dictionary of tuples or be mappable to a 2D array.")
     if inplace:
       output = self
     else:
@@ -137,8 +196,24 @@ class WaveletTransform:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return output
 
-def dwt(image, levels, wavelet = "default", mode = "symmetric"):
-  """
+def dwt(image, levels, wavelet = "default", mode = "reflect"):
+  """Discrete wavelet transform of an image.
+
+  Args:
+    image (Image or numpy.ndarray): The input image.
+    levels (int): The number of wavelet levels.
+    wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
+      Default is "default" for `equimage.params.defwavelet`.
+    mode (str, optional): How to extend the image across its boundaries:
+
+      - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+      - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+      - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+      - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
+      - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
+
+  Returns:
+    WaveletTransform: The discrete wavelet transform of the input image.
   """
   isImage = issubclass(type(image), img.Image)
   if isImage:
@@ -147,6 +222,17 @@ def dwt(image, levels, wavelet = "default", mode = "symmetric"):
     data = image
   else:
     raise ValueError("Error, the input image is not valid.")
+  # Translate boundary mode for pywt.
+  if mode == "reflect":
+    mode = "symmetric"
+  elif mode == "mirror":
+    mode = "reflect"
+  elif mode == "nearest":
+    mode = "constant"
+  elif mode == "wrap":
+    mode = "periodic"
+  elif mode != "zero":
+    raise ValueError(f"Error, unknown boundary mode '{mode}'.")
   # Compute the discrete wavelet transform.
   if wavelet == "default": wavelet = params.defwavelet
   wt = WaveletTransform()
@@ -160,10 +246,26 @@ def dwt(image, levels, wavelet = "default", mode = "symmetric"):
   if isImage:
     wt.colorspace = image.colorspace
     wt.colormodel = image.colormodel
-  return wt
+  return wtdiscrete
 
-def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
-  """
+def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
+  """Stationary wavelet transform (also known as undecimated or "à trous" transform) of an image.
+
+  Args:
+    image (Image or numpy.ndarray): The input image.
+    levels (int): The number of wavelet levels.
+    wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
+      Default is "default" for `equimage.params.defwavelet`.
+    mode (str, optional): How to extend the image across its boundaries:
+
+      - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+      - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+      - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+      - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
+      - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
+
+  Returns:
+    WaveletTransform: The stationary wavelet transform of the input image.
   """
   isImage = issubclass(type(image), img.Image)
   if isImage:
@@ -174,6 +276,13 @@ def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
     data = image
   else:
     raise ValueError("Error, the input image is not valid.")
+  # Translate boundary mode.
+  if mode == "zero":
+    mode = "constant"
+  elif mode == "nearest":
+    mode = "edge"
+  elif mode not in ["reflect", "mirror", "wrap"]:
+    raise ValueError(f"Error, unknown boundary mode '{mode}'.")
   # Pad the image so that the width and height are multiples of 2**level.
   length = 2**levels
   pwidth  = int(np.ceil(width /length))*length
@@ -181,14 +290,6 @@ def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
   pleft = (pwidth-width)//2 ; pright = pwidth-width-pleft
   ptop = (pheight-height)//2 ; pbottom = pheight-height-ptop
   padding = (data.ndim-2)*((0, 0),)+((ptop, pbottom), (pleft, pright))
-  if mode == "zero": # Translate pywt boundary modes.
-    mode = "constant"
-  elif mode == "constant":
-    mode = "edge"
-  elif mode == "periodic":
-    mode = "wrap"
-  elif mode not in ["symmetric", "reflect"]:
-    raise ValueError(f"Error, unknown boundary mode '{mode}'.")
   padded = np.pad(data, padding, mode = mode)
   # Compute the stationary wavelet transform.
   if wavelet == "default": wavelet = params.defwavelet
@@ -197,7 +298,6 @@ def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
   wt.wavelet = wavelet
   wt.levels = levels
   wt.start = start
-  wt.mode = mode
   wt.norm = True
   wt.coeffs = pywt.swt2(padded, wavelet = wavelet, level = levels, start_level = start, trim_approx = True, norm = wt.norm, axes = (-2, -1))
   wt.size = (height, width)
@@ -208,13 +308,28 @@ def swt(image, levels, wavelet = "default", mode = "symmetric", start = 0):
     wt.colormodel = image.colormodel
   return wt
 
-def slt(image, levels, starlet = "cubic", mode = "symmetric"):
-  """
+def slt(image, levels, starlet = "cubic", mode = "reflect"):
+  """Starlet (isotropic undecimated wavelet) transform of the input image.
+
+  Args:
+    image (Image or numpy.ndarray): The input image.
+    levels (int): The number of starlet levels.
+    starlet (string, optional): The starlet used for the transformation ("linear" for the 3x3
+      linear spline or "cubic" for the 5x5 cubic spline). Default is "cubic".
+    mode (str, optional): How to extend the image across its boundaries:
+
+      - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+      - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+      - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+      - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
+      - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
+
+  Returns:
+    WaveletTransform: The starlet transform of the input image.
   """
 
   def convolve_starlet(data, step):
-    """
-    """
+    """Convolve the input data with the starlet at scale step/2-1."""
     # Set-up convolution kernel.
     if starlet == "linear":
       size = 2*step+1
@@ -245,18 +360,10 @@ def slt(image, levels, starlet = "cubic", mode = "symmetric"):
     data = image
   else:
     raise ValueError("Error, the input image is not valid.")
-  # Translate pywt boundary modes.
+  # Translate boundary mode.
   if mode == "zero":
     mode = "constant"
-  elif mode == "constant":
-    mode = "nearest"
-  elif mode == "periodic":
-    mode = "wrap"
-  elif mode == "symmetric":
-    mode = "reflect"
-  elif mode == "reflect":
-    mode = "mirror"
-  else:
+  elif mode not in ["reflect", "mirror", "nearest", "wrap"]:
     raise ValueError(f"Error, unknown boundary mode '{mode}'.")
   # Compute the starlet transform.
   step = 1
@@ -272,67 +379,12 @@ def slt(image, levels, starlet = "cubic", mode = "symmetric"):
   wt.wavelet = starlet
   wt.levels = levels
   wt.start = 0
-  wt.mode = mode
   wt.coeffs = tuple(reversed(coeffs))
   wt.isImage = isImage
   if isImage:
     wt.colorspace = image.colorspace
     wt.colormodel = image.colormodel
   return wt
-
-# def slt(image, levels, starlet = "cubic", mode = "symmetric"):
-#   """
-#   """
-#   isImage = issubclass(type(image), img.Image)
-#   if isImage:
-#     width, height = image.get_size()
-#     data = image.image
-#   elif imgutils.is_valid_image(image):
-#     width, height = image.shape[-1], image.shape[-2]
-#     data = image
-#   else:
-#     raise ValueError("Error, the input image is not valid.")
-#   # Pad the image so that the width and height are multiples of 2**level.
-#   length = 2**levels
-#   pwidth  = int(np.ceil(width /length))*length
-#   pheight = int(np.ceil(height/length))*length
-#   pleft = (pwidth-width)//2 ; pright = pwidth-width-pleft
-#   ptop = (pheight-height)//2 ; pbottom = pheight-height-ptop
-#   padding = (data.ndim-2)*((0, 0),)+((ptop, pbottom), (pleft, pright))
-#   if mode == "zero": # Translate pywt boundary modes.
-#     mode = "constant"
-#   elif mode == "constant":
-#     mode = "edge"
-#   elif mode == "periodic":
-#     mode = "wrap"
-#   elif mode not in ["symmetric", "reflect"]:
-#     raise ValueError(f"Error, unknown boundary mode '{mode}'.")
-#   padded = np.pad(data, padding, mode = mode)
-#   # Compute the starlet transform.
-#   if starlet == "linear": # Only the first (low pass) filter is relevant here.
-#     wavelet = pywt.Wavelet("linear", filter_bank = [[1/4, 1/2, 1/4], [-1/4, 1/2, -1/4], [0., 0., 0.], [0., 0., 0.]])
-#   elif starlet == "cubic":
-#     wavelet = pywt.Wavelet("cubic", filter_bank = [[1/16, 1/4, 3/8, 1/4, 1/16], [-1/16, -1/8, 3/8, -1/8, -1/16], [0., 0., 0., 0., 0.], [0., 0., 0., 0., 0.]])
-#   else:
-#     raise ValueError("Error, starlet must be 'linear' or 'cubic'.")
-#   coeffs = pywt.swt2(padded, wavelet = wavelet, level = levels, start_level = 0, trim_approx = False, norm = False, axes = (-2, -1))
-#   wt = WaveletTransform()
-#   wt.type = "slt"
-#   wt.wavelet = starlet
-#   wt.levels = levels
-#   wt.start = 0
-#   wt.mode = mode
-#   wt.coeffs = (coeffs[0][0][..., ptop:ptop+height, pleft:pleft+width],)
-#   for level in range(levels-1):
-#     delta = coeffs[level+1][0]-coeffs[level][0]
-#     wt.coeffs += (delta[..., ptop:ptop+height, pleft:pleft+width],)
-#   delta = image-coeffs[levels-1][0]
-#   wt.coeffs += (delta[..., ptop:ptop+height, pleft:pleft+width],)
-#   wt.isImage = isImage
-#   if isImage:
-#     wt.colorspace = image.colorspace
-#     wt.colormodel = image.colormodel
-#   return wt
 
 #####################################
 # For inclusion in the Image class. #
@@ -341,18 +393,62 @@ def slt(image, levels, starlet = "cubic", mode = "symmetric"):
 class MixinImage:
   """To be included in the Image class."""
 
-  def dwt(self, levels, wavelet = "default", mode = "symmetric"):
-    """
+  def dwt(self, levels, wavelet = "default", mode = "reflect"):
+    """Discrete wavelet transform of the image.
+
+    Args:
+      levels (int): The number of wavelet levels.
+      wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
+        Default is "default" for `equimage.params.defwavelet`.
+      mode (str, optional): How to extend the image across its boundaries:
+
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
+        - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
+
+    Returns:
+      WaveletTransform: The discrete wavelet transform of the image.
     """
     return dwt(self, levels, wavelet = wavelet, mode = mode)
 
-  def swt(self, levels, wavelet = "default", mode = "symmetric", start = 0):
-    """
+  def swt(self, levels, wavelet = "default", mode = "reflect", start = 0):
+    """Stationary wavelet transform (also known as undecimated or "à trous" transform) of the image.
+
+    Args:
+      levels (int): The number of wavelet levels.
+      wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
+        Default is "default" for `equimage.params.defwavelet`.
+      mode (str, optional): How to extend the image across its boundaries:
+
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
+        - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
+
+    Returns:
+      WaveletTransform: The stationary wavelet transform of the image.
     """
     return swt(self, levels, wavelet = wavelet, mode = mode, start = start)
 
-  def slt(self, levels, starlet = "cubic", mode = "symmetric"):
-    """
+  def slt(self, levels, starlet = "cubic", mode = "reflect"):
+    """Starlet (isotropic undecimated wavelet) transform of the image.
+
+    Args:
+      levels (int): The number of starlet levels.
+      starlet (string, optional): The starlet used for the transformation ("linear" for the 3x3
+        linear spline or "cubic" for the 5x5 cubic spline). Default is "cubic".
+      mode (str, optional): How to extend the image across its boundaries:
+
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
+        - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
+
+    Returns:
+      WaveletTransform: The starlet transform of the image.
     """
     return slt(self, levels, starlet = starlet, mode = mode)
-

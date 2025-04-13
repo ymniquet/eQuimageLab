@@ -7,9 +7,10 @@
 
 """eQuimageLab parameters.
 
-``from equimage.params import get_image_type, set_image_type, get_CIE_params, set_CIE_params, set_max_hist_bins, set_default_hist_bins``
+.. code-block:: python
 
-``from equimagelab.jupyter.params import set_image_sampling, set_figure_max_width, set_figure_margins, set_table_row_height``
+  from equimage.params import get_image_type, set_image_type, get_CIE_params, set_CIE_params, set_max_hist_bins, set_default_hist_bins
+  from equimagelab.jupyter.params import set_image_sampling, set_figure_max_width, set_figure_margins, set_table_row_height
 """
 
 # Import relevant parameters from the eQuimage and jupyter modules.
