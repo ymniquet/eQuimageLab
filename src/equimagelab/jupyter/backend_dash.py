@@ -18,7 +18,10 @@ __all__ = ["Dashboard"]
 
 import os
 import threading
+from copy import deepcopy
 import numpy as np
+import pywt
+
 import dash
 from dash import Dash, dcc, html
 import dash_bootstrap_templates as dbt
@@ -27,7 +30,9 @@ import dash_extensions as dxt
 
 from equimage import Image, load_image, get_RGB_luma
 from equimage import image_colorspaces as cspaces
+from equimage.image_utils import is_valid_image
 from equimage.image_stats import parse_channels
+from equimage.image_multiscale import WaveletTransform
 
 from . import params
 from .utils import get_image_size, format_images, format_images_as_b64strings, shadowed, highlighted, differences
@@ -471,19 +476,20 @@ class Dashboard():
         Each image is displayed in a separate tab. The tabs are labelled according to the keys for
         a dictionary. Otherwise, the tabs are labelled "Image" & "Reference" if there are one or
         two images, and "Image #1", "Image #2"... if there are more.
-      histograms (optional): If True or a string, show the histograms of the image. The string
+      histograms (optional): If True or a string, show the histograms of the image(s). The string
         lists the channels of the histograms (see :meth:`Image.histograms() <.histograms>`). True
         is substituted with "RGBL" (red, green, blue, luma). Default is False.
-      statistics (optional): If True or a string, show the statistics of the image. The string
+      statistics (optional): If True or a string, show the statistics of the image(s). The string
         lists the channels of the statistics (see :meth:`Image.statistics() <.statistics>`). True
         is substituted with "RGBL" (red, green, blue, luma). Default is False.
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
-        negative). Only images[::sampling, ::sampling] are shown, to speed up display.
+        negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
+        speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, partial histograms).
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
-        the image.
+        the images.
       synczoom (bool, optional): If True (default), synchronize zooms over images. Zooms will be
         synchronized only if all images have the same size.
       trans (optional): A container with an histogram transformation (see :meth:`Image.apply_channels() <.apply_channels>`),
@@ -626,12 +632,13 @@ class Dashboard():
         for red, green, blue, luma). The channels of the transformation are automatically appended.
         See :meth:`Image.histograms() <.histograms>`.
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
-        negative). Only image[::sampling, ::sampling] is shown, to speed up display.
+        negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
+        speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, partial histograms).
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
-        the image.
+        the images.
       synczoom (bool, optional): If True (default), synchronize zooms over images.
     """
     if not issubclass(type(image), Image):
@@ -648,6 +655,78 @@ class Dashboard():
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
               sampling = sampling, filters = filters, click = click, select = select, synczoom = synczoom, trans = trans)
 
+  def show_wavelets(self, wt, absc = True, normalize = False, histograms = False, statistics = False,
+                    sampling = -1, filters = True, click = True, select = True, synczoom = True):
+    """Show wavelet coefficients on the dashboard.
+
+    For a discrete wavelet transform, display Mallat’s representation in a single tab.
+    For a stationary wavelet of starlet transform, displays the final approximation and the
+    successive wavelet levels in different tabs.
+
+    Args:
+      wt (WaveletTransform): The wavelet coefficients.
+      absc (bool, optional): If True (default), display the absolute value of the wavelet
+        coefficients.
+      normalize (bool, optional): If True, normalize each set of wavelet coefficients (or their
+        absolute value if absc is True) in the [0, 1] range. Default is False.
+      histograms (optional): If True or a string, show the histograms of the image(s). The string
+        lists the channels of the histograms (see :meth:`Image.histograms() <.histograms>`). True
+        is substituted with "RGBL" (red, green, blue, luma). Default is False.
+      statistics (optional): If True or a string, show the statistics of the image(s). The string
+        lists the channels of the statistics (see :meth:`Image.statistics() <.statistics>`). True
+        is substituted with "RGBL" (red, green, blue, luma). Default is False.
+      sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
+        negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
+        speed up display.
+      filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
+        shadowed/highlighted pixels, images differences, partial histograms).
+      click (bool, optional): If True (default), show image data on click.
+      select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
+        the images.
+      synczoom (bool, optional): If True (default), synchronize zooms over images. Zooms will be
+        synchronized only if all images have the same size.
+    """
+
+    def normalize_wavelet_coeffs(c):
+      """Normalize wavelet coefficients."""
+      if absc: c = abs(c)
+      if normalize:
+        cmin = 0. if absc else c.min()
+        cmax = c.max()
+        if cmax == cmin:
+          c = 0. if cmax == 0. else 1.
+        else:
+          c = (c-cmin)/(cmax-cmin)
+      return c
+
+    def display_wavelet_coeffs(c):
+      """Prepare wavelet coefficients for display."""
+      if wt.isImage:
+        return Image(c, channels = 0, colorspace = wt.colorspace, colormodel = wt.colormodel)
+      else:
+        if not is_valid_image(c):
+          raise ValueError("Error, the wavelets coefficients can not be displayed as an image.")
+        return c
+
+    if not issubclass(type(wt), WaveletTransform):
+      raise TypeError("This method can only display WaveletTransform objects.")
+    images = {}
+    if wt.type == "dwt":
+      coeffs = deepcopy(wt.coeffs)
+      coeffs[0] = normalize_wavelet_coeffs(coeffs[0])
+      for level in range(wt.levels):
+        coeffs[level+1] = [normalize_wavelet_coeffs(c) for c in coeffs[level+1]]
+      mallat, slices = pywt.coeffs_to_array(coeffs, axes = (-2, -1))
+      images["Mallat's decomposition"] = display_wavelet_coeffs(mallat)
+    elif wt.type in ["swt", "slt"]:
+      for l, c in enumerate(wt.coeffs):
+        label = "Approximation" if l == 0 else f"Level #{wt.start+wt.levels-l}"
+        images[label] = display_wavelet_coeffs(normalize_wavelet_coeffs(c))
+    else:
+      raise ValueError(f"Unknown wavelet transform type '{wt.type}'.")
+    self.show(images, histograms = histograms, statistics = statistics, sampling = sampling,
+              filters = filters, click = click, select = select, synczoom = synczoom)
+
   ### Carousel layout.
 
   def carousel(self, images, sampling = -1, interval = 2000):
@@ -660,7 +739,8 @@ class Dashboard():
         "Image" and "Reference" if there are two images, and "Image #1", "Image #2"... if there are
         more.
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
-        negative). Only images[::sampling, ::sampling] are shown, to speed up display.
+        negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
+        speed up display.
       interval (int, optional): The interval (ms) between image changes in the carousel (default 2000).
     """
     self.refresh = False # Stop refreshing dashboard.
@@ -736,8 +816,8 @@ def _table_statistics_(image, channels = ""):
   """Prepare a table with the statistics of an image.
 
   Args:
-    image: An Image object or numpy.ndarray with shape (height, width, 3)
-      (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    image: An Image object or numpy.ndarray with shape (height, width, 3) (for a color image),
+      (height, width, 1) or (height, width) (for a grayscale image).
     channels (str, optional): The channels of the statistics (default "" = "RGBL" for red, green,
       blue, luma).
 

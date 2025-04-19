@@ -48,7 +48,8 @@ def format_images(images, sampling = 1, copy = False):
     images: A single/tuple/list of Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
     sampling (int, optional): The downsampling rate (default 1; set to `jupyter.params.sampling`
-      if negative). Only images[::sampling, ::sampling] are processed, to speed up operations.
+      if negative). Only the pixels image[::sampling, ::sampling] of a given image are processed, to
+        speed up operations.
     copy (bool, optional): If False (default), the formatted images are (when possible) views of
       the original images; If True, they are always copies.
 
@@ -84,7 +85,8 @@ def format_images_as_b64strings(images, sampling = 1, compression = 4):
     images: A single/tuple/list of Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
     sampling (int, optional): The downsampling rate (default 1; set to `jupyter.params.sampling`
-      if negative). Only images[::sampling, ::sampling] are processed, to speed up operations.
+      if negative). Only the pixels image[::sampling, ::sampling] of a given image are processed, to
+        speed up operations.
     compression (int, optional): The PNG compression level (default 4).
 
   Returns:
