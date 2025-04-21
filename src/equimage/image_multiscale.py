@@ -23,6 +23,36 @@ from . import helpers
 from . import image as img
 from . import image_utils as imgutils
 
+#####################
+# Helper functions. #
+#####################
+
+def std_centered(data, method, **kwargs):
+  """Return the standard deviation of a centered data set.
+
+  Args:
+    data (numpy.ndarray): The data set (average must be zero).
+    method (str): The method used to compute the standard deviation:
+
+      - "variance": std_centered = sqrt(mean(data**2))
+      - "median": std_centered = median(abs(data))/0.6744897501960817
+
+    The latter estimate is more robust to outliers.
+
+  Returns:
+    float: The standard deviation of data.
+  """
+  if method == "variance":
+    return np.sqrt(np.mean(data**2, **kwargs))
+  elif method == "median":
+    return np.median(abs(data), **kwargs)/0.6744897501960817
+  else:
+    raise ValueError("Error, unknown method '{method}'.")
+
+###########################
+# WaveletTransform class. #
+###########################
+
 class WaveletTransform:
   """Wavelet transform class."""
 
@@ -59,20 +89,23 @@ class WaveletTransform:
       WaveletTransform: The updated WaveletTransform object.
     """
     if isinstance(mult, dict):
-      ms = np.ones(self.levels)
+      ms = [0.]*self.levels
       for key, value in mult.items():
-        if not isinstance(key, int): raise ValueError("Error, mult dictionary keys must be integers.")
-        if key < 0 or key >= self.levels: raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
+        if not isinstance(key, int):
+          raise ValueError("Error, mult dictionary keys must be integers.")
+        if key < 0 or key >= self.levels:
+          raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
         ms[key] = value
     else:
       ms = np.asarray(mult)
-      if ms.ndim != 1: raise ValueError("Error, mult must be a dictionary or be mappable to a 1D array.")
+      if ms.ndim != 1:
+        raise ValueError("Error, mult must be a dictionary or be mappable to a 1D array.")
     if inplace:
       output = self
     else:
       output = deepcopy(self)
     if self.type in ["dwt", "swt", "slt"]:
-      for level in range(min(self.levels, ms.size)):
+      for level in range(min(self.levels, len(ms))):
         if (m := ms[level]) == 1.: continue
         output.coeffs[-(level+1)] = [m*c for c in output.coeffs[-(level+1)]]
     else:
@@ -86,8 +119,10 @@ class WaveletTransform:
       :py:meth:`threshold_firm_levels <WaveletTransform.threshold_firm_levels>`
 
     Args:
-      threshold (numpy.ndarray or dict): The threshold for each wavelet level. Level 0 is the smallest
-        scale. If a dictionary, must be of the form {level: threshold, ...} (e.g. {0: 1.e-2, 1: 1.e-3}).
+      threshold (numpy.ndarray or dict): The threshold for each wavelet level. Level 0 is the
+        smallest scale. Can be a 1D array (threshold for each level), a 2D array (threshold for
+        each level & channel), or a dictionary of the form {level: threshold, ...} or of the form
+        {level: (threshold channel #1, threshold channel #2, ...), ...} (e.g. {0: 1.e-2, 1: 1.e-3}).
         Default threshold is 0 for all unspecified wavelet levels.
       mode (string, optional): The thresholding mode:
 
@@ -96,7 +131,7 @@ class WaveletTransform:
           threshold.
         - "hard": Wavelet coefficients with absolute value < threshold are replaced by substitute,
           while those with absolute value >= threshold are left unchanged.
-        - "garrote": Non-negative Garotte threshold (soft for small wavelet coefficients, and hard
+        - "garrote": Non-negative Garrote threshold (soft for small wavelet coefficients, and hard
           for large wavelet coefficients).
         - "greater": Wavelet coefficients < threshold are replaced by substitute.
         - "less": Wavelet coefficients > threshold are replaced by substitute.
@@ -110,22 +145,32 @@ class WaveletTransform:
       WaveletTransform: The updated WaveletTransform object.
     """
     if isinstance(threshold, dict):
-      ts = np.zeros(self.levels)
+      ts = [0.]*self.levels
       for key, value in threshold.items():
-        if not isinstance(key, int): raise ValueError("Error, threshold dictionary keys must be integers.")
-        if key < 0 or key >= self.levels: raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
+        if not isinstance(key, int):
+          raise ValueError("Error, threshold dictionary keys must be integers.")
+        if key < 0 or key >= self.levels:
+          raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
         ts[key] = value
     else:
       ts = np.asarray(threshold)
-      if ts.ndim != 1: raise ValueError("Error, threshold must be a dictionary or be mappable to a 1D array.")
+      if ts.ndim > 2:
+        raise ValueError("Error, threshold must be a dictionary or be mappable to a 1D or 2D array.")
     if inplace:
       output = self
     else:
       output = deepcopy(self)
     if self.type in ["dwt", "swt", "slt"]:
-      for level in range(min(self.levels, ts.size)):
+      for level in range(min(self.levels, len(ts))):
         t = ts[level]
-        output.coeffs[-(level+1)] = [pywt.threshold(c, t, mode = mode, substitute = substitute) for c in output.coeffs[-(level+1)]]
+        scalar = np.isscalar(t)
+        if not scalar and len(t) != self.nc:
+          raise ValueError("Error, the length of the threshold must match the number of channels.")
+        if scalar or self.nc == 1:
+          output.coeffs[-(level+1)] = [pywt.threshold(c, t, mode = mode, substitute = substitute) for c in output.coeffs[-(level+1)]]
+        else:
+          output.coeffs[-(level+1)] = [np.array([pywt.threshold(c[ic], t[ic], mode = mode, substitute = substitute) \
+            for ic in range(self.nc)]) for c in output.coeffs[-(level+1)]]
     else:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return output
@@ -141,11 +186,13 @@ class WaveletTransform:
       :py:meth:`threshold <WaveletTransform.threshold>`
 
     Args:
-      thresholds (numpy.ndarray or dict): The thresholds for each wavelet level. Level 0 is the smallest
-        scale. If a dictionary, must be of the form {level: (threshold_low, threshold_high), ...}
-        (e.g. {0: (1.e-2, 5e-2), 1: (1.e-3, 5e-3)}). If an array, the first column is threshold_low
-        and the second column is threshold_high. Default thresholds are (0, 0) for all unspecified
-        wavelet levels.
+      thresholds (numpy.ndarray or dict): The thresholds for each wavelet level. Level 0 is the
+        smallest scale. Can be a 2D array (threshold_low and threshold_high for each level), a 3D
+        array (threshold_low and threshold_high for each level & channel), or a dictionary of the
+        form {level: (threshold_low, threshold_high), ...} or of the form {level: ((threshold_low
+        channel #1, threshold_low channel #2, ...), (threshold_high channel #1, threshold_high
+        channel #2, ...)), ...} (e.g. {0: (1.e-2, 5e-2), 1: (1.e-3, 5e-3)}). Default thresholds
+        are (0, 0) for all unspecified wavelet levels.
       inplace (bool, optional): If True, update the object "in place"; if False (default), return a
         new WaveletTransform object.
 
@@ -153,36 +200,50 @@ class WaveletTransform:
       WaveletTransform: The updated WaveletTransform object.
     """
     if isinstance(thresholds, dict):
-      ts = np.zeros((self.levels, 2))
+      ts = [(0., 0.)]*self.levels
       for key, value in thresholds.items():
-        if not isinstance(key, int): raise ValueError("Error, thresholds dictionary keys must be integers.")
-        if key < 0 or key >= self.levels: raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
-        ts[key, :] = value[0], value[1]
+        if not isinstance(key, int):
+          raise ValueError("Error, thresholds dictionary keys must be integers.")
+        if key < 0 or key >= self.levels:
+          raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
+        ts[key] = value
     else:
       ts = np.asarray(thresholds)
-      if ts.ndim != 2: raise ValueError("Error, thresholds must be a dictionary of tuples or be mappable to a 2D array.")
+      if ts.ndim not in [2, 3]:
+        raise ValueError("Error, thresholds must be a dictionary or be mappable to a 2D or 3D array.")
     if inplace:
       output = self
     else:
       output = deepcopy(self)
     if self.type in ["dwt", "swt", "slt"]:
-      for level in range(min(self.levels, ts.shape[0])):
-        t = ts[level]
-        output.coeffs[-(level+1)] = [pywt.threshold_firm(c, t[0], t[1]) for c in output.coeffs[-(level+1)]]
+      for level in range(min(self.levels, len(ts))):
+        tlow, thigh = ts[level][0], ts[level][1]
+        tlowscalar, thighscalar = np.isscalar(tlow), np.isscalar(thigh)
+        if not tlowscalar and len(tlow) != self.nc:
+          raise ValueError("Error, the length of the low threshold must match the number of channels.")
+        if not thighscalar and len(thigh) != self.nc:
+          raise ValueError("Error, the length of the high threshold must match the number of channels.")
+        if tlowscalar != thighscalar:
+          raise ValueError("Error, the low and high thresholds must both be either scalars or arrays.")
+        if tlowscalar or self.nc == 1:
+          output.coeffs[-(level+1)] = [pywt.threshold_firm(c, tlow, thigh) for c in output.coeffs[-(level+1)]]
+        else:
+          output.coeffs[-(level+1)] = [np.array([pywt.threshold_firm(c[ic], tlow[ic], thigh[ic]) \
+            for ic in range(self.nc)]) for c in output.coeffs[-(level+1)]]
     else:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return output
 
-  def noise_scale_factors(self, numerical = False, size = None, repeat = 1):
+  def noise_scale_factors(self, method = "median", numerical = False, size = None, samples = 1):
     if not numerical:
       if self.type == "dwt":
-        return np.ones((self.levels, 3))
+        return np.ones(self.levels)
       elif self.type == "swt":
-        return np.array([[0.5**(level+1)]*3 for level in range(self.levels)])
+        return np.array([0.5**(level+1) for level in range(self.levels)])
     if size is None: size = self.coeffs[0].shape[-2:]
     rng = np.random.default_rng(12345) # Ensure reproducibility.
     scale_factors = 0.
-    for n in range(repeat):
+    for n in range(samples):
       image = rng.normal(size = (1, size[-2], size[-1]))
       if self.type == "dwt":
         wt = dwt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode)
@@ -192,28 +253,47 @@ class WaveletTransform:
         wt = slt(image, levels = self.levels, starlet = self.wavelet, mode = self.mode)
       else:
         raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
-      scale_factors += np.array([[np.median(abs(c))/0.6744897501960817 for c in wt.coeffs[-(level+1)]] for level in range(wt.levels)])
-    return scale_factors/repeat
+      scale_factors += np.array([std_centered(wt.coeffs[-(level+1)][-1], method) for level in range(wt.levels)])
+    return scale_factors/samples
 
-  def estimate_noise0(self, clip = None):
-    abscoeffs = helpers.at_least_3D(np.abs(self.coeffs[-1][-1]))
-    sigma = np.median(abscoeffs, axis = (-2, -1))/0.6744897501960817
+  def estimate_noise0(self, method = "median", clip = None):
+    coeffs = helpers.at_least_3D(self.coeffs[-1][-1])
+    sigma = std_centered(coeffs, method, axis = (-2, -1))
     if clip is not None:
-      for ic in range(abscoeffs.shape[0]):
-        oldset = np.zeros_like(abscoeffs[ic], dtype = bool)
+      for ic in range(self.nc):
+        oldset = np.zeros_like(coeffs[ic], dtype = bool)
         while True:
-          newset = abscoeffs[ic] < clip*sigma[ic]
+          newset = abs(coeffs[ic]) < clip*sigma[ic]
           if np.all(newset == oldset): break
-          sigma[ic] = np.median(abscoeffs[ic][newset])/0.6744897501960817
+          sigma[ic] = std_centered(coeffs[ic][newset], method)
           oldset = newset
     return sigma
 
-  def estimate_noise(self, scale_factors = None, clip = None):
-    if scale_factors is None: scale_factors = self.noise_scale_factors()
-    sigma0 = self.estimate_noise0(clip = clip)
-    norm = scale_factors[0][-1]
-    sigmas = np.array([[sigma0*f/norm for f in s] for s in scale_factors])
+  def estimate_noise(self, method = "median", clip = None, scale_factors = None):
+    if scale_factors is None: scale_factors = self.noise_scale_factors(method = method)
+    sigma0 = self.estimate_noise0(method = method, clip = clip)
+    norm = scale_factors[0]
+    sigmas = np.array([sigma0*factor/norm for factor in scale_factors])
     return sigmas, sigma0/norm
+
+  # def VisuShrink(self, sigmas):
+  #   f = np.sqrt(2.*np.log(wt.size[0]*wt.size[1]))
+  #   print(f"VisuShrink: threshold = {f:.5f}σ.")
+  #   return f*sigmas
+
+  # def BayesShrink(self, sigmas, method = "median"):
+  #   eps = np.finfo(wt.coeffs[0].dtype).eps
+  #   varis = sigmas**2
+  #   for level in range(wt.levels):
+  #     coeffs = wt.coeffs[-(level+1)]
+  #     for i, c in enumerate(coeffs):
+  #       cvari = std_centered(c, method = method)**2
+  #       varis[l, i] /= np.sqrt(max(cvari-varis, eps))
+  #   return varis
+
+#######################
+# Wavelet transforms. #
+#######################
 
 def dwt(image, levels, wavelet = "default", mode = "reflect"):
   """Discrete wavelet transform of an image.
@@ -265,6 +345,8 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
   wt.mode = mode
   wt._mode = _mode
   wt.coeffs = pywt.wavedec2(data, wavelet = wavelet, level = levels, mode = _mode, axes = (-2, -1))
+  wt.size = (data.shape[-2], data.shape[-1])
+  wt.nc = 1 if data.ndim == 2 else data.shape[0]
   wt.isImage = isImage
   if isImage:
     wt.colorspace = image.colorspace
@@ -293,13 +375,12 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
   if levels < 1: raise ValueError("Error, levels must be > 1.")
   isImage = issubclass(type(image), img.Image)
   if isImage:
-    width, height = image.get_size()
     data = image.image
   elif imgutils.is_valid_image(image):
-    width, height = image.shape[-1], image.shape[-2]
     data = image
   else:
     raise ValueError("Error, the input image is not valid.")
+  width, height = data.shape[-1], data.shape[-2]
   # Translate boundary mode.
   if mode == "zero":
     _mode = "constant"
@@ -328,6 +409,7 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
   wt.norm = True
   wt.coeffs = pywt.swt2(padded, wavelet = wavelet, level = levels, start_level = start, trim_approx = True, norm = wt.norm, axes = (-2, -1))
   wt.size = (height, width)
+  wt.nc = 1 if data.ndim == 2 else data.shape[0]
   wt.padding = (ptop, pleft)
   wt.isImage = isImage
   if isImage:
@@ -411,6 +493,8 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
   wt.start = 0
   wt.mode = mode
   wt.coeffs = list(reversed(coeffs))
+  wt.size = (data.shape[-2], data.shape[-1])
+  wt.nc = 1 if data.ndim == 2 else data.shape[0]
   wt.isImage = isImage
   if isImage:
     wt.colorspace = image.colorspace
