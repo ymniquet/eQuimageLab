@@ -75,3 +75,22 @@ def lookup(x, xlut, ylut, slut, nlut):
   """
   i = np.clip(np.int32(np.floor((nlut-1)*(x-xlut[0])/(xlut[-1]-xlut[0]))), 0, nlut-2)
   return slut[i]*(x-xlut[i])+ylut[i]
+
+def at_least_3D(x):
+  """Return a view on the input array with at least 3 dimensions (by prepending extra dimensions).
+
+  For example, for an input array x with shape (230, 450), returns a view with shape (1, 230, 450).
+
+  Args:
+    x (numpy.ndarray): The input array.
+
+  Returns:
+    numpy.ndarray: A view on the input array with at least 3 dimensions.
+  """
+  n = x.ndim
+  if n == 1:
+    return x[np.newaxis, np.newaxis]
+  elif n == 2:
+    return x[np.newaxis]
+  else:
+    return x

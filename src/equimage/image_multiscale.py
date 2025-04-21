@@ -5,7 +5,7 @@
 # Version: 1.3.1 / 2025.03.26
 # Doc OK.
 
-"""Multiscale transformations.
+"""Multiscale transforms.
 
 The following symbols are imported in the equimage/equimagelab namespaces for convenience:
   "dwt", "swt", "slt".
@@ -19,6 +19,7 @@ import scipy.ndimage as ndimg
 from copy import deepcopy
 
 from . import params
+from . import helpers
 from . import image as img
 from . import image_utils as imgutils
 
@@ -39,7 +40,7 @@ class WaveletTransform:
       ptop, pleft = self.padding
       data = data[..., ptop:ptop+height, pleft:pleft+width]
     elif self.type == "slt":
-      data = np.sum(self.coeffs, axis = 0)
+      data = self.coeffs[0]+np.sum(self.coeffs[1:], axis = 0)[0]
     else:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage else data
@@ -172,6 +173,48 @@ class WaveletTransform:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return output
 
+  def noise_scale_factors(self, numerical = False, size = None, repeat = 1):
+    if not numerical:
+      if self.type == "dwt":
+        return np.ones((self.levels, 3))
+      elif self.type == "swt":
+        return np.array([[0.5**(level+1)]*3 for level in range(self.levels)])
+    if size is None: size = self.coeffs[0].shape[-2:]
+    rng = np.random.default_rng(12345) # Ensure reproducibility.
+    scale_factors = 0.
+    for n in range(repeat):
+      image = rng.normal(size = (1, size[-2], size[-1]))
+      if self.type == "dwt":
+        wt = dwt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode)
+      elif self.type == "swt":
+        wt = swt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode, start = self.start)
+      elif self.type == "slt":
+        wt = slt(image, levels = self.levels, starlet = self.wavelet, mode = self.mode)
+      else:
+        raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
+      scale_factors += np.array([[np.median(abs(c))/0.6744897501960817 for c in wt.coeffs[-(level+1)]] for level in range(wt.levels)])
+    return scale_factors/repeat
+
+  def estimate_noise0(self, clip = None):
+    abscoeffs = helpers.at_least_3D(np.abs(self.coeffs[-1][-1]))
+    sigma = np.median(abscoeffs, axis = (-2, -1))/0.6744897501960817
+    if clip is not None:
+      for ic in range(abscoeffs.shape[0]):
+        oldset = np.zeros_like(abscoeffs[ic], dtype = bool)
+        while True:
+          newset = abscoeffs[ic] < clip*sigma[ic]
+          if np.all(newset == oldset): break
+          sigma[ic] = np.median(abscoeffs[ic][newset])/0.6744897501960817
+          oldset = newset
+    return sigma
+
+  def estimate_noise(self, scale_factors = None, clip = None):
+    if scale_factors is None: scale_factors = self.noise_scale_factors()
+    sigma0 = self.estimate_noise0(clip = clip)
+    norm = scale_factors[0][-1]
+    sigmas = np.array([[sigma0*f/norm for f in s] for s in scale_factors])
+    return sigmas, sigma0/norm
+
 def dwt(image, levels, wavelet = "default", mode = "reflect"):
   """Discrete wavelet transform of an image.
 
@@ -191,6 +234,7 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
   Returns:
     WaveletTransform: The discrete wavelet transform of the input image.
   """
+  if levels < 1: raise ValueError("Error, levels must be > 1.")
   isImage = issubclass(type(image), img.Image)
   if isImage:
     data = image.image
@@ -246,6 +290,7 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
   Returns:
     WaveletTransform: The stationary wavelet transform of the input image.
   """
+  if levels < 1: raise ValueError("Error, levels must be > 1.")
   isImage = issubclass(type(image), img.Image)
   if isImage:
     width, height = image.get_size()
@@ -335,6 +380,7 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
       output = ndimg.convolve1d(output, kernel, axis = axis, mode = _mode, cval = 0.)
     return output
 
+  if levels < 1: raise ValueError("Error, levels must be > 1.")
   isImage = issubclass(type(image), img.Image)
   if isImage:
     data = image.image
@@ -354,7 +400,7 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
   coeffs = []
   for level in range(levels):
     convolved = convolve_starlet(data, step)
-    coeffs.append(data-convolved)
+    coeffs.append([data-convolved])
     data = convolved
     step *= 2
   coeffs.append(convolved)

@@ -37,6 +37,7 @@ def is_valid_image(image):
   elif image.ndim != 2:
     return False
   if image.dtype not in [np.float32, np.float64]: return False
+  return True
 
 ##########################
 # Image transformations. #

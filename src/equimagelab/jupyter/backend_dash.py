@@ -642,7 +642,7 @@ class Dashboard():
       synczoom (bool, optional): If True (default), synchronize zooms over images.
     """
     if not issubclass(type(image), Image):
-      print("The transformations can only be displayed for Image objects.")
+      print("The transformation can only be displayed for Image objects.")
       return
     trans = getattr(image, "trans", None)
     if trans is None:
@@ -659,9 +659,10 @@ class Dashboard():
                     sampling = -1, filters = True, click = True, select = True, synczoom = True):
     """Show wavelet coefficients on the dashboard.
 
-    For a discrete wavelet transform, display Mallat’s representation in a single tab.
-    For a stationary wavelet of starlet transform, displays the final approximation and the
-    successive wavelet levels in different tabs.
+    For a discrete wavelet transform, displays Mallat’s representation in a single tab.
+    For a starlet transform, displays the final approximation and the successive starlet
+    levels in different tabs.
+    Not implemented for stationary wavelet ("à trous") transforms.
 
     Args:
       wt (WaveletTransform): The wavelet coefficients.
@@ -687,7 +688,7 @@ class Dashboard():
         synchronized only if all images have the same size.
     """
 
-    def normalize_wavelet_coeffs(c):
+    def normalize_coeffs(c):
       """Normalize wavelet coefficients."""
       if absc: c = abs(c)
       if normalize:
@@ -699,29 +700,27 @@ class Dashboard():
           c = (c-cmin)/(cmax-cmin)
       return c
 
-    def display_wavelet_coeffs(c):
+    def display_coeffs(c):
       """Prepare wavelet coefficients for display."""
-      if wt.isImage:
-        return Image(c, channels = 0, colorspace = wt.colorspace, colormodel = wt.colormodel)
-      else:
-        if not is_valid_image(c):
-          raise ValueError("Error, the wavelets coefficients can not be displayed as an image.")
-        return c
+      return np.moveaxis(c, 0, -1)
 
     if not issubclass(type(wt), WaveletTransform):
       raise TypeError("This method can only display WaveletTransform objects.")
     images = {}
     if wt.type == "dwt":
       coeffs = deepcopy(wt.coeffs)
-      coeffs[0] = normalize_wavelet_coeffs(coeffs[0])
+      coeffs[0] = normalize_coeffs(coeffs[0])
       for level in range(wt.levels):
-        coeffs[level+1] = [normalize_wavelet_coeffs(c) for c in coeffs[level+1]]
+        coeffs[level+1] = [normalize_coeffs(c) for c in coeffs[level+1]]
       mallat, slices = pywt.coeffs_to_array(coeffs, axes = (-2, -1))
-      images["Mallat's decomposition"] = display_wavelet_coeffs(mallat)
-    elif wt.type in ["swt", "slt"]:
-      for l, c in enumerate(wt.coeffs):
-        label = "Approximation" if l == 0 else f"Level #{wt.start+wt.levels-l}"
-        images[label] = display_wavelet_coeffs(normalize_wavelet_coeffs(c))
+      images["Mallat's decomposition"] = display_coeffs(mallat)
+    elif wt.type == "swt":
+      raise NotImplementedError("Error, not implemented for stationary wavelet (à trous) transforms.")
+    elif wt.type == "slt":
+      images["Approximation"] = display_coeffs(normalize_coeffs(wt.coeffs[0]))
+      for l, c in enumerate(wt.coeffs[1:]):
+        label = f"Level #{wt.levels-l-1}"
+        images[label] = display_coeffs(normalize_coeffs(c[0]))
     else:
       raise ValueError(f"Unknown wavelet transform type '{wt.type}'.")
     self.show(images, histograms = histograms, statistics = statistics, sampling = sampling,
