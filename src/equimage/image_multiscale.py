@@ -276,20 +276,21 @@ class WaveletTransform:
     sigmas = np.array([sigma0*factor/norm for factor in scale_factors])
     return sigmas, sigma0/norm
 
-  # def VisuShrink(self, sigmas):
-  #   f = np.sqrt(2.*np.log(wt.size[0]*wt.size[1]))
-  #   print(f"VisuShrink: threshold = {f:.5f}σ.")
-  #   return f*sigmas
+  def visu_shrink(self, sigmas):
+    clip = np.sqrt(2.*np.log(self.size[0]*self.size[1]))
+    print(f"VisuShrink: threshold = {clip:.5f}σ.")
+    return clip*sigmas
 
-  # def BayesShrink(self, sigmas, method = "median"):
-  #   eps = np.finfo(wt.coeffs[0].dtype).eps
-  #   varis = sigmas**2
-  #   for level in range(wt.levels):
-  #     coeffs = wt.coeffs[-(level+1)]
-  #     for i, c in enumerate(coeffs):
-  #       cvari = std_centered(c, method = method)**2
-  #       varis[l, i] /= np.sqrt(max(cvari-varis, eps))
-  #   return varis
+  def bayes_shrink(self, sigmas, method = "median"):
+    eps = np.finfo(self.coeffs[0].dtype).eps
+    varns = sigmas**2
+    for level in range(self.levels):
+      coeffs = helpers.at_least_3D(self.coeffs[-(level+1)][-1])
+      for ic in range(self.nc):
+        cvarn = std_centered(coeffs[ic], method = method)**2
+        clip = 1./np.sqrt(max(cvarn-varns[level, ic], eps))
+        varns[level, ic] *= clip
+    return varns
 
 #######################
 # Wavelet transforms. #
