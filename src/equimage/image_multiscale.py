@@ -11,7 +11,7 @@ The following symbols are imported in the equimage/equimagelab namespaces for co
   "dwt", "swt", "slt".
 """
 
-__all__ = ["dwt", "swt", "slt"]
+__all__ = ["dwt", "swt", "slt", "anscombe", "inverse_anscombe"]
 
 import pywt
 import numpy as np
@@ -23,9 +23,9 @@ from . import helpers
 from . import image as img
 from . import image_utils as imgutils
 
-#####################
-# Helper functions. #
-#####################
+#########################
+# Statistics functions. #
+#########################
 
 def std_centered(data, method, **kwargs):
   """Return the standard deviation of a centered data set.
@@ -35,9 +35,8 @@ def std_centered(data, method, **kwargs):
     method (str): The method used to compute the standard deviation:
 
       - "variance": std_centered = sqrt(mean(data**2))
-      - "median": std_centered = median(abs(data))/0.6744897501960817
-
-    The latter estimate is more robust to outliers.
+      - "median": std_centered = median(abs(data))/0.6744897501960817. This estimate is more robust
+        to outliers.
 
   Returns:
     float: The standard deviation of data.
@@ -48,6 +47,46 @@ def std_centered(data, method, **kwargs):
     return np.median(abs(data), **kwargs)/0.6744897501960817
   else:
     raise ValueError("Error, unknown method '{method}'.")
+
+def anscombe(data, gain = 1., average = 0., sigma = 0.):
+  """Return the generalized Anscombe transform of the input data.
+
+  Transforms the sum data = gain*P+N of a white Poisson noise P and a white Gaussian noise
+  N(average, sigma) into an approximate white Gaussian noise with variance 1.
+
+  For gain = 1, average = 0 and sigma = 0 (default), this function falls back to the original
+  Anscombe transform T(data) = 2*sqrt(data+3/8).
+
+  See also:
+    :py:func:`inverse_anscombe`
+
+  Args:
+    data (numpy.ndarray): The input data.
+    gain (float, optional): The gain (default 1).
+    average (float, optional): The average of the Gaussian noise (default 0).
+    sigma (float, optional): The standard deviation of the Gaussian noise (default 0).
+
+  Returns:
+    numpy.ndarray: The generalized Anscombe transform of the input data.
+  """
+  return 2.*np.sqrt(gain*data+3.*gain**2/8.+sigma**2-gain*average)/gain
+
+def inverse_anscombe(data, gain = 1., average = 0., sigma = 0.):
+  """Return the inverse generalized Anscombe transform of the input data.
+
+  See also:
+    :py:func:`anscombe`
+
+  Args:
+    data (numpy.ndarray): The input data.
+    gain (float, optional): The gain (default 1).
+    average (float, optional): The average of the Gaussian noise (default 0).
+    sigma (float, optional): The standard deviation of the Gaussian noise (default 0).
+
+  Returns:
+    numpy.ndarray: The inverse generalized Anscombe transform of the input data.
+  """
+  return ((gain*data/2.)**2-3.*gain**2/8.-sigma**2+gain*average)/gain
 
 ###########################
 # WaveletTransform class. #
@@ -178,9 +217,10 @@ class WaveletTransform:
   def threshold_firm_levels(self, thresholds, inplace = False):
     """Firm threshold of wavelet levels.
 
-    Firm threshold behaves the same as soft-thresholding for wavelet coefficients below threshold_low
-    and the same as hard-thresholding for wavelet coefficients above threshold_high. For intermediate
-    values, the outcome is in between that of soft and hard thresholding.
+    Firm threshold behaves the same as soft-thresholding for wavelet coefficients with absolute
+    values below threshold_low, and the same as hard-thresholding for wavelet coefficients with
+    absolute values above threshold_high. For intermediate values, the outcome is in between that
+    of soft and hard thresholding.
 
     See also:
       :py:meth:`threshold <WaveletTransform.threshold>`
@@ -568,3 +608,41 @@ class MixinImage:
       WaveletTransform: The starlet transform of the image.
     """
     return slt(self, levels, starlet = starlet, mode = mode)
+
+  def anscombe(self, gain = 1., average = 0., sigma = 0.):
+    """Return the generalized Anscombe transform of the image.
+
+    Transforms the sum image = gain*P+N of a white Poisson noise P and a white Gaussian noise
+    N(average, sigma) into an approximate white Gaussian noise with variance 1.
+
+    For gain = 1, average = 0 and sigma = 0 (default), this function falls back to the original
+    Anscombe transform T(self) = 2*sqrt(self+3/8).
+
+    See also:
+      :py:meth:`Image.inverse_anscombe <.inverse_anscombe>`
+
+    Args:
+      gain (float, optional): The gain (default 1).
+      average (float, optional): The average of the Gaussian noise (default 0).
+      sigma (float, optional): The standard deviation of the Gaussian noise (default 0).
+
+    Returns:
+      Image: The generalized Anscombe transform of the image.
+    """
+    return anscombe(self, gain = gain, average = average, sigma = sigma)
+
+  def inverse_anscombe(self, gain = 1., average = 0., sigma = 0.):
+    """Return the inverse generalized Anscombe transform of the image.
+
+    See also:
+      :py:meth:`Image.anscombe <.anscombe>`
+
+    Args:
+      gain (float, optional): The gain (default 1).
+      average (float, optional): The average of the Gaussian noise (default 0).
+      sigma (float, optional): The standard deviation of the Gaussian noise (default 0).
+
+    Returns:
+      Image: The inverse generalized Anscombe transform of the image.
+    """
+    return inverse_anscombe(self, gain = gain, average = average, sigma = sigma)
