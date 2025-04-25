@@ -8,7 +8,7 @@
 """Multiscale transforms.
 
 The following symbols are imported in the equimage/equimagelab namespaces for convenience:
-  "dwt", "swt", "slt".
+  "dwt", "swt", "slt", "anscombe", "inverse_anscombe".
 """
 
 __all__ = ["dwt", "swt", "slt", "anscombe", "inverse_anscombe"]
@@ -155,7 +155,7 @@ class WaveletTransform:
     """Threshold wavelet levels.
 
     See also:
-      :py:meth:`threshold_firm_levels <WaveletTransform.threshold_firm_levels>`
+      :py:meth:`WaveletTransform.threshold_firm_levels`
 
     Args:
       threshold (numpy.ndarray or dict): The threshold for each wavelet level. Level 0 is the
@@ -223,7 +223,7 @@ class WaveletTransform:
     of soft and hard thresholding.
 
     See also:
-      :py:meth:`threshold <WaveletTransform.threshold>`
+      :py:meth:`WaveletTransform.threshold`
 
     Args:
       thresholds (numpy.ndarray or dict): The thresholds for each wavelet level. Level 0 is the
@@ -275,16 +275,39 @@ class WaveletTransform:
     return output
 
   def noise_scale_factors(self, method = "median", numerical = False, size = None, samples = 1):
+    """Compute the standard deviation of a white gaussian noise with variance 1 at all wavelet levels.
+
+    This method returns the partition of a white gaussian noise with variance 1 across all wavelet
+    levels. It does so analytically when the distribution of the variance is known for the
+    transformation & wavelet. If not, it does so numerically by transforming random images with
+    white gaussian noise and computing the standard deviation at all scales.
+
+    Args:
+      method (str, optional): The method used to compute standard deviations. Can be "variance"
+        or "median" (default). See :py:func:`std_centered` for details.
+      numerical (bool, optional): If False (default), use analytical results when known. If True,
+        always compute the standard deviations numerically.
+      size (tuple of int, optional): The size (height, width) of the random images used to compute
+        the standard deviations numerically. If None, defaults to the present image size.
+      samples (int, optional): The number of random images used to compute the standard deviations
+        numerically. The standard deviations of all random images are averaged at each scale.
+
+    Returns:
+      numpy.ndarray: The standard deviation of a white gaussian noise with variance 1 at all wavelet
+      levels. Level #0 is the smallest scale.
+    """
+    if self.type != "slt": numerical = numerical or not pywt.Wavelet(self.wavelet).orthogonal
     if not numerical:
       if self.type == "dwt":
-        return np.ones(self.levels)
+        return np.ones(self.levels) # May be approximate.
       elif self.type == "swt":
-        return np.array([0.5**(level+1) for level in range(self.levels)])
-    if size is None: size = self.coeffs[0].shape[-2:]
+        return np.array([0.5**(level+1) for level in range(self.levels)]) # May be approximate.
+    # Numerical estimate of the noise partition.
+    if size is None: size = self.size
     rng = np.random.default_rng(12345) # Ensure reproducibility.
     scale_factors = 0.
     for n in range(samples):
-      image = rng.normal(size = (1, size[-2], size[-1]))
+      image = rng.normal(size = (size[0], size[1]))
       if self.type == "dwt":
         wt = dwt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode)
       elif self.type == "swt":
@@ -297,6 +320,24 @@ class WaveletTransform:
     return scale_factors/samples
 
   def estimate_noise0(self, method = "median", clip = None):
+    """Estimate noise as the standard deviation of the wavelet coefficients at the smallest scale.
+
+    This method estimates the noise of the image as the standard deviation sigma0 of the (diagonal)
+    wavelet coefficients at the smallest scale. If the clip kwarg is provided, it reject wavelets
+    whose absolute coefficients are greater than clip*sigma0 and iterates until sigma0 is converged.
+
+    See also:
+      :py:meth:`WaveletTransform.estimate_noise`
+
+    Args:
+      method (str, optional): The method used to compute standard deviations. Can be "variance"
+        or "median" (default). See :py:func:`std_centered` for details.
+      clip (float, optional): If not None (default), reject wavelets whose absolute coefficients
+        are greater than clip*sigma0 and iterate until sigma0 is converged.
+
+    Returns:
+      numpy.ndarray: The noise sigma0 in each channel.
+    """
     coeffs = helpers.at_least_3D(self.coeffs[-1][-1])
     sigma = std_centered(coeffs, method, axis = (-2, -1))
     if clip is not None:
@@ -310,18 +351,108 @@ class WaveletTransform:
     return sigma
 
   def estimate_noise(self, method = "median", clip = None, scale_factors = None):
+    """Estimate noise at each wavelet level.
+
+    This method first estimates the noise at wavelet level #0 as the standard deviation sigma0 of the
+    (diagonal) wavelet coefficients at the smallest scale. It then extrapolates sigma0 to all wavelet
+    levels assuming the noise is gaussian.
+
+    See also:
+      :py:meth:`WaveletTransform.estimate_noise0`,
+      :py:meth:`WaveletTransform.noise_scale_factors`
+
+    Args:
+      method (str, optional): The method used to compute standard deviations. Can be "variance"
+        or "median" (default). See :py:func:`std_centered` for details.
+      clip (float, optional): If not None (default), reject level #0 wavelets whose absolute
+        coefficients are greater than clip*sigma0 and iterate until sigma0 is converged.
+      scale_factors (numpy.ndarray): The expected standard deviation of a white gaussian noise
+        with variance 1 at each wavelet level. If None (default), this method calls
+        :py:meth:`WaveletTransform.noise_scale_factors` to compute these data.
+
+    Returns:
+      numpy.ndarray: The noise in each channel (columns) and wavelet level (rows).
+    """
     if scale_factors is None: scale_factors = self.noise_scale_factors(method = method)
     sigma0 = self.estimate_noise0(method = method, clip = clip)
     norm = scale_factors[0]
     sigmas = np.array([sigma0*factor/norm for factor in scale_factors])
     return sigmas, sigma0/norm
 
+  def visu_shrink_clip(self):
+    """Return the VisuShrink clip coefficient.
+
+    The VisuShrink method computes the thresholds for the wavelet coefficients from the standard
+    deviations sigmas of the noise in each level as thresholds = clip*sigmas, with
+    clip = sqrt(2*log(npixels)) and npixels the number of pixels in the image.
+
+    Note:
+      Borrowed from scikit-image. See L. Donoho and I. M. Johnstone, "Ideal spatial adaptation by
+      wavelet shrinkage", Biometrika 81, 425 (1994) (DOI:10.1093/biomet/81.3.425).
+
+    See also:
+      :py:meth:`WaveletTransform.visu_shrink`
+
+    Returns:
+      float: The VisuShrink clip coefficient clip = sqrt(2*log(npixels)).
+    """
+    return np.sqrt(2.*np.log(self.size[0]*self.size[1]))
+
   def visu_shrink(self, sigmas):
-    clip = np.sqrt(2.*np.log(self.size[0]*self.size[1]))
+    """Compute thresholds for the wavelet coefficients using the VisuShrink method.
+
+    This method computes the thresholds for the wavelet coefficients from the standard deviations
+    sigmas of the noise in each level as thresholds = clip*sigmas, with clip = sqrt(2*log(npixels))
+    and npixels the number of pixels in the image. The clip coefficienr is, therefore, the same for
+    all wavelet levels.
+
+    This produces softer images than :py:meth:`WaveletTransform.bayes_shrink`, but may oversmooth
+    and loose much details.
+
+    Note:
+      Borrowed from scikit-image. See L. Donoho and I. M. Johnstone, "Ideal spatial adaptation by
+      wavelet shrinkage", Biometrika 81, 425 (1994) (DOI:10.1093/biomet/81.3.425).
+
+    See also:
+      :py:meth:`WaveletTransform.bayes_shrink`
+      :py:meth:`WaveletTransform.threshold`
+
+    Args:
+      sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
+
+    Returns:
+      numpy.ndarray: The thresholds in each channel (columns) and wavelet level (rows). Can be used
+      as input for :py:meth:`WaveletTransform.threshold`.
+    """
+    clip = self.visu_shrink()
     print(f"VisuShrink: threshold = {clip:.5f}σ.")
     return clip*sigmas
 
   def bayes_shrink(self, sigmas, method = "median"):
+    """Compute thresholds for the wavelet coefficients using the BayeShrink method.
+
+    This method computes the thresholds for the wavelet coefficients from the standard deviations
+    sigmas of the noise in each level as thresholds[i] = <cD[i]²>/sqrt(<cD[i]²>-sigmas[i]²), where
+    <cD[i]²> is the variance of the (diagonal) wavelet coefficients of level #i.
+
+    This level-dependent strategy preserves more details than :py:meth:`WaveletTransform.visu_shrink`.
+
+    Note:
+      Borrowed from scikit-image. See Chang, S. Grace, Bin Yu, and Martin Vetterli. "Adaptive wavelet
+      thresholding for image denoising and compression", IEEE Transactions on Image Processing 9,
+      1532 (2000) (DOI:10.1109/83.862633).
+
+    See also:
+      :py:meth:`WaveletTransform.visu_shrink`
+      :py:meth:`WaveletTransform.threshold`
+
+    Args:
+      sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
+
+    Returns:
+      numpy.ndarray: The thresholds in in each channel (columns) and wavelet level (rows). Can be used
+      as input for :py:meth:`WaveletTransform.threshold`.
+    """
     eps = np.finfo(self.coeffs[0].dtype).eps
     varns = sigmas**2
     for level in range(self.levels):
