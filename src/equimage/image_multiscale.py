@@ -27,35 +27,35 @@ from . import image_utils as imgutils
 # Statistics functions. #
 #########################
 
-def std_centered(data, method, **kwargs):
+def std_centered(data, std, **kwargs):
   """Return the standard deviation of a centered data set.
 
   Args:
-    data (numpy.ndarray): The data set (average must be zero).
-    method (str): The method used to compute the standard deviation:
+    data (numpy.ndarray): The data set (whose average must be zero).
+    std (str): The std used to compute the standard deviation:
 
       - "variance": std_centered = sqrt(mean(data**2))
-      - "median": std_centered = median(abs(data))/0.6744897501960817. This estimate is more robust
-        to outliers.
+      - "median": std_centered = median(abs(data))/0.6744897501960817.
+        This estimate is more robust to outliers.
 
   Returns:
     float: The standard deviation of data.
   """
-  if method == "variance":
+  if std == "variance":
     return np.sqrt(np.mean(data**2, **kwargs))
-  elif method == "median":
+  elif std == "median":
     return np.median(abs(data), **kwargs)/0.6744897501960817
   else:
-    raise ValueError("Error, unknown method '{method}'.")
+    raise ValueError("Error, unknown method '{std}'.")
 
 def anscombe(data, gain = 1., average = 0., sigma = 0.):
-  """Return the generalized Anscombe transform of the input data.
+  """Return the generalized Anscombe transform (gAt) of the input data.
 
-  Transforms the sum data = gain*P+N of a white Poisson noise P and a white Gaussian noise
+  The gAt transforms the sum data = gain*P+N of a white Poisson noise P and a white Gaussian noise
   N(average, sigma) into an approximate white Gaussian noise with variance 1.
 
-  For gain = 1, average = 0 and sigma = 0 (default), this function falls back to the original
-  Anscombe transform T(data) = 2*sqrt(data+3/8).
+  For gain = 1, average = 0 and sigma = 0 (default), the gAt is the original Anscombe transform
+  T(data) = 2*sqrt(data+3/8).
 
   See also:
     :py:func:`inverse_anscombe`
@@ -146,12 +146,12 @@ class WaveletTransform:
     if self.type in ["dwt", "swt", "slt"]:
       for level in range(min(self.levels, len(ms))):
         if (m := ms[level]) == 1.: continue
-        output.coeffs[-(level+1)] = [m*c for c in output.coeffs[-(level+1)]]
+        output.coeffs[-(level+1)] = [m*c for c in self.coeffs[-(level+1)]]
     else:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return output
 
-  def threshold_levels(self, threshold, mode = "soft", substitute = 0., inplace = False):
+  def threshold_levels(self, threshold, mode = "soft", inplace = False):
     """Threshold wavelet levels.
 
     See also:
@@ -165,18 +165,15 @@ class WaveletTransform:
         Default threshold is 0 for all unspecified wavelet levels.
       mode (string, optional): The thresholding mode:
 
-        - "soft" (default): Wavelet coefficients with absolute value < threshold are replaced by
-          substitute, while those with absolute value >= threshold are shrunk toward zero by
-          threshold.
-        - "hard": Wavelet coefficients with absolute value < threshold are replaced by substitute,
-          while those with absolute value >= threshold are left unchanged.
+        - "soft" (default): Wavelet coefficients with absolute value < threshold are replaced by 0,
+          while those with absolute value >= threshold are shrunk toward 0 by the value of threshold.
+        - "hard": Wavelet coefficients with absolute value < threshold are replaced by 0, while
+          those with absolute value >= threshold are left unchanged.
         - "garrote": Non-negative Garrote threshold (soft for small wavelet coefficients, and hard
           for large wavelet coefficients).
-        - "greater": Wavelet coefficients < threshold are replaced by substitute.
-        - "less": Wavelet coefficients > threshold are replaced by substitute.
+        - "greater": Wavelet coefficients < threshold are replaced by 0.
+        - "less": Wavelet coefficients > threshold are replaced by 0.
 
-      substitute (float, optional): The substitute value for thresholded wavelet coefficients
-        (default 0).
       inplace (bool, optional): If True, update the object "in place"; if False (default), return a
         new WaveletTransform object.
 
@@ -203,13 +200,18 @@ class WaveletTransform:
       for level in range(min(self.levels, len(ts))):
         t = ts[level]
         scalar = np.isscalar(t)
-        if not scalar and len(t) != self.nc:
-          raise ValueError("Error, the length of the threshold must match the number of channels.")
-        if scalar or self.nc == 1:
-          output.coeffs[-(level+1)] = [pywt.threshold(c, t, mode = mode, substitute = substitute) for c in output.coeffs[-(level+1)]]
+        if not scalar:
+          if len(t) != self.nc:
+            raise ValueError("Error, the length of the threshold must match the number of channels.")
+          if self.nc == 1:
+            t = t[0]
+            scalar = True
+        if scalar:
+          if t == 0.: continue
+          output.coeffs[-(level+1)] = [pywt.threshold(c, t, mode = mode) for c in self.coeffs[-(level+1)]]
         else:
-          output.coeffs[-(level+1)] = [np.array([pywt.threshold(c[ic], t[ic], mode = mode, substitute = substitute) \
-            for ic in range(self.nc)]) for c in output.coeffs[-(level+1)]]
+          output.coeffs[-(level+1)] = [np.array([pywt.threshold(c[ic], t[ic], mode = mode) \
+            for ic in range(self.nc)]) for c in self.coeffs[-(level+1)]]
     else:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return output
@@ -217,10 +219,10 @@ class WaveletTransform:
   def threshold_firm_levels(self, thresholds, inplace = False):
     """Firm threshold of wavelet levels.
 
-    Firm threshold behaves the same as soft-thresholding for wavelet coefficients with absolute
+    Firm thresholding behaves the same as soft-thresholding for wavelet coefficients with absolute
     values below threshold_low, and the same as hard-thresholding for wavelet coefficients with
-    absolute values above threshold_high. For intermediate values, the outcome is in between that
-    of soft and hard thresholding.
+    absolute values above threshold_high. For intermediate values, the outcome is in between soft
+    and hard thresholding.
 
     See also:
       :py:meth:`WaveletTransform.threshold`
@@ -265,25 +267,29 @@ class WaveletTransform:
           raise ValueError("Error, the length of the high threshold must match the number of channels.")
         if tlowscalar != thighscalar:
           raise ValueError("Error, the low and high thresholds must both be either scalars or arrays.")
-        if tlowscalar or self.nc == 1:
-          output.coeffs[-(level+1)] = [pywt.threshold_firm(c, tlow, thigh) for c in output.coeffs[-(level+1)]]
+        if not tlowscalar and nc == 1:
+          tlow, thigh = tlow[0], thigh[0]
+          tlowscalar = True
+        if tlowscalar:
+          if (tlow, thigh) == (0., 0.): continue
+          output.coeffs[-(level+1)] = [pywt.threshold_firm(c, tlow, thigh) for c in self.coeffs[-(level+1)]]
         else:
           output.coeffs[-(level+1)] = [np.array([pywt.threshold_firm(c[ic], tlow[ic], thigh[ic]) \
-            for ic in range(self.nc)]) for c in output.coeffs[-(level+1)]]
+            for ic in range(self.nc)]) for c in self.coeffs[-(level+1)]]
     else:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return output
 
-  def noise_scale_factors(self, method = "median", numerical = False, size = None, samples = 1):
+  def noise_scale_factors(self, std = "median", numerical = False, size = None, samples = 1):
     """Compute the standard deviation of a white gaussian noise with variance 1 at all wavelet levels.
 
     This method returns the partition of a white gaussian noise with variance 1 across all wavelet
-    levels. It does so analytically when the distribution of the variance is known for the
+    levels. It does so analytically when the distribution of the variance is known for the object
     transformation & wavelet. If not, it does so numerically by transforming random images with
     white gaussian noise and computing the standard deviation at all scales.
 
     Args:
-      method (str, optional): The method used to compute standard deviations. Can be "variance"
+      std (str, optional): The method used to compute standard deviations. Can be "variance"
         or "median" (default). See :py:func:`std_centered` for details.
       numerical (bool, optional): If False (default), use analytical results when known. If True,
         always compute the standard deviations numerically.
@@ -316,21 +322,21 @@ class WaveletTransform:
         wt = slt(image, levels = self.levels, starlet = self.wavelet, mode = self.mode)
       else:
         raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
-      scale_factors += np.array([std_centered(wt.coeffs[-(level+1)][-1], method) for level in range(wt.levels)])
+      scale_factors += np.array([std_centered(wt.coeffs[-(level+1)][-1], std) for level in range(wt.levels)])
     return scale_factors/samples
 
-  def estimate_noise0(self, method = "median", clip = None):
+  def estimate_noise0(self, std = "median", clip = None):
     """Estimate noise as the standard deviation of the wavelet coefficients at the smallest scale.
 
     This method estimates the noise of the image as the standard deviation sigma0 of the (diagonal)
-    wavelet coefficients at the smallest scale. If the clip kwarg is provided, it reject wavelets
+    wavelet coefficients at the smallest scale. If the clip kwarg is provided, it rejects wavelets
     whose absolute coefficients are greater than clip*sigma0 and iterates until sigma0 is converged.
 
     See also:
       :py:meth:`WaveletTransform.estimate_noise`
 
     Args:
-      method (str, optional): The method used to compute standard deviations. Can be "variance"
+      std (str, optional): The method used to compute standard deviations. Can be "variance"
         or "median" (default). See :py:func:`std_centered` for details.
       clip (float, optional): If not None (default), reject wavelets whose absolute coefficients
         are greater than clip*sigma0 and iterate until sigma0 is converged.
@@ -339,51 +345,51 @@ class WaveletTransform:
       numpy.ndarray: The noise sigma0 in each channel.
     """
     coeffs = helpers.at_least_3D(self.coeffs[-1][-1])
-    sigma = std_centered(coeffs, method, axis = (-2, -1))
+    sigma = std_centered(coeffs, std, axis = (-2, -1))
     if clip is not None:
       for ic in range(self.nc):
         oldset = np.zeros_like(coeffs[ic], dtype = bool)
         while True:
-          newset = abs(coeffs[ic]) < clip*sigma[ic]
+          newset = abs(coeffs[ic]) <= clip*sigma[ic]
           if np.all(newset == oldset): break
-          sigma[ic] = std_centered(coeffs[ic][newset], method)
+          sigma[ic] = std_centered(coeffs[ic][newset], std)
           oldset = newset
     return sigma
 
-  def estimate_noise(self, method = "median", clip = None, scale_factors = None):
+  def estimate_noise(self, std = "median", clip = None, scale_factors = None):
     """Estimate noise at each wavelet level.
 
-    This method first estimates the noise at wavelet level #0 as the standard deviation sigma0 of the
-    (diagonal) wavelet coefficients at the smallest scale. It then extrapolates sigma0 to all wavelet
-    levels assuming the noise is gaussian.
+    This method first estimates the noise at the smallest scale as the standard deviation sigma0 of
+    the (diagonal) wavelet coefficients at level #0. It then extrapolates sigma0 to all wavelet
+    levels assuming the noise is white and gaussian.
 
     See also:
       :py:meth:`WaveletTransform.estimate_noise0`,
       :py:meth:`WaveletTransform.noise_scale_factors`
 
     Args:
-      method (str, optional): The method used to compute standard deviations. Can be "variance"
+      std (str, optional): The method used to compute standard deviations. Can be "variance"
         or "median" (default). See :py:func:`std_centered` for details.
       clip (float, optional): If not None (default), reject level #0 wavelets whose absolute
         coefficients are greater than clip*sigma0 and iterate until sigma0 is converged.
       scale_factors (numpy.ndarray): The expected standard deviation of a white gaussian noise
         with variance 1 at each wavelet level. If None (default), this method calls
-        :py:meth:`WaveletTransform.noise_scale_factors` to compute these data.
+        :py:meth:`WaveletTransform.noise_scale_factors` to compute these factors.
 
     Returns:
       numpy.ndarray: The noise in each channel (columns) and wavelet level (rows).
     """
-    if scale_factors is None: scale_factors = self.noise_scale_factors(method = method)
-    sigma0 = self.estimate_noise0(method = method, clip = clip)
+    if scale_factors is None: scale_factors = self.noise_scale_factors(std = std)
+    sigma0 = self.estimate_noise0(std = std, clip = clip)
     norm = scale_factors[0]
     sigmas = np.array([sigma0*factor/norm for factor in scale_factors])
     return sigmas, sigma0/norm
 
   def visu_shrink_clip(self):
-    """Return the VisuShrink clip coefficient.
+    """Return the VisuShrink clip factor.
 
     The VisuShrink method computes the thresholds for the wavelet coefficients from the standard
-    deviations sigmas of the noise in each level as thresholds = clip*sigmas, with
+    deviation sigma of the noise in each level as threshold = clip*sigma, with
     clip = sqrt(2*log(npixels)) and npixels the number of pixels in the image.
 
     Note:
@@ -394,20 +400,19 @@ class WaveletTransform:
       :py:meth:`WaveletTransform.visu_shrink`
 
     Returns:
-      float: The VisuShrink clip coefficient clip = sqrt(2*log(npixels)).
+      float: The VisuShrink clip factor clip = sqrt(2*log(npixels)).
     """
     return np.sqrt(2.*np.log(self.size[0]*self.size[1]))
 
-  def visu_shrink(self, sigmas):
-    """Compute thresholds for the wavelet coefficients using the VisuShrink method.
+  def visu_shrink(self, sigmas, mode = "soft", inplace = False):
+    """Threshold wavelet coefficients using the VisuShrink method.
 
-    This method computes the thresholds for the wavelet coefficients from the standard deviations
-    sigmas of the noise in each level as thresholds = clip*sigmas, with clip = sqrt(2*log(npixels))
-    and npixels the number of pixels in the image. The clip coefficienr is, therefore, the same for
-    all wavelet levels.
+    The VisuShrink method computes the thresholds for the wavelet coefficients from the standard
+    deviations sigma of the noise in each level as threshold = clip*sigma, with
+    clip = sqrt(2*log(npixels)) and npixels the number of pixels in the image.
 
-    This produces softer images than :py:meth:`WaveletTransform.bayes_shrink`, but may oversmooth
-    and loose much details.
+    VisuShrink produces softer images than :py:meth:`WaveletTransform.bayes_shrink`, but may
+    oversmooth and loose many details.
 
     Note:
       Borrowed from scikit-image. See L. Donoho and I. M. Johnstone, "Ideal spatial adaptation by
@@ -415,25 +420,34 @@ class WaveletTransform:
 
     See also:
       :py:meth:`WaveletTransform.bayes_shrink`
-      :py:meth:`WaveletTransform.threshold`
 
     Args:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
+      mode (string, optional): The thresholding mode:
+
+        - "soft" (default): Wavelet coefficients with absolute value < threshold are replaced by 0,
+          while those with absolute value >= threshold are shrunk toward 0 by the value of threshold.
+        - "hard": Wavelet coefficients with absolute value < threshold are replaced by 0, while those
+          with absolute value >= threshold are left unchanged.
+        - "garrote": Non-negative Garrote threshold (soft for small wavelet coefficients, and hard
+          for large wavelet coefficients).
+
+      inplace (bool, optional): If True, update the object "in place"; if False (default), return a
+        new WaveletTransform object.
 
     Returns:
-      numpy.ndarray: The thresholds in each channel (columns) and wavelet level (rows). Can be used
-      as input for :py:meth:`WaveletTransform.threshold`.
+      WaveletTransform: The updated WaveletTransform object.
     """
-    clip = self.visu_shrink()
+    clip = self.visu_shrink_clip()
     print(f"VisuShrink: threshold = {clip:.5f}σ.")
-    return clip*sigmas
+    return self.threshold_levels(clip*sigmas, mode = mode, inplace = inplace)
 
-  def bayes_shrink(self, sigmas, method = "median"):
-    """Compute thresholds for the wavelet coefficients using the BayeShrink method.
+  def bayes_shrink(self, sigmas, std = "median", mode = "soft", inplace = False):
+    """Threshold wavelet coefficients using the BayeShrink method.
 
-    This method computes the thresholds for the wavelet coefficients from the standard deviations
-    sigmas of the noise in each level as thresholds[i] = <cD[i]²>/sqrt(<cD[i]²>-sigmas[i]²), where
-    <cD[i]²> is the variance of the (diagonal) wavelet coefficients of level #i.
+    This method computes the thresholds for the wavelet coefficients from the standard deviation
+    sigma of the noise in each level as threshold = <c²>/sqrt(<c²>-sigma²), where <c²> is the
+    variance of the wavelet coefficients.
 
     This level-dependent strategy preserves more details than :py:meth:`WaveletTransform.visu_shrink`.
 
@@ -444,24 +458,44 @@ class WaveletTransform:
 
     See also:
       :py:meth:`WaveletTransform.visu_shrink`
-      :py:meth:`WaveletTransform.threshold`
 
     Args:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
+      std (str, optional): The method used to compute standard deviations. Can be "variance"
+        or "median" (default). See :py:func:`std_centered` for details.
+      mode (string, optional): The thresholding mode:
+
+        - "soft" (default): Wavelet coefficients with absolute value < threshold are replaced by 0,
+          while those with absolute value >= threshold are shrunk toward 0 by the value of threshold.
+        - "hard": Wavelet coefficients with absolute value < threshold are replaced by 0, while those
+          with absolute value >= threshold are left unchanged.
+        - "garrote": Non-negative Garrote threshold (soft for small wavelet coefficients, and hard
+          for large wavelet coefficients).
+
+      inplace (bool, optional): If True, update the object "in place"; if False (default), return a
+        new WaveletTransform object.
 
     Returns:
-      numpy.ndarray: The thresholds in in each channel (columns) and wavelet level (rows). Can be used
-      as input for :py:meth:`WaveletTransform.threshold`.
+      WaveletTransform: The updated WaveletTransform object.
     """
-    eps = np.finfo(self.coeffs[0].dtype).eps
-    varns = sigmas**2
+
+    def shrink(c, sigma):
+      """Process wavelets coefficients c with noise sigma."""
+      eps = np.finfo(c.dtype).eps # Floating point accuracy.
+      threshold = sigma**2/np.sqrt(max(std_centered(c, std = std)**2-sigma**2, eps))
+      return pywt.threshold(c, threshold, mode = mode)
+
+    if inplace:
+      output = self
+    else:
+      output = deepcopy(self)
     for level in range(self.levels):
-      coeffs = helpers.at_least_3D(self.coeffs[-(level+1)][-1])
-      for ic in range(self.nc):
-        cvarn = std_centered(coeffs[ic], method = method)**2
-        clip = 1./np.sqrt(max(cvarn-varns[level, ic], eps))
-        varns[level, ic] *= clip
-    return varns
+      if self.nc == 1:
+        output.coeffs[-(level+1)] = [shrink(c, sigmas[level, 0]) for c in self.coeffs[-(level+1)]]
+      else:
+        output.coeffs[-(level+1)] = [np.array([shrink(c[ic], sigmas[level, ic]) \
+          for ic in range(self.nc)]) for c in self.coeffs[-(level+1)]]
+    return output
 
 #######################
 # Wavelet transforms. #
@@ -741,13 +775,13 @@ class MixinImage:
     return slt(self, levels, starlet = starlet, mode = mode)
 
   def anscombe(self, gain = 1., average = 0., sigma = 0.):
-    """Return the generalized Anscombe transform of the image.
+    """Return the generalized Anscombe transform (gAt) of the image.
 
-    Transforms the sum image = gain*P+N of a white Poisson noise P and a white Gaussian noise
+    The gAt transforms the sum image = gain*P+N of a white Poisson noise P and a white Gaussian noise
     N(average, sigma) into an approximate white Gaussian noise with variance 1.
 
-    For gain = 1, average = 0 and sigma = 0 (default), this function falls back to the original
-    Anscombe transform T(self) = 2*sqrt(self+3/8).
+    For gain = 1, average = 0 and sigma = 0 (default), the gAt is the original Anscombe transform
+    T(image) = 2*sqrt(image+3/8).
 
     See also:
       :py:meth:`Image.inverse_anscombe <.inverse_anscombe>`
