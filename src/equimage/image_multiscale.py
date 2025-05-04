@@ -95,8 +95,13 @@ def inverse_anscombe(data, gain = 1., average = 0., sigma = 0.):
 class WaveletTransform:
   """Wavelet transform class."""
 
-  def iwt(self):
+  def iwt(self, asarray = False):
     """Inverse wavelet transform.
+
+    Args:
+      asarray (bool, optional): If True, return the inverse wavelet transform as a numpy.ndarray
+        object. If False (default), return the inverse wavelet transform as an Image object if the
+        original was an Image object, and as a numpy.ndarray otherwise.
 
     Returns:
       Image or numpy.ndarray: The inverse wavelet transform of the object.
@@ -112,7 +117,25 @@ class WaveletTransform:
       data = self.coeffs[0]+np.sum(self.coeffs[1:], axis = 0)[0]
     else:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
-    return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage else data
+    return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage and not asarray else data
+
+  def apply_same_transform(self, image):
+    """Apply the wavelet transform of the object to the input image.
+
+    Args:
+      image (Image or numpy.ndarray): The input image.
+
+    Returns:
+      WaveletTransform: The wavelet transform of the input image.
+    """
+    if self.type == "dwt":
+      return dwt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode)
+    elif self.type == "swt":
+      return swt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode, start = self.start)
+    elif self.type == "slt":
+      return slt(image, levels = self.levels, starlet = self.wavelet, mode = self.mode)
+    else:
+      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
 
   def scale_levels(self, mult, inplace = False):
     """Scale wavelet levels.
@@ -314,23 +337,17 @@ class WaveletTransform:
     scale_factors = 0.
     for n in range(samples):
       image = rng.normal(size = (size[0], size[1]))
-      if self.type == "dwt":
-        wt = dwt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode)
-      elif self.type == "swt":
-        wt = swt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode, start = self.start)
-      elif self.type == "slt":
-        wt = slt(image, levels = self.levels, starlet = self.wavelet, mode = self.mode)
-      else:
-        raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
+      wt = self.apply_same_transform(image)
       scale_factors += np.array([std_centered(wt.coeffs[-(level+1)][-1], std) for level in range(wt.levels)])
     return scale_factors/samples
 
-  def estimate_noise0(self, std = "median", clip = None):
+  def estimate_noise0(self, std = "median", clip = None, eps = 1.e-3, maxit = 8):
     """Estimate noise as the standard deviation of the wavelet coefficients at the smallest scale.
 
     This method estimates the noise of the image as the standard deviation sigma0 of the (diagonal)
-    wavelet coefficients at the smallest scale. If the clip kwarg is provided, it rejects wavelets
-    whose absolute coefficients are greater than clip*sigma0 and iterates until sigma0 is converged.
+    wavelet coefficients at the smallest scale (level #0). If the clip kwarg is provided, it then
+    excludes wavelets whose absolute coefficients are greater than clip*sigma0, and iterates until
+    sigma0 is converged.
 
     See also:
       :py:meth:`WaveletTransform.estimate_noise`
@@ -338,25 +355,31 @@ class WaveletTransform:
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
         or "median" (default). See :py:func:`std_centered` for details.
-      clip (float, optional): If not None (default), reject wavelets whose absolute coefficients
-        are greater than clip*sigma0 and iterate until sigma0 is converged.
+      clip (float, optional): If not None (default), exclude wavelets whose absolute coefficients
+        are greater than clip*sigma0 and iterate until sigma0 is converged (see the eps and maxit
+        kwargs).
+      eps (float, optional): If clip is not None, iterate until |delta sigma0| < eps*sigma0, where
+        delta sigma0 is the variation of sigma0 between two successive iterations. Default is 1e-3.
+      maxit (int, optional): Maximum number of iterations if clip is not None. Default is 8.
 
     Returns:
       numpy.ndarray: The noise sigma0 in each channel.
     """
     coeffs = helpers.at_least_3D(self.coeffs[-1][-1])
     sigma = std_centered(coeffs, std, axis = (-2, -1))
-    if clip is not None:
+    if clip is not None and maxit > 0:
       for ic in range(self.nc):
-        oldset = np.zeros_like(coeffs[ic], dtype = bool)
-        while True:
-          newset = abs(coeffs[ic]) <= clip*sigma[ic]
-          if np.all(newset == oldset): break
-          sigma[ic] = std_centered(coeffs[ic][newset], std)
-          oldset = newset
+        for it in range(maxit):
+          oldsigma = sigma[ic]
+          cset = (abs(coeffs[ic]) <= clip*sigma[ic])
+          sigma[ic] = std_centered(coeffs[ic][cset], std)
+          # print(f"Iteration #{it+1}: σ[{ic}] = {sigma[ic]:.6e}.")
+          if (converged := abs(sigma[ic]-oldsigma) <= eps*sigma[ic]): break
+        if not converged:
+          print(f"After {maxit} iterations, σ[{ic}] = {sigma[ic]:.6e} but |Δσ[{ic}]| = {abs(sigma[ic]-oldsigma):.6e} > {eps:.3e}σ[{ic}].")
     return sigma
 
-  def estimate_noise(self, std = "median", clip = None, scale_factors = None):
+  def estimate_noise(self, std = "median", clip = None, eps = 1.e-3, maxit = 8, scale_factors = None):
     """Estimate noise at each wavelet level.
 
     This method first estimates the noise at the smallest scale as the standard deviation sigma0 of
@@ -370,22 +393,28 @@ class WaveletTransform:
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
         or "median" (default). See :py:func:`std_centered` for details.
-      clip (float, optional): If not None (default), reject level #0 wavelets whose absolute
-        coefficients are greater than clip*sigma0 and iterate until sigma0 is converged.
+      clip (float, optional): If not None (default), exclude level #0 wavelets whose absolute
+        coefficients are greater than clip*sigma0 and iterate until sigma0 is converged (see the
+        eps and maxit kwargs).
+      eps (float, optional): If clip is not None, iterate until |delta sigma0| < eps*sigma0, where
+        delta sigma0 is the variation of sigma0 between two successive iterations. Default is 1e-3.
+      maxit (int, optional): Maximum number of iterations if clip is not None. Default is 8.
       scale_factors (numpy.ndarray): The expected standard deviation of a white gaussian noise
         with variance 1 at each wavelet level. If None (default), this method calls
         :py:meth:`WaveletTransform.noise_scale_factors` to compute these factors.
 
     Returns:
-      numpy.ndarray: The noise in each channel (columns) and wavelet level (rows).
+      numpy.ndarray, numpy.ndarray: The noise in each channel (columns) and wavelet level (rows),
+      and the total noise in each channel.
     """
     if scale_factors is None: scale_factors = self.noise_scale_factors(std = std)
-    sigma0 = self.estimate_noise0(std = std, clip = clip)
+    sigma0 = self.estimate_noise0(std = std, clip = clip, eps = eps, maxit = maxit)
     norm = scale_factors[0]
     sigmas = np.array([sigma0*factor/norm for factor in scale_factors])
-    return sigmas, sigma0/norm
+    sigmat = sigma0/norm if self.nc > 1 else sigma0[0]/norm
+    return sigmas, sigmat
 
-  def visu_shrink_clip(self):
+  def visu_clip(self):
     """Return the VisuShrink clip factor.
 
     The VisuShrink method computes the thresholds for the wavelet coefficients from the standard
@@ -438,7 +467,7 @@ class WaveletTransform:
     Returns:
       WaveletTransform: The updated WaveletTransform object.
     """
-    clip = self.visu_shrink_clip()
+    clip = self.visu_clip()
     print(f"VisuShrink: threshold = {clip:.5f}σ.")
     return self.threshold_levels(clip*sigmas, mode = mode, inplace = inplace)
 
@@ -496,6 +525,32 @@ class WaveletTransform:
         output.coeffs[-(level+1)] = [np.array([shrink(c[ic], sigmas[level, ic]) \
           for ic in range(self.nc)]) for c in self.coeffs[-(level+1)]]
     return output
+
+  def iterative_noise_reduction(self, std = "median", mode = "hard", clip = 3., eps = 1.e-3, maxit = 8, scale_factors = None):
+    if scale_factors is None: scale_factors = self.noise_scale_factors(std = std)
+    original = helpers.at_least_3D(self.iwt(asarray = True))
+    sigmas, noise = self.estimate_noise(std = std, clip = clip, eps = eps, maxit = maxit, scale_factors = scale_factors)
+    threshd = self.threshold_levels(clip*sigmas, mode = mode)
+    denoised = helpers.at_least_3D(threshd.iwt(asarray = True))
+    for ic in range(self.nc):
+      noise = 0.
+      for it in range(maxit):
+        oldnoise = noise
+        diff = original[ic]-denoised[ic]
+        diffwt = self.apply_same_transform(diff)
+        sigmas, noise = diffwt.estimate_noise(std = std, clip = clip, eps = eps, maxit = maxit, scale_factors = scale_factors)
+        print(f"Iteration #{it+1}: σ_E[{ic}] = {noise:.6e}.")
+        if (converged := abs(noise-oldnoise) <= eps*noise): break
+        diffthreshd = diffwt.threshold_levels(clip*sigmas, mode = mode)
+        diffdenoised = diffthreshd.iwt()
+        denoised[ic] = denoised[ic]+diffdenoised
+      if not converged:
+        print(f"After {maxit} iterations, σ_E[{ic}] = {noise:.6e} but |Δσ_E[{ic}]| = {abs(noise-oldnoise):.6e} > {eps:.3e}σ_E[{ic}].")
+    diff = original-denoised
+    if self.isImage:
+      denoised = img.Image(denoised, colorspace = self.colorspace, colormodel = self.colormodel)
+      diff = img.Image(diff, colorspace = self.colorspace, colormodel = self.colormodel)
+    return denoised, diff
 
 #######################
 # Wavelet transforms. #
