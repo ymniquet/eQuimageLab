@@ -32,7 +32,7 @@ def std_centered(data, std, **kwargs):
 
   Args:
     data (numpy.ndarray): The data set (whose average must be zero).
-    std (str): The std used to compute the standard deviation:
+    std (str): The method used to compute the standard deviation:
 
       - "variance": std_centered = sqrt(mean(data**2))
       - "median": std_centered = median(abs(data))/0.6744897501960817.
@@ -99,9 +99,9 @@ class WaveletTransform:
     """Inverse wavelet transform.
 
     Args:
-      asarray (bool, optional): If True, return the inverse wavelet transform as a numpy.ndarray
-        object. If False (default), return the inverse wavelet transform as an Image object if the
-        original was an Image object, and as a numpy.ndarray otherwise.
+      asarray (bool, optional): If True, return the inverse wavelet transform as a numpy.ndarray.
+        If False (default), return the inverse wavelet transform as an Image object if the original
+        was an Image object, and as a numpy.ndarray otherwise.
 
     Returns:
       Image or numpy.ndarray: The inverse wavelet transform of the object.
@@ -369,14 +369,16 @@ class WaveletTransform:
     sigma = std_centered(coeffs, std, axis = (-2, -1))
     if clip is not None and maxit > 0:
       for ic in range(self.nc):
+        # print(f"Channel #{ic+1}:")
+        # print(f"Iteration #0: σ = {sigma[ic]:.6e}.")
         for it in range(maxit):
           oldsigma = sigma[ic]
-          cset = (abs(coeffs[ic]) <= clip*sigma[ic])
+          cset = abs(coeffs[ic]) <= clip*sigma[ic]
           sigma[ic] = std_centered(coeffs[ic][cset], std)
-          # print(f"Iteration #{it+1}: σ[{ic}] = {sigma[ic]:.6e}.")
-          if (converged := abs(sigma[ic]-oldsigma) <= eps*sigma[ic]): break
+          # print(f"Iteration #{it+1}: σ = {sigma[ic]:.6e}.")
+          if converged := abs(sigma[ic]-oldsigma) <= eps*sigma[ic]: break
         if not converged:
-          print(f"After {maxit} iterations, σ[{ic}] = {sigma[ic]:.6e} but |Δσ[{ic}]| = {abs(sigma[ic]-oldsigma):.6e} > {eps:.3e}σ[{ic}].")
+          print(f"Channel #{ic+1}: After {maxit} iterations, σ = {sigma[ic]:.6e} but |Δσ| = {abs(sigma[ic]-oldsigma):.6e} > {eps:.3e}σ.")
     return sigma
 
   def estimate_noise(self, std = "median", clip = None, eps = 1.e-3, maxit = 8, scale_factors = None):
@@ -411,8 +413,7 @@ class WaveletTransform:
     sigma0 = self.estimate_noise0(std = std, clip = clip, eps = eps, maxit = maxit)
     norm = scale_factors[0]
     sigmas = np.array([sigma0*factor/norm for factor in scale_factors])
-    sigmat = sigma0/norm if self.nc > 1 else sigma0[0]/norm
-    return sigmas, sigmat
+    return sigmas, sigma0/norm
 
   def visu_clip(self):
     """Return the VisuShrink clip factor.
@@ -448,6 +449,7 @@ class WaveletTransform:
       wavelet shrinkage", Biometrika 81, 425 (1994) (DOI:10.1093/biomet/81.3.425).
 
     See also:
+      :py:meth:`WaveletTransform.visu_clip`
       :py:meth:`WaveletTransform.bayes_shrink`
 
     Args:
@@ -526,26 +528,68 @@ class WaveletTransform:
           for ic in range(self.nc)]) for c in self.coeffs[-(level+1)]]
     return output
 
-  def iterative_noise_reduction(self, std = "median", mode = "hard", clip = 3., eps = 1.e-3, maxit = 8, scale_factors = None):
+  def iterative_noise_reduction(self, std = "median", clip = 3., eps = 1.e-3, maxit = 8, scale_factors = None):
+    """Iterative noise reduction.
+
+    This method first estimates the noise sigma in each channel and wavelet level (using
+    :py:meth:`WaveletTransform.estimate_noise`), then clips the wavelet coefficients whose
+    absolute values are smaller than clip*sigma. It then computes the inverse wavelet transform
+    I0 and the difference D0 = I-I0 with the original image.
+
+    It next computes the wavelet transform of D0, estimates the noise sigma_D in each channel
+    and wavelet level, clips the wavelet coefficients whose absolute values are smaller than
+    clip*sigma_D, calculates the inverse wavelet transform dD0, and a new image I1 = I0+dD0
+    that containes the significant residual structures thus identified in D0.
+
+    It then repeats this procedure with D1 = I-I1, D2 = I-I2... until sigma_D is converged (which
+    means that no residual structure can be indentified in Dn).
+
+    The method returns the denoised image In and the noise Dn = I-In. Dn shall be (almost)
+    structureless.
+
+    See also:
+      :py:meth:`WaveletTransform.estimate_noise`,
+      :py:meth:`WaveletTransform.noise_scale_factors`
+
+    Args:
+      std (str, optional): The method used to compute standard deviations. Can be "variance"
+        or "median" (default). See :py:func:`std_centered` for details.
+      clip (float, optional): Clip wavelets whose absolute coefficients are smaller than clip*sigma,
+        where sigma is the estimated noise at that wavelet level. Default is 3.
+      eps (float, optional): Iterate until |delta sigma_D| < eps*sigma_D, where delta sigma_D is the
+        variation of sigma_D between two successive iterations. Default is 1e-3.
+      maxit (int, optional): Maximum number of iterations. Default is 8.
+      scale_factors (numpy.ndarray): The expected standard deviation of a white gaussian noise
+        with variance 1 at each wavelet level. If None (default), this method calls
+        :py:meth:`WaveletTransform.noise_scale_factors` to compute these factors.
+
+    Returns:
+      Image or numpy.ndarray, Image or numpy.ndarray: The denoised image In and the noise Dn = I-In.
+    """
     if scale_factors is None: scale_factors = self.noise_scale_factors(std = std)
     original = helpers.at_least_3D(self.iwt(asarray = True))
-    sigmas, noise = self.estimate_noise(std = std, clip = clip, eps = eps, maxit = maxit, scale_factors = scale_factors)
-    threshd = self.threshold_levels(clip*sigmas, mode = mode)
-    denoised = helpers.at_least_3D(threshd.iwt(asarray = True))
+    sigmas, sigmat = self.estimate_noise(std = std, clip = clip, eps = eps, maxit = maxit, scale_factors = scale_factors)
+    denoised = helpers.at_least_3D(self.threshold_levels(clip*sigmas, mode = "hard").iwt(asarray = True))
     for ic in range(self.nc):
-      noise = 0.
-      for it in range(maxit):
-        oldnoise = noise
-        diff = original[ic]-denoised[ic]
-        diffwt = self.apply_same_transform(diff)
-        sigmas, noise = diffwt.estimate_noise(std = std, clip = clip, eps = eps, maxit = maxit, scale_factors = scale_factors)
-        print(f"Iteration #{it+1}: σ_E[{ic}] = {noise:.6e}.")
-        if (converged := abs(noise-oldnoise) <= eps*noise): break
-        diffthreshd = diffwt.threshold_levels(clip*sigmas, mode = mode)
-        diffdenoised = diffthreshd.iwt()
-        denoised[ic] = denoised[ic]+diffdenoised
-      if not converged:
-        print(f"After {maxit} iterations, σ_E[{ic}] = {noise:.6e} but |Δσ_E[{ic}]| = {abs(noise-oldnoise):.6e} > {eps:.3e}σ_E[{ic}].")
+      print(f"Channel #{ic+1}:")
+      print(f"Initial estimate: σ = {sigmat[ic]:.6e}.")
+      it = 0
+      while True:
+        D = original[ic]-denoised[ic]
+        Dwt = self.apply_same_transform(D)
+        sigmaDs, sigmaDt = Dwt.estimate_noise(std = std, clip = clip, eps = eps, maxit = maxit, scale_factors = scale_factors)
+        sigmaDt = sigmaDt[0]
+        print(f"Iteration #{it}: σ_D = {sigmaDt:.6e}.")
+        converged = it > 0 and abs(sigmaDt-oldsigmaDt) <= eps*sigmaDt
+        if converged: break
+        it += 1
+        if it > maxit: break
+        denoised[ic] += Dwt.threshold_levels(clip*sigmas, mode = "hard", inplace = True).iwt()
+        oldsigmaDt = sigmaDt
+      if converged:
+        print(f"Converged in {it} iterations.")
+      elif maxit > 0:
+        print(f"After {maxit} iterations, σ_D = {sigmaDt:.6e} but |Δσ_D| = {abs(sigmaDt-oldsigmaDt):.6e} > {eps:.3e}σ_D.")
     diff = original-denoised
     if self.isImage:
       denoised = img.Image(denoised, colorspace = self.colorspace, colormodel = self.colormodel)
