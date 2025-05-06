@@ -46,7 +46,3 @@ print(wt.noise_scale_factors(numerical = True, samples = 10))
 
 plt.matshow(np.log10(wt.coeffs[0]+1.e-12))
 plt.show()
-
-
-
-

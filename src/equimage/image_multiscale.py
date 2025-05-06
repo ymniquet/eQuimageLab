@@ -23,9 +23,9 @@ from . import helpers
 from . import image as img
 from . import image_utils as imgutils
 
-#########################
-# Statistics functions. #
-#########################
+###############
+# Statistics. #
+###############
 
 def std_centered(data, std, **kwargs):
   """Return the standard deviation of a centered data set.
@@ -34,9 +34,12 @@ def std_centered(data, std, **kwargs):
     data (numpy.ndarray): The data set (whose average must be zero).
     std (str): The method used to compute the standard deviation:
 
-      - "variance": std_centered = sqrt(mean(data**2))
-      - "median": std_centered = median(abs(data))/0.6744897501960817.
+      - "variance": std_centered = sqrt(numpy.mean(data**2))
+      - "median": std_centered = numpy.median(abs(data))/0.6744897501960817.
         This estimate is more robust to outliers.
+
+    kwargs: Optional keyword arguments are passed to the numpy.mean (std = "variance") or
+      numpy.median (std = "median") functions.
 
   Returns:
     float: The standard deviation of data.
@@ -52,7 +55,8 @@ def anscombe(data, gain = 1., average = 0., sigma = 0.):
   """Return the generalized Anscombe transform (gAt) of the input data.
 
   The gAt transforms the sum data = gain*P+N of a white Poisson noise P and a white Gaussian noise
-  N(average, sigma) into an approximate white Gaussian noise with variance 1.
+  N (characterized by its average and standard deviation sigma) into an approximate white Gaussian
+  noise with variance 1.
 
   For gain = 1, average = 0 and sigma = 0 (default), the gAt is the original Anscombe transform
   T(data) = 2*sqrt(data+3/8).
@@ -101,7 +105,7 @@ class WaveletTransform:
     Args:
       asarray (bool, optional): If True, return the inverse wavelet transform as a numpy.ndarray.
         If False (default), return the inverse wavelet transform as an Image object if the original
-        was an Image object, and as a numpy.ndarray otherwise.
+        image was an Image object, and as a numpy.ndarray otherwise.
 
     Returns:
       Image or numpy.ndarray: The inverse wavelet transform of the object.
@@ -162,16 +166,10 @@ class WaveletTransform:
       ms = np.asarray(mult)
       if ms.ndim != 1:
         raise ValueError("Error, mult must be a dictionary or be mappable to a 1D array.")
-    if inplace:
-      output = self
-    else:
-      output = deepcopy(self)
-    if self.type in ["dwt", "swt", "slt"]:
-      for level in range(min(self.levels, len(ms))):
-        if (m := ms[level]) == 1.: continue
-        output.coeffs[-(level+1)] = [m*c for c in self.coeffs[-(level+1)]]
-    else:
-      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
+    output = self if inplace else deepcopy(self)
+    for level in range(min(self.levels, len(ms))):
+      if (m := ms[level]) == 1.: continue
+      output.coeffs[-(level+1)] = [m*c for c in self.coeffs[-(level+1)]]
     return output
 
   def threshold_levels(self, threshold, mode = "soft", inplace = False):
@@ -182,10 +180,10 @@ class WaveletTransform:
 
     Args:
       threshold (numpy.ndarray or dict): The threshold for each wavelet level. Level 0 is the
-        smallest scale. Can be a 1D array (threshold for each level), a 2D array (threshold for
-        each level & channel), or a dictionary of the form {level: threshold, ...} or of the form
-        {level: (threshold channel #1, threshold channel #2, ...), ...} (e.g. {0: 1.e-2, 1: 1.e-3}).
-        Default threshold is 0 for all unspecified wavelet levels.
+        smallest scale. Can be a 1D array [threshold for each level], a 2D array [threshold for
+        each level (rows) & channel (columns)], or a dictionary of the form {level: threshold, ...}
+        or of the form {level: (threshold channel #1, threshold channel #2, ...), ...} (e.g.,
+        {0: 1.e-2, 1: 1.e-3}). Default threshold is 0 for all unspecified wavelet levels.
       mode (string, optional): The thresholding mode:
 
         - "soft" (default): Wavelet coefficients with absolute value < threshold are replaced by 0,
@@ -215,28 +213,22 @@ class WaveletTransform:
       ts = np.asarray(threshold)
       if ts.ndim > 2:
         raise ValueError("Error, threshold must be a dictionary or be mappable to a 1D or 2D array.")
-    if inplace:
-      output = self
-    else:
-      output = deepcopy(self)
-    if self.type in ["dwt", "swt", "slt"]:
-      for level in range(min(self.levels, len(ts))):
-        t = ts[level]
-        scalar = np.isscalar(t)
-        if not scalar:
-          if len(t) != self.nc:
-            raise ValueError("Error, the length of the threshold must match the number of channels.")
-          if self.nc == 1:
-            t = t[0]
-            scalar = True
-        if scalar:
-          if t == 0.: continue
-          output.coeffs[-(level+1)] = [pywt.threshold(c, t, mode = mode) for c in self.coeffs[-(level+1)]]
-        else:
-          output.coeffs[-(level+1)] = [np.array([pywt.threshold(c[ic], t[ic], mode = mode) \
-            for ic in range(self.nc)]) for c in self.coeffs[-(level+1)]]
-    else:
-      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
+    output = self if inplace else deepcopy(self)
+    for level in range(min(self.levels, len(ts))):
+      t = ts[level]
+      scalar = np.isscalar(t)
+      if not scalar:
+        if len(t) != self.nc:
+          raise ValueError("Error, the length of the threshold must match the number of channels.")
+        if self.nc == 1:
+          t = t[0]
+          scalar = True
+      if scalar:
+        if t == 0.: continue
+        output.coeffs[-(level+1)] = [pywt.threshold(c, t, mode = mode) for c in self.coeffs[-(level+1)]]
+      else:
+        output.coeffs[-(level+1)] = [np.array([pywt.threshold(c[ic], t[ic], mode = mode) \
+          for ic in range(self.nc)]) for c in self.coeffs[-(level+1)]]
     return output
 
   def threshold_firm_levels(self, thresholds, inplace = False):
@@ -252,12 +244,13 @@ class WaveletTransform:
 
     Args:
       thresholds (numpy.ndarray or dict): The thresholds for each wavelet level. Level 0 is the
-        smallest scale. Can be a 2D array (threshold_low and threshold_high for each level), a 3D
-        array (threshold_low and threshold_high for each level & channel), or a dictionary of the
-        form {level: (threshold_low, threshold_high), ...} or of the form {level: ((threshold_low
+        smallest scale. Can be a 2D array [threshold_low (column 1) and threshold_high (column 2)
+        for each level (rows)], a 3D array [threshold_low and threshold_high (second axis) for each
+        level (first axis) & channel (third axis)], or a dictionary of the form
+        {level: (threshold_low, threshold_high), ...} or of the form {level: ((threshold_low
         channel #1, threshold_low channel #2, ...), (threshold_high channel #1, threshold_high
         channel #2, ...)), ...} (e.g. {0: (1.e-2, 5e-2), 1: (1.e-3, 5e-3)}). Default thresholds
-        are (0, 0) for all unspecified wavelet levels.
+        are (threshold_low = 0, threshold_high = 0) for all unspecified wavelet levels.
       inplace (bool, optional): If True, update the object "in place"; if False (default), return a
         new WaveletTransform object.
 
@@ -274,33 +267,26 @@ class WaveletTransform:
         ts[key] = value
     else:
       ts = np.asarray(thresholds)
-      if ts.ndim not in [2, 3]:
-        raise ValueError("Error, thresholds must be a dictionary or be mappable to a 2D or 3D array.")
-    if inplace:
-      output = self
-    else:
-      output = deepcopy(self)
-    if self.type in ["dwt", "swt", "slt"]:
-      for level in range(min(self.levels, len(ts))):
-        tlow, thigh = ts[level][0], ts[level][1]
-        tlowscalar, thighscalar = np.isscalar(tlow), np.isscalar(thigh)
-        if not tlowscalar and len(tlow) != self.nc:
-          raise ValueError("Error, the length of the low threshold must match the number of channels.")
-        if not thighscalar and len(thigh) != self.nc:
-          raise ValueError("Error, the length of the high threshold must match the number of channels.")
-        if tlowscalar != thighscalar:
-          raise ValueError("Error, the low and high thresholds must both be either scalars or arrays.")
-        if not tlowscalar and nc == 1:
-          tlow, thigh = tlow[0], thigh[0]
-          tlowscalar = True
-        if tlowscalar:
-          if (tlow, thigh) == (0., 0.): continue
-          output.coeffs[-(level+1)] = [pywt.threshold_firm(c, tlow, thigh) for c in self.coeffs[-(level+1)]]
-        else:
-          output.coeffs[-(level+1)] = [np.array([pywt.threshold_firm(c[ic], tlow[ic], thigh[ic]) \
-            for ic in range(self.nc)]) for c in self.coeffs[-(level+1)]]
-    else:
-      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
+      if ts.ndim not in [2, 3]: raise ValueError("Error, thresholds must be a dictionary or be mappable to a 2D or 3D array.")
+    output = self if inplace else deepcopy(self)
+    for level in range(min(self.levels, len(ts))):
+      tlow, thigh = ts[level][0], ts[level][1]
+      scalartlow, scalarthigh = np.isscalar(tlow), np.isscalar(thigh)
+      if not scalartlow and len(tlow) != self.nc:
+        raise ValueError("Error, the length of threshold_low must match the number of channels.")
+      if not scalarthigh and len(thigh) != self.nc:
+        raise ValueError("Error, the length of threshold_high must match the number of channels.")
+      if scalartlow != scalarthigh:
+        raise ValueError("Error, threshold_low and threshold_high must both be either scalars or arrays.")
+      if not scalartlow and nc == 1:
+        tlow, thigh = tlow[0], thigh[0]
+        scalartlow = True
+      if scalartlow:
+        if (tlow, thigh) == (0., 0.): continue
+        output.coeffs[-(level+1)] = [pywt.threshold_firm(c, tlow, thigh) for c in self.coeffs[-(level+1)]]
+      else:
+        output.coeffs[-(level+1)] = [np.array([pywt.threshold_firm(c[ic], tlow[ic], thigh[ic]) \
+          for ic in range(self.nc)]) for c in self.coeffs[-(level+1)]]
     return output
 
   def noise_scale_factors(self, std = "median", numerical = False, size = None, samples = 1):
@@ -309,7 +295,8 @@ class WaveletTransform:
     This method returns the partition of a white gaussian noise with variance 1 across all wavelet
     levels. It does so analytically when the distribution of the variance is known for the object
     transformation & wavelet. If not, it does so numerically by transforming random images with
-    white gaussian noise and computing the standard deviation at all scales.
+    white gaussian noise and computing the standard deviation of the wavelet coefficients at all
+    scales.
 
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
@@ -317,7 +304,7 @@ class WaveletTransform:
       numerical (bool, optional): If False (default), use analytical results when known. If True,
         always compute the standard deviations numerically.
       size (tuple of int, optional): The size (height, width) of the random images used to compute
-        the standard deviations numerically. If None, defaults to the present image size.
+        the standard deviations numerically. If None, defaults to the object image size.
       samples (int, optional): The number of random images used to compute the standard deviations
         numerically. The standard deviations of all random images are averaged at each scale.
 
@@ -371,7 +358,7 @@ class WaveletTransform:
       clip (float, optional): If not None (default), exclude wavelets whose absolute coefficients
         are greater than clip*sigma0 and iterate until sigma0 is converged (see the eps and maxit
         kwargs).
-      eps (float, optional): If clip is not None, iterate until |delta sigma0| < eps*sigma0, where
+      eps (float, optional): If clip is not None, iterate until abs(delta sigma0) < eps*sigma0, where
         delta sigma0 is the variation of sigma0 between two successive iterations. Default is 1e-3.
       maxit (int, optional): Maximum number of iterations if clip is not None. Default is 8.
 
@@ -411,7 +398,7 @@ class WaveletTransform:
       clip (float, optional): If not None (default), exclude level #0 wavelets whose absolute
         coefficients are greater than clip*sigma0 and iterate until sigma0 is converged (see the
         eps and maxit kwargs).
-      eps (float, optional): If clip is not None, iterate until |delta sigma0| < eps*sigma0, where
+      eps (float, optional): If clip is not None, iterate until abs(delta sigma0) < eps*sigma0, where
         delta sigma0 is the variation of sigma0 between two successive iterations. Default is 1e-3.
       maxit (int, optional): Maximum number of iterations if clip is not None. Default is 8.
       scale_factors (numpy.ndarray): The expected standard deviation of a white gaussian noise
@@ -428,42 +415,42 @@ class WaveletTransform:
     sigmas = np.array([sigma0*factor/norm for factor in scale_factors])
     return sigmas, sigma0/norm
 
-  def visu_clip(self):
+  def VisuShrink_clip(self):
     """Return the VisuShrink clip factor.
 
     The VisuShrink method computes the thresholds for the wavelet coefficients from the standard
-    deviation sigma of the noise in each level as threshold = clip*sigma, with
-    clip = sqrt(2*log(npixels)) and npixels the number of pixels in the image.
+    deviation sigma of the noise in each level as threshold = clip*sigma, with clip =
+    sqrt(2*log(npixels)) and npixels the number of pixels in the image.
 
     Note:
       Borrowed from scikit-image. See L. Donoho and I. M. Johnstone, "Ideal spatial adaptation by
       wavelet shrinkage", Biometrika 81, 425 (1994) (DOI:10.1093/biomet/81.3.425).
 
     See also:
-      :py:meth:`WaveletTransform.visu_shrink`
+      :py:meth:`WaveletTransform.VisuShrink`
 
     Returns:
       float: The VisuShrink clip factor clip = sqrt(2*log(npixels)).
     """
     return np.sqrt(2.*np.log(self.size[0]*self.size[1]))
 
-  def visu_shrink(self, sigmas, mode = "soft", inplace = False):
+  def VisuShrink(self, sigmas, mode = "soft", inplace = False):
     """Threshold wavelet coefficients using the VisuShrink method.
 
     The VisuShrink method computes the thresholds for the wavelet coefficients from the standard
-    deviations sigma of the noise in each level as threshold = clip*sigma, with
-    clip = sqrt(2*log(npixels)) and npixels the number of pixels in the image.
+    deviations sigma of the noise in each level as threshold = clip*sigma, with clip =
+    sqrt(2*log(npixels)) and npixels the number of pixels in the image.
 
-    VisuShrink produces softer images than :py:meth:`WaveletTransform.bayes_shrink`, but may
-    oversmooth and loose many details.
+    VisuShrink produces softer images than BayesShrink (see :py:meth:`WaveletTransform.BayesShrink`),
+    but may oversmooth and loose many details.
 
     Note:
       Borrowed from scikit-image. See L. Donoho and I. M. Johnstone, "Ideal spatial adaptation by
       wavelet shrinkage", Biometrika 81, 425 (1994) (DOI:10.1093/biomet/81.3.425).
 
     See also:
-      :py:meth:`WaveletTransform.visu_clip`
-      :py:meth:`WaveletTransform.bayes_shrink`
+      :py:meth:`WaveletTransform.VisuShrink_clip`
+      :py:meth:`WaveletTransform.BayesShrink`
 
     Args:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
@@ -482,18 +469,19 @@ class WaveletTransform:
     Returns:
       WaveletTransform: The updated WaveletTransform object.
     """
-    clip = self.visu_clip()
+    clip = self.VisuShrink_clip()
     print(f"VisuShrink: threshold = {clip:.5f}σ.")
     return self.threshold_levels(clip*sigmas, mode = mode, inplace = inplace)
 
-  def bayes_shrink(self, sigmas, std = "median", mode = "soft", inplace = False):
+  def BayesShrink(self, sigmas, std = "median", mode = "soft", inplace = False):
     """Threshold wavelet coefficients using the BayeShrink method.
 
     This method computes the thresholds for the wavelet coefficients from the standard deviation
     sigma of the noise in each level as threshold = <c²>/sqrt(<c²>-sigma²), where <c²> is the
     variance of the wavelet coefficients.
 
-    This level-dependent strategy preserves more details than :py:meth:`WaveletTransform.visu_shrink`.
+    This level-dependent strategy preserves more details than the VisuShrink method (see
+    :py:meth:`WaveletTransform.VisuShrink`).
 
     Note:
       Borrowed from scikit-image. See Chang, S. Grace, Bin Yu, and Martin Vetterli. "Adaptive wavelet
@@ -501,7 +489,7 @@ class WaveletTransform:
       1532 (2000) (DOI:10.1109/83.862633).
 
     See also:
-      :py:meth:`WaveletTransform.visu_shrink`
+      :py:meth:`WaveletTransform.VisuShrink`
 
     Args:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
@@ -529,10 +517,7 @@ class WaveletTransform:
       threshold = sigma**2/np.sqrt(max(std_centered(c, std = std)**2-sigma**2, eps))
       return pywt.threshold(c, threshold, mode = mode)
 
-    if inplace:
-      output = self
-    else:
-      output = deepcopy(self)
+    output = self if inplace else deepcopy(self)
     for level in range(self.levels):
       if self.nc == 1:
         output.coeffs[-(level+1)] = [shrink(c, sigmas[level, 0]) for c in self.coeffs[-(level+1)]]
@@ -547,18 +532,23 @@ class WaveletTransform:
     This method first estimates the noise sigma in each channel and wavelet level (using
     :py:meth:`WaveletTransform.estimate_noise`), then clips the wavelet coefficients whose
     absolute values are smaller than clip*sigma. It then computes the inverse wavelet transform
-    I0 and the difference D0 = I-I0 with the original image.
+    I0 and the difference D0 = I-I0 with the original image I.
 
     It next computes the wavelet transform of D0, estimates the noise sigma_D in each channel
     and wavelet level, clips the wavelet coefficients whose absolute values are smaller than
     clip*sigma_D, calculates the inverse wavelet transform dD0, and a new image I1 = I0+dD0
-    that containes the significant residual structures thus identified in D0.
+    that contains the significant residual structures thus identified in D0.
 
     It then repeats this procedure with D1 = I-I1, D2 = I-I2... until sigma_D is converged (which
-    means that no residual structure can be indentified in Dn).
+    means that no further residual structure can be indentified in Dn).
 
-    The method returns the denoised image In and the noise Dn = I-In. Dn shall be (almost)
+    The method returns the denoised image In and the noise Dn = I-In. Dn shall hence be (almost)
     structureless.
+
+    Note:
+      See: Image processing and data analysis: The multiscale approach, Jean-Luc Starck, Fionn Murtagh,
+      and Albert Bijaoui, Cambridge University Press (1998).
+      https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach
 
     See also:
       :py:meth:`WaveletTransform.estimate_noise`,
@@ -569,15 +559,15 @@ class WaveletTransform:
         or "median" (default). See :py:func:`std_centered` for details.
       clip (float, optional): Clip wavelets whose absolute coefficients are smaller than clip*sigma,
         where sigma is the estimated noise at that wavelet level. Default is 3.
-      eps (float, optional): Iterate until |delta sigma_D| < eps*sigma_D, where delta sigma_D is the
-        variation of sigma_D between two successive iterations. Default is 1e-3.
+      eps (float, optional): Iterate until abs(delta sigma_D) < eps*sigma_D, where delta sigma_D is
+        the variation of sigma_D between two successive iterations. Default is 1e-3.
       maxit (int, optional): Maximum number of iterations. Default is 8.
       scale_factors (numpy.ndarray): The expected standard deviation of a white gaussian noise
         with variance 1 at each wavelet level. If None (default), this method calls
         :py:meth:`WaveletTransform.noise_scale_factors` to compute these factors.
 
     Returns:
-      Image or numpy.ndarray, Image or numpy.ndarray: The denoised image In and the noise Dn = I-In.
+      Image or numpy.ndarray: The denoised image In and the noise Dn = I-In.
     """
     if scale_factors is None: scale_factors = self.noise_scale_factors(std = std)
     original = helpers.at_least_3D(self.iwt(asarray = True))
@@ -620,7 +610,7 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
     image (Image or numpy.ndarray): The input image.
     levels (int): The number of wavelet levels.
     wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
-      Default is "default" for `equimage.params.defwavelet`.
+      Default is "default", a shortcut for `equimage.params.defwavelet`.
     mode (str, optional): How to extend the image across its boundaries:
 
       - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
@@ -632,7 +622,6 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
   Returns:
     WaveletTransform: The discrete wavelet transform of the input image.
   """
-  if levels < 1: raise ValueError("Error, levels must be > 1.")
   isImage = issubclass(type(image), img.Image)
   if isImage:
     data = image.image
@@ -640,6 +629,10 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
     data = image
   else:
     raise ValueError("Error, the input image is not valid.")
+  height, width = data.shape[-2], data.shape[-1]
+  maxlevels = pywt.dwtn_max_level((height, width), wavelet)
+  if levels < 1: raise ValueError("Error, levels must be >= 1.")
+  if levels > maxlevels: raise ValueError(f"Error, levels must be <= {maxlevels} for an image with size ({height}, {width}).")
   # Translate boundary mode for pywt.
   if mode == "reflect":
     _mode = "symmetric"
@@ -663,7 +656,7 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
   wt.mode = mode
   wt._mode = _mode
   wt.coeffs = pywt.wavedec2(data, wavelet = wavelet, level = levels, mode = _mode, axes = (-2, -1))
-  wt.size = (data.shape[-2], data.shape[-1])
+  wt.size = (height, width)
   wt.nc = 1 if data.ndim == 2 else data.shape[0]
   wt.isImage = isImage
   if isImage:
@@ -678,7 +671,7 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
     image (Image or numpy.ndarray): The input image.
     levels (int): The number of wavelet levels.
     wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
-      Default is "default" for `equimage.params.defwavelet`.
+      Default is "default", a shortcut for `equimage.params.defwavelet`.
     mode (str, optional): How to extend the image across its boundaries:
 
       - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
@@ -690,7 +683,6 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
   Returns:
     WaveletTransform: The stationary wavelet transform of the input image.
   """
-  if levels < 1: raise ValueError("Error, levels must be > 1.")
   isImage = issubclass(type(image), img.Image)
   if isImage:
     data = image.image
@@ -698,7 +690,10 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
     data = image
   else:
     raise ValueError("Error, the input image is not valid.")
-  width, height = data.shape[-1], data.shape[-2]
+  height, width = data.shape[-2], data.shape[-1]
+  maxlevels = pywt.dwtn_max_level((height, width), wavelet)
+  if levels < 1: raise ValueError("Error, levels must be >= 1.")
+  if levels > maxlevels: raise ValueError(f"Error, levels must be <= {maxlevels} for an image with size ({height}, {width}).")
   # Translate boundary mode.
   if mode == "zero":
     _mode = "constant"
@@ -738,6 +733,11 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
 def slt(image, levels, starlet = "cubic", mode = "reflect"):
   """Starlet (isotropic undecimated wavelet) transform of the input image.
 
+  Note:
+    See: Image processing and data analysis: The multiscale approach, Jean-Luc Starck, Fionn Murtagh,
+    and Albert Bijaoui, Cambridge University Press (1998).
+    https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach
+
   Args:
     image (Image or numpy.ndarray): The input image.
     levels (int): The number of starlet levels.
@@ -746,9 +746,6 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
     mode (str, optional): How to extend the image across its boundaries:
 
       - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
-      - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
-      - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
-      - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
       - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
   Returns:
@@ -759,28 +756,25 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
     """Convolve the input data with the starlet at scale step/2-1."""
     # Set-up convolution kernel.
     if starlet == "linear":
-      size = 2*step+1
-      kernel = np.zeros(size, dtype = data.dtype)
+      kernel_size = 2*step+1
+      kernel = np.zeros(kernel_size, dtype = data.dtype)
       kernel[   0] = 1/4.
       kernel[step] = 1/2.
       kernel[  -1] = 1/4.
     elif starlet == "cubic":
-      size = 4*step+1
-      kernel = np.zeros(size, dtype = data.dtype)
+      kernel_size = 4*step+1
+      kernel = np.zeros(kernel_size, dtype = data.dtype)
       kernel[     0] = 1/16.
       kernel[  step] = 1/4.
       kernel[2*step] = 3/8.
       kernel[3*step] = 1/4.
       kernel[    -1] = 1/16.
-    else:
-      raise ValueError("Error, starlet must be 'linear' or 'cubic'.")
     # Convolve data with the kernel along the last two axes.
     output = data
     for axis in (-2, -1):
-      output = ndimg.convolve1d(output, kernel, axis = axis, mode = _mode, cval = 0.)
+      output = ndimg.convolve1d(output, kernel, axis = axis, mode = mode, cval = 0.)
     return output
 
-  if levels < 1: raise ValueError("Error, levels must be > 1.")
   isImage = issubclass(type(image), img.Image)
   if isImage:
     data = image.image
@@ -788,13 +782,19 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
     data = image
   else:
     raise ValueError("Error, the input image is not valid.")
-  # Translate boundary mode.
-  if mode == "zero":
-    _mode = "constant"
-  elif mode in ["reflect", "mirror", "nearest", "wrap"]:
-    _mode = mode
+  height, width = data.shape[-2], data.shape[-1]
+  if starlet == "linear":
+    kernel_size = 3
+  elif starlet == "cubic":
+    kernel_size = 5
   else:
-    raise ValueError(f"Error, unknown boundary mode '{mode}'.")
+    raise ValueError("Error, starlet must be 'linear' or 'cubic'.")
+  maxlevels = pywt.dwt_max_level(min(height, width), kernel_size)
+  if levels < 1: raise ValueError("Error, levels must be >= 1.")
+  if levels > maxlevels: raise ValueError(f"Error, levels must be <= {maxlevels} for an image with size ({height}, {width}).")
+  # Check boundary mode.
+  # These are the only modes that ensure that the average of the wavelet coefficients is zero at all scales.
+  if mode not in ["reflect", "wrap"]: raise ValueError(f"Error, unknown boundary mode '{mode}'.")
   # Compute the starlet transform.
   step = 1
   coeffs = []
@@ -811,7 +811,7 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
   wt.start = 0
   wt.mode = mode
   wt.coeffs = list(reversed(coeffs))
-  wt.size = (data.shape[-2], data.shape[-1])
+  wt.size = (height, width)
   wt.nc = 1 if data.ndim == 2 else data.shape[0]
   wt.isImage = isImage
   if isImage:
@@ -832,7 +832,7 @@ class MixinImage:
     Args:
       levels (int): The number of wavelet levels.
       wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
-        Default is "default" for `equimage.params.defwavelet`.
+        Default is "default", a shortcut for `equimage.params.defwavelet`.
       mode (str, optional): How to extend the image across its boundaries:
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
@@ -852,7 +852,7 @@ class MixinImage:
     Args:
       levels (int): The number of wavelet levels.
       wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
-        Default is "default" for `equimage.params.defwavelet`.
+        Default is "default", a shortcut for `equimage.params.defwavelet`.
       mode (str, optional): How to extend the image across its boundaries:
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
@@ -869,6 +869,11 @@ class MixinImage:
   def slt(self, levels, starlet = "cubic", mode = "reflect"):
     """Starlet (isotropic undecimated wavelet) transform of the image.
 
+    Note:
+      See: Image processing and data analysis: The multiscale approach, Jean-Luc Starck, Fionn Murtagh,
+      and Albert Bijaoui, Cambridge University Press (1998).
+      https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach
+
     Args:
       levels (int): The number of starlet levels.
       starlet (string, optional): The starlet used for the transformation ("linear" for the 3x3
@@ -876,9 +881,6 @@ class MixinImage:
       mode (str, optional): How to extend the image across its boundaries:
 
         - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
-        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
-        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
-        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
         - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
     Returns:
@@ -889,8 +891,9 @@ class MixinImage:
   def anscombe(self, gain = 1., average = 0., sigma = 0.):
     """Return the generalized Anscombe transform (gAt) of the image.
 
-    The gAt transforms the sum image = gain*P+N of a white Poisson noise P and a white Gaussian noise
-    N(average, sigma) into an approximate white Gaussian noise with variance 1.
+    The gAt transforms the sum gain*P+N of a white Poisson noise P and a white Gaussian noise N
+    (characterized by its average and standard deviation sigma) into an approximate white Gaussian
+    noise with variance 1.
 
     For gain = 1, average = 0 and sigma = 0 (default), the gAt is the original Anscombe transform
     T(image) = 2*sqrt(image+3/8).
