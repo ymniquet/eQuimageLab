@@ -326,11 +326,24 @@ class WaveletTransform:
       levels. Level #0 is the smallest scale.
     """
     if self.type != "slt": numerical = numerical or not pywt.Wavelet(self.wavelet).orthogonal
+    # Analytical noise partition.
     if not numerical:
       if self.type == "dwt":
-        return np.ones(self.levels) # May be approximate.
+        return np.ones(self.levels)
       elif self.type == "swt":
-        return np.array([0.5**(level+1) for level in range(self.levels)]) # May be approximate.
+        return np.array([0.5**(level+1) for level in range(self.levels)])
+      elif self.type == "slt" and self.levels <= 10:
+        # See misc/wavelets_noise.py.
+        if self.wavelet == "linear":
+          return np.array([0.8003905296791061, 0.2728788936964528, 0.11977928208173409, \
+                           0.057766478495319795, 0.028616328288766757, 0.014274750590965335, \
+                           0.007133197029613843, 0.0035660761823069166, 0.001782972798050199, \
+                           0.0008914782373390341])[:self.levels]
+        elif self.wavelet == "cubic":
+          return np.array([0.8907963102787584, 0.20066385102441897, 0.08550750475336993, \
+                           0.0412174443743162, 0.02042496659278143, 0.010189759249213292, \
+                           0.005092046680819309, 0.0025456694579151255, 0.001272790500997916, \
+                           0.0006363897222337067])[:self.levels]
     # Numerical estimate of the noise partition.
     if size is None: size = self.size
     rng = np.random.default_rng(12345) # Ensure reproducibility.
