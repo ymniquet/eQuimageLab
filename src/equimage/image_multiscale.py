@@ -158,7 +158,7 @@ class WaveletTransform:
       ms = [0.]*self.levels
       for key, value in mult.items():
         if not isinstance(key, int):
-          raise ValueError("Error, mult dictionary keys must be integers.")
+          raise TypeError("Error, mult dictionary keys must be integers.")
         if key < 0 or key >= self.levels:
           raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
         ms[key] = value
@@ -205,7 +205,7 @@ class WaveletTransform:
       ts = [0.]*self.levels
       for key, value in threshold.items():
         if not isinstance(key, int):
-          raise ValueError("Error, threshold dictionary keys must be integers.")
+          raise TypeError("Error, threshold dictionary keys must be integers.")
         if key < 0 or key >= self.levels:
           raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
         ts[key] = value
@@ -261,7 +261,7 @@ class WaveletTransform:
       ts = [(0., 0.)]*self.levels
       for key, value in thresholds.items():
         if not isinstance(key, int):
-          raise ValueError("Error, thresholds dictionary keys must be integers.")
+          raise TypeError("Error, thresholds dictionary keys must be integers.")
         if key < 0 or key >= self.levels:
           raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
         ts[key] = value

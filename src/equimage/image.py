@@ -209,10 +209,10 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
   def __array_ufunc__(self, ufunc, method, *args, **kwargs):
     """Apply numpy ufuncs to an Image object."""
-    if method != "__call__": return
-    inputs = []
-    mixed = False
+    if method != "__call__": raise NotImplemented(f"Operation {method} not implemented on Image ufuncs.")
     reference = None
+    mixed = False
+    inputs = []
     for arg in args:
       if isinstance(arg, Image):
         if reference is None:
@@ -224,8 +224,19 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
         inputs.append(arg.image)
       else:
         inputs.append(arg)
+    if (out := kwargs.get("out", None)) is not None: # In-place operation.
+      outputs = []
+      for arg in out:
+        if isinstance(arg, Image):
+          if arg.colorspace != reference.colorspace or arg.colormodel != reference.colormodel and not mixed:
+            print("Warning ! This operation mixes images with different color spaces or models !..")
+            mixed = True
+          outputs.append(arg.image)
+        else:
+          outputs.append(arg)
+      kwargs["out"] = tuple(outputs)
     output = ufunc(*inputs, **kwargs)
-    if isinstance(output, np.ndarray):
+    if isinstance(output, np.ndarray): # Note: If there are multiple outputs, we don't convert these to Images.
       if output.ndim == 0: # Is output actually a scalar ?
         return output[()]
       else:
@@ -238,9 +249,9 @@ class Image(np.lib.mixins.NDArrayOperatorsMixin,
 
   def __array_function__(self, func, types, args, kwargs):
     """Apply numpy array functions to an Image object."""
-    inputs = []
-    mixed = False
     reference = None
+    mixed = False
+    inputs = []
     for arg in args:
       if isinstance(arg, Image):
         if reference is None:
