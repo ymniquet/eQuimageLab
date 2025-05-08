@@ -62,7 +62,7 @@ def anscombe(data, gain = 1., average = 0., sigma = 0.):
   T(data) = 2*sqrt(data+3/8).
 
   See also:
-    :py:func:`inverse_anscombe`
+    :func:`inverse_anscombe`
 
   Args:
     data (numpy.ndarray): The input data.
@@ -79,7 +79,7 @@ def inverse_anscombe(data, gain = 1., average = 0., sigma = 0.):
   """Return the inverse generalized Anscombe transform of the input data.
 
   See also:
-    :py:func:`anscombe`
+    :func:`anscombe`
 
   Args:
     data (numpy.ndarray): The input data.
@@ -176,7 +176,7 @@ class WaveletTransform:
     """Threshold wavelet levels.
 
     See also:
-      :py:meth:`WaveletTransform.threshold_firm_levels`
+      :meth:`WaveletTransform.threshold_firm_levels`
 
     Args:
       threshold (numpy.ndarray or dict): The threshold for each wavelet level. Level 0 is the
@@ -240,7 +240,7 @@ class WaveletTransform:
     and hard thresholding.
 
     See also:
-      :py:meth:`WaveletTransform.threshold`
+      :meth:`WaveletTransform.threshold`
 
     Args:
       thresholds (numpy.ndarray or dict): The thresholds for each wavelet level. Level 0 is the
@@ -300,7 +300,7 @@ class WaveletTransform:
 
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
-        or "median" (default). See :py:func:`std_centered` for details.
+        or "median" (default). See :func:`std_centered` for details.
       numerical (bool, optional): If False (default), use analytical results when known. If True,
         always compute the standard deviations numerically.
       size (tuple of int, optional): The size (height, width) of the random images used to compute
@@ -350,11 +350,11 @@ class WaveletTransform:
     sigma0 is converged.
 
     See also:
-      :py:meth:`WaveletTransform.estimate_noise`
+      :meth:`WaveletTransform.estimate_noise`
 
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
-        or "median" (default). See :py:func:`std_centered` for details.
+        or "median" (default). See :func:`std_centered` for details.
       clip (float, optional): If not None (default), exclude wavelets whose absolute coefficients
         are greater than clip*sigma0 and iterate until sigma0 is converged (see the eps and maxit
         kwargs).
@@ -389,12 +389,12 @@ class WaveletTransform:
     levels assuming the noise is white and gaussian.
 
     See also:
-      :py:meth:`WaveletTransform.estimate_noise0`,
-      :py:meth:`WaveletTransform.noise_scale_factors`
+      :meth:`WaveletTransform.estimate_noise0`,
+      :meth:`WaveletTransform.noise_scale_factors`
 
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
-        or "median" (default). See :py:func:`std_centered` for details.
+        or "median" (default). See :func:`std_centered` for details.
       clip (float, optional): If not None (default), exclude level #0 wavelets whose absolute
         coefficients are greater than clip*sigma0 and iterate until sigma0 is converged (see the
         eps and maxit kwargs).
@@ -403,7 +403,7 @@ class WaveletTransform:
       maxit (int, optional): Maximum number of iterations if clip is not None. Default is 8.
       scale_factors (numpy.ndarray): The expected standard deviation of a white gaussian noise
         with variance 1 at each wavelet level. If None (default), this method calls
-        :py:meth:`WaveletTransform.noise_scale_factors` to compute these factors.
+        :meth:`WaveletTransform.noise_scale_factors` to compute these factors.
 
     Returns:
       numpy.ndarray, numpy.ndarray: The noise in each channel (columns) and wavelet level (rows),
@@ -427,7 +427,7 @@ class WaveletTransform:
       wavelet shrinkage", Biometrika 81, 425 (1994) (DOI:10.1093/biomet/81.3.425).
 
     See also:
-      :py:meth:`WaveletTransform.VisuShrink`
+      :meth:`WaveletTransform.VisuShrink`
 
     Returns:
       float: The VisuShrink clip factor clip = sqrt(2*log(npixels)).
@@ -441,7 +441,7 @@ class WaveletTransform:
     deviations sigma of the noise in each level as threshold = clip*sigma, with clip =
     sqrt(2*log(npixels)) and npixels the number of pixels in the image.
 
-    VisuShrink produces softer images than BayesShrink (see :py:meth:`WaveletTransform.BayesShrink`),
+    VisuShrink produces softer images than BayesShrink (see :meth:`WaveletTransform.BayesShrink`),
     but may oversmooth and loose many details.
 
     Note:
@@ -449,8 +449,8 @@ class WaveletTransform:
       wavelet shrinkage", Biometrika 81, 425 (1994) (DOI:10.1093/biomet/81.3.425).
 
     See also:
-      :py:meth:`WaveletTransform.VisuShrink_clip`
-      :py:meth:`WaveletTransform.BayesShrink`
+      :meth:`WaveletTransform.VisuShrink_clip`
+      :meth:`WaveletTransform.BayesShrink`
 
     Args:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
@@ -481,7 +481,7 @@ class WaveletTransform:
     variance of the wavelet coefficients.
 
     This level-dependent strategy preserves more details than the VisuShrink method (see
-    :py:meth:`WaveletTransform.VisuShrink`).
+    :meth:`WaveletTransform.VisuShrink`).
 
     Note:
       Borrowed from scikit-image. See Chang, S. Grace, Bin Yu, and Martin Vetterli. "Adaptive wavelet
@@ -489,12 +489,12 @@ class WaveletTransform:
       1532 (2000) (DOI:10.1109/83.862633).
 
     See also:
-      :py:meth:`WaveletTransform.VisuShrink`
+      :meth:`WaveletTransform.VisuShrink`
 
     Args:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
       std (str, optional): The method used to compute standard deviations. Can be "variance"
-        or "median" (default). See :py:func:`std_centered` for details.
+        or "median" (default). See :func:`std_centered` for details.
       mode (string, optional): The thresholding mode:
 
         - "soft" (default): Wavelet coefficients with absolute value < threshold are replaced by 0,
@@ -530,7 +530,7 @@ class WaveletTransform:
     """Iterative noise reduction.
 
     This method first estimates the noise sigma in each channel and wavelet level (using
-    :py:meth:`WaveletTransform.estimate_noise`), then clips the wavelet coefficients whose
+    :meth:`WaveletTransform.estimate_noise`), then clips the wavelet coefficients whose
     absolute values are smaller than clip*sigma. It then computes the inverse wavelet transform
     I0 and the difference D0 = I-I0 with the original image I.
 
@@ -551,12 +551,12 @@ class WaveletTransform:
       https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach
 
     See also:
-      :py:meth:`WaveletTransform.estimate_noise`,
-      :py:meth:`WaveletTransform.noise_scale_factors`
+      :meth:`WaveletTransform.estimate_noise`,
+      :meth:`WaveletTransform.noise_scale_factors`
 
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
-        or "median" (default). See :py:func:`std_centered` for details.
+        or "median" (default). See :func:`std_centered` for details.
       clip (float, optional): Clip wavelets whose absolute coefficients are smaller than clip*sigma,
         where sigma is the estimated noise at that wavelet level. Default is 3.
       eps (float, optional): Iterate until abs(delta sigma_D) < eps*sigma_D, where delta sigma_D is
@@ -564,7 +564,7 @@ class WaveletTransform:
       maxit (int, optional): Maximum number of iterations. Default is 8.
       scale_factors (numpy.ndarray): The expected standard deviation of a white gaussian noise
         with variance 1 at each wavelet level. If None (default), this method calls
-        :py:meth:`WaveletTransform.noise_scale_factors` to compute these factors.
+        :meth:`WaveletTransform.noise_scale_factors` to compute these factors.
 
     Returns:
       Image or numpy.ndarray: The denoised image In and the noise Dn = I-In.
@@ -899,7 +899,7 @@ class MixinImage:
     T(image) = 2*sqrt(image+3/8).
 
     See also:
-      :py:meth:`Image.inverse_anscombe <.inverse_anscombe>`
+      :meth:`Image.inverse_anscombe <.inverse_anscombe>`
 
     Args:
       gain (float, optional): The gain (default 1).
@@ -915,7 +915,7 @@ class MixinImage:
     """Return the inverse generalized Anscombe transform of the image.
 
     See also:
-      :py:meth:`Image.anscombe <.anscombe>`
+      :meth:`Image.anscombe <.anscombe>`
 
     Args:
       gain (float, optional): The gain (default 1).

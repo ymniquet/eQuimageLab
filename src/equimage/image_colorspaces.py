@@ -1667,7 +1667,7 @@ class MixinImage:
       return output
     elif channels == "L'":
       if is_gray:
-        output = self.newImage(f(self.image))
+        output = self.newImage(f(self.image[0]))
         if trans: output.trans = transformation(f, self.image, "L'")
       elif is_RGB:
         hsl = RGB_to_HSL(self.image)
@@ -1698,7 +1698,7 @@ class MixinImage:
       return output
     elif channels in ["L", "Ls", "Lb", "Ln"]:
       if is_gray:
-        output = self.newImage(f(self.image))
+        output = self.newImage(f(self.image[0]))
         if trans: output.trans = transformation(f, self.image, "L")
       elif is_RGB:
         luma = self.luma()

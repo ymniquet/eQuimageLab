@@ -19,7 +19,7 @@ from .image_stretch import hms, Dharmonic_through
 class MixinImage:
   """To be included in the Image class."""
 
-  def remove_hot_pixels(self, ratio, mode = "reflect", channels = ""):
+  def remove_hot_cold_pixels(self, ratio, mode = "reflect", channels = ""):
     """Remove hot pixels in selected channels of the image.
 
     All pixels of a selected channel greater than ratio times the eight nearest-neighbors average
@@ -42,8 +42,8 @@ class MixinImage:
 
     def remove_hot_pixels_channel(channel):
       """Remove hot pixels from the input channel data."""
-      avg = ndimg.convolve(channel, kernel, mode = mode, cval = 0.)/nnn
-      return np.where(channel > ratio*avg, avg, channel)
+      avg = ndimg.convolve(channel, kernel, mode = mode, cval = 0., axes = (-2, -1))/nnn
+      return np.where(channel > avg*ratio, avg, channel)
 
     if ratio <= 0.: raise ValueError("Error, ratio must be > 0.")
     # Translate modes.
@@ -53,7 +53,45 @@ class MixinImage:
     # Normalize with respect to the actual number of nearest neighbors.
     width, height = self.get_size()
     nnn = ndimg.convolve(np.ones((height, width), dtype = self.dtype), kernel, mode = mode, cval = 0.)
-    return self.apply_channels(remove_hot_pixels_channel, channels, multi = False)
+    return self.apply_channels(remove_hot_pixels_channel, channels)
+
+  def remove_hot_cold_pixels(self, hot_ratio, cold_ratio, mode = "reflect", channels = ""):
+    """Remove hot and cold pixels in selected channels of the image.
+
+    All pixels of a selected channel greater than A*hot_ratio or smaller than A/cold_ratio, with A
+    the eight nearest-neighbors average, are replaced by this average.
+
+    Args:
+      hot_ratio (float): The threshold for hot pixels detection.
+      cold_ratio (float): The threshold for cold pixels detection.
+      channels (str, optional): The selected channels (default "" = all channels).
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      mode (str, optional): How to extend the image across its boundaries:
+
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
+
+    Returns:
+      Image: The processed image.
+    """
+
+    def remove_hot_cold_pixels_channel(channel):
+      """Remove hot pixels from the input channel data."""
+      avg = ndimg.convolve(channel, kernel, mode = mode, cval = 0., axes = (-2, -1))/nnn
+      return np.where((channel > avg*hot_ratio) | (channel < avg/cold_ratio), avg, channel)
+
+    if hot_ratio <= 0.: raise ValueError("Error, hot_ratio must be > 0.")
+    if cold_ratio <= 0.: raise ValueError("Error, cold_ratio must be > 0.")
+    # Translate modes.
+    if mode == "zero": mode = "constant"
+    # Set-up the (unnormalized) kernel for nearest-neighbors average.
+    kernel = np.array([[1., 1., 1.], [1., 0., 1.], [1., 1., 1.]], dtype = self.dtype)
+    # Normalize with respect to the actual number of nearest neighbors.
+    width, height = self.get_size()
+    nnn = ndimg.convolve(np.ones((height, width), dtype = self.dtype), kernel, mode = mode, cval = 0.)
+    return self.apply_channels(remove_hot_cold_pixels_channel, channels)
 
   def sharpen(self, mode = "reflect", channels = ""):
     """Apply a sharpening (Laplacian) convolution filter to selected channels of the image.
@@ -76,7 +114,7 @@ class MixinImage:
     # Set-up Laplacian kernel.
     kernel = np.array([[-1., -1., -1.], [-1., 9., -1.], [-1., -1., -1.]], dtype = self.dtype)
     # Convolve selected channels with the kernel.
-    return self.apply_channels(lambda channel: ndimg.convolve(channel, kernel, mode = mode, cval = 0.), channels, multi = False)
+    return self.apply_channels(lambda channel: ndimg.convolve(channel, kernel, mode = mode, cval = 0., axes = (-2, -1)), channels)
 
   def LDBS(self, sigma, amount, threshold, channels = "L*", mode = "reflect", full_output = False):
     """Light-dependent blur & sharpen (LDBS).
