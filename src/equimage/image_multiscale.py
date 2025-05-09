@@ -123,6 +123,14 @@ class WaveletTransform:
       raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
     return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage and not asarray else data
 
+  def copy(self):
+    """Return a (deep) copy of the object.
+
+    Returns:
+      WaveletTransform: A copy of the object.
+    """
+    return deepcopy(self)
+
   def apply_same_transform(self, image):
     """Apply the wavelet transform of the object to the input image.
 
@@ -166,7 +174,7 @@ class WaveletTransform:
       ms = np.asarray(mult)
       if ms.ndim != 1:
         raise ValueError("Error, mult must be a dictionary or be mappable to a 1D array.")
-    output = self if inplace else deepcopy(self)
+    output = self if inplace else self.copy()
     for level in range(min(self.levels, len(ms))):
       if (m := ms[level]) == 1.: continue
       output.coeffs[-(level+1)] = [m*c for c in self.coeffs[-(level+1)]]
@@ -213,7 +221,7 @@ class WaveletTransform:
       ts = np.asarray(threshold)
       if ts.ndim > 2:
         raise ValueError("Error, threshold must be a dictionary or be mappable to a 1D or 2D array.")
-    output = self if inplace else deepcopy(self)
+    output = self if inplace else self.copy()
     for level in range(min(self.levels, len(ts))):
       t = ts[level]
       scalar = np.isscalar(t)
@@ -268,7 +276,7 @@ class WaveletTransform:
     else:
       ts = np.asarray(thresholds)
       if ts.ndim not in [2, 3]: raise ValueError("Error, thresholds must be a dictionary or be mappable to a 2D or 3D array.")
-    output = self if inplace else deepcopy(self)
+    output = self if inplace else self.copy()
     for level in range(min(self.levels, len(ts))):
       tlow, thigh = ts[level][0], ts[level][1]
       scalartlow, scalarthigh = np.isscalar(tlow), np.isscalar(thigh)
@@ -517,7 +525,7 @@ class WaveletTransform:
       threshold = sigma**2/np.sqrt(max(std_centered(c, std = std)**2-sigma**2, eps))
       return pywt.threshold(c, threshold, mode = mode)
 
-    output = self if inplace else deepcopy(self)
+    output = self if inplace else self.copy()
     for level in range(self.levels):
       if self.nc == 1:
         output.coeffs[-(level+1)] = [shrink(c, sigmas[level, 0]) for c in self.coeffs[-(level+1)]]
@@ -587,7 +595,7 @@ class WaveletTransform:
         if converged: break
         it += 1
         if it > maxit: break
-        denoised[ic] += Dwt.threshold_levels(clip*sigmas, mode = "hard", inplace = True).iwt()
+        denoised[ic] += Dwt.threshold_levels(clip*sigmaDs, mode = "hard", inplace = True).iwt()
         oldsigmaDt = sigmaDt
       if converged:
         print(f"Converged in {it} iterations.")
@@ -598,6 +606,69 @@ class WaveletTransform:
       denoised = img.Image(denoised, colorspace = self.colorspace, colormodel = self.colormodel)
       diff = img.Image(diff, colorspace = self.colorspace, colormodel = self.colormodel)
     return denoised, diff
+
+  def enhance_details(self, alphas, betas = 1., thresholds = 0., alphaA = 1., betaA = 1., inplace = False):
+    """Enhance the detail coefficients of a starlet transformation.
+
+    This method (only implemented for starlet transformations at present) enhances the details
+    coefficients c → f(|c|)*c of each wavelet level, with:
+
+      - f(x) = 1 if x <= threshold,
+      - f(x) = (cmax/x)*((x-c0)/(cmax-c0))**alpha if x > threshold,
+
+    where cmax = beta*max(|c|) and c0 is computed to ensure continuity at x = threshold.
+
+    With alpha < 1 this transformations enhances the detail coefficients whose absolute values are
+    within [threshold, cmax], and softens detail coefficients whose absolute values are above cmax
+    (dynamic range compression).
+
+    Args:
+      alphas (float): The alpha exponent for each wavelet level (expected < 1). Can be a scalar
+        (same alpha for all scales) or a list/tuple/array (level #0 is the smallest scale).
+        If alpha = 1, the wavelet level is not enhanced.
+      betas (float, optional): The beta factor for each wavelet level (expected < 1). Can be
+        a scalar (same beta for all scales) or a list/tuple/array (level #0 is the smallest scale).
+      thresholds (float, optional): The threshold for each wavelet level. Can be a scalar (same
+        threshold for all scales) or a list/tuple/array (level #0 is the smallest scale).
+      alphaA (float, optional): The alpha exponent for the approximation coefficients (default 1 =
+        not enhanced).
+      betaA (float, optional): The beta factor for the approximation coefficients (default 1).
+      inplace (bool, optional): If True, update the object "in place"; if False (default), return a
+        new WaveletTransform object.
+
+    Returns:
+      WaveletTransform: The updated WaveletTransform object.
+    """
+
+    def enhance(c, cmin, cmax, alpha):
+      """Enhance the input coefficients c."""
+      r = (cmin/cmax)**(1./alpha)
+      c0 = (cmax*r-cmin)/(r-1.)
+      cout = np.empty_like(c)
+      cset = c <= cmin
+      cout[ cset] = c[cset]
+      cout[~cset] = cmax*((c[~cset]-c0)/(cmax-c0))**alpha
+      return cout
+
+    if self.type != "slt": raise NotImplementedError("Error, only implemented for starlet transforms.")
+    if np.isscalar(alphas): alphas = [alphas]*self.levels
+    if np.isscalar(betas): betas = [betas]*self.levels
+    if np.isscalar(thresholds): thresholds = [thresholds]*self.levels
+    output = self if inplace else self.copy()
+    for level in range(self.levels):
+      alpha = alphas[level]
+      if alpha == 1.: continue
+      beta = betas[level]
+      c = self.coeffs[-(level+1)][0]
+      absc = abs(c)
+      cmin = thresholds[level]
+      cmax = beta*absc.max()
+      if cmax <= cmin: raise ValueError(f"Error, threshold > cmax at level #{level}. Decrease threshold or increase beta.")
+      output.coeffs[-(level+1)][0] = np.sign(c)*enhance(absc, cmin, cmax, alpha)
+    if alphaA != 1.:
+      c = self.coeffs[0][0]
+      output.coeffs[0][0] = enhance(c, 0., betaA*c.max(), alphaA)
+    return output
 
 #######################
 # Wavelet transforms. #
