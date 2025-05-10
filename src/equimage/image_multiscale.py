@@ -611,12 +611,12 @@ class WaveletTransform:
     """Enhance the detail coefficients of a starlet transformation.
 
     This method (only implemented for starlet transformations at present) enhances the details
-    coefficients c → f(|c|)*c of each wavelet level, with:
+    coefficients c → f(abs(c))*c of each wavelet level, with:
 
       - f(x) = 1 if x <= threshold,
       - f(x) = (cmax/x)*((x-c0)/(cmax-c0))**alpha if x > threshold,
 
-    where cmax = beta*max(|c|) and c0 is computed to ensure continuity at x = threshold.
+    where cmax = beta*max(abs(c)) and c0 is computed to ensure continuity at x = threshold.
 
     With alpha < 1 this transformations enhances the detail coefficients whose absolute values are
     within [threshold, cmax], and softens detail coefficients whose absolute values are above cmax

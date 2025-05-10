@@ -19,7 +19,7 @@ from .image_stretch import hms, Dharmonic_through
 class MixinImage:
   """To be included in the Image class."""
 
-  def remove_hot_cold_pixels(self, ratio, mode = "reflect", channels = ""):
+  def remove_hot_pixels(self, ratio, mode = "reflect", channels = ""):
     """Remove hot pixels in selected channels of the image.
 
     All pixels of a selected channel greater than ratio times the eight nearest-neighbors average
