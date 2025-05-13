@@ -71,3 +71,8 @@ Latest news:
     - Spline curve stretch.
     - Background neutralization.
     - Star resynthesis with Siril & star reduction.
+
+  - May 11, 2025: Version 1.4.0.
+
+    - Wavelet transforms.
+    - Code reorganization.

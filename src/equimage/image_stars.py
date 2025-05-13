@@ -53,9 +53,11 @@ class MixinImage:
     # Stretch the input image if needed.
     if midtone == "auto":
       avgmedian = np.mean(np.median(self.image, axis = (-1, -2)))
-      midtone = min(1./mts(avgmedian, .25), .5)
+      midtone = min(mts(avgmedian, .25), .5)
+      print(f"Midtone = {midtone:.5f}.")
     if midtone != .5:
       image = self.midtone_stretch(midtone)
+      #print(np.mean(np.median(image.image, axis = (-1, -2))))
     else:
       image = self
     # Run starnet++.

@@ -614,6 +614,7 @@ def lightness_to_luminance(Lstar):
   Y = 0.11070564608393481*Lstar
   mask = (Lstar > .07999591993063804)
   Y[mask] = ((Lstar[mask]+.16)/1.16)**3
+  return Y
 
 def lRGB_luminance(image):
   """Return the luminance Y of the input linear RGB image.
