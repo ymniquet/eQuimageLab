@@ -49,8 +49,9 @@ namespaces = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"equimagelab.images" = ["splash.png", "HSVwheel.png"]
-"equimagelab.jupyter" = ["assets/*"]
+"equimage.images" = ["HSVwheel.png"]
+"equimagelab.images" = ["splash.png"]
+"equimagelab.jupyter.assets" = ["equimagelab.css"]
 "equimagelab_launcher.icons" = ["icon.png", "icon.ico"]
 "equimagelab_launcher.images" = ["splash.png"]
 "equimagelab_launcher.templates" = ["equimagelab.ipynb"]
