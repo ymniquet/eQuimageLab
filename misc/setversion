@@ -1,0 +1,42 @@
+#!/usr/bin/bash
+
+VERSION="$1"
+DATE="$2"
+
+echo "Version = ${VERSION}."
+echo "Date = ${DATE}."
+read -p "Are you sure (Y/N) ? " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+  echo "Exiting..."
+  exit 1
+fi
+
+# Update version tags.
+
+echo "Updating 'version' in pyproject.toml..."
+perl -pi -e "s/version = \".*\"/version = \"${VERSION}\"/" pyproject.toml
+
+echo "Updating '__version__' in src/equimagelab/__init__.py..."
+perl -pi -e "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/equimagelab/__init__.py
+
+echo "Updating '__version__' in src/equimagelab_launcher/__init__.py..."
+perl -pi -e "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/equimagelab_launcher/__init__.py
+
+for file in `find src -name *.py`;
+do
+  echo "Updating version tag in ${file}..."
+  perl -pi -e "s/# Version: (.*)\n/# Version: ${VERSION} \/ ${DATE}\n/" ${file}
+done
+
+# Compile docs.
+
+echo "Compiling docs..."
+pushd docs
+make clean
+make ga
+make apidoc
+make html
+make noga
+popd

@@ -2,19 +2,25 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.1 / 2025.03.26
+# Version: 1.4.0 / 2025.05.17
 # Doc OK.
 
-"""Utils for Jupyter Lab interface."""
+"""Utils for JupyterLab interface.
+
+The following symbols are imported in the equimagelab namespace for convenience:
+  "filter", "shadowed", "highlighted", "differences".
+"""
+
+__all__ = ["filter", "shadowed", "highlighted", "differences"]
 
 import base64
 from io import BytesIO
 from PIL import Image as PILImage
 import numpy as np
 
-from . import params
+from equimage import Image
 
-from ..equimage import Image
+from . import params
 
 def get_image_size(image):
   """Return the width and height of the input image.
@@ -42,7 +48,8 @@ def format_images(images, sampling = 1, copy = False):
     images: A single/tuple/list of Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
     sampling (int, optional): The downsampling rate (default 1; set to `jupyter.params.sampling`
-      if negative). Only images[::sampling, ::sampling] are processed, to speed up operations.
+      if negative). Only the pixels image[::sampling, ::sampling] of a given image are processed, to
+      speed up operations.
     copy (bool, optional): If False (default), the formatted images are (when possible) views of
       the original images; If True, they are always copies.
 
@@ -78,7 +85,8 @@ def format_images_as_b64strings(images, sampling = 1, compression = 4):
     images: A single/tuple/list of Image object(s) or numpy.ndarray(s) with shape (height, width, 3)
       (for color images), (height, width, 1) or (height, width) (for grayscale images).
     sampling (int, optional): The downsampling rate (default 1; set to `jupyter.params.sampling`
-      if negative). Only images[::sampling, ::sampling] are processed, to speed up operations.
+      if negative). Only the pixels image[::sampling, ::sampling] of a given image are processed, to
+      speed up operations.
     compression (int, optional): The PNG compression level (default 4).
 
   Returns:

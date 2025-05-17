@@ -2,10 +2,16 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.1 / 2025.03.26
+# Version: 1.4.0 / 2025.05.17
 # Doc OK.
 
-"""Plotly backend for Jupyter Lab interface."""
+"""Plotly backend for JupyterLab interface.
+
+The following symbols are imported in the equimagelab namespace for convenience:
+  "show", "show_t", "show_histograms", "show_statistics", "light_curve".
+"""
+
+__all__ = ["show", "show_t", "show_histograms", "show_statistics", "light_curve"]
 
 import numpy as np
 import plotly.express as px
@@ -14,11 +20,11 @@ import plotly.io as pio
 from plotly.subplots import make_subplots
 pio.renderers.default = "jupyterlab"
 
+from equimage import Image
+from equimage.image_stats import parse_channels
+
 from . import params
 from .utils import format_images
-
-from ..equimage import Image
-from ..equimage.image_stats import parse_channels
 
 #####################
 # Helper functions. #

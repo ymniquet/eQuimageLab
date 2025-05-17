@@ -2,17 +2,17 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.3.1 / 2025.03.26
+# Version: 1.4.0 / 2025.05.17
 # Doc OK.
 
-"""Jupyter Lab interface parameters."""
+"""JupyterLab interface parameters."""
 
 import numpy as np
 
 IMGTOL = np.spacing(1, dtype = np.float32) # Expected floating-point accuracy of numpy.float32 images.
 
 # Images downsampling rate for display.
-# Only images[::sampling, ::sampling] are shown to speed up operations.
+# Only the pixels image[::sampling, ::sampling] of a given image are processed, to speed up operations.
 
 sampling = 1
 

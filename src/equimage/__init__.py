@@ -5,20 +5,21 @@
 # Version: 1.4.0 / 2025.05.17
 # Doc OK.
 
-"""eQuimageLab package."""
+"""Image processing module."""
 
-__version__ = "1.4.0"
 __packagepath__ = __path__[0]
 
 # Import top-level symbols.
 
-from equimage.imports import *
-from .jupyter.imports import *
-from . import params
+from .imports import *
 
-print("######################################"+len(__version__)*"#")
-print(f"# Welcome to eQuimageLab version {__version__}... #")
-print("######################################"+len(__version__)*"#")
-print("Documentation available at: https://astro.ymniquet.fr/codes/equimagelab/docs/")
-
-set_RGB_luma("human")
+# NB : Here is the list of functions which explicitely deal with channels.
+# Please crosscheck/update these functions when adding new channels.
+#  - Image.get_channel
+#  - Image.set_channel
+#  - Image.apply_channel
+#  - Image.histograms
+#  - Image.statistics
+#  - Image.statistical_stretch
+#  - Image.LDBS
+#  - Image.filter

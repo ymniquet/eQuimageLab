@@ -5,20 +5,21 @@
 # Version: 1.4.0 / 2025.05.17
 # Doc OK.
 
-"""eQuimageLab package."""
+"""eQuimage top-level symbols.
 
-__version__ = "1.4.0"
-__packagepath__ = __path__[0]
+This imports relevant symbols from the submodules into the equimage/equimagelab namespace.
+These symbols are defined by the :py:class:`__all__` dictionary (if any) of each submodule, and
+listed in their docstring.
 
-# Import top-level symbols.
+Also, the methods of the :py:class:`MixinImage` class of each submodule are imported in the Image class.
+"""
 
-from equimage.imports import *
-from .jupyter.imports import *
-from . import params
-
-print("######################################"+len(__version__)*"#")
-print(f"# Welcome to eQuimageLab version {__version__}... #")
-print("######################################"+len(__version__)*"#")
-print("Documentation available at: https://astro.ymniquet.fr/codes/equimagelab/docs/")
-
-set_RGB_luma("human")
+from .params import *
+from .image import *
+from .image_utils import *
+from .image_colorspaces import *
+from .image_colors import *
+from .image_stretch import *
+from .image_masks import *
+from .image_multiscale import *
+from .image_io import *
