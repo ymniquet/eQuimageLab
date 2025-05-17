@@ -169,7 +169,7 @@ Discrete wavelet transforms, stationary discrete wavelet transforms (also known 
    swt
    slt
 
-These functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class. They all return an :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` object. Discrete and "à trous" wavelet transforms are performed with the `PyWavelet <https://pywavelets.readthedocs.io/en/latest/>`_ package.
+These functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class. They all return a :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` object. Discrete and "à trous" wavelet transforms are performed with the `PyWavelet <https://pywavelets.readthedocs.io/en/latest/>`_ package.
 
 The inverse wavelet transform can be computed with the following method of the :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` class:
 
@@ -212,7 +212,7 @@ These methods act on the wavelet coefficients and are designed for additive gaus
    anscombe
    inverse_anscombe
 
-Both functions are also available as methods of the :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` class. Finally, the details of the image can be enhanced (sharpened) with the following method of the :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` class:
+Both functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class. Finally, the details of the image can be enhanced (sharpened) with the following method of the :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` class:
 
 .. currentmodule:: equimage.image_multiscale.WaveletTransform
 
@@ -220,7 +220,7 @@ Both functions are also available as methods of the :py:class:`WaveletTransform 
 
    enhance_details
 
-See `this <https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach>`_ for more details about the use of wavelet transforms in image processing.
+See this `document <https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach>`_ for more details about the use of wavelet transforms in image processing.
 
 Miscellaneous operations
 ^^^^^^^^^^^^^^^^^^^^^^^^

@@ -33,7 +33,7 @@ done
 # Compile docs.
 
 echo "Compiling docs..."
-pushd src/equimagelab/docs
+pushd docs
 make clean
 make ga
 make apidoc

@@ -72,7 +72,7 @@ Latest news:
     - Background neutralization.
     - Star resynthesis with Siril & star reduction.
 
-  - May 11, 2025: Version 1.4.0.
+  - May 17, 2025: Version 1.4.0.
 
     - Wavelet transforms.
-    - Code reorganization.
+    - Code refactoring.
