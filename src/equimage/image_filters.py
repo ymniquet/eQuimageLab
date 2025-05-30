@@ -147,12 +147,13 @@ class MixinImage:
     where the lightness is "small" (the background), and m > 1 where the lightness is "large" (the
     object of interest). We may use as a starting point:
 
-      m = (1 + a) * image
+      m = (1 + a) * blurred
 
-    where a > 0 controls image sharpening in the bright areas. In practice, we gain flexibility by
-    stretching the image to control how fast we switch from blurring to sharpening, e.g.:
+    where a > 0 controls image sharpening in the bright areas and we use the blurred image as a
+    template to limit noise enhancement. In practice, we gain flexibility by stretching this
+    template to control how fast we switch from blurring to sharpening, e.g.:
 
-      m = (1 + a) * hms(image, D)
+      m = (1 + a) * hms(blurred, D)
 
     where hms is the harmonic stretch with strength D. The latter can be calculated to switch (m = 1)
     at a given threshold.
@@ -194,7 +195,7 @@ class MixinImage:
     clipped = self.clip() # Clip the image before LDBS.
     if channels == "":
       blurred = clipped.gaussian_filter(sigma, mode = mode)
-      output = blurred.blend(clipped, (1.+amount)*hms(clipped, D)).clip()
+      output = blurred.blend(clipped, (1.+amount)*hms(blurred, D)).clip()
       if full_output:
         return output, blurred
       else:
@@ -203,7 +204,7 @@ class MixinImage:
       lightness = channels in ["L*", "L*ab", "L*uv", "L*sh"]
       cin = clipped.grayscale("L*" if lightness else channels)
       cblurred = cin.gaussian_filter(sigma, mode = mode)
-      cout = cblurred.blend(cin, (1.+amount)*hms(cin, D)).clip()
+      cout = cblurred.blend(cin, (1.+amount)*hms(cblurred, D)).clip()
       output = clipped.set_channel(channels, cout.lightness() if lightness else cout.image[0])
       if full_output:
         return output, cin, cblurred, cout
