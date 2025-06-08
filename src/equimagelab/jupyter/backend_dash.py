@@ -466,8 +466,8 @@ class Dashboard():
 
   ### Tabs layout.
 
-  def show(self, images, histograms = False, statistics = False, sampling = -1,
-           filters = True, click = True, select = True, synczoom = True, trans = None):
+  def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True,
+           autostretch = True, click = True, select = True, synczoom = True, trans = None):
     """Show image(s) on the dashboard.
 
     Args:
@@ -487,6 +487,8 @@ class Dashboard():
         speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, partial histograms).
+      autostretch (bool, optional): If True (default), enable image auto stretch. Filters must also
+        be True.
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
         the images.
@@ -568,11 +570,18 @@ class Dashboard():
         checklist = dcc.Checklist(options = options, value = values, id = {"type": "filters", "index": n},
                                   inline = True, labelClassName = "rm4")
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
-        button = dbc.Button("Sel. histograms", color = "primary", size = "sm", n_clicks = 0, id = {"type": "histogramsbutton", "index": n})
+        if autostretch:
+          autostrtch = [dcc.Checklist(options = [dict(label = html.Span("Autostretch", className = "lm1"), value = True)],
+                                      id = {"type": "autostretch", "index": n}, inline = True, labelClassName = "lm4 rm4")]
+        else:
+          autostrtch = []
+        button = dbc.Button("Sel. histograms", color = "primary", size = "sm", n_clicks = 0, id = {"type": "histogramsbutton", "index": n},
+                            className = "lm4")
         offcanvas = dbc.Offcanvas([], placement = "top", close_button = True, keyboard = True,
                                   id = {"type": "offcanvas", "index": n}, style = {"height": "auto", "bottom": "initial"}, is_open = False)
-        tab.append(html.Div([html.Div(["Filters:"], className = "rm4"), html.Div([checklist]), html.Div([button], className = "flushright")],
-                   className = "flex center tm1 bm1",
+        tab.append(html.Div([html.Div(["Filters:"], className = "rm4"), html.Div([checklist]), html.Div([], className = "grow"),
+                             html.Div(autostrtch), html.Div([], className = "grow"), html.Div([button])],
+                   className = "flex tm1 bm1 vcenter",
                    style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
         tab.append(html.Div([selected, offcanvas]))
       # Click data (keep defined for the callbacks even if click is False).
@@ -619,7 +628,8 @@ class Dashboard():
       self.content = [dbc.Tabs(tabs, active_tab = activetab, id = "image-tabs")]
       self.refresh = True
 
-  def show_t(self, image, channels = "RGBL", sampling = -1, filters = True, click = True, select = True, synczoom = True):
+  def show_t(self, image, channels = "RGBL", sampling = -1, filters = True, autostretch = True,
+             click = True, select = True, synczoom = True):
     """Show the input and output images of an histogram transformation on the dashboard.
 
     Displays the input image, histograms, statistics, and the transformation curve in tab "Reference",
@@ -636,6 +646,8 @@ class Dashboard():
         speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, partial histograms).
+      autostretch (bool, optional): If True (default), enable image auto stretch. Filters must also
+        be True.
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
         the images.
@@ -653,10 +665,12 @@ class Dashboard():
     for key in parse_channels(trans.channels, errors = False):
       if not key in keys: channels += key
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
-              sampling = sampling, filters = filters, click = click, select = select, synczoom = synczoom, trans = trans)
+              sampling = sampling, filters = filters, autostretch = autostretch, click = click,
+              select = select, synczoom = synczoom, trans = trans)
 
   def show_wavelets(self, wt, absc = True, normalize = False, histograms = False, statistics = False,
-                    sampling = -1, filters = True, click = True, select = True, synczoom = True):
+                    sampling = -1, filters = True, autostretch = True, click = True, select = True,
+                    synczoom = True):
     """Show wavelet coefficients on the dashboard.
 
     For a discrete wavelet transform, displays Mallat’s representation in a single tab.
@@ -681,6 +695,8 @@ class Dashboard():
         speed up display.
       filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, partial histograms).
+      autostretch (bool, optional): If True (default), enable image auto stretch. Filters must also
+        be True.
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
         the images.
@@ -724,7 +740,8 @@ class Dashboard():
     else:
       raise ValueError(f"Unknown wavelet transform type '{wt.type}'.")
     self.show(images, histograms = histograms, statistics = statistics, sampling = sampling,
-              filters = filters, click = click, select = select, synczoom = synczoom)
+              filters = filters, autostretch = autostretch, click = click, select = select,
+              synczoom = synczoom)
 
   ### Carousel layout.
 

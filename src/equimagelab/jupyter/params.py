@@ -55,6 +55,9 @@ def set_figure_max_width(w):
     w (int): The maximum figure width in pixels.
   """
   global maxwidth
+  if w < 800:
+    print("The maximum figure width must be at least 800 pixels.")
+    w = 800
   maxwidth = w
 
 def set_figure_margins(left = None, right = None, bottom = None, top = None):
