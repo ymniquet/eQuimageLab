@@ -123,7 +123,7 @@ class Dashboard():
     except:
       pass
     else:
-      self.show({"Welcome": splash}, sampling = 1, filters = False, click = False, select = False, synczoom = False)
+      self.show({"Welcome": splash}, sampling = 1, toolbar = False, click = False, select = False, synczoom = False)
 
   ##############
   # Callbacks. #
@@ -176,7 +176,7 @@ class Dashboard():
         hsv = cspaces.RGB_to_HSV(RGB)
         luma = cspaces.luma(RGB)
         lightness = cspaces.sRGB_lightness(RGB)
-        return [html.Div([f"Data at (x = {x}, y = {y}):"], className = "rm2"),
+        return [html.Div(f"Data at (x = {x}, y = {y}):", className = "rm2"),
                 html.Div([html.Span(f"R = {data[0]:.5f}", className = "red"), ", ",
                           html.Span(f"G = {data[1]:.5f}", className = "green"), ", ",
                           html.Span(f"B = {data[2]:.5f}", className = "blue"), ", ",
@@ -187,7 +187,7 @@ class Dashboard():
                           html.Span(f"L* = {lightness[0]:.5f}", className = "lightness"), "."])]
       else:
         lightness = cspaces.sRGB_lightness(np.array([[data]]))
-        return [html.Div([f"Data at (x = {x}, y = {y}):"], className = "rm2"),
+        return [html.Div(f"Data at (x = {x}, y = {y}):", className = "rm2"),
                 html.Div([html.Span(f"L = {data:.5f}", className = "luma"), ", ",
                           html.Span(f"L* = {lightness[0]:.5f}", className = "lightness"), "."])]
 
@@ -466,8 +466,8 @@ class Dashboard():
 
   ### Tabs layout.
 
-  def show(self, images, histograms = False, statistics = False, sampling = -1, filters = True,
-           autostretch = True, click = True, select = True, synczoom = True, trans = None):
+  def show(self, images, histograms = False, statistics = False, sampling = -1, toolbar = True,
+           autostretch = False, click = True, select = True, synczoom = True, trans = None):
     """Show image(s) on the dashboard.
 
     Args:
@@ -485,10 +485,10 @@ class Dashboard():
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
         negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
         speed up display.
-      filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
-        shadowed/highlighted pixels, images differences, partial histograms).
-      autostretch (bool, optional): If True (default), enable image auto stretch. Filters must also
-        be True.
+      toolbar (bool, optional): If True (default), display image toolbar (R, G, B, L channel filters,
+        shadowed/highlighted pixels, images differences, auto stretch, and partial histograms).
+      autostretch (bool, optional): If True, enable image auto stretch (default False). toolbar must
+        also be True.
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
         the images.
@@ -553,8 +553,8 @@ class Dashboard():
       else:
         config = dict()
       tab.append(dcc.Graph(figure = figure, id = {"type": "image", "index": n}, config = config))
-      # Image filters.
-      if filters:
+      # Image toolbar.
+      if toolbar:
         options = []
         values = []
         if pimages[n].ndim > 2: # Color image.
@@ -571,16 +571,16 @@ class Dashboard():
                                   inline = True, labelClassName = "rm4")
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
         if autostretch:
-          autostrtch = [dcc.Checklist(options = [dict(label = html.Span("Autostretch", className = "lm1"), value = True)],
-                                      id = {"type": "autostretch", "index": n}, inline = True, labelClassName = "lm4 rm4")]
+          autobutton = dcc.Checklist(options = [dict(label = html.Span("Autostretch", className = "lm1"), value = True)],
+                                     id = {"type": "autostretch", "index": n}, inline = True, labelClassName = "lm4 rm4")
         else:
-          autostrtch = []
-        button = dbc.Button("Sel. histograms", color = "primary", size = "sm", n_clicks = 0, id = {"type": "histogramsbutton", "index": n},
-                            className = "lm4")
+          autobutton = []
+        histbutton = dbc.Button("Sel. histograms", color = "primary", size = "sm", n_clicks = 0,
+                                id = {"type": "histogramsbutton", "index": n}, className = "lm4")
         offcanvas = dbc.Offcanvas([], placement = "top", close_button = True, keyboard = True,
                                   id = {"type": "offcanvas", "index": n}, style = {"height": "auto", "bottom": "initial"}, is_open = False)
-        tab.append(html.Div([html.Div(["Filters:"], className = "rm4"), html.Div([checklist]), html.Div([], className = "grow"),
-                             html.Div(autostrtch), html.Div([], className = "grow"), html.Div([button])],
+        tab.append(html.Div([html.Div("Filters:", className = "rm4"), html.Div(checklist), html.Div([], className = "grow"),
+                             html.Div(autobutton), html.Div([], className = "grow"), html.Div(histbutton)],
                    className = "flex tm1 bm1 vcenter",
                    style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
         tab.append(html.Div([selected, offcanvas]))
@@ -592,7 +592,7 @@ class Dashboard():
       tab.append(html.Div([], id = {"type": "selectdiv", "index": n}, className = "tm2 bm2",
                  style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px",
                           "position": "relative"}))
-      tab.append(html.Div([shape]))
+      tab.append(html.Div(shape))
       if histograms is not False:
         if histograms is True: histograms = ""
         figure = _figure_histograms_(images[n], channels = histograms, log = True, width = params.maxwidth,
@@ -624,11 +624,11 @@ class Dashboard():
       self.reference = reference
       self.activetab = activetab
       self.histograms = histograms if histograms is not False else "RGBL"
-      self.images = pimages if click or filters else None # No need to register images for the callbacks if click and filters are False.
+      self.images = pimages if click or toolbar else None # No need to register images for the callbacks if click and toolbar are False.
       self.content = [dbc.Tabs(tabs, active_tab = activetab, id = "image-tabs")]
       self.refresh = True
 
-  def show_t(self, image, channels = "RGBL", sampling = -1, filters = True, autostretch = True,
+  def show_t(self, image, channels = "RGBL", sampling = -1, toolbar = True, autostretch = False,
              click = True, select = True, synczoom = True):
     """Show the input and output images of an histogram transformation on the dashboard.
 
@@ -644,10 +644,10 @@ class Dashboard():
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
         negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
         speed up display.
-      filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
-        shadowed/highlighted pixels, images differences, partial histograms).
-      autostretch (bool, optional): If True (default), enable image auto stretch. Filters must also
-        be True.
+      toolbar (bool, optional): If True (default), display image toolbar (R, G, B, L channel filters,
+        shadowed/highlighted pixels, images differences, auto stretch, and partial histograms).
+      autostretch (bool, optional): If True, enable image auto stretch (default False). toolbar must
+        also be True.
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
         the images.
@@ -665,11 +665,11 @@ class Dashboard():
     for key in parse_channels(trans.channels, errors = False):
       if not key in keys: channels += key
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
-              sampling = sampling, filters = filters, autostretch = autostretch, click = click,
+              sampling = sampling, toolbar = toolbar, autostretch = autostretch, click = click,
               select = select, synczoom = synczoom, trans = trans)
 
   def show_wavelets(self, wt, absc = True, normalize = False, histograms = False, statistics = False,
-                    sampling = -1, filters = True, autostretch = True, click = True, select = True,
+                    sampling = -1, toolbar = True, autostretch = False, click = True, select = True,
                     synczoom = True):
     """Show wavelet coefficients on the dashboard.
 
@@ -693,10 +693,10 @@ class Dashboard():
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
         negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
         speed up display.
-      filters (bool, optional): If True (default), add image filters menu (R, G, B, L channel filters,
-        shadowed/highlighted pixels, images differences, partial histograms).
-      autostretch (bool, optional): If True (default), enable image auto stretch. Filters must also
-        be True.
+      toolbar (bool, optional): If True (default), display image toolbar (R, G, B, L channel filters,
+        shadowed/highlighted pixels, images differences, auto stretch, and partial histograms).
+      autostretch (bool, optional): If True, enable image auto stretch (default False). toolbar must
+        also be True.
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
         the images.
@@ -740,7 +740,7 @@ class Dashboard():
     else:
       raise ValueError(f"Unknown wavelet transform type '{wt.type}'.")
     self.show(images, histograms = histograms, statistics = statistics, sampling = sampling,
-              filters = filters, autostretch = autostretch, click = click, select = select,
+              toolbar = toolbar, autostretch = autostretch, click = click, select = select,
               synczoom = synczoom)
 
   ### Carousel layout.
@@ -810,9 +810,9 @@ class Dashboard():
     # Set-up before/after widget.
     image1, image2 = format_images_as_b64strings((image1, image2), sampling = sampling)
     baslider = dxt.BeforeAfter(after = dict(src = image1), before = dict(src = image2), width = f"{params.maxwidth}")
-    left   = html.Div([label1], className = "ba-left", style = {"width": f"{params.lmargin}px"})
-    middle = html.Div([baslider], className = "ba-middle", style = {"width": f"{params.maxwidth}px"})
-    right  = html.Div([label2], className = "ba-right", style = {"width": f"{params.rmargin}px"})
+    left   = html.Div(label1, className = "ba-left", style = {"width": f"{params.lmargin}px"})
+    middle = html.Div(baslider, className = "ba-middle", style = {"width": f"{params.maxwidth}px"})
+    right  = html.Div(label2, className = "ba-right", style = {"width": f"{params.rmargin}px"})
     widget = html.Div([left, middle, right], className = "inline",
                       style = {"margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
     tab = dbc.Tab([widget], label = "Compare images", className = "tab")

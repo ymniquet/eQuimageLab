@@ -18,7 +18,8 @@ sampling = 1
 
 # Figure size and margins (pixels).
 
-maxwidth = 1024 # Maximum width of the displayed image.
+minwidth = 768  # Minimum figure width.
+maxwidth = 1024 # Maximum figure width.
 
 lmargin = 96  # Left margin.
 rmargin = 160 # Right margin.
@@ -55,9 +56,9 @@ def set_figure_max_width(w):
     w (int): The maximum figure width in pixels.
   """
   global maxwidth
-  if w < 800:
-    print("The maximum figure width must be at least 800 pixels.")
-    w = 800
+  if w < minwidth:
+    print(f"The maximum figure width must be at least (and will be set to) {minwidth} pixels.")
+    w = minwidth
   maxwidth = w
 
 def set_figure_margins(left = None, right = None, bottom = None, top = None):
