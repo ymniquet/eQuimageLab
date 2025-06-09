@@ -563,15 +563,15 @@ class Dashboard():
                           dict(label = html.Span("B", className = "blue lm1"), value = "B"),
                           dict(label = html.Span("L", className = "luma lm1 rm4"), value = "L")])
           values.extend(["R", "G", "B"])
-        options.extend([dict(label = html.Span("Shadowed", className = "lm1"), value = "S"),
-                        dict(label = html.Span("Highlighted", className = "lm1"), value = "H")])
+        options.extend([dict(label = html.Span("Low", className = "lm1"), value = "S"),
+                        dict(label = html.Span("High", className = "lm1"), value = "H")])
         if reference is not None and pimages[n].shape == pimages[reference].shape:
-          options.extend([dict(label = html.Span("Differences", className = "lm1"), value = "D")])
+          options.extend([dict(label = html.Span("Diff", className = "lm1"), value = "D")])
         checklist = dcc.Checklist(options = options, value = values, id = {"type": "filters", "index": n},
                                   inline = True, labelClassName = "rm4")
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
         if autostretch:
-          autobutton = dcc.Checklist(options = [dict(label = html.Span("Autostretch", className = "lm1"), value = True)],
+          autobutton = dcc.Checklist(options = [dict(label = html.Span("Autostretch", className = "lm1"), value = True)], value = [True],
                                      id = {"type": "autostretch", "index": n}, inline = True, labelClassName = "lm4 rm4")
         else:
           autobutton = []
@@ -778,9 +778,17 @@ class Dashboard():
       keys = ["Image"]
       images = [images]
     # Set-up carousel.
+    imwidth, imheight = get_image_size(images[-1])
+    width = params.maxwidth
+    lmargin = params.lmargin
+    rmargin = params.rmargin
+    if (xmargin := width-imwidth) > 0:
+      lmargin += xmargin//2
+      rmargin += xmargin-xmargin//2
+      width = imwidth
     items = [dict(key = f"{n}", src = format_images_as_b64strings(images[n], sampling = sampling), header = keys[n]) for n in range(nimages)]
     widget = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
-             style = {"width": f"{params.maxwidth}px", "margin": f"{params.tmargin}px {params.rmargin}px {params.bmargin}px {params.lmargin}px"})
+             style = {"width": f"{width}px", "margin": f"{params.tmargin}px {rmargin}px {params.bmargin}px {lmargin}px"})
     tab = dbc.Tab([widget], label = "Carousel", className = "tab")
     # Update dashboard.
     with self.updatelock: # Lock on update.
@@ -808,11 +816,19 @@ class Dashboard():
     """
     self.refresh = False # Stop refreshing dashboard.
     # Set-up before/after widget.
+    imwidth, imheight = get_image_size(image1)
+    width = params.maxwidth
+    lmargin = params.lmargin
+    rmargin = params.rmargin
+    if (xmargin := width-imwidth) > 0:
+      lmargin += xmargin//2
+      rmargin += xmargin-xmargin//2
+      width = imwidth
     image1, image2 = format_images_as_b64strings((image1, image2), sampling = sampling)
-    baslider = dxt.BeforeAfter(after = dict(src = image1), before = dict(src = image2), width = f"{params.maxwidth}")
-    left   = html.Div(label1, className = "ba-left", style = {"width": f"{params.lmargin}px"})
-    middle = html.Div(baslider, className = "ba-middle", style = {"width": f"{params.maxwidth}px"})
-    right  = html.Div(label2, className = "ba-right", style = {"width": f"{params.rmargin}px"})
+    baslider = dxt.BeforeAfter(after = dict(src = image1), before = dict(src = image2), width = f"{width}")
+    left   = html.Div(label1, className = "ba-left", style = {"width": f"{lmargin}px"})
+    middle = html.Div(baslider, className = "ba-middle", style = {"width": f"{width}px"})
+    right  = html.Div(label2, className = "ba-right", style = {"width": f"{rmargin}px"})
     widget = html.Div([left, middle, right], className = "inline",
                       style = {"margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
     tab = dbc.Tab([widget], label = "Compare images", className = "tab")
