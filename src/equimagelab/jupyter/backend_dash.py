@@ -95,6 +95,7 @@ class Dashboard():
                       Input({"type": "filters", "index": MATCH}, "value"),
                       State({"type": "selectedfilters", "index": MATCH}, "data"), State("updateid", "data"),
                       prevent_initial_call = True)(self.__filter_image)
+    #   - Image stretch:
     #   - Partial histograms:
     self.app.callback(Output({"type": "offcanvas", "index": MATCH}, "is_open"),
                       Output({"type": "offcanvas", "index": MATCH}, "title"), Output({"type": "offcanvas", "index": MATCH}, "children"),
@@ -252,6 +253,42 @@ class Dashboard():
                  dcc.Clipboard(target_id = "selection", title = "copy", className = "copyselection")]
     return patch, selectdiv, current
 
+  def __apply_filters(self, n, filters):
+    """Apply filters to the image of tab #n.
+
+    Args:
+      n (int): The tab index.
+      filters (list): The currently selected filters.
+
+    Returns:
+      numpy.ndarray: The processed image of tab #n.
+    """
+
+    def filter_channels(image, channels):
+      """Apply channel filters to the input image."""
+      if image.ndim > 2: # Color image.
+        if "L" in channels: # Return luma.
+          rgbluma = get_RGB_luma()
+          image = rgbluma[0]*image[:, : , 0]+rgbluma[1]*image[:, : , 1]+rgbluma[2]*image[:, : , 2]
+        else: # Filter out R, G, B channels.
+          image = image.copy()
+          if "R" not in channels: image[:, :, 0] = 0.
+          if "G" not in channels: image[:, :, 1] = 0.
+          if "B" not in channels: image[:, :, 2] = 0.
+      return image
+
+    stretched = filter_channels(self.stretched[n], filters)
+    if filters & {"S", "H", "D"}:
+      image = filter_channels(self.images[n], filters)
+      reference = filter_channels(self.images[self.reference], filters) if self.reference is not None else None
+      if "S" in filters:
+        stretched = shadowed(image, reference, dest = stretched)
+      elif "H" in filters:
+        stretched = highlighted(image, reference, dest = stretched)
+      else:
+        stretched = differences(image, reference, dest = stretched)
+    return stretched
+
   def __filter_image(self, current, previous, updateid):
     """Callback for image filters.
 
@@ -267,22 +304,6 @@ class Dashboard():
       The curated filters (twice, as currently selected and new previous), and a patch for the
       filtered figure.
     """
-
-    def filter_channels(image, channels):
-      """Apply channel filters to the input image."""
-      if image.ndim > 2: # Color image.
-        if "L" in channels: # Return luma.
-          rgbluma = get_RGB_luma()
-          return rgbluma[0]*image[:, : , 0]+rgbluma[1]*image[:, : , 1]+rgbluma[2]*image[:, : , 2]
-        else: # Filter out R, G, B channels.
-          output = image.copy()
-          if "R" not in channels: output[:, :, 0] = 0.
-          if "G" not in channels: output[:, :, 1] = 0.
-          if "B" not in channels: output[:, :, 2] = 0.
-        return output
-      else: # Grayscale image.
-        return image
-
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return previous, previous, dash.no_update
     with self.updatelock: # Lock on callback.
@@ -311,21 +332,34 @@ class Dashboard():
         else:
           raise ValueError(f"Error, unknown filter '{t}'.")
       # Apply selected filters to the image.
-      n = trigger["index"] # Image index.
-      image = filter_channels(self.images[n], current)
-      if current & {"S", "H", "D"}:
-        reference = filter_channels(self.images[self.reference], current) if self.reference is not None else None
-        if "S" in current:
-          image = shadowed(image, reference)
-        elif "H" in current:
-          image = highlighted(image, reference)
-        else:
-          image = differences(image, reference)
+      image = self.__apply_filters(trigger["index"], current)
       # Return filtered image as a patch.
       patch = dash.Patch()
-      patch["data"][0]["source"] = format_images_as_b64strings(image, sampling = 1)
+      patch["data"][0]["source"] = format_images_as_b64strings(image)
       current = list(current)
       return current, current, patch
+
+  def __stretch_image(self, filters, updateid):
+    """Callback for image stretch.
+
+    Args:
+      filters (list): The currently selected filters.
+      updateid (integer): The unique ID of the displayed dashboard update.
+
+    Returns:
+      A patch for the stretched figure.
+    """
+    trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
+    if not trigger: return dash.no_update
+    with self.updatelock: # Lock on callback.
+      if self.images is None or updateid != self.nupdates: return dash.no_update # The dashboard is out of sync.
+      # Stretch the selected image and apply filters.
+      self.stretched[n] = self.images[n]
+      image = self.__apply_filters(trigger["index"], current)
+      # Return filtered image as a patch.
+      patch = dash.Patch()
+      patch["data"][0]["source"] = format_images_as_b64strings(image)
+      return patch
 
   def __partial_histograms(self, n_clicks, is_open, figure, shape, updateid):
     """Callback for partial histograms.
@@ -467,7 +501,7 @@ class Dashboard():
   ### Tabs layout.
 
   def show(self, images, histograms = False, statistics = False, sampling = -1, toolbar = True,
-           autostretch = False, click = True, select = True, synczoom = True, trans = None):
+           stretch = False, click = True, select = True, synczoom = True, trans = None):
     """Show image(s) on the dashboard.
 
     Args:
@@ -486,9 +520,9 @@ class Dashboard():
         negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
         speed up display.
       toolbar (bool, optional): If True (default), display image toolbar (R, G, B, L channel filters,
-        shadowed/highlighted pixels, images differences, auto stretch, and partial histograms).
-      autostretch (bool, optional): If True, enable image auto stretch (default False). toolbar must
-        also be True.
+        shadowed/highlighted pixels, images differences, and partial histograms).
+      stretch (bool, optional): If True, enable image stretch (default False). toolbar must also
+        be True.
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
         the images.
@@ -558,40 +592,41 @@ class Dashboard():
         options = []
         values = []
         if pimages[n].ndim > 2: # Color image.
-          options.extend([dict(label = html.Span("R", className = "red lm1"), value = "R"),
-                          dict(label = html.Span("G", className = "green lm1"), value = "G"),
-                          dict(label = html.Span("B", className = "blue lm1"), value = "B"),
-                          dict(label = html.Span("L", className = "luma lm1 rm4"), value = "L")])
+          options.extend([dict(label = html.Span("R", className = "red"), value = "R"),
+                          dict(label = html.Span("G", className = "green"), value = "G"),
+                          dict(label = html.Span("B", className = "blue"), value = "B"),
+                          dict(label = html.Span("L", className = "luma rm4"), value = "L")])
           values.extend(["R", "G", "B"])
-        options.extend([dict(label = html.Span("Low", className = "lm1"), value = "S"),
-                        dict(label = html.Span("High", className = "lm1"), value = "H")])
+        options.extend([dict(label = "Low", value = "S"),
+                        dict(label = "High", value = "H")])
         if reference is not None and pimages[n].shape == pimages[reference].shape:
-          options.extend([dict(label = html.Span("Diff", className = "lm1"), value = "D")])
-        checklist = dcc.Checklist(options = options, value = values, id = {"type": "filters", "index": n},
-                                  inline = True, labelClassName = "rm4")
+          options.extend([dict(label = "Diff", value = "D")])
+        filters = dbc.Checklist(options = options, value = values, inline = True, id = {"type": "filters", "index": n})
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
-        if autostretch:
-          autobutton = dcc.Checklist(options = [dict(label = html.Span("Autostretch", className = "lm1"), value = True)], value = [True],
-                                     id = {"type": "autostretch", "index": n}, inline = True, labelClassName = "lm4 rm4")
+        if stretch:
+          select = dbc.Select(options = [dict(label = "Linear", value = "Linear"),
+                                         dict(label = "med = 5%", value = "5"),
+                                         dict(label = "med = 10%", value = "10"),
+                                         dict(label = "med = 20%", value = "15"),
+                                         dict(label = "med = 30%", value = "20")],
+                              value = "Linear", size = "sm", id = {"type": "stretch", "index": n})
+          stretches = html.Div(select, className = "center")
         else:
-          autobutton = []
-        histbutton = dbc.Button("Sel. histograms", color = "primary", size = "sm", n_clicks = 0,
-                                id = {"type": "histogramsbutton", "index": n}, className = "lm4")
-        offcanvas = dbc.Offcanvas([], placement = "top", close_button = True, keyboard = True,
-                                  id = {"type": "offcanvas", "index": n}, style = {"height": "auto", "bottom": "initial"}, is_open = False)
-        tab.append(html.Div([html.Div("Filters:", className = "rm4"), html.Div(checklist), html.Div([], className = "grow"),
-                             html.Div(autobutton), html.Div([], className = "grow"), html.Div(histbutton)],
-                   className = "flex tm1 bm1 vcenter",
-                   style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
+          stretches = []
+        histogramsbutton = dbc.Button("Sel. histograms", color = "primary", size = "sm", n_clicks = 0, id = {"type": "histogramsbutton", "index": n})
+        offcanvas = dbc.Offcanvas([], placement = "top", close_button = True, keyboard = True, is_open = False,
+                                  id = {"type": "offcanvas", "index": n}, style = {"height": "auto", "bottom": "initial"})
+        tab.append(html.Div([html.Div("Filters:", className = "rm4"), html.Div(filters), html.Div(stretches, className = "grow"), html.Div(histogramsbutton)],
+                             className = "flex tm1 bm1 vcenter",
+                             style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
         tab.append(html.Div([selected, offcanvas]))
       # Click data (keep defined for the callbacks even if click is False).
       tab.append(html.Div([], id = {"type": "datadiv", "index": n}, className = "flex tm1 bm1",
-                 style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
+                          style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px"}))
       # Selection data (keep defined for the callbacks even if select is False).
-      shape = dcc.Store(data = {}, id = {"type": "shape", "index": n})
       tab.append(html.Div([], id = {"type": "selectdiv", "index": n}, className = "tm2 bm2",
-                 style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px",
-                          "position": "relative"}))
+                          style = {"width": f"{params.maxwidth}px", "margin-left": f"{params.lmargin}px", "margin-right": f"{params.rmargin}px", "position": "relative"}))
+      shape = dcc.Store(data = {}, id = {"type": "shape", "index": n})
       tab.append(html.Div(shape))
       if histograms is not False:
         if histograms is True: histograms = ""
@@ -624,11 +659,16 @@ class Dashboard():
       self.reference = reference
       self.activetab = activetab
       self.histograms = histograms if histograms is not False else "RGBL"
-      self.images = pimages if click or toolbar else None # No need to register images for the callbacks if click and toolbar are False.
+      if click or toolbar:
+        self.images = pimages
+        self.stretched = [image for image in self.images]
+      else: # No need to register images for the callbacks if click and toolbar are False.
+        self.images = None
+        self.stretched = None
       self.content = [dbc.Tabs(tabs, active_tab = activetab, id = "image-tabs")]
       self.refresh = True
 
-  def show_t(self, image, channels = "RGBL", sampling = -1, toolbar = True, autostretch = False,
+  def show_t(self, image, channels = "RGBL", sampling = -1, toolbar = True, stretch = False,
              click = True, select = True, synczoom = True):
     """Show the input and output images of an histogram transformation on the dashboard.
 
@@ -645,9 +685,9 @@ class Dashboard():
         negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
         speed up display.
       toolbar (bool, optional): If True (default), display image toolbar (R, G, B, L channel filters,
-        shadowed/highlighted pixels, images differences, auto stretch, and partial histograms).
-      autostretch (bool, optional): If True, enable image auto stretch (default False). toolbar must
-        also be True.
+        shadowed/highlighted pixels, images differences, and partial histograms).
+      stretch (bool, optional): If True, enable image stretch (default False). toolbar must also
+        be True.
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
         the images.
@@ -665,11 +705,11 @@ class Dashboard():
     for key in parse_channels(trans.channels, errors = False):
       if not key in keys: channels += key
     self.show({"Image": image, "Reference": reference}, histograms = channels, statistics = channels,
-              sampling = sampling, toolbar = toolbar, autostretch = autostretch, click = click,
+              sampling = sampling, toolbar = toolbar, stretch = stretch, click = click,
               select = select, synczoom = synczoom, trans = trans)
 
   def show_wavelets(self, wt, absc = True, normalize = False, histograms = False, statistics = False,
-                    sampling = -1, toolbar = True, autostretch = False, click = True, select = True,
+                    sampling = -1, toolbar = True, stretch = False, click = True, select = True,
                     synczoom = True):
     """Show wavelet coefficients on the dashboard.
 
@@ -694,9 +734,9 @@ class Dashboard():
         negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
         speed up display.
       toolbar (bool, optional): If True (default), display image toolbar (R, G, B, L channel filters,
-        shadowed/highlighted pixels, images differences, auto stretch, and partial histograms).
-      autostretch (bool, optional): If True, enable image auto stretch (default False). toolbar must
-        also be True.
+        shadowed/highlighted pixels, images differences, and partial histograms).
+      stretch (bool, optional): If True, enable image stretch (default False). toolbar must also
+        be True.
       click (bool, optional): If True (default), show image data on click.
       select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
         the images.
@@ -740,7 +780,7 @@ class Dashboard():
     else:
       raise ValueError(f"Unknown wavelet transform type '{wt.type}'.")
     self.show(images, histograms = histograms, statistics = statistics, sampling = sampling,
-              toolbar = toolbar, autostretch = autostretch, click = click, select = select,
+              toolbar = toolbar, stretch = stretch, click = click, select = select,
               synczoom = synczoom)
 
   ### Carousel layout.

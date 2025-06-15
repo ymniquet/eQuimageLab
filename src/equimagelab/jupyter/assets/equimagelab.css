@@ -66,7 +66,7 @@ body { font-size: 16px }
 
 .flushleft { margin-right: auto }
 .flushright { margin-left: auto }
-.center { justify-content: center }
+.center { justify-self: center }
 
 .vcenter { align-items: center }
 

@@ -18,7 +18,7 @@ sampling = 1
 
 # Figure size and margins (pixels).
 
-minwidth = 768  # Minimum figure width.
+minwidth = 800  # Minimum figure width.
 maxwidth = 1024 # Maximum figure width.
 
 lmargin = 96  # Left margin.
