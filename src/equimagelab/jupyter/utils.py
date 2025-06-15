@@ -19,6 +19,7 @@ from PIL import Image as PILImage
 import numpy as np
 
 from equimage import Image
+from equimage.stretchfunctions import shadow_stretch_function, midtone_stretch_function
 
 from . import params
 
@@ -249,3 +250,19 @@ def differences(image, reference, dest = None):
   mask = np.any(image != reference, axis = 2)
   dest[mask, :] = params.diffcolor
   return dest
+
+def stretch(image, median, clip = 3.):
+  """Stretch the input image.
+
+  Args:
+
+  Returns:
+    numpy.ndarray: The stretched image.
+  """
+  print(image.shape)
+  avgmed = np.mean(np.median(image, axis = (0, 1)))
+  maxstd = np.max(np.std(image, axis = (0, 1)))
+  shadow = max(np.min(image), avgmed-clip*maxstd)
+  avgmed = shadow_stretch_function(avgmed, shadow)
+  midtone = midtone_stretch_function(avgmed, median, False)
+  return midtone_stretch_function(shadow_stretch_function(image, shadow), midtone, False)

@@ -35,7 +35,8 @@ from equimage.image_stats import parse_channels
 from equimage.image_multiscale import WaveletTransform
 
 from . import params
-from .utils import get_image_size, format_images, format_images_as_b64strings, shadowed, highlighted, differences
+from . import utils
+from .utils import get_image_size, format_images, format_images_as_b64strings
 from .backend_plotly import _figure_formatted_image_, _figure_histograms_
 
 class Dashboard():
@@ -96,6 +97,10 @@ class Dashboard():
                       State({"type": "selectedfilters", "index": MATCH}, "data"), State("updateid", "data"),
                       prevent_initial_call = True)(self.__filter_image)
     #   - Image stretch:
+    self.app.callback(Output({"type": "image", "index": MATCH}, "figure", allow_duplicate = True),
+                      Input({"type": "stretch", "index": MATCH}, "value"),
+                      State({"type": "selectedfilters", "index": MATCH}, "data"), State("updateid", "data"),
+                      prevent_initial_call = True)(self.__stretch_image)
     #   - Partial histograms:
     self.app.callback(Output({"type": "offcanvas", "index": MATCH}, "is_open"),
                       Output({"type": "offcanvas", "index": MATCH}, "title"), Output({"type": "offcanvas", "index": MATCH}, "children"),
@@ -258,7 +263,7 @@ class Dashboard():
 
     Args:
       n (int): The tab index.
-      filters (list): The currently selected filters.
+      filters (list or set): The currently selected filters.
 
     Returns:
       numpy.ndarray: The processed image of tab #n.
@@ -278,15 +283,15 @@ class Dashboard():
       return image
 
     stretched = filter_channels(self.stretched[n], filters)
-    if filters & {"S", "H", "D"}:
+    if set(filters) & {"S", "H", "D"}:
       image = filter_channels(self.images[n], filters)
       reference = filter_channels(self.images[self.reference], filters) if self.reference is not None else None
       if "S" in filters:
-        stretched = shadowed(image, reference, dest = stretched)
+        stretched = utils.shadowed(image, reference, dest = stretched)
       elif "H" in filters:
-        stretched = highlighted(image, reference, dest = stretched)
+        stretched = utils.highlighted(image, reference, dest = stretched)
       else:
-        stretched = differences(image, reference, dest = stretched)
+        stretched = utils.differences(image, reference, dest = stretched)
     return stretched
 
   def __filter_image(self, current, previous, updateid):
@@ -332,17 +337,19 @@ class Dashboard():
         else:
           raise ValueError(f"Error, unknown filter '{t}'.")
       # Apply selected filters to the image.
-      image = self.__apply_filters(trigger["index"], current)
+      n = trigger["index"]
+      image = self.__apply_filters(n, current)
       # Return filtered image as a patch.
       patch = dash.Patch()
       patch["data"][0]["source"] = format_images_as_b64strings(image)
       current = list(current)
       return current, current, patch
 
-  def __stretch_image(self, filters, updateid):
+  def __stretch_image(self, stretch, filters, updateid):
     """Callback for image stretch.
 
     Args:
+      stretch (string): The selected stretch.
       filters (list): The currently selected filters.
       updateid (integer): The unique ID of the displayed dashboard update.
 
@@ -354,8 +361,12 @@ class Dashboard():
     with self.updatelock: # Lock on callback.
       if self.images is None or updateid != self.nupdates: return dash.no_update # The dashboard is out of sync.
       # Stretch the selected image and apply filters.
-      self.stretched[n] = self.images[n]
-      image = self.__apply_filters(trigger["index"], current)
+      n = trigger["index"]
+      if stretch == "Linear":
+        self.stretched[n] = self.images[n]
+      else:
+        self.stretched[n] = utils.stretch(self.images[n], median = float(stretch))
+      image = self.__apply_filters(n, filters)
       # Return filtered image as a patch.
       patch = dash.Patch()
       patch["data"][0]["source"] = format_images_as_b64strings(image)
@@ -605,10 +616,11 @@ class Dashboard():
         selected = dcc.Store(data = values, id = {"type": "selectedfilters", "index": n})
         if stretch:
           select = dbc.Select(options = [dict(label = "Linear", value = "Linear"),
-                                         dict(label = "med = 5%", value = "5"),
-                                         dict(label = "med = 10%", value = "10"),
-                                         dict(label = "med = 20%", value = "15"),
-                                         dict(label = "med = 30%", value = "20")],
+                                         dict(label = "med = 2.5%", value = ".025"),
+                                         dict(label = "med = 5%", value = ".05"),
+                                         dict(label = "med = 10%", value = ".10"),
+                                         dict(label = "med = 20%", value = ".20"),
+                                         dict(label = "med = 30%", value = ".30")],
                               value = "Linear", size = "sm", id = {"type": "stretch", "index": n})
           stretches = html.Div(select, className = "center")
         else:
