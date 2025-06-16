@@ -256,7 +256,7 @@ def stretch(image, median, clip = 3.):
 
   The image is first clipped below max(min(image), avgmed-clip*maxstd), where avgmed is the average
   median of all channels, maxstd the maximum standard deviation of all channels, and clip an input
-  clip factor. It is then stretched with a midtone (aka harmonic) transformation so that the average
+  factor. It is then stretched with a midtone (aka harmonic) transformation so that the average
   median of all channels matches the target median.
 
   Args:

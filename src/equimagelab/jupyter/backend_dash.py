@@ -122,7 +122,7 @@ class Dashboard():
                       State("updateid", "data"),
                       prevent_initial_call = True)(self.__switch_tab)
     # Launch Dash server.
-    self.app.run_server(port = port, debug = debug, use_reloader = False, jupyter_mode = "external")
+    self.app.run(port = port, debug = debug, use_reloader = False, jupyter_mode = "external")
     # Display splash image.
     try:
       splash, meta = load_image(os.path.join(__packagepath__, "images", "splash.png"), verbose = False)
@@ -530,12 +530,12 @@ class Dashboard():
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
         negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
         speed up display.
-      toolbar (bool, optional): If True (default), display image toolbar (R, G, B, L channel filters,
+      toolbar (bool, optional): If True (default), enable image toolbar (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, and partial histograms).
-      stretch (bool, optional): If True, enable image stretch (default False). toolbar must also
-        be True.
+      stretch (bool, optional): If True, enable image stretch menu in the toolbar (default False).
+        toolbar must also be True.
       click (bool, optional): If True (default), show image data on click.
-      select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
+      select (bool, optional): If True (default), enable rectangle, ellipse and lasso selections on
         the images.
       synczoom (bool, optional): If True (default), synchronize zooms over images. Zooms will be
         synchronized only if all images have the same size.
@@ -696,12 +696,12 @@ class Dashboard():
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
         negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
         speed up display.
-      toolbar (bool, optional): If True (default), display image toolbar (R, G, B, L channel filters,
+      toolbar (bool, optional): If True (default), enable image toolbar (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, and partial histograms).
       stretch (bool, optional): If True, enable image stretch (default False). toolbar must also
         be True.
       click (bool, optional): If True (default), show image data on click.
-      select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
+      select (bool, optional): If True (default), enable rectangle, ellipse and lasso selections on
         the images.
       synczoom (bool, optional): If True (default), synchronize zooms over images.
     """
@@ -745,12 +745,12 @@ class Dashboard():
       sampling (int, optional): The downsampling rate (defaults to `jupyter.params.sampling` if
         negative). Only the pixels image[::sampling, ::sampling] of a given image are shown, to
         speed up display.
-      toolbar (bool, optional): If True (default), display image toolbar (R, G, B, L channel filters,
+      toolbar (bool, optional): If True (default), enable image toolbar (R, G, B, L channel filters,
         shadowed/highlighted pixels, images differences, and partial histograms).
-      stretch (bool, optional): If True, enable image stretch (default False). toolbar must also
-        be True.
+      stretch (bool, optional): If True, enable image stretch menu in the toolbar (default False).
+        toolbar must also be True.
       click (bool, optional): If True (default), show image data on click.
-      select (bool, optional): If True (default), allow rectangle, ellipse and lasso selections on
+      select (bool, optional): If True (default), enable rectangle, ellipse and lasso selections on
         the images.
       synczoom (bool, optional): If True (default), synchronize zooms over images. Zooms will be
         synchronized only if all images have the same size.
