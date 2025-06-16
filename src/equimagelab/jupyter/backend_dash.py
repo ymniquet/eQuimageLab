@@ -839,7 +839,7 @@ class Dashboard():
       rmargin += xmargin-xmargin//2
       width = imwidth
     items = [dict(key = f"{n}", src = format_images_as_b64strings(images[n], sampling = sampling), header = keys[n]) for n in range(nimages)]
-    widget = dbc.Carousel(items = items, controls = True, indicators = True, ride = "carousel", interval = interval, className = "carousel-fade",
+    widget = dbc.Carousel(items = items, controls = True, indicators = True, interval = interval, className = "carousel-fade",
              style = {"width": f"{width}px", "margin": f"{params.tmargin}px {rmargin}px {params.bmargin}px {lmargin}px"})
     tab = dbc.Tab([widget], label = "Carousel", className = "tab")
     # Update dashboard.
