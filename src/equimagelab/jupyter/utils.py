@@ -8,10 +8,10 @@
 """Utils for JupyterLab interface.
 
 The following symbols are imported in the equimagelab namespace for convenience:
-  "filter", "shadowed", "highlighted", "differences".
+  "filter", "shadowed", "highlighted", "differences", "stretch".
 """
 
-__all__ = ["filter", "shadowed", "highlighted", "differences"]
+__all__ = ["filter", "shadowed", "highlighted", "differences", "stretch"]
 
 import base64
 from io import BytesIO
@@ -254,12 +254,22 @@ def differences(image, reference, dest = None):
 def stretch(image, median, clip = 3.):
   """Stretch the input image.
 
+  The image is first clipped below max(min(image), avgmed-clip*maxstd), where avgmed is the average
+  median of all channels, maxstd the maximum standard deviation of all channels, and clip an input
+  clip factor. It is then stretched with a midtone (aka harmonic) transformation so that the average
+  median of all channels matches the target median.
+
   Args:
+    image: An Image object or numpy.ndarray with shape (height, width, 3) (for a color image),
+      (height, width, 1) or (height, width) (for a grayscale image).
+    median (float): The target median of the image.
+    clip (float, optional): The clip factor (default 3).
 
   Returns:
-    numpy.ndarray: The stretched image.
+    numpy.ndarray: The stretched image as an array with shape (height, width, 3) (for color images)
+    or (height, width) (for grayscale images).
   """
-  print(image.shape)
+  image = format_images(image)
   avgmed = np.mean(np.median(image, axis = (0, 1)))
   maxstd = np.max(np.std(image, axis = (0, 1)))
   shadow = max(np.min(image), avgmed-clip*maxstd)
