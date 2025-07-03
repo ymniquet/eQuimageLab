@@ -1784,7 +1784,7 @@ class MixinImage:
       if trans: output.trans = transformation(f, self.image[selected], channels)
       return output
 
-  def clip_channels(self, channels, vmin = 0., vmax = 1.):
+  def clip_channels(self, channels, vmin = 0., vmax = 1., trans = False):
     """Clip selected channels of the image in the range [vmin, vmax].
 
     Args:
@@ -1792,11 +1792,13 @@ class MixinImage:
         See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       vmin (float, optional): The lower clip bound (default 0).
       vmax (float, optional): The upper clip bound (default 1).
+      trans (bool, optional): If True, embed the transormation in the output image as output.trans
+        (see :meth:`Image.apply_channels() <.apply_channels>`). Default is False.
 
     Returns:
       Image: The clipped image.
     """
-    return self.apply_channels(lambda channel: np.clip(channel, vmin, vmax), channels)
+    return self.apply_channels(lambda channel: np.clip(channel, vmin, vmax), channels, trans = trans)
 
   def protect_highlights_saturation(self):
     """Normalize out-of-range pixels with HSV value > 1 by adjusting the saturation at constant hue

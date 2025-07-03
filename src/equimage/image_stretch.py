@@ -671,12 +671,17 @@ class MixinImage:
       x = [0., .5*avgmedian, avgmedian, .25+.75*avgmedian, .75+.25*avgmedian, 1.]
       y = [x[0], x[1], x[2], x[3]**(1.-boost), (x[4]**(1.-boost))**(1.-boost), x[5]]
       fboost = Akima1DInterpolator(x, y) # Akima spline.
-      output = output.curve_stretch(fboost, channels = channels, trans = trans and ctrans is None) # Curve stretch.
-      if trans:
-        if ctrans is None: # Cumulative transformation.
-          ctrans = copy.copy(output.trans)
+      clipped = output.clip_channels(channels = channels, trans = trans and ctrans is None) # Clip channels.
+      nclipped = np.sum(np.any(clipped.image != output.image, axis = 0))
+      if nclipped > 0: print(f"Clipped {nclipped} pixel(s).")
+      if trans: # Cumulative transformation.
+        if ctrans is None:
+          ctrans = copy.copy(clipped.trans)
           ctrans.xticks = [avgmedian]
         else:
-          ctrans.y = fboost(ctrans.y)
+          ctrans.y = np.clip(ctrans.y, 0., 1.)
+      output = clipped.curve_stretch(fboost, channels = channels, trans = False) # Curve stretch.
+      if trans: # Cumulative transformation.
+        ctrans.y = fboost(ctrans.y)
     if ctrans is not None: output.trans = ctrans
     return output
