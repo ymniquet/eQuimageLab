@@ -49,6 +49,13 @@ Here is another example of dashboard with two images and the "Reference" tab sho
 
 This dashboard is the outcome of :py:meth:`dbrd.show_t(stretched) <equimagelab.jupyter.backend_dash.Dashboard.show_t>`, where *stretched* is the output image of a midtone stretch (see :py:meth:`Image.midtone_stretch() <equimage.image_stretch.MixinImage.midtone_stretch>`). The dashboard displays the output, stretched image in the "Image" tab, and the original, input image in the "Reference" tab. Moreover, the histograms panel of the "Reference" tab shows the midtone stretch function *f* (the relation between the input and output luma L, in purple). You can click on the *f/log f'* button to switch between plots of *f* and *log f'*. The latter is a measure of contrast enhancement as a function of the input luma (it is positive when contrast is enhanced, negative when contrast is reduced).
 
+Stretches
+^^^^^^^^^
+
+The option ``stretch = True`` in :py:meth:`dbrd.show() <equimagelab.jupyter.backend_dash.Dashboard.show>` and :py:meth:`dbrd.show_t() <equimagelab.jupyter.backend_dash.Dashboard.show_t>` adds a drop-down menu to the filters, which allow you to stretch the image for display (the histograms and statistics are still those of the original, unstretched image). You can choose between "Linear" (unstretched image) and different "med = x%" stretches (:py:func:`harmonic <equimage.image_stretch.hms>` stretch so that the median of the stretched image is x/100).
+
+If you are pleased with the displayed image, you can permanently stretch the original image in the JupyterLab notebook using ``stretched = original.statistical_stretch(median = x/100.)``.
+
 Selections
 ^^^^^^^^^^
 

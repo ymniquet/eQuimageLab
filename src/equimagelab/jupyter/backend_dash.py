@@ -710,7 +710,7 @@ class Dashboard():
       return
     trans = getattr(image, "trans", None)
     if trans is None:
-      pr+int("There is no transformation embedded in the input image.")
+      print("There is no transformation embedded in the input image.")
       return
     reference = trans.input
     keys = parse_channels(channels)
