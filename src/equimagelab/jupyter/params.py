@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.4.1 / 2025.05.30
+# Version: 2.0.0 / 2025.07.13
 # Doc OK.
 
 """JupyterLab interface parameters."""
@@ -18,7 +18,8 @@ sampling = 1
 
 # Figure size and margins (pixels).
 
-maxwidth = 1024 # Maximum width of the displayed image.
+minwidth = 800  # Minimum figure width.
+maxwidth = 1024 # Maximum figure width.
 
 lmargin = 96  # Left margin.
 rmargin = 160 # Right margin.
@@ -55,6 +56,9 @@ def set_figure_max_width(w):
     w (int): The maximum figure width in pixels.
   """
   global maxwidth
+  if w < minwidth:
+    print(f"The maximum figure width must be at least (and will be set to) {minwidth} pixels.")
+    w = minwidth
   maxwidth = w
 
 def set_figure_margins(left = None, right = None, bottom = None, top = None):

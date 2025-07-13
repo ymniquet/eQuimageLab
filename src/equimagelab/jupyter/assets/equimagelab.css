@@ -1,5 +1,7 @@
 /* Dashboard layout. */
 
+body { font-size: 16px }
+
 .dashboard-outer { margin: 16px }
 .dashboard-inner { display: inline-block }
 
@@ -60,8 +62,13 @@
 .floatright { float : right }
 
 .flex { display: flex }
-.center { align-items: center }
+.grow { flex-grow: 1 }
+
+.flushleft { margin-right: auto }
 .flushright { margin-left: auto }
+.center { justify-self: center }
+
+.vcenter { align-items: center }
 
 /* Margins. */
 

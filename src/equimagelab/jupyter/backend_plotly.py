@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.4.1 / 2025.05.30
+# Version: 2.0.0 / 2025.07.13
 # Doc OK.
 
 """Plotly backend for JupyterLab interface.
@@ -46,14 +46,21 @@ def _figure_formatted_image_(image, dx = 1, dy = 1, width = -1, hover = False, t
     plotly.graph_objects.Figure: A plotly figure with the image.
   """
   if width <= 0: width = params.maxwidth
+  imwidth, imheight = image.shape[1], image.shape[0]
   # Plot image.
-  x = np.arange(0, image.shape[1])*dx
-  y = np.arange(0, image.shape[0])*dy
+  x = np.arange(0, imwidth)*dx
+  y = np.arange(0, imheight)*dy
   figure = px.imshow(image, x = x, y = y, zmin = 0., zmax = 1., aspect = "equal", binary_string = not hover)
   figure.update_traces(name = "", hovertemplate = "(%{x}, %{y}): %{z}" if hover else "(%{x}, %{y})")
+  lmargin = params.lmargin
+  rmargin = params.rmargin
+  if (xmargin := width-imwidth*dx) > 0:
+    lmargin += xmargin//2
+    rmargin += xmargin-xmargin//2
+    width = imwidth*dx
   layout = go.Layout(template = template,
-                     width = width+params.lmargin+params.rmargin, height = width*image.shape[0]/image.shape[1]+params.bmargin+params.tmargin,
-                     margin = go.layout.Margin(l = params.lmargin, r = params.rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
+                     width = width+lmargin+rmargin, height = width*imheight/imwidth+params.bmargin+params.tmargin,
+                     margin = go.layout.Margin(l = lmargin, r = rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
   figure.update_layout(layout)
   return figure
 

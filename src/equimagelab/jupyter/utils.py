@@ -2,16 +2,16 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.4.1 / 2025.05.30
+# Version: 2.0.0 / 2025.07.13
 # Doc OK.
 
 """Utils for JupyterLab interface.
 
 The following symbols are imported in the equimagelab namespace for convenience:
-  "filter", "shadowed", "highlighted", "differences".
+  "filter", "shadowed", "highlighted", "differences", "stretch".
 """
 
-__all__ = ["filter", "shadowed", "highlighted", "differences"]
+__all__ = ["filter", "shadowed", "highlighted", "differences", "stretch"]
 
 import base64
 from io import BytesIO
@@ -19,6 +19,7 @@ from PIL import Image as PILImage
 import numpy as np
 
 from equimage import Image
+from equimage.stretchfunctions import shadow_stretch_function, midtone_stretch_function
 
 from . import params
 
@@ -142,7 +143,7 @@ def filter(image, channels):
   image[:, :, ~selected] = 0.
   return image
 
-def shadowed(image, reference = None):
+def shadowed(image, reference = None, dest = None):
   """Highlight black pixels of an image.
 
   Highlights black pixels on the input image with color `jupyter.params.shadowcolor`.
@@ -155,27 +156,33 @@ def shadowed(image, reference = None):
     reference (optional): An Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
       Default is None.
+    dest (optional): If None (default), the pixels are highlighted on a copy of the input image.
+      Otherwise, the pixels are highlighted on a copy of dest, an Image object or numpy.ndarray
+      with shape (height, width, 3) (for a color image), (height, width, 1) or (height, width)
+      (for a grayscale image).
 
   Returns:
-    numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the black
-    pixels highlighted with color `jupyter.params.shadowcolor`.
+    numpy.ndarray: A copy of the image or of dest as an array with shape (height, width, 3) and the
+    black pixels highlighted with color `jupyter.params.shadowcolor`.
   """
-  image = format_images(image, copy = True)
+  image = format_images(image)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
+  dest = image.copy() if dest is None else format_images(dest, copy = True)
+  if dest.ndim == 2: dest = np.expand_dims(dest, axis = -1)
+  if dest.shape[2] == 1: dest = np.repeat(dest, 3, axis = 2)
   imgmask = np.all(image < params.IMGTOL, axis = 2)
-  if image.shape[2] == 1: image = np.repeat(image, 3, axis = 2)
-  image[imgmask, :] = params.shadowcolor
+  dest[imgmask, :] = params.shadowcolor
   if reference is not None:
     reference = format_images(reference)
     if reference.shape[0:2] != image.shape[0:2]:
       print("Warning, image and reference have different sizes !")
-      return image
+      return dest
     if reference.ndim == 2: reference = np.expand_dims(reference, -1)
     refmask = np.all(reference < params.IMGTOL, axis = 2)
-    image[imgmask & refmask, :] = .5*params.shadowcolor
-  return image
+    dest[imgmask & refmask, :] = .5*params.shadowcolor
+  return dest
 
-def highlighted(image, reference = None):
+def highlighted(image, reference = None, dest = None):
   """Highlight saturated pixels of an image.
 
   A pixel is saturated if at least one channel is >= 1.
@@ -189,27 +196,33 @@ def highlighted(image, reference = None):
     reference (optional): An Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
       Default is None.
+    dest (optional): If None (default), the pixels are highlighted on a copy of the input image.
+      Otherwise, the pixels are highlighted on a copy of dest, an Image object or numpy.ndarray
+      with shape (height, width, 3) (for a color image), (height, width, 1) or (height, width)
+      (for a grayscale image).
 
   Returns:
-    numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the saturated
-    pixels highlighted with color `jupyter.params.highlightcolor`.
+    numpy.ndarray: A copy of the image or of dest as an array with shape (height, width, 3) and the
+    saturated pixels highlighted with color `jupyter.params.highlightcolor`.
   """
-  image = format_images(image, copy = True)
+  image = format_images(image)
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
+  dest = image.copy() if dest is None else format_images(dest, copy = True)
+  if dest.ndim == 2: dest = np.expand_dims(dest, axis = -1)
+  if dest.shape[2] == 1: dest = np.repeat(dest, 3, axis = 2)
   imgmask = np.any(image > 1., axis = 2)
-  if image.shape[2] == 1: image = np.repeat(image, 3, axis = 2)
-  image[imgmask, :] = params.highlightcolor
+  dest[imgmask, :] = params.highlightcolor
   if reference is not None:
     reference = format_images(reference)
     if reference.shape[0:2] != image.shape[0:2]:
       print("Warning, image and reference have different sizes !")
-      return image
+      return dest
     if reference.ndim == 2: reference = np.expand_dims(reference, -1)
     refmask = np.any(reference > 1., axis = 2)
-    image[imgmask & refmask, :] = .5*params.highlightcolor
-  return image
+    dest[imgmask & refmask, :] = .5*params.highlightcolor
+  return dest
 
-def differences(image, reference):
+def differences(image, reference, dest = None):
   """Highlight differences between an image and a reference.
 
   Args:
@@ -217,18 +230,49 @@ def differences(image, reference):
       (height, width, 1) or (height, width) (for a grayscale image).
     reference (optional): An Image object or numpy.ndarray with shape (height, width, 3)
       (for a color image), (height, width, 1) or (height, width) (for a grayscale image).
+    dest (optional): If None (default), the pixels are highlighted on a copy of the input image.
+      Otherwise, the pixels are highlighted on a copy of dest, an Image object or numpy.ndarray
+      with shape (height, width, 3) (for a color image), (height, width, 1) or (height, width)
+      (for a grayscale image).
 
   Returns:
-    numpy.ndarray: A copy of the image as an array with shape (height, width, 3) and the differences
-    with the reference highlighted with color `jupyter.params.diffcolor`.
+    numpy.ndarray: A copy of the image or of dest as an array with shape (height, width, 3) and the
+    differences highlighted with color `jupyter.params.diffcolor`.
   """
-  image = format_images(image, copy = True)
-  reference = format_images(reference)
+  image, reference = format_images((image, reference))
   if image.shape != reference.shape:
     raise ValueError("Error, image and reference have different sizes/number of channels !")
   if image.ndim == 2: image = np.expand_dims(image, axis = -1)
   if reference.ndim == 2: reference = np.expand_dims(reference, -1)
+  dest = image.copy() if dest is None else format_images(dest, copy = True)
+  if dest.ndim == 2: dest = np.expand_dims(dest, axis = -1)
+  if dest.shape[2] == 1: dest = np.repeat(dest, 3, axis = 2)
   mask = np.any(image != reference, axis = 2)
-  if image.shape[2] == 1: image = np.repeat(image, 3, axis = 2)
-  image[mask, :] = params.diffcolor
-  return image
+  dest[mask, :] = params.diffcolor
+  return dest
+
+def stretch(image, median, clip = 3.):
+  """Stretch the input image.
+
+  The image is first clipped below max(min(image), avgmed-clip*maxstd), where avgmed is the average
+  median of all channels, maxstd the maximum standard deviation of all channels, and clip an input
+  factor. It is then stretched with a midtone (aka harmonic) transformation so that the average
+  median of all channels matches the target median.
+
+  Args:
+    image: An Image object or numpy.ndarray with shape (height, width, 3) (for a color image),
+      (height, width, 1) or (height, width) (for a grayscale image).
+    median (float): The target median of the image.
+    clip (float, optional): The clip factor (default 3).
+
+  Returns:
+    numpy.ndarray: The stretched image as an array with shape (height, width, 3) (for color images)
+    or (height, width) (for grayscale images).
+  """
+  image = format_images(image)
+  avgmed = np.mean(np.median(image, axis = (0, 1)))
+  maxstd = np.max(np.std(image, axis = (0, 1)))
+  shadow = max(np.min(image), avgmed-clip*maxstd)
+  avgmed = shadow_stretch_function(avgmed, shadow)
+  midtone = midtone_stretch_function(avgmed, median, False)
+  return midtone_stretch_function(shadow_stretch_function(image, shadow), midtone, False)

@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 1.4.1 / 2025.05.30
+# Version: 2.0.0 / 2025.07.13
 # Doc OK.
 
 """Multiscale transforms.
@@ -423,6 +423,32 @@ class WaveletTransform:
     sigmas = np.array([sigma0*factor/norm for factor in scale_factors])
     return sigmas, sigma0/norm
 
+  def multiresolution_support(self, thresholds):
+    """Compute the multiresolution support.
+
+    The multiresolution support is a map of the significant wavelet coefficients of an undecimated
+    starlet transform. In a given channel, each pixel p(x, y) of the multiresolution support is
+
+      p(x, y) = sum_l F(c_l(x,y), t_l) 2**l/(2**nlevels-1),
+
+    where the sum runs over the nlevels wavelet levels, c_l(x,y) is the wavelet coefficient of the
+    pixel (x, y) at level l, and F(u) = 1 if u is greater than the threshold t_l, 0 otherwise.
+
+    Args:
+      thresholds (numpy.ndarray): The threshold in each channel (columns) and wavelet level (rows).
+
+    Returns:
+      numpy.ndarray: The multiresolution support, with the same shape as the original image.
+    """
+    if self.type != "slt": raise ValueError("Error, multiresolution support is only available for starlet transforms.")
+    support = np.zeros((self.nc, self.size[0], self.size[1]))
+    for level in range(self.levels):
+      coeffs = helpers.at_least_3D(self.coeffs[-(level+1)][0])
+      for ic in range(self.nc):
+        support[ic] += 2**level*(coeffs[ic] >= thresholds[level, ic])
+    support /= (2**self.levels-1)
+    return support if self.ndim > 2 else support[0]
+
   def VisuShrink_clip(self):
     """Return the VisuShrink clip factor.
 
@@ -727,6 +753,7 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
   wt.mode = mode
   wt._mode = _mode
   wt.coeffs = pywt.wavedec2(data, wavelet = wavelet, level = levels, mode = _mode, axes = (-2, -1))
+  wt.ndim = data.ndim
   wt.size = (height, width)
   wt.nc = 1 if data.ndim == 2 else data.shape[0]
   wt.isImage = isImage
@@ -792,6 +819,7 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
   wt.mode = mode
   wt.norm = True
   wt.coeffs = pywt.swt2(padded, wavelet = wavelet, level = levels, start_level = start, trim_approx = True, norm = wt.norm, axes = (-2, -1))
+  wt.ndim = data.ndim
   wt.size = (height, width)
   wt.nc = 1 if data.ndim == 2 else data.shape[0]
   wt.padding = (ptop, pleft)
@@ -882,6 +910,7 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
   wt.start = 0
   wt.mode = mode
   wt.coeffs = list(reversed(coeffs))
+  wt.ndim = data.ndim
   wt.size = (height, width)
   wt.nc = 1 if data.ndim == 2 else data.shape[0]
   wt.isImage = isImage
