@@ -52,7 +52,7 @@ This dashboard is the outcome of :py:meth:`dbrd.show_t(stretched) <equimagelab.j
 Stretches
 ^^^^^^^^^
 
-The option ``stretch = True`` in :py:meth:`dbrd.show() <equimagelab.jupyter.backend_dash.Dashboard.show>` and :py:meth:`dbrd.show_t() <equimagelab.jupyter.backend_dash.Dashboard.show_t>` adds a drop-down menu to the filters, which allow you to stretch the image for display (the histograms and statistics are still those of the original, unstretched image). You can choose between "Linear" (unstretched image) and different "med = x%" stretches (:py:func:`harmonic <equimage.image_stretch.hms>` stretch so that the median of the stretched image is x/100).
+The option ``stretch = True`` in :py:meth:`dbrd.show() <equimagelab.jupyter.backend_dash.Dashboard.show>` and :py:meth:`dbrd.show_t() <equimagelab.jupyter.backend_dash.Dashboard.show_t>` adds a drop-down menu to the filters that proposes different stretches of the image for display (the histograms and statistics are still those of the original, unstretched image). You can choose between "Linear" (unstretched image) and different "med = x%" stretches (:py:func:`harmonic <equimage.image_stretch.hms>` stretch such that the median of the stretched image is x/100).
 
 If you are pleased with the displayed image, you can permanently stretch the original image in the JupyterLab notebook using ``stretched = original.statistical_stretch(median = x/100.)``.
 

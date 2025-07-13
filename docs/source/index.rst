@@ -76,3 +76,9 @@ Latest news:
 
     - Wavelet transforms.
     - Code refactoring.
+
+  - July 13, 2025: Version 2.0.0.
+
+    - Using Dash > 3.0.0.
+    - Screen stretches drop-down menu (see ``stretch = True`` option in :py:meth:`dbrd.show() <equimagelab.jupyter.backend_dash.Dashboard.show>`)  .
+
