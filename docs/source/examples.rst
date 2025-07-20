@@ -1,6 +1,9 @@
 Examples
 --------
 
+.. meta::
+   :description: Examples and use cases with eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 | See this `notebook <notebooks/NGC6946.ipynb>`_ for a detailed (commented) example on the Fireworks galaxy (NGC 6946).
 | The notebook and the fits file can be downloaded `here <https://astro.ymniquet.fr/codes/equimagelab/examples/NGC6946.zip>`_.
 

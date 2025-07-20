@@ -1,6 +1,9 @@
 Running eQuimageLab
 --------------------
 
+.. meta::
+   :description: How to run eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 To use eQuimageLab, you can simply run JupyterLab from a shell:
 
 .. code-block:: bash

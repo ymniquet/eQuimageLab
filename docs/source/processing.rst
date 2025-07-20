@@ -1,6 +1,9 @@
 Processing images with eQuimageLab
 ----------------------------------
 
+.. meta::
+   :description: Overview of the capabilities of eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 This section provides an overview of the capabilities of eQuimageLab.
 
 Image geometry

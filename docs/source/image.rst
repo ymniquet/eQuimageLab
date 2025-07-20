@@ -1,6 +1,9 @@
 The Image class
 ---------------
 
+.. meta::
+   :description: Description of the image class in eQuimageLab (a python package to process astronomical images in JupyterLab notebooks) and theory of color spaces and models
+
 Description
 ^^^^^^^^^^^
 

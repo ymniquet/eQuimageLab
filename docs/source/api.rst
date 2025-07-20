@@ -1,6 +1,9 @@
 eQuimageLab API reference
 =========================
 
+.. meta::
+   :description: API of eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 The :ref:`eQuimageLab <equimagelab>` package provides a JupyterLab interface to the image processing package :ref:`eQuimage <equimage>`.
 
 The ``import equimagelab`` command imports all symbols from the :ref:`eQuimage <equimage>` package and the :ref:`eQuimageLab.jupyter <equimagelab>` subpackage and in the ``equimagelab`` namespace for convenience.

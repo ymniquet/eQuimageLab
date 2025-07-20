@@ -878,9 +878,9 @@ class Dashboard():
       width = imwidth
     image1, image2 = format_images_as_b64strings((image1, image2), sampling = sampling)
     baslider = dxt.BeforeAfter(after = dict(src = image1), before = dict(src = image2), width = f"{width}")
-    left   = html.Div(label1, className = "ba-left", style = {"width": f"{lmargin}px"})
+    left   = html.Div(label2, className = "ba-left", style = {"width": f"{lmargin}px"})
     middle = html.Div(baslider, className = "ba-middle", style = {"width": f"{width}px"})
-    right  = html.Div(label2, className = "ba-right", style = {"width": f"{rmargin}px"})
+    right  = html.Div(label1, className = "ba-right", style = {"width": f"{rmargin}px"})
     widget = html.Div([left, middle, right], className = "inline",
                       style = {"margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
     tab = dbc.Tab([widget], label = "Compare images", className = "tab")

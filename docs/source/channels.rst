@@ -1,6 +1,9 @@
 The channels argument in eQuimageLab
 ------------------------------------
 
+.. meta::
+   :description: How to handle the color channels in eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 Many operations in eQuimageLab can be applied to specific channels specified by the `channels` argument (also see :doc:`composite`).
 `channels` can be:
 

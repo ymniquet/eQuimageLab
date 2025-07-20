@@ -1,6 +1,9 @@
 Channels
 --------
 
+.. meta::
+   :description: The color channels (red, blue, green, luma, lightness...) in eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 As explained in :doc:`image`, the default color space of eQuimageLab is sRGB (the color space of most display devices), and the default color model is RGB. The native channels of this color space and model are the red, blue and green components of the image. We may introduce additional "composite" channels that bring specific information about the image (and are functions of the RGB components): the luma, the lightness, the value, the saturation, etc... Most of these composite channels are actually borrowed from the other color spaces and models used by eQuimageLab (CIELab/CIELuv, HSV/HSL...). You can actually work with such composite channels without making explicit conversions to those color spaces and models yourself. This section describes the available channels and their use in eQuimageLab.
 
 Definitions

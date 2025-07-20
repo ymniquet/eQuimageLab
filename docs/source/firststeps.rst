@@ -1,6 +1,9 @@
 First steps with eQuimageLab
 ----------------------------
 
+.. meta::
+   :description: The first steps (load and display an image) with eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 Have a look at this minimal `notebook <notebooks/minimal.ipynb>`_: It imports and sets up eQuimageLab, then loads and displays a png image.
 
 This minimal notebook
