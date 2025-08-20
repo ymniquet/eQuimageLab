@@ -22,6 +22,7 @@ from . import params
 from . import helpers
 from . import image as img
 from . import image_utils as imgutils
+from .image_stretch import mts
 
 ###############
 # Statistics. #
@@ -1026,3 +1027,60 @@ class MixinImage:
       Image: The inverse generalized Anscombe transform of the image.
     """
     return inverse_anscombe(self, gain = gain, average = average, sigma = sigma)
+
+  def HDRwt(self, starlet = "cubic", lmin = 1, lmax = 5, rstrength = .1, mstrength = 2., target = "bright", niter = 1, channels = "", lightchannel = ""):
+    """HDRWT."""
+    # Check inputs.
+    if target not in ["bright", "dark"]: raise ValueError("Error, target must be 'bright' or 'dark'.")
+    channels = channels.strip()
+    lightchannel = lightchannel.strip()
+    if channels == "":
+      if self.colormodel in ["RGB", "gray"]:
+        channels = "Ls" if target == "dark" else "L"
+      elif self.colormodel == "HSV":
+        channels = "V"
+      elif self.colormodel == "HSL":
+        channels = "L'"
+      elif self.colormodel in ["Lab", "Luv", "Lch", "Lsh"]:
+        channels = "L*"
+      else:
+        raise ValueError(f"Error, unknown color model {self.colormdel}.")
+    if lightchannel == "":
+      if self.colormodel in ["RGB", "gray"]:
+        lightchannel = "L"
+      elif self.colormodel == "HSV":
+        lightchannel = "V"
+      elif self.colormodel == "HSL":
+        lightchannel = "L'"
+      elif self.colormodel in ["Lab", "Luv", "Lch", "Lsh"]:
+        lightchannel = "L*"
+      else:
+        raise ValueError(f"Error, unknown color model {self.colormdel}.")
+    print(f"HDRWT on channel(s) {channels} with (pseudo-)lightness channel {lightchannel}...")
+    # HDRWT algorithm.
+    image = self.copy()
+    for iiter in range(niter): # HDRWT iterations.
+      if niter > 1: print(f"Iteration {iiter+1}/{niter}.")
+      for level in range(lmin, lmax+1): # Iterate over wavelet levels.
+        print(f"Processing level #{level}: ", end = "")
+        # Compute the approximation of the (pseudo-)lightness at that wavelet level.
+        lightness = image.get_channel(channel = lightchannel)
+        if level > 0:
+          smoothed = slt(lightness, levels = level, starlet = starlet).coeffs[0]
+        else:
+          smoothed = lightness
+        # Compute the midtone transformation and HDR fusion mask.
+        median = np.median(smoothed)
+        if target == "bright":
+          mask = (   smoothed/np.max(smoothed))**mstrength
+          midtone = max(mts(median, (1.-rstrength)*median), .5)
+          channels = "L"
+        else:
+          mask = (1.-smoothed/np.max(smoothed))**mstrength
+          midtone = min(mts(median, (1.+rstrength)*median), .5)
+          channels = "Ls"
+        print(f"midtone = {midtone:.5f}.")
+        # Apply the midtone transformation and blend with the original image.
+        stretched = image.midtone_stretch(channels = channels, midtone = midtone, trans = False)
+        image = image.blend(stretched, mask)
+    return image

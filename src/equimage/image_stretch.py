@@ -637,8 +637,10 @@ class MixinImage:
         channels = "L"
       elif self.colormodel == "RGB":
         channels = "RGB"
+      elif self.colormodel in ["HSV", "HSL"]:
+        channels = "3"
       else:
-        for ic in range(self.get_nc()): channels += str(ic+1)
+        channels = "1"
     # Iterate harmonic stretches until the average median of the channels matches the target median.
     # This shall actually converge in one iteration for a single channel image.
     niter = 0
