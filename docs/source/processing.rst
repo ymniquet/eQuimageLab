@@ -162,7 +162,7 @@ and, from `Scikit-Image <https://scikit-image.org/>`_:
 Multiscale transformations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Discrete wavelet transforms, stationary discrete wavelet transforms (also known as undecimated or "à trous" transforms), and starlet (isotropic undecimated) transforms of :py:class:`Image <equimage.image.Image>` or :py:class:`numpy.ndarray` objects can be computed with:
+Discrete wavelet transforms, stationary discrete wavelet transforms (also known as undecimated or "à trous" transforms), starlet (isotropic undecimated) transforms and multiscale median transforms (MMT) of :py:class:`Image <equimage.image.Image>` or :py:class:`numpy.ndarray` objects can be computed with:
 
 .. currentmodule:: equimage.image_multiscale
 
@@ -171,20 +171,29 @@ Discrete wavelet transforms, stationary discrete wavelet transforms (also known 
    dwt
    swt
    slt
+   mmt
 
-These functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class. They all return a :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` object. Discrete and "à trous" wavelet transforms are performed with the `PyWavelet <https://pywavelets.readthedocs.io/en/latest/>`_ package.
+These functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class. They all return a :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` object. Discrete and "à trous" wavelet transforms are performed with the `PyWavelet <https://pywavelets.readthedocs.io/en/latest/>`_ package.
 
-The inverse wavelet transform can be computed with the following method of the :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` class:
+The multiscale coefficients of a :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` object can be visualized in eQuimageLab with the following method of the Dashboard:
 
-.. currentmodule:: equimage.image_multiscale.WaveletTransform
+.. currentmodule:: equimagelab.jupyter.backend_dash.Dashboard
 
 .. autosummary::
 
-   iwt
+   show_multiscale
+
+The inverse wavelet/MMT transform can be computed with the following method of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
+
+.. currentmodule:: equimage.image_multiscale.MultiscaleTransform
+
+.. autosummary::
+
+   inverse
 
 This returns (by default) an object with the same class as the original (:py:class:`Image <equimage.image.Image>` or :py:class:`numpy.ndarray`).
 
-The :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` class also provides the following methods to manipulate wavelets coefficients and transforms:
+The :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class also provides the following methods to manipulate multiscale coefficients and transforms:
 
 .. autosummary::
 
@@ -194,7 +203,7 @@ The :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` cl
    threshold_levels
    threshold_firm_levels
 
-Furthermore, the noise of the image can be estimated and reduced with the following methods of the :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` class:
+Furthermore, the noise of the image can be estimated and reduced with the following methods of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
 
 .. autosummary::
 
@@ -206,7 +215,7 @@ Furthermore, the noise of the image can be estimated and reduced with the follow
    BayesShrink
    iterative_noise_reduction
 
-These methods act on the wavelet coefficients and are designed for additive gaussian noise. For Poisson (counting) noise, or for a mix of Poisson and gaussian noise, a generalized Anscombe transform must be performed before the wavelet transform and denoising of the wavelet coefficients, and the inverse Anscombe transform applied after the inverse wavelet transform with the functions:
+These methods are available only for wavelet transforms and are designed for additive gaussian noise. For Poisson (counting) noise, or for a mix of Poisson and gaussian noise, a generalized Anscombe transform must be performed before the wavelet transform and denoising of the wavelet coefficients, and the inverse Anscombe transform applied after the inverse wavelet transform with the functions:
 
 .. currentmodule:: equimage.image_multiscale
 
@@ -215,15 +224,15 @@ These methods act on the wavelet coefficients and are designed for additive gaus
    anscombe
    inverse_anscombe
 
-Both functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class. Finally, the details of the image can be enhanced (sharpened) with the following method of the :py:class:`WaveletTransform <equimage.image_multiscale.WaveletTransform>` class:
+Both functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class. Finally, the details of the image can be enhanced (sharpened) with the following method of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
 
-.. currentmodule:: equimage.image_multiscale.WaveletTransform
+.. currentmodule:: equimage.image_multiscale.MultiscaleTransform
 
 .. autosummary::
 
    enhance_details
 
-See this `document <https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach>`_ for more details about the use of wavelet transforms in image processing.
+See this `document <https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach>`_ for more details about the use of wavelet and multiscale median transforms in image processing.
 
 Miscellaneous operations
 ^^^^^^^^^^^^^^^^^^^^^^^^
