@@ -148,6 +148,8 @@ class MultiscaleTransform:
       return swt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode, start = self.start)
     elif self.type == "slt":
       return slt(image, levels = self.levels, starlet = self.wavelet, mode = self.mode)
+    elif self.type == "mmt":
+      return mmt(image, level = self.levels, mode = self.mode)
     else:
       raise ValueError(f"Unknown multiscale transform type '{self.type}'.")
 
@@ -552,6 +554,9 @@ class MultiscaleTransform:
     See also:
       :meth:`MultiscaleTransform.VisuShrink`
 
+    Warning:
+      This method does not apply to the multiscale median transform owing to its non-linear behavior.
+
     Args:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
       std (str, optional): The method used to compute standard deviations. Can be "variance"
@@ -735,7 +740,7 @@ class MultiscaleTransform:
 #######################
 
 def dwt(image, levels, wavelet = "default", mode = "reflect"):
-  """Discrete wavelet transform of an image.
+  """Discrete wavelet transform of the input image.
 
   Args:
     image (Image or numpy.ndarray): The input image.
@@ -780,6 +785,7 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
     raise ValueError(f"Error, unknown boundary mode '{mode}'.")
   # Compute the discrete wavelet transform.
   if wavelet == "default": wavelet = params.defwavelet
+  # Set up the MultiscaleTransform object.
   mst = MultiscaleTransform()
   mst.type = "dwt"
   mst.wavelet = wavelet
@@ -798,7 +804,7 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
   return mst
 
 def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
-  """Stationary wavelet transform (also known as undecimated or "à trous" transform) of an image.
+  """Stationary wavelet transform (also known as undecimated or "à trous" transform) of the input image.
 
   Args:
     image (Image or numpy.ndarray): The input image.
@@ -847,6 +853,7 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
   padded = np.pad(data, padding, mode = _mode)
   # Compute the stationary wavelet transform.
   if wavelet == "default": wavelet = params.defwavelet
+  # Set up the MultiscaleTransform object.
   mst = MultiscaleTransform()
   mst.type = "swt"
   mst.wavelet = wavelet
@@ -891,14 +898,14 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
     """Convolve the input data with the starlet at scale step/2-1."""
     # Set-up convolution kernel.
     if starlet == "linear":
-      kernel_size = 2*step+1
-      kernel = np.zeros(kernel_size, dtype = data.dtype)
+      ksize = 2*step+1
+      kernel = np.zeros(ksize, dtype = data.dtype)
       kernel[   0] = 1/4.
       kernel[step] = 1/2.
       kernel[  -1] = 1/4.
     elif starlet == "cubic":
-      kernel_size = 4*step+1
-      kernel = np.zeros(kernel_size, dtype = data.dtype)
+      ksize = 4*step+1
+      kernel = np.zeros(ksize, dtype = data.dtype)
       kernel[     0] = 1/16.
       kernel[  step] = 1/4.
       kernel[2*step] = 3/8.
@@ -920,12 +927,12 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
     raise ValueError("Error, the input image is not valid.")
   height, width = data.shape[-2], data.shape[-1]
   if starlet == "linear":
-    kernel_size = 3
+    ksize = 3
   elif starlet == "cubic":
-    kernel_size = 5
+    ksize = 5
   else:
     raise ValueError("Error, starlet must be 'linear' or 'cubic'.")
-  maxlevels = pywt.dwt_max_level(min(height, width), kernel_size)
+  maxlevels = pywt.dwt_max_level(min(height, width), ksize)
   if levels < 1: raise ValueError("Error, levels must be >= 1.")
   if levels > maxlevels: raise ValueError(f"Error, levels must be <= {maxlevels} for an image with size ({height}, {width}).")
   # Check boundary mode.
@@ -940,6 +947,7 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
     data = smoothed
     step *= 2
   coeffs.append(smoothed)
+  # Set up the MultiscaleTransform object.
   mst = MultiscaleTransform()
   mst.type = "slt"
   mst.wavelet = starlet
@@ -960,7 +968,7 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
 # Multiscale median transform. #
 ################################
 
-def mmt(image, levels, mode = "reflect"):
+def mmt(image, levels, mode = "reflect", pyramidal = True):
   """Multiscale median transform of the input image.
 
   Note:
@@ -979,6 +987,14 @@ def mmt(image, levels, mode = "reflect"):
       - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
       - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
+    pyramidal (bool, optional): If False, the approximation w_{j+1} at scale j+1 is obtained from
+      the approximation w_j at scale j by the application of a median filter with window size
+      s = 2**j+1, and the detail coefficients c_{j+1} computed as c_{j+1} = w_j-w_{j+1}. This can
+      be extremely slow for large j's. If True (default), the window size is s = 3 at all scales,
+      but the approximation is decimated after the application of the median filter (keeping one
+      pixel over two along the width and height). This is thus much faster. However, the pyramidal
+      method involves some approximations and is less acurate.
+
   Returns:
     MultiscaleTransform: The mutiscale median transform of the input image.
   """
@@ -991,6 +1007,7 @@ def mmt(image, levels, mode = "reflect"):
   else:
     raise ValueError("Error, the input image is not valid.")
   height, width = data.shape[-2], data.shape[-1]
+  nc = 1 if data.ndim == 2 else data.shape[0]
   maxlevels = pywt.dwt_max_level(min(height, width), 3)
   if levels < 1: raise ValueError("Error, levels must be >= 1.")
   if levels > maxlevels: raise ValueError(f"Error, levels must be <= {maxlevels} for an image with size ({height}, {width}).")
@@ -1002,26 +1019,23 @@ def mmt(image, levels, mode = "reflect"):
   else:
     raise ValueError(f"Error, unknown boundary mode '{mode}'.")
   # Compute the multiscale median transform.
-  nc = 1 if data.ndim == 2 else data.shape[0]
   coeffs = []
   halfsize = 1
   for level in range(levels):
-    if data.ndim == 2: # Grayscale image.
-      if mode != "zero":
-        smoothed = ndimg.median_filter(data, size = 2*halfsize+1, mode = _mode)
-      else: # Faster.
+    if mode != "zero":
+      smoothed = ndimg.median_filter(data, size = 2*halfsize+1, mode = _mode, axes = (-2, -1))
+    else: # Faster.
+      if data.ndim == 2:
         smoothed = signal.medfilt2d(data, size = 2*halfsize+1)
-    else:
-      smoothed = np.empty_like(data)
-      for ic in range(nc):
-        if mode != "zero":
-          smoothed[ic] = ndimg.median_filter(data[ic], size = 2*halfsize+1, mode = _mode)
-        else: # Faster.
+      else:
+        smoothed = np.empty_like(data)
+        for ic in range(nc):
           smoothed[ic] = signal.medfilt2d(data[ic], size = 2*halfsize+1)
     coeffs.append([data-smoothed])
     data = smoothed
     halfsize *= 2
   coeffs.append(smoothed)
+  # Set up the MultiscaleTransform object.
   mmt = MultiscaleTransform()
   mmt.type = "mmt"
   mmt.levels = levels
@@ -1106,7 +1120,7 @@ class MixinImage:
     """
     return slt(self, levels, starlet = starlet, mode = mode)
 
-  def mmt(self, levels, mode = "reflect"):
+  def mmt(self, levels, mode = "reflect", pyramidal = True):
     """Multiscale median transform of the image.
 
     Note:
@@ -1124,10 +1138,18 @@ class MixinImage:
         - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
         - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
+      pyramidal (bool, optional): If False, the approximation w_{j+1} at scale j+1 is obtained from
+        the approximation w_j at scale j by the application of a median filter with window size
+        s = 2**j+1, and the detail coefficients c_{j+1} computed as c_{j+1} = w_j-w_{j+1}. This can
+        be extremely slow for large j's. If True (default), the window size is s = 3 at all scales,
+        but the approximation is decimated after the application of the median filter (keeping one
+        pixel over two along the width and height). This is thus much faster. However, the pyramidal
+        method involves some approximations and is less acurate.
+
     Returns:
       MultiscaleTransform: The mutiscale median transform of the image.
     """
-    return mmt(self, levels, mode = mode)
+    return mmt(self, levels, mode = mode, pyramidal = pyramidal)
 
   def anscombe(self, gain = 1., average = 0., sigma = 0.):
     """Return the generalized Anscombe transform (gAt) of the image.
