@@ -15,6 +15,7 @@ __all__ = ["dwt", "swt", "slt", "mmt", "anscombe", "inverse_anscombe"]
 
 import pywt
 import numpy as np
+import skimage as skim
 import scipy.ndimage as ndimg
 import scipy.signal as signal
 from copy import deepcopy
@@ -112,6 +113,7 @@ class MultiscaleTransform:
     Returns:
       Image or numpy.ndarray: The inverse multiscale transform of the object.
     """
+
     if self.type == "dwt":
       data = pywt.waverec2(self.coeffs, wavelet = self.wavelet, mode = self._mode, axes = (-2, -1))
     elif self.type == "swt":
@@ -121,6 +123,11 @@ class MultiscaleTransform:
       data = data[..., ptop:ptop+height, pleft:pleft+width]
     elif self.type == "slt" or self.type == "mmt":
       data = self.coeffs[0]+np.sum(self.coeffs[1:], axis = 0)[0]
+    elif self.type == "pmmt":
+      data = self.coeffs[0]
+      for level in range(self.levels):
+        data = skim.transform.rescale(data, scale = 2, order = 3, mode = self._mode,
+                                      clip = False, channel_axis = None if self.ndim == 2 else 0)+self.coeffs[level+1][0]
     else:
       raise ValueError(f"Unknown multiscale transform type '{self.type}'.")
     return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage and not asarray else data
@@ -149,7 +156,9 @@ class MultiscaleTransform:
     elif self.type == "slt":
       return slt(image, levels = self.levels, starlet = self.wavelet, mode = self.mode)
     elif self.type == "mmt":
-      return mmt(image, level = self.levels, mode = self.mode)
+      return mmt(image, level = self.levels, mode = self.mode, pyramidal = False)
+    elif self.type == "pmmt":
+      return mmt(image, level = self.levels, mode = self.mode, pyramidal = True)
     else:
       raise ValueError(f"Unknown multiscale transform type '{self.type}'.")
 
@@ -327,8 +336,8 @@ class MultiscaleTransform:
       numpy.ndarray: The standard deviation of a white gaussian noise with variance 1 at all wavelet
       levels. Level #0 is the smallest scale.
     """
-    if self.type == "mmt":
-      raise NotImplementedError("Error, does not apply to the multiscale median transform owing to its non-linear behavior.")
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     if self.type != "slt": numerical = numerical or not pywt.Wavelet(self.wavelet).orthogonal
     # Analytical noise partition.
     if not numerical:
@@ -385,8 +394,8 @@ class MultiscaleTransform:
     Returns:
       numpy.ndarray: The noise sigma0 in each channel.
     """
-    if self.type == "mmt":
-      raise NotImplementedError("Error, does not apply to the multiscale median transform owing to its non-linear behavior.")
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     coeffs = helpers.at_least_3D(self.coeffs[-1][-1])
     sigma = std_centered(coeffs, std, axis = (-2, -1))
     if clip is not None and maxit > 0:
@@ -434,8 +443,8 @@ class MultiscaleTransform:
       numpy.ndarray, numpy.ndarray: The noise in each channel (columns) and wavelet level (rows),
       and the total noise in each channel.
     """
-    if self.type == "mmt":
-      raise NotImplementedError("Error, does not apply to the multiscale median transform owing to its non-linear behavior.")
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     if scale_factors is None: scale_factors = self.noise_scale_factors(std = std)
     sigma0 = self.estimate_noise0(std = std, clip = clip, eps = eps, maxit = maxit)
     norm = scale_factors[0]
@@ -461,7 +470,7 @@ class MultiscaleTransform:
       numpy.ndarray: The multiresolution support, with the same shape as the original image.
     """
     if self.type not in ["slt", "mmt"]:
-      raise NotImplementedError("Error, multiresolution support is only available for starlet and multiscale median transforms.")
+      raise NotImplementedError("Error, multiresolution support is only available for the starlet and multiscale median transforms.")
     support = np.zeros((self.nc, self.size[0], self.size[1]))
     for level in range(self.levels):
       coeffs = helpers.at_least_3D(self.coeffs[-(level+1)][0])
@@ -530,8 +539,8 @@ class MultiscaleTransform:
     Returns:
       MultiscaleTransform: The updated MultiscaleTransform object.
     """
-    if self.type == "mmt":
-      raise NotImplementedError("Error, does not apply to the multiscale median transform owing to its non-linear behavior.")
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     clip = self.VisuShrink_clip()
     print(f"VisuShrink: threshold = {clip:.5f}σ.")
     return self.threshold_levels(clip*sigmas, mode = mode, inplace = inplace)
@@ -583,8 +592,8 @@ class MultiscaleTransform:
       threshold = sigma**2/np.sqrt(max(std_centered(c, std = std)**2-sigma**2, eps))
       return pywt.threshold(c, threshold, mode = mode)
 
-    if self.type == "mmt":
-      raise NotImplementedError("Error, does not apply to the multiscale median transform owing to its non-linear behavior.")
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     output = self if inplace else self.copy()
     for level in range(self.levels):
       if self.nc == 1:
@@ -640,8 +649,8 @@ class MultiscaleTransform:
     Returns:
       Image or numpy.ndarray: The denoised image In and the noise Dn = I-In.
     """
-    if self.type == "mmt":
-      raise NotImplementedError("Error, does not apply to the multiscale median transform owing to its non-linear behavior.")
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     if scale_factors is None: scale_factors = self.noise_scale_factors(std = std)
     original = helpers.at_least_3D(self.inverse(asarray = True))
     sigmas, sigmat = self.estimate_noise(std = std, clip = clip, eps = eps, maxit = maxit, scale_factors = scale_factors)
@@ -968,7 +977,7 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
 # Multiscale median transform. #
 ################################
 
-def mmt(image, levels, mode = "reflect", pyramidal = True):
+def mmt(image, levels, mode = "reflect", pyramidal = False):
   """Multiscale median transform of the input image.
 
   Note:
@@ -987,17 +996,35 @@ def mmt(image, levels, mode = "reflect", pyramidal = True):
       - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
       - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
-    pyramidal (bool, optional): If False, the approximation w_{j+1} at scale j+1 is obtained from
-      the approximation w_j at scale j by the application of a median filter with window size
-      s = 2**j+1, and the detail coefficients c_{j+1} computed as c_{j+1} = w_j-w_{j+1}. This can
-      be extremely slow for large j's. If True (default), the window size is s = 3 at all scales,
-      but the approximation is decimated after the application of the median filter (keeping one
-      pixel over two along the width and height). This is thus much faster. However, the pyramidal
-      method involves some approximations and is less acurate.
+    pyramidal (bool, optional): If False (default), the approximation w_{j+1} at scale j+1 is
+      obtained from the approximation w_j at scale j by the application of a median filter with
+      window size s = 2**j+1, and the detail coefficients c_{j+1} computed as c_{j+1} = w_j-w_{j+1}.
+      This can be very slow for large j's. If True, the window size is s = 3 at all scales, but
+      the approximation is decimated after the application of the median filter (keeping one pixel
+      over two along the width and height). This is thus much faster. However, the pyramidal
+      method involves some approximations, and the reconstructed image is not simply the sum of
+      the final approximation and details coefficients of all levels.
 
   Returns:
     MultiscaleTransform: The mutiscale median transform of the input image.
   """
+
+  def median_filter(data, size):
+    """Apply a median filter with given window size to the input data."""
+    if mode != "zero":
+      return ndimg.median_filter(data, size = size, mode = mode_ndimg, axes = (-2, -1))
+    else: # Faster.
+      if data.ndim == 2:
+        return signal.medfilt2d(data, size = size)
+      else:
+        output = np.empty_like(data)
+        for ic in range(nc):
+          output[ic] = signal.medfilt2d(data[ic], size = size)
+
+  def upscale(data):
+    """Upscale input data by a factor 2."""
+    return skim.transform.rescale(data, scale = 2, order = 3, mode = mode_skim, clip = False, channel_axis = None if data.ndim == 2 else 0)
+
   # Check inputs.
   isImage = issubclass(type(image), img.Image)
   if isImage:
@@ -1012,44 +1039,52 @@ def mmt(image, levels, mode = "reflect", pyramidal = True):
   if levels < 1: raise ValueError("Error, levels must be >= 1.")
   if levels > maxlevels: raise ValueError(f"Error, levels must be <= {maxlevels} for an image with size ({height}, {width}).")
   # Translate boundary mode.
-  if mode == "zero":
-    _mode = "constant"
-  elif mode in ["reflect", "mirror", "nearest", "wrap"]:
-    _mode = mode
+  mode_ndimg = mode # For ndimage.
+  if mode == "reflect":
+    mode_skim = "symmetric" # For skimage.
+  elif mode == "mirror":
+    mode_skim = "reflect"
+  elif mode == "nearest":
+    mode_skim = "edge"
+  elif mode == "zero":
+    mode_ndimg = mode_skim = "constant"
+  elif mode == "wrap":
+    mode_skim = mode
   else:
     raise ValueError(f"Error, unknown boundary mode '{mode}'.")
   # Compute the multiscale median transform.
   coeffs = []
-  halfsize = 1
-  for level in range(levels):
-    if mode != "zero":
-      smoothed = ndimg.median_filter(data, size = 2*halfsize+1, mode = _mode, axes = (-2, -1))
-    else: # Faster.
-      if data.ndim == 2:
-        smoothed = signal.medfilt2d(data, size = 2*halfsize+1)
-      else:
-        smoothed = np.empty_like(data)
-        for ic in range(nc):
-          smoothed[ic] = signal.medfilt2d(data[ic], size = 2*halfsize+1)
-    coeffs.append([data-smoothed])
-    data = smoothed
-    halfsize *= 2
-  coeffs.append(smoothed)
+  if pyramidal: # Pyramidal algorithm.
+    for level in range(levels): # Build a pyramid of downscaled smoothed images.
+      dsmoothed = median_filter(data, 3)[..., ::2, ::2] # Smooth and decimate.
+      usmoothed = upscale(dsmoothed) # Upscale again.
+      coeffs.append([data-usmoothed])
+      data = dsmoothed
+    coeffs.append(dsmoothed)
+  else:
+    halfsize = 1
+    for level in range(levels):
+      smoothed = median_filter(data, 2*halfsize+1)
+      coeffs.append([data-smoothed])
+      data = smoothed
+      halfsize *= 2
+    coeffs.append(smoothed)
   # Set up the MultiscaleTransform object.
-  mmt = MultiscaleTransform()
-  mmt.type = "mmt"
-  mmt.levels = levels
-  mmt.start = 0
-  mmt.mode = mode
-  mmt.coeffs = list(reversed(coeffs))
-  mmt.ndim = data.ndim
-  mmt.size = (height, width)
-  mmt.nc = nc
-  mmt.isImage = isImage
+  mst = MultiscaleTransform()
+  mst.type = "pmmt" if pyramidal else "mmt"
+  mst.levels = levels
+  mst.start = 0
+  mst.mode = mode
+  mst._mode = mode_skim
+  mst.coeffs = list(reversed(coeffs))
+  mst.ndim = data.ndim
+  mst.size = (height, width)
+  mst.nc = nc
+  mst.isImage = isImage
   if isImage:
-    mmt.colorspace = image.colorspace
-    mmt.colormodel = image.colormodel
-  return mmt
+    mst.colorspace = image.colorspace
+    mst.colormodel = image.colormodel
+  return mst
 
 #####################################
 # For inclusion in the Image class. #
@@ -1120,7 +1155,7 @@ class MixinImage:
     """
     return slt(self, levels, starlet = starlet, mode = mode)
 
-  def mmt(self, levels, mode = "reflect", pyramidal = True):
+  def mmt(self, levels, mode = "reflect", pyramidal = False):
     """Multiscale median transform of the image.
 
     Note:
@@ -1138,13 +1173,14 @@ class MixinImage:
         - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
         - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
-      pyramidal (bool, optional): If False, the approximation w_{j+1} at scale j+1 is obtained from
-        the approximation w_j at scale j by the application of a median filter with window size
-        s = 2**j+1, and the detail coefficients c_{j+1} computed as c_{j+1} = w_j-w_{j+1}. This can
-        be extremely slow for large j's. If True (default), the window size is s = 3 at all scales,
-        but the approximation is decimated after the application of the median filter (keeping one
-        pixel over two along the width and height). This is thus much faster. However, the pyramidal
-        method involves some approximations and is less acurate.
+      pyramidal (bool, optional): If False (default), the approximation w_{j+1} at scale j+1 is
+        obtained from the approximation w_j at scale j by the application of a median filter with
+        window size s = 2**j+1, and the detail coefficients c_{j+1} computed as c_{j+1} = w_j-w_{j+1}.
+        This can be very slow for large j's. If True, the window size is s = 3 at all scales, but
+        the approximation is decimated after the application of the median filter (keeping one pixel
+        over two along the width and height). This is thus much faster. However, the pyramidal
+        method involves some approximations, and the reconstructed image is not simply the sum of
+        the final approximation and details coefficients of all levels.
 
     Returns:
       MultiscaleTransform: The mutiscale median transform of the image.

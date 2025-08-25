@@ -790,6 +790,8 @@ class Dashboard():
       for l, c in enumerate(mst.coeffs[1:]):
         label = f"Level #{mst.levels-l-1}"
         images[label] = display_coeffs(normalize_coeffs(c[0]))
+    elif mst.type == "pmmt":
+      raise NotImplementedError("Error, not implemented for pyramidal multiscale median transforms.")
     else:
       raise ValueError(f"Unknown multiscale transform type '{mst.type}'.")
     self.show(images, histograms = histograms, statistics = statistics, sampling = sampling,
