@@ -26,33 +26,9 @@ from . import image as img
 from . import image_utils as imgutils
 from .image_stretch import mts
 
-###############
-# Statistics. #
-###############
-
-def std_centered(data, std, **kwargs):
-  """Return the standard deviation of a centered data set.
-
-  Args:
-    data (numpy.ndarray): The data set (whose average must be zero).
-    std (str): The method used to compute the standard deviation:
-
-      - "variance": std_centered = sqrt(numpy.mean(data**2))
-      - "median": std_centered = numpy.median(abs(data))/0.6744897501960817.
-        This estimate is more robust to outliers.
-
-    kwargs: Optional keyword arguments are passed to the numpy.mean (std = "variance") or
-      numpy.median (std = "median") functions.
-
-  Returns:
-    float: The standard deviation of data.
-  """
-  if std == "variance":
-    return np.sqrt(np.mean(data**2, **kwargs))
-  elif std == "median":
-    return np.median(abs(data), **kwargs)/0.6744897501960817
-  else:
-    raise ValueError("Error, unknown method '{std}'.")
+#############################
+# Anscombe transformations. #
+#############################
 
 def anscombe(data, gain = 1., average = 0., sigma = 0.):
   """Return the generalized Anscombe transform (gAt) of the input data.
@@ -95,6 +71,54 @@ def inverse_anscombe(data, gain = 1., average = 0., sigma = 0.):
   """
   return ((gain*data/2.)**2-3.*gain**2/8.-sigma**2+gain*average)/gain
 
+#####################
+# Helper functions. #
+#####################
+
+def std_centered(data, std, **kwargs):
+  """Return the standard deviation of a centered data set.
+
+  Args:
+    data (numpy.ndarray): The data set (whose average must be zero).
+    std (str): The method used to compute the standard deviation:
+
+      - "variance": std_centered = sqrt(numpy.mean(data**2))
+      - "median": std_centered = numpy.median(abs(data))/0.6744897501960817.
+        This estimate is more robust to outliers.
+
+    kwargs: Optional keyword arguments are passed to the numpy.mean (std = "variance") or
+      numpy.median (std = "median") functions.
+
+  Returns:
+    float: The standard deviation of data.
+  """
+  if std == "variance":
+    return np.sqrt(np.mean(data**2, **kwargs))
+  elif std == "median":
+    return np.median(abs(data), **kwargs)/0.6744897501960817
+  else:
+    raise ValueError("Error, unknown method '{std}'.")
+
+def resize(image, shape, mode = "symmetric"):
+  """Rescale the input image to the target shape by bicubic spline interpolation.
+
+  Args:
+    image (numpy.ndarray): An image with shape (..., height, width).
+    shape (tuple): The target shape (..., newheight, newwidth) of the image.
+    mode (str, optional): How to extend the image across its boundaries (skimage.transform.resize
+      convention):
+
+      - "symmetric" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+      - "reflect": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+      - "edge": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+      - "constant": the image is padded with zeros (abcd → 0000|abcd|0000).
+      - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
+
+  Returns:
+    numpy.ndarray: The rescaled image with shape (..., newheight, newwidth).
+  """
+  return skim.transform.resize(image, shape, order = 3, mode = mode, clip = False)
+
 ##############################
 # MultiscaleTransform class. #
 ##############################
@@ -126,8 +150,8 @@ class MultiscaleTransform:
     elif self.type == "pmmt":
       data = self.coeffs[0]
       for level in range(self.levels):
-        data = skim.transform.rescale(data, scale = 2, order = 3, mode = self._mode,
-                                      clip = False, channel_axis = None if self.ndim == 2 else 0)+self.coeffs[level+1][0]
+        c = self.coeffs[level+1][0]
+        data = c+resize(data, c.shape, mode = self._mode)
     else:
       raise ValueError(f"Unknown multiscale transform type '{self.type}'.")
     return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage and not asarray else data
@@ -1021,10 +1045,6 @@ def mmt(image, levels, mode = "reflect", pyramidal = False):
         for ic in range(nc):
           output[ic] = signal.medfilt2d(data[ic], size = size)
 
-  def upscale(data):
-    """Upscale input data by a factor 2."""
-    return skim.transform.rescale(data, scale = 2, order = 3, mode = mode_skim, clip = False, channel_axis = None if data.ndim == 2 else 0)
-
   # Check inputs.
   isImage = issubclass(type(image), img.Image)
   if isImage:
@@ -1057,7 +1077,7 @@ def mmt(image, levels, mode = "reflect", pyramidal = False):
   if pyramidal: # Pyramidal algorithm.
     for level in range(levels): # Build a pyramid of downscaled smoothed images.
       dsmoothed = median_filter(data, 3)[..., ::2, ::2] # Smooth and decimate.
-      usmoothed = upscale(dsmoothed) # Upscale again.
+      usmoothed = resize(dsmoothed, data.shape, mode = mode_skim) # Upscale again.
       coeffs.append([data-usmoothed])
       data = dsmoothed
     coeffs.append(dsmoothed)
