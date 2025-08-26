@@ -151,7 +151,7 @@ class MultiscaleTransform:
       data = self.coeffs[0]
       for level in range(self.levels):
         c = self.coeffs[level+1][0]
-        data = c+resize(data, c.shape, mode = self._mode)
+        data = resize(data, c.shape, mode = self._mode)+c
     else:
       raise ValueError(f"Unknown multiscale transform type '{self.type}'.")
     return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage and not asarray else data
@@ -494,7 +494,7 @@ class MultiscaleTransform:
       numpy.ndarray: The multiresolution support, with the same shape as the original image.
     """
     if self.type not in ["slt", "mmt"]:
-      raise NotImplementedError("Error, multiresolution support is only available for the starlet and multiscale median transforms.")
+      raise NotImplementedError("Error, multiresolution support is only available for the starlet and (non-pyramidal) multiscale median transforms.")
     support = np.zeros((self.nc, self.size[0], self.size[1]))
     for level in range(self.levels):
       coeffs = helpers.at_least_3D(self.coeffs[-(level+1)][0])
@@ -748,7 +748,7 @@ class MultiscaleTransform:
       cout[~cset] = cmax*((c[~cset]-c0)/(cmax-c0))**alpha
       return cout
 
-    if self.type not in ["slt", "mmt"]: raise NotImplementedError("Error, only implemented for starlet and median transforms.")
+    if self.type not in ["slt", "mmt"]: raise NotImplementedError("Error, only implemented for starlet and (non-pyramidal) median transforms.")
     if np.isscalar(alphas): alphas = [alphas]*self.levels
     if np.isscalar(betas): betas = [betas]*self.levels
     if np.isscalar(thresholds): thresholds = [thresholds]*self.levels
