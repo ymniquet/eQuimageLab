@@ -704,32 +704,35 @@ class MultiscaleTransform:
       diff = img.Image(diff, colorspace = self.colorspace, colormodel = self.colormodel)
     return denoised, diff
 
-  def enhance_details(self, alphas, betas = 1., thresholds = 0., alphaA = 1., betaA = 1., inplace = False):
+  def enhance_details(self, alphas, omegas = 1., thresholds = 0., alphaA = 1., omegaA = 1., inplace = False):
     """Enhance the detail coefficients of a starlet or multiscale median transform.
 
-    This method (only implemented for starlet transformations at present) enhances the details
-    coefficients c → f(abs(c))*c of each level, with:
+    This method compresses the details coefficients c → f(abs(c))*sign(c) of each level, where:
 
-      - f(x) = 1 if x <= threshold,
-      - f(x) = (cmax/x)*((x-c0)/(cmax-c0))**alpha if x > threshold,
+      - f(x) = x if x <= threshold,
+      - f(x) = omega*((x-x0)/(omega-x0))**alpha if x > threshold,
 
-    where cmax = beta*max(abs(c)) and c0 is computed to ensure continuity at x = threshold.
+    and x0 is computed to ensure continuity at x = threshold (x0 = 0 if threshold = 0).
 
     With alpha < 1 this transformations enhances the detail coefficients whose absolute values are
-    within [threshold, cmax], and softens detail coefficients whose absolute values are above cmax
-    (dynamic range compression).
+    within [threshold, omega], and softens the detail coefficients whose absolute values are greater
+    than omega (dynamic range compression). The detail coefficients with absolute values smaller
+    than threshold are preserved.
+
+    Note:
+      If threshold = 0 and alpha, omega are the same for all levels (and for the approximation),
+      then omega simply scales the whole image by omega**(1-alpha) and can thus be set afterwards.
 
     Args:
-      alphas (float): The alpha exponent for each level (expected < 1). Can be a scalar (same alpha
-        for all scales) or a list/tuple/array (level #0 is the smallest scale).
-        If alpha = 1, the level is not enhanced.
-      betas (float, optional): The beta factor for each level (expected < 1). Can be a scalar
-        (same beta for all scales) or a list/tuple/array (level #0 is the smallest scale).
-      thresholds (float, optional): The threshold for each level. Can be a scalar (same threshold
-        for all scales) or a list/tuple/array (level #0 is the smallest scale).
-      alphaA (float, optional): The alpha exponent for the approximation coefficients (default 1 =
-        not enhanced).
-      betaA (float, optional): The beta factor for the approximation coefficients (default 1).
+      alphas (float): The exponent alpha for each level (expected > 0). Can be a scalar (same alpha
+        for all scales) or a list/tuple/array (level #0 is the smallest scale). If alpha = 1, the
+        level is not enhanced.
+      omegas (float, optional): The turning point omega for each level (default 1). Can be a scalar
+        (same omega for all scales) or a list/tuple/array (level #0 is the smallest scale).
+      thresholds (float, optional): The threshold for each level (default 0). Can be a scalar (same
+        threshold for all scales) or a list/tuple/array (level #0 is the smallest scale).
+      alphaA (float, optional): The exponent alpha for the approximation coefficients (default 1).
+      omegaA (float, optional): The turning point omega for the approximation coefficients (default 1).
       inplace (bool, optional): If True, update the object "in place"; if False (default), return a
         new MultiscaleTransform object.
 
@@ -737,34 +740,32 @@ class MultiscaleTransform:
       MultiscaleTransform: The updated MultiscaleTransform object.
     """
 
-    def enhance(c, cmin, cmax, alpha):
+    def enhance(c, alpha, threshold, omega):
       """Enhance the input coefficients c."""
-      r = (cmin/cmax)**(1./alpha)
-      c0 = (cmax*r-cmin)/(r-1.)
+      r = (threshold/omega)**(1./alpha)
+      c0 = (omega*r-threshold)/(r-1.)
       cout = np.empty_like(c)
-      cset = c <= cmin
+      cset = (c <= threshold)
       cout[ cset] = c[cset]
-      cout[~cset] = cmax*((c[~cset]-c0)/(cmax-c0))**alpha
+      cout[~cset] = omega*((c[~cset]-c0)/(omega-c0))**alpha
       return cout
 
     if self.type not in ["slt", "mmt"]: raise NotImplementedError("Error, only implemented for starlet and (non-pyramidal) median transforms.")
     if np.isscalar(alphas): alphas = [alphas]*self.levels
-    if np.isscalar(betas): betas = [betas]*self.levels
+    if np.isscalar(omegas): omegas = [omegas]*self.levels
     if np.isscalar(thresholds): thresholds = [thresholds]*self.levels
     output = self if inplace else self.copy()
     for level in range(self.levels):
+      omega = omegas[level]
+      threshold = thresholds[level]
+      if threshold >= omega: raise ValueError(f"Error, threshold >= omega at level #{level}.")
       alpha = alphas[level]
       if alpha == 1.: continue
-      beta = betas[level]
       c = self.coeffs[-(level+1)][0]
-      absc = abs(c)
-      cmin = thresholds[level]
-      cmax = beta*absc.max()
-      if cmax <= cmin: raise ValueError(f"Error, threshold > cmax at level #{level}. Decrease threshold or increase beta.")
-      output.coeffs[-(level+1)][0] = np.sign(c)*enhance(absc, cmin, cmax, alpha)
+      output.coeffs[-(level+1)][0] = np.sign(c)*enhance(abs(c), alpha, threshold, omega)
     if alphaA != 1.:
-      c = self.coeffs[0][0]
-      output.coeffs[0][0] = enhance(c, 0., betaA*c.max(), alphaA)
+      c = self.coeffs[0]
+      output.coeffs[0] = enhance(c, alphaA, 0., omegaA)
     return output
 
 #######################
