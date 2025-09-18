@@ -91,12 +91,13 @@ The following function provides an alternative parametrization of the harmonic s
 
    Dharmonic_through
 
-Moreover, eQuimageLab provides an implementation of the `statistical stretch of SETI astro <https://www.setiastro.com/statistical-stretch>`_ as a method of the :py:class:`Image <equimage.image.Image>` class:
+Moreover, eQuimageLab provides an implementation of masked stretch and an implementation of the `statistical stretch of SETI astro <https://www.setiastro.com/statistical-stretch>`_ as methods of the :py:class:`Image <equimage.image.Image>` class:
 
 .. currentmodule:: equimage.image_stretch.MixinImage
 
 .. autosummary::
 
+   masked_stretch
    statistical_stretch
 
 Finally, eQuimageLab provides an interface to the `Scikit-Image <https://scikit-image.org/>`_ implementation of `CLAHE <https://en.wikipedia.org/wiki/Adaptive_histogram_equalization>`_ as a method of the :py:class:`Image <equimage.image.Image>` class:

@@ -1375,7 +1375,7 @@ class MixinImage:
       return self.luma()
     elif channel == "Y":
       return self.luminance()
-    elif channel == "L*":
+    elif channel in ["L*", "L*ab", "L*uv", "L*sh"]:
       return self.lightness()
     elif channel == "c*":
       return self.CIE_chroma()
@@ -1399,6 +1399,10 @@ class MixinImage:
         - "L'": Update the HSL lightness (RGB, HSL and grayscale images).
         - "S'": Update the HSL saturation (RGB and HSL images).
         - "L": Update the luma (RGB and grayscale images).
+        - "Ls": Update the luma, and protect highlights by desaturation.
+          (after the operation, the out-of-range pixels are desaturated at constant luma).
+        - "Ln": Update the luma, and protect highlights by normalization.
+          (after the operation, the image is normalized so that all pixels fall back in the [0, 1] range).
         - "L*": Update the CIE lightness L* (CIELab and CIELuv images; equivalent to "L*ab"
           for lRGB and sRGB images).
         - "L*ab": Update the CIE lightness L* in the CIELab/Lab color space and model
@@ -1485,11 +1489,16 @@ class MixinImage:
       else:
         self.color_model_error()
       return output
-    elif channel == "L":
+    elif channel in ["L", "Ls", "Ln"]:
       if is_gray:
         output.image[0] = data
       elif is_RGB:
         output.image[:] = helpers.scale_pixels(self.image, self.luma(), data)
+        if channels == "Ls":
+          output.image[:] = output.protect_highlights_saturation()
+        elif channels == "Ln":
+          maximum = np.max(output.image)
+          if maximum > 1.: output.image /= maximum
       else:
         self.color_model_error()
       return output

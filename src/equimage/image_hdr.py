@@ -24,7 +24,8 @@ class MixinImage:
     # Check inputs.
     if target not in ["bright", "dark"]: raise ValueError("Error, target must be 'bright' or 'dark'.")
     channels = channels.strip()
-    maskchannel = maskchannel.strip()
+    if channels not in ["", "V", "L'", "L", "L*", "L*ab", "L*uv", "L*sh"]:
+      raise ValueError("""Error, channels must be "", "V", "L'", "L", "L*", "L*ab", "L*uv" or "L*sh".""")
     if channels == "":
       if self.colormodel == "RGB":
         channels = "RGB"
@@ -38,6 +39,9 @@ class MixinImage:
         channels = "L*"
       else:
         raise ValueError(f"Error, unknown color model {self.colormodel}.")
+    maskchannel = maskchannel.strip()
+    if maskchannel not in ["", "V", "L'", "L", "L*"]:
+      raise ValueError("""Error, maskchannel must be "", "V", "L'", "L" or "L*".""")
     if maskchannel == "":
       if self.colormodel in ["RGB", "gray"]:
         maskchannel = "L"
@@ -82,6 +86,8 @@ class MixinImage:
     """HDRWT v2."""
     # Check inputs.
     channels = channels.strip()
+    if channels not in ["", "V", "L'", "L", "L*", "L*ab", "L*uv", "L*sh"]:
+      raise ValueError("""Error, channels must be "", "V", "L'", "L", "L*", "L*ab", "L*uv" or "L*sh".""")
     if channels == "":
       if self.colormodel == "RGB":
         channels = "RGB"
@@ -95,8 +101,6 @@ class MixinImage:
         channels = "L*"
       else:
         raise ValueError(f"Error, unknown color model {self.colormodel}.")
-    if channels not in ["RGB", "L", "V", "L'", "L*"]:
-      raise ValueError(f"Error, channels must be 'RGB', 'L', 'V', 'L'' or 'L*'.")
     print(f"HDRWT on channel(s) {channels}...")
     # HDRWT algorithm.
     if channels == "RGB":

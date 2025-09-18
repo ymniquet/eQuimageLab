@@ -188,7 +188,7 @@ class MixinImage:
     """
     channels = channels.strip()
     if channels not in ["", "V", "L'", "L", "L*", "L*ab", "L*uv", "L*sh"]:
-      raise ValueError("Error, channels must be '', 'V', 'L'', 'L', 'L*', 'L*ab', 'L*uv' or 'L*sh'.")
+      raise ValueError("""Error, channels must be "", "V", "L'", "L", "L*", "L*ab", "L*uv" or "L*sh".""")
     if amount <= 0.: raise ValueError("Error amount must be > 0.")
     if threshold < .0001 or threshold >= .9999: raise ValueError("Error, threshold must be >= 0.0001 and <= 0.9999.")
     D = Dharmonic_through(threshold, 1./(1.+amount))

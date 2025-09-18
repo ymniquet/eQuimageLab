@@ -689,17 +689,86 @@ class MixinImage:
     if ctrans is not None: output.trans = ctrans
     return output
 
-  def masked_stretch(self, median, niter, gamma = 1., clip = 0., accuracy = .001):
-    """
-    Only applies to RGB & grayscale images.
+  def masked_stretch(self, median, niter, gamma = 1., clip = 0., channels = "", maskchannel = ""):
+    r"""Apply a series of masked midtone stretches to the image.
+
+    Given a target median, this method applies a series of niter "small" midtone stretches to bring
+    the median of the image close to the target. Each of these midtone stretches is blended with
+    the previous one using the luma as a mask:
+
+      image_{0} = self
+
+      mask_{n} = [1-LUMA(image_{n})]**gamma
+
+      image_{n+1} = mask_{n}*mts(image_{n}, midtone)+(1-mask_{n})*image_{n}
+
+    The method returns image_{niter}. mts is the midtone stretch function, and the midtone parameter
+    is estimated so that median(image_{niter}) is close to the target [yet median(image_{niter})
+    will not exactly match the target as the solution is only approximate]. The larger the number
+    of iterations, the closer the midtone to 0.5, thus the smoother the stretches. Moreover, the
+    features that are or have become bright are little further stretched thanks to the mask.
+    This prevents, e.g., stars from overblowing as in a conventional, single hard stretch.
+
+    Warning:
+      Only applies to RGB & grayscale images at present.
+
+    See also:
+      :meth:`Image.midtone_stretch() <.midtone_stretch>`
+
+    Args:
+      median (float): The target median (expected in ]0, 1[).
+      maxiter (int): The number of iterations (midtone stretches). The larger niter, the smoother
+        the unitary stretches.
+      gamma (float, optional): The power law transformation applied to the luma (see above
+        equations). The larger gamma, the better preserved the bright features, but the lower the
+        contrast in the dark features. Default is 1.
+      clip (float, optional): Clip the luma below that value. Pixels whose luma is smaller than
+        clip are thus fully stretched (not blended). Default is 0.
+
+    Returns:
+      Image: The stretched image.
     """
 
     def estimate_median(median, midtone, niter):
+      """Returns the expected median of the image after niter midtone transformations.
+      On input, 'median' is the median of the original image. This function does not, however,
+      account for the effects of the mask."""
       for iiter in range(niter):
         median = mts(median, midtone)
       return median
 
-    self.check_color_model("RGB", "gray")
+    # Check inputs.
+    channels = channels.strip()
+    if channels not in ["", "V", "L'", "L", "L*", "L*ab", "L*uv", "L*sh"]:
+      raise ValueError("""Error, channels must be "", "V", "L'", "L", "L*", "L*ab", "L*uv" or "L*sh".""")
+    if channels == "":
+      if self.colormodel == "RGB":
+        channels = ""
+      elif self.colormodel == "gray":
+        channels = "L"
+      elif self.colormodel == "HSV":
+        channels = "V"
+      elif self.colormodel == "HSL":
+        channels = "L'"
+      elif self.colormodel in ["Lab", "Luv", "Lch", "Lsh"]:
+        channels = "L*"
+      else:
+        raise ValueError(f"Error, unknown color model {self.colormodel}.")
+    maskchannel = maskchannel.strip()
+    if maskchannel not in ["", "V", "L'", "L", "L*"]:
+      raise ValueError("""Error, maskchannel must be "", ""V", "L'", "L" or "L*".""")
+    if maskchannel == "":
+      if self.colormodel in ["RGB", "gray"]:
+        maskchannel = "L"
+      elif self.colormodel == "HSV":
+        maskchannel = "V"
+      elif self.colormodel == "HSL":
+        maskchannel = "L'"
+      elif self.colormodel in ["Lab", "Luv", "Lch", "Lsh"]:
+        maskchannel = "L*"
+      else:
+        raise ValueError(f"Error, unknown color model {self.colormodel}.")
+    print(f"Masked stretch on channel(s) {channels} with mask channel {maskchannel}...")
     target = median
     # Compute the midtone by dichotomy.
     median0 = np.median(self)
@@ -709,7 +778,7 @@ class MixinImage:
       raise ValueError("Error, the target median is too far from the original median of the image. Increase niter.")
     midtone = (midtone1+midtone2)/2.
     median = estimate_median(median0, midtone, niter)
-    while abs(median-target) > accuracy:
+    while abs(median-target) > .001:
       if (median1-target)*(median-target) < 0.:
         midtone2, median2 = midtone, median
       else:
