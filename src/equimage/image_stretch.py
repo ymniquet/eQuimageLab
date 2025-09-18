@@ -18,6 +18,7 @@ import numpy as np
 import scipy.interpolate as spint
 from scipy.interpolate import Akima1DInterpolator
 
+from . import image_colorspaces as cspaces
 from . import stretchfunctions as stf
 
 ######################
@@ -652,7 +653,7 @@ class MixinImage:
       print_medians(medians)
       avgmedian = np.mean(list(medians.values())) # Compute the average median.
       if len(medians) > 1: print(f"Average median = {avgmedian:.5f}.")
-      converged = (abs(avgmedian-median) < .001) # Check convergence.
+      converged = (abs(avgmedian-median) < accuracy) # Check convergence.
       if converged or niter >= maxiter: break
       niter += 1
       # Compute the effective stretch parameter D such that f(avgmedian) = median, with f the harmonic stretch function.
@@ -687,3 +688,40 @@ class MixinImage:
         ctrans.y = fboost(ctrans.y)
     if ctrans is not None: output.trans = ctrans
     return output
+
+  def masked_stretch(self, median, niter, gamma = 1., clip = 0., accuracy = .001):
+    """
+    Only applies to RGB & grayscale images.
+    """
+
+    def estimate_median(median, midtone, niter):
+      for iiter in range(niter):
+        median = mts(median, midtone)
+      return median
+
+    self.check_color_model("RGB", "gray")
+    target = median
+    # Compute the midtone by dichotomy.
+    median0 = np.median(self)
+    midtone1 = .25 ; median1 = estimate_median(median0, midtone1, niter)
+    midtone2 = .75 ; median2 = estimate_median(median0, midtone2, niter)
+    if (median1-median)*(median2-median) > 0.: # No solution within the [.25, .75] range.
+      raise ValueError("Error, the target median is too far from the original median of the image. Increase niter.")
+    midtone = (midtone1+midtone2)/2.
+    median = estimate_median(median0, midtone, niter)
+    while abs(median-target) > accuracy:
+      if (median1-target)*(median-target) < 0.:
+        midtone2, median2 = midtone, median
+      else:
+        midtone1, median1 = midtone, median
+      midtone = (midtone1+midtone2)/2.
+      median = estimate_median(median0, midtone, niter)
+    print(f"Midtone = {midtone:.5f}.")
+    # Apply niter masked midtone stretches to the image.
+    image = self.image
+    for iiter in range(niter):
+      luma = cspaces.luma(image)
+      mask = (1.-stf.shadow_highlight_stretch_function(luma, clip, 1.))**gamma
+      image = mask*mts(image, midtone)+(1.-mask)*image
+    print(f"Final median = {np.median(image):.5f}.")
+    return self.newImage(image)

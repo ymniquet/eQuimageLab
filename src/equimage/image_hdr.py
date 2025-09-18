@@ -19,12 +19,12 @@ from . import image_multiscale as multiscale
 class MixinImage:
   """To be included in the Image class."""
 
-  def HDRwt1(self, starlet = "cubic", lmin = 1, lmax = 5, rstrength = .1, mstrength = 2., target = "bright", niter = 1, channels = "", lightchannel = ""):
+  def HDRwt1(self, starlet = "cubic", lmin = 1, lmax = 5, rstrength = .1, mstrength = 2., target = "bright", niter = 1, channels = "", maskchannel = ""):
     """HDRWT v1."""
     # Check inputs.
     if target not in ["bright", "dark"]: raise ValueError("Error, target must be 'bright' or 'dark'.")
     channels = channels.strip()
-    lightchannel = lightchannel.strip()
+    maskchannel = maskchannel.strip()
     if channels == "":
       if self.colormodel == "RGB":
         channels = "RGB"
@@ -38,27 +38,27 @@ class MixinImage:
         channels = "L*"
       else:
         raise ValueError(f"Error, unknown color model {self.colormodel}.")
-    if lightchannel == "":
+    if maskchannel == "":
       if self.colormodel in ["RGB", "gray"]:
-        lightchannel = "L"
+        maskchannel = "L"
       elif self.colormodel == "HSV":
-        lightchannel = "V"
+        maskchannel = "V"
       elif self.colormodel == "HSL":
-        lightchannel = "L'"
+        maskchannel = "L'"
       elif self.colormodel in ["Lab", "Luv", "Lch", "Lsh"]:
-        lightchannel = "L*"
+        maskchannel = "L*"
       else:
         raise ValueError(f"Error, unknown color model {self.colormodel}.")
-    print(f"HDRWT on channel(s) {channels} with (pseudo-)lightness channel {lightchannel}...")
+    print(f"HDRWT on channel(s) {channels} with mask channel {maskchannel}...")
     # HDRWT algorithm.
     image = self.copy()
-    # omed = np.median(image)
+    # median0 = np.median(image)
     for iiter in range(niter): # HDRWT iterations.
       if niter > 1: print(f"Iteration {iiter+1}/{niter}.")
       for level in range(lmin, lmax+1): # Iterate over wavelet levels.
         print(f"Processing level #{level}: ", end = "")
         # Compute the approximation of the (pseudo-)lightness at that wavelet level.
-        lightness = image.get_channel(channel = lightchannel)
+        lightness = image.get_channel(channel = maskchannel)
         if level > 0:
           approx = multiscale.slt(lightness, levels = level, starlet = starlet).coeffs[0]
         else:
@@ -75,7 +75,7 @@ class MixinImage:
         # Apply the midtone transformation and blend with the original image.
         stretched = image.midtone_stretch(channels = channels, midtone = midtone, trans = False)
         image = image.blend(stretched, mask)
-        # image = image.midtone_stretch(midtone = mts(np.median(image), omed), channels = "L", trans = False)
+        # image = image.midtone_stretch(midtone = mts(np.median(image), median0), channels = "L", trans = False)
     return image
 
   def HDRwt2(self, starlet = "cubic", lmin = 0, lmax = 5, alpha = .9, gamma = 1., niter = 1, channels = ""):
@@ -100,6 +100,7 @@ class MixinImage:
     print(f"HDRWT on channel(s) {channels}...")
     # HDRWT algorithm.
     if channels == "RGB":
+      self.check_color_model("RGB")
       image = self.image
     else:
       image = self.get_channel(channel = channels)

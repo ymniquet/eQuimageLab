@@ -181,6 +181,8 @@ There are four options to deal with the out-of-range pixels:
 
 In eQuimageLab, these four options correspond to different choices for the kwarg ``channels`` of the midtone transformation: 1) ``channels = "L"``, 2) ``channels = "Ls"``, 3) ``channels = "Lb"``, and 4) ``channels = "Ln"``.
 
+Alternatively, you can desaturate any overflowed :py:class:`Image <equimage.image.Image>` object at constant luma with the :py:meth:`protect_highlights_saturation() <equimage.image_colorspaces.MixinImage.protect_highlights_saturation>` method.
+
 Examples
 ^^^^^^^^
 
