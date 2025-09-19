@@ -24,8 +24,6 @@ class MixinImage:
     # Check inputs.
     if target not in ["bright", "dark"]: raise ValueError("Error, target must be 'bright' or 'dark'.")
     channels = channels.strip()
-    if channels not in ["", "V", "L'", "L", "L*", "L*ab", "L*uv", "L*sh"]:
-      raise ValueError("""Error, channels must be "", "V", "L'", "L", "L*", "L*ab", "L*uv" or "L*sh".""")
     if channels == "":
       if self.colormodel == "RGB":
         channels = "RGB"
@@ -39,9 +37,10 @@ class MixinImage:
         channels = "L*"
       else:
         raise ValueError(f"Error, unknown color model {self.colormodel}.")
+    if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv", "L*sh"]:
+      raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv" or "L*sh".""")
+    if channels == "RGB": self.check_color_model("RGB")
     maskchannel = maskchannel.strip()
-    if maskchannel not in ["", "V", "L'", "L", "L*"]:
-      raise ValueError("""Error, maskchannel must be "", "V", "L'", "L" or "L*".""")
     if maskchannel == "":
       if self.colormodel in ["RGB", "gray"]:
         maskchannel = "L"
@@ -53,6 +52,8 @@ class MixinImage:
         maskchannel = "L*"
       else:
         raise ValueError(f"Error, unknown color model {self.colormodel}.")
+    if maskchannel not in ["V", "L'", "L", "L*"]:
+      raise ValueError("""Error, maskchannel must be "V", "L'", "L" or "L*".""")
     print(f"HDRWT on channel(s) {channels} with mask channel {maskchannel}...")
     # HDRWT algorithm.
     image = self.copy()
@@ -61,12 +62,9 @@ class MixinImage:
       if niter > 1: print(f"Iteration {iiter+1}/{niter}.")
       for level in range(lmin, lmax+1): # Iterate over wavelet levels.
         print(f"Processing level #{level}: ", end = "")
-        # Compute the approximation of the (pseudo-)lightness at that wavelet level.
+        # Compute the approximation of the mask channel at that wavelet level.
         lightness = image.get_channel(channel = maskchannel)
-        if level > 0:
-          approx = multiscale.slt(lightness, levels = level, starlet = starlet).coeffs[0]
-        else:
-          approx = lightness
+        approx = multiscale.slt(lightness, levels = level, starlet = starlet).coeffs[0] if level > 0 else mc
         # Compute the midtone transformation and HDR fusion mask.
         median = np.median(approx)
         if target == "bright":
@@ -86,8 +84,6 @@ class MixinImage:
     """HDRWT v2."""
     # Check inputs.
     channels = channels.strip()
-    if channels not in ["", "V", "L'", "L", "L*", "L*ab", "L*uv", "L*sh"]:
-      raise ValueError("""Error, channels must be "", "V", "L'", "L", "L*", "L*ab", "L*uv" or "L*sh".""")
     if channels == "":
       if self.colormodel == "RGB":
         channels = "RGB"
@@ -101,13 +97,12 @@ class MixinImage:
         channels = "L*"
       else:
         raise ValueError(f"Error, unknown color model {self.colormodel}.")
+    if channels == "RGB": self.check_color_model("RGB")
+    if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv", "L*sh"]:
+      raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv" or "L*sh".""")
     print(f"HDRWT on channel(s) {channels}...")
     # HDRWT algorithm.
-    if channels == "RGB":
-      self.check_color_model("RGB")
-      image = self.image
-    else:
-      image = self.get_channel(channel = channels)
+    image = self.image if channels == "RGB" else self.get_channel(channel = channels)
     for iiter in range(niter): # HDRWT iterations.
       if niter > 1: print(f"Iteration {iiter+1}/{niter}.")
       # Compute wavelet transform.
@@ -122,11 +117,8 @@ class MixinImage:
         c = wt.coeffs[-(level+1)][0].copy()
         wt.coeffs[-(level+1)][0] = blend(c, cwt.coeffs[-(level+1)][0], approx**gamma)
         approx += c
-      # Compute the inverse wavelet transform and rescale.
+      # Compute the inverse wavelet transform and renormalize.
       image = wt.inverse()
       image -= np.min(image)
       image /= np.max(image)
-    if channels == "RGB":
-      return self.newImage(image)
-    else:
-      return self.set_channel(channel = channels, data = image)
+      return self.newImage(image) if channels == "RGB" else self.set_channel(channel = channels, data = image)

@@ -1371,7 +1371,7 @@ class MixinImage:
       return self.HSL_saturation()
     elif channel == "H":
       return self.HSX_hue()
-    elif channel == "L":
+    elif channel in ["L", "Ls", "Lb", "Ln"]:
       return self.luma()
     elif channel == "Y":
       return self.luminance()

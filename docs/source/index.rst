@@ -85,3 +85,8 @@ Latest news:
     - Using Dash >= 3.0.0.
     - Screen stretches drop-down menu (see ``stretch = True`` option in :py:meth:`dbrd.show() <equimagelab.jupyter.backend_dash.Dashboard.show>`)  .
 
+  - Version 2.1.0.
+
+    - Masked stretch.
+    - Median multiscale transform.
+    - Experimental HDR wavelet transforms.
