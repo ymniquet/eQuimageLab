@@ -700,11 +700,11 @@ class MixinImage:
     stretches is blended with the previous one using the lightness (or any proxy for it, such as the
     luma) as a mask:
 
-      image_{0} = self
+      image_0 = self
 
-      mask_{n} = [1-lightness(image_{n})]**gamma
+      mask_n = [1-lightness(image_n)]**gamma
 
-      image_{n+1} = mask_{n}*mts(image_{n}, midtone)+(1-mask_{n})*image_{n}
+      image_{n+1} = mask_n*mts(image_n, midtone)+(1-mask_n)*image_n
 
     The method returns image_{niter}. mts is the midtone stretch function, and the midtone parameter
     is estimated so that median(image_{niter}) is close to the target [yet median(image_{niter})

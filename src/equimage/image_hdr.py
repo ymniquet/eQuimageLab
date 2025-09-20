@@ -121,4 +121,4 @@ class MixinImage:
       image = wt.inverse()
       image -= np.min(image)
       image /= np.max(image)
-      return self.newImage(image) if channels == "RGB" else self.set_channel(channel = channels, data = image)
+    return self.newImage(image) if channels == "RGB" else self.set_channel(channel = channels, data = image)

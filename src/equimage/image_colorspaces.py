@@ -1494,9 +1494,9 @@ class MixinImage:
         output.image[0] = data
       elif is_RGB:
         output.image[:] = helpers.scale_pixels(self.image, self.luma(), data)
-        if channels == "Ls":
+        if channel == "Ls":
           output.image[:] = output.protect_highlights_saturation()
-        elif channels == "Ln":
+        elif channel == "Ln":
           maximum = np.max(output.image)
           if maximum > 1.: output.image /= maximum
       else:
