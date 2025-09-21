@@ -1,6 +1,9 @@
 The dashboard
 -------------
 
+.. meta::
+   :description: How to display and filter/compare images on the dashboard of eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 You can also display images in a separate dashboard managed with `Dash <https://dash.plotly.com/>`_.
 
 Displaying a single image

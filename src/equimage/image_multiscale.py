@@ -2,20 +2,22 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 2.0.0 / 2025.07.13
+# Version: 2.1.0 / 2025.09.21
 # Doc OK.
 
 """Multiscale transforms.
 
 The following symbols are imported in the equimage/equimagelab namespaces for convenience:
-  "dwt", "swt", "slt", "anscombe", "inverse_anscombe".
+  "dwt", "swt", "slt", "mmt", "anscombe", "inverse_anscombe".
 """
 
-__all__ = ["dwt", "swt", "slt", "anscombe", "inverse_anscombe"]
+__all__ = ["dwt", "swt", "slt", "mmt", "anscombe", "inverse_anscombe"]
 
 import pywt
 import numpy as np
+import skimage as skim
 import scipy.ndimage as ndimg
+import scipy.signal as signal
 from copy import deepcopy
 
 from . import params
@@ -23,33 +25,9 @@ from . import helpers
 from . import image as img
 from . import image_utils as imgutils
 
-###############
-# Statistics. #
-###############
-
-def std_centered(data, std, **kwargs):
-  """Return the standard deviation of a centered data set.
-
-  Args:
-    data (numpy.ndarray): The data set (whose average must be zero).
-    std (str): The method used to compute the standard deviation:
-
-      - "variance": std_centered = sqrt(numpy.mean(data**2))
-      - "median": std_centered = numpy.median(abs(data))/0.6744897501960817.
-        This estimate is more robust to outliers.
-
-    kwargs: Optional keyword arguments are passed to the numpy.mean (std = "variance") or
-      numpy.median (std = "median") functions.
-
-  Returns:
-    float: The standard deviation of data.
-  """
-  if std == "variance":
-    return np.sqrt(np.mean(data**2, **kwargs))
-  elif std == "median":
-    return np.median(abs(data), **kwargs)/0.6744897501960817
-  else:
-    raise ValueError("Error, unknown method '{std}'.")
+#############################
+# Anscombe transformations. #
+#############################
 
 def anscombe(data, gain = 1., average = 0., sigma = 0.):
   """Return the generalized Anscombe transform (gAt) of the input data.
@@ -92,24 +70,73 @@ def inverse_anscombe(data, gain = 1., average = 0., sigma = 0.):
   """
   return ((gain*data/2.)**2-3.*gain**2/8.-sigma**2+gain*average)/gain
 
-###########################
-# WaveletTransform class. #
-###########################
+#####################
+# Helper functions. #
+#####################
 
-class WaveletTransform:
-  """Wavelet transform class."""
+def std_centered(data, std, **kwargs):
+  """Return the standard deviation of a centered data set.
 
-  def iwt(self, asarray = False):
-    """Inverse wavelet transform.
+  Args:
+    data (numpy.ndarray): The data set (whose average must be zero).
+    std (str): The method used to compute the standard deviation:
+
+      - "variance": std_centered = sqrt(numpy.mean(data**2))
+      - "median": std_centered = numpy.median(abs(data))/0.6744897501960817.
+        This estimate is more robust to outliers.
+
+    kwargs: Optional keyword arguments are passed to the numpy.mean (std = "variance") or
+      numpy.median (std = "median") functions.
+
+  Returns:
+    float: The standard deviation of data.
+  """
+  if std == "variance":
+    return np.sqrt(np.mean(data**2, **kwargs))
+  elif std == "median":
+    return np.median(abs(data), **kwargs)/0.6744897501960817
+  else:
+    raise ValueError("Error, unknown method '{std}'.")
+
+def resize(image, shape, mode = "symmetric"):
+  """Rescale the input image to the target shape by bicubic spline interpolation.
+
+  Args:
+    image (numpy.ndarray): An image with shape (..., height, width).
+    shape (tuple): The target shape (..., newheight, newwidth) of the image.
+    mode (str, optional): How to extend the image across its boundaries (skimage.transform.resize
+      convention):
+
+      - "symmetric" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+      - "reflect": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+      - "edge": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+      - "constant": the image is padded with zeros (abcd → 0000|abcd|0000).
+      - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
+
+  Returns:
+    numpy.ndarray: The rescaled image with shape (..., newheight, newwidth).
+  """
+  return skim.transform.resize(image, shape, order = 3, mode = mode, clip = False)
+
+##############################
+# MultiscaleTransform class. #
+##############################
+
+class MultiscaleTransform:
+  """Multiscale transform class."""
+
+  def inverse(self, asarray = False):
+    """Inverse multiscale transform.
 
     Args:
-      asarray (bool, optional): If True, return the inverse wavelet transform as a numpy.ndarray.
-        If False (default), return the inverse wavelet transform as an Image object if the original
+      asarray (bool, optional): If True, return the inverse multiscale transform as a numpy.ndarray.
+        If False (default), return the inverse multiscale transform as an Image object if the original
         image was an Image object, and as a numpy.ndarray otherwise.
 
     Returns:
-      Image or numpy.ndarray: The inverse wavelet transform of the object.
+      Image or numpy.ndarray: The inverse multiscale transform of the object.
     """
+
     if self.type == "dwt":
       data = pywt.waverec2(self.coeffs, wavelet = self.wavelet, mode = self._mode, axes = (-2, -1))
     elif self.type == "swt":
@@ -117,28 +144,33 @@ class WaveletTransform:
       height, width = self.size
       ptop, pleft = self.padding
       data = data[..., ptop:ptop+height, pleft:pleft+width]
-    elif self.type == "slt":
+    elif self.type == "slt" or self.type == "mmt":
       data = self.coeffs[0]+np.sum(self.coeffs[1:], axis = 0)[0]
+    elif self.type == "pmmt":
+      data = self.coeffs[0]
+      for level in range(self.levels):
+        c = self.coeffs[level+1][0]
+        data = resize(data, c.shape, mode = self._mode)+c
     else:
-      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
+      raise ValueError(f"Unknown multiscale transform type '{self.type}'.")
     return img.Image(data, colorspace = self.colorspace, colormodel = self.colormodel) if self.isImage and not asarray else data
 
   def copy(self):
     """Return a (deep) copy of the object.
 
     Returns:
-      WaveletTransform: A copy of the object.
+      MultiscaleTransform: A copy of the object.
     """
     return deepcopy(self)
 
   def apply_same_transform(self, image):
-    """Apply the wavelet transform of the object to the input image.
+    """Apply the multiscale transform of the object to the input image.
 
     Args:
       image (Image or numpy.ndarray): The input image.
 
     Returns:
-      WaveletTransform: The wavelet transform of the input image.
+      MultiscaleTransform: The multiscale transform of the input image.
     """
     if self.type == "dwt":
       return dwt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode)
@@ -146,21 +178,25 @@ class WaveletTransform:
       return swt(image, levels = self.levels, wavelet = self.wavelet, mode = self.mode, start = self.start)
     elif self.type == "slt":
       return slt(image, levels = self.levels, starlet = self.wavelet, mode = self.mode)
+    elif self.type == "mmt":
+      return mmt(image, level = self.levels, mode = self.mode, pyramidal = False)
+    elif self.type == "pmmt":
+      return mmt(image, level = self.levels, mode = self.mode, pyramidal = True)
     else:
-      raise ValueError(f"Unknown wavelet transform type '{self.type}'.")
+      raise ValueError(f"Unknown multiscale transform type '{self.type}'.")
 
   def scale_levels(self, mult, inplace = False):
-    """Scale wavelet levels.
+    """Scale wavelet/multiscale median transform levels.
 
     Args:
-      mult (numpy.ndarray or dict): The scaling factor for each wavelet level. Level 0 is the smallest
-        scale. If a dictionary, must be of the form {level: scaling factor, ...} (e.g. {0: .8, 1: 1.5}).
-        Default scaling factor is 1 for all unspecified wavelet levels.
+      mult (numpy.ndarray or dict): The scaling factor for each level. Level 0 is the smallest scale.
+        If a dictionary, must be of the form {level: scaling factor, ...} (e.g. {0: .8, 1: 1.5}).
+        Default scaling factor is 1 for all unspecified levels.
       inplace (bool, optional): If True, update the object "in place"; if False (default), return a
-        new WaveletTransform object.
+        new MultiscaleTransform object.
 
     Returns:
-      WaveletTransform: The updated WaveletTransform object.
+      MultiscaleTransform: The updated MultiscaleTransform object.
     """
     if isinstance(mult, dict):
       ms = [0.]*self.levels
@@ -168,7 +204,7 @@ class WaveletTransform:
         if not isinstance(key, int):
           raise TypeError("Error, mult dictionary keys must be integers.")
         if key < 0 or key >= self.levels:
-          raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
+          raise ValueError(f"Error, levels must be >= 0 and < {self.levels}.")
         ms[key] = value
     else:
       ms = np.asarray(mult)
@@ -181,33 +217,33 @@ class WaveletTransform:
     return output
 
   def threshold_levels(self, threshold, mode = "soft", inplace = False):
-    """Threshold wavelet levels.
+    """Threshold wavelet/multiscale median transform levels.
 
     See also:
-      :meth:`WaveletTransform.threshold_firm_levels`
+      :meth:`MultiscaleTransform.threshold_firm_levels`
 
     Args:
-      threshold (numpy.ndarray or dict): The threshold for each wavelet level. Level 0 is the
-        smallest scale. Can be a 1D array [threshold for each level], a 2D array [threshold for
-        each level (rows) & channel (columns)], or a dictionary of the form {level: threshold, ...}
-        or of the form {level: (threshold channel #1, threshold channel #2, ...), ...} (e.g.,
-        {0: 1.e-2, 1: 1.e-3}). Default threshold is 0 for all unspecified wavelet levels.
+      threshold (numpy.ndarray or dict): The threshold for each level. Level 0 is the smallest scale.
+        Can be a 1D array [threshold for each level], a 2D array [threshold for each level (rows) &
+        channel (columns)], or a dictionary of the form {level: threshold, ...} or of the form
+        {level: (threshold channel #1, threshold channel #2, ...), ...} (e.g., {0: 1.e-2, 1: 1.e-3}).
+        Default threshold is 0 for all unspecified levels.
       mode (string, optional): The thresholding mode:
 
-        - "soft" (default): Wavelet coefficients with absolute value < threshold are replaced by 0,
+        - "soft" (default): Detail coefficients with absolute value < threshold are replaced by 0,
           while those with absolute value >= threshold are shrunk toward 0 by the value of threshold.
-        - "hard": Wavelet coefficients with absolute value < threshold are replaced by 0, while
-          those with absolute value >= threshold are left unchanged.
-        - "garrote": Non-negative Garrote threshold (soft for small wavelet coefficients, and hard
-          for large wavelet coefficients).
-        - "greater": Wavelet coefficients < threshold are replaced by 0.
-        - "less": Wavelet coefficients > threshold are replaced by 0.
+        - "hard": Detail coefficients with absolute value < threshold are replaced by 0, while those
+          with absolute value >= threshold are left unchanged.
+        - "garrote": Non-negative Garrote threshold (soft for small detail coefficients, and hard
+          for large detail coefficients).
+        - "greater": Detail oefficients < threshold are replaced by 0.
+        - "less": Detail coefficients > threshold are replaced by 0.
 
       inplace (bool, optional): If True, update the object "in place"; if False (default), return a
-        new WaveletTransform object.
+        new MultiscaleTransform object.
 
     Returns:
-      WaveletTransform: The updated WaveletTransform object.
+      MultiscaleTransform: The updated MultiscaleTransform object.
     """
     if isinstance(threshold, dict):
       ts = [0.]*self.levels
@@ -215,7 +251,7 @@ class WaveletTransform:
         if not isinstance(key, int):
           raise TypeError("Error, threshold dictionary keys must be integers.")
         if key < 0 or key >= self.levels:
-          raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
+          raise ValueError(f"Error, levels must be >= 0 and < {self.levels}.")
         ts[key] = value
     else:
       ts = np.asarray(threshold)
@@ -240,30 +276,30 @@ class WaveletTransform:
     return output
 
   def threshold_firm_levels(self, thresholds, inplace = False):
-    """Firm threshold of wavelet levels.
+    """Firm threshold of wavelet/multiscale median transform levels.
 
-    Firm thresholding behaves the same as soft-thresholding for wavelet coefficients with absolute
-    values below threshold_low, and the same as hard-thresholding for wavelet coefficients with
+    Firm thresholding behaves the same as soft-thresholding for detail coefficients with absolute
+    values below threshold_low, and the same as hard-thresholding for detail coefficients with
     absolute values above threshold_high. For intermediate values, the outcome is in between soft
     and hard thresholding.
 
     See also:
-      :meth:`WaveletTransform.threshold`
+      :meth:`MultiscaleTransform.threshold`
 
     Args:
-      thresholds (numpy.ndarray or dict): The thresholds for each wavelet level. Level 0 is the
-        smallest scale. Can be a 2D array [threshold_low (column 1) and threshold_high (column 2)
-        for each level (rows)], a 3D array [threshold_low and threshold_high (second axis) for each
+      thresholds (numpy.ndarray or dict): The thresholds for each level. Level 0 is the smallest
+        scale. Can be a 2D array [threshold_low (column 1) and threshold_high (column 2) for each
+        level (rows)], a 3D array [threshold_low and threshold_high (second axis) for each
         level (first axis) & channel (third axis)], or a dictionary of the form
         {level: (threshold_low, threshold_high), ...} or of the form {level: ((threshold_low
         channel #1, threshold_low channel #2, ...), (threshold_high channel #1, threshold_high
         channel #2, ...)), ...} (e.g. {0: (1.e-2, 5e-2), 1: (1.e-3, 5e-3)}). Default thresholds
-        are (threshold_low = 0, threshold_high = 0) for all unspecified wavelet levels.
+        are (threshold_low = 0, threshold_high = 0) for all unspecified levels.
       inplace (bool, optional): If True, update the object "in place"; if False (default), return a
-        new WaveletTransform object.
+        new MultiscaleTransform object.
 
     Returns:
-      WaveletTransform: The updated WaveletTransform object.
+      MultiscaleTransform: The updated MultiscaleTransform object.
     """
     if isinstance(thresholds, dict):
       ts = [(0., 0.)]*self.levels
@@ -271,7 +307,7 @@ class WaveletTransform:
         if not isinstance(key, int):
           raise TypeError("Error, thresholds dictionary keys must be integers.")
         if key < 0 or key >= self.levels:
-          raise ValueError(f"Error, wavelet levels must be >= 0 and < {self.levels}.")
+          raise ValueError(f"Error, levels must be >= 0 and < {self.levels}.")
         ts[key] = value
     else:
       ts = np.asarray(thresholds)
@@ -306,6 +342,9 @@ class WaveletTransform:
     white gaussian noise and computing the standard deviation of the wavelet coefficients at all
     scales.
 
+    Warning:
+      This method does not apply to the multiscale median transform owing to its non-linear behavior.
+
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
         or "median" (default). See :func:`std_centered` for details.
@@ -320,6 +359,8 @@ class WaveletTransform:
       numpy.ndarray: The standard deviation of a white gaussian noise with variance 1 at all wavelet
       levels. Level #0 is the smallest scale.
     """
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     if self.type != "slt": numerical = numerical or not pywt.Wavelet(self.wavelet).orthogonal
     # Analytical noise partition.
     if not numerical:
@@ -345,8 +386,8 @@ class WaveletTransform:
     scale_factors = 0.
     for n in range(samples):
       image = rng.normal(size = (size[0], size[1]))
-      wt = self.apply_same_transform(image)
-      scale_factors += np.array([std_centered(wt.coeffs[-(level+1)][-1], std) for level in range(wt.levels)])
+      mst = self.apply_same_transform(image)
+      scale_factors += np.array([std_centered(mst.coeffs[-(level+1)][-1], std) for level in range(mst.levels)])
     return scale_factors/samples
 
   def estimate_noise0(self, std = "median", clip = None, eps = 1.e-3, maxit = 8):
@@ -358,7 +399,10 @@ class WaveletTransform:
     sigma0 is converged.
 
     See also:
-      :meth:`WaveletTransform.estimate_noise`
+      :meth:`MultiscaleTransform.estimate_noise`
+
+    Warning:
+      This method does not apply to the multiscale median transform owing to its non-linear behavior.
 
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
@@ -373,6 +417,8 @@ class WaveletTransform:
     Returns:
       numpy.ndarray: The noise sigma0 in each channel.
     """
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     coeffs = helpers.at_least_3D(self.coeffs[-1][-1])
     sigma = std_centered(coeffs, std, axis = (-2, -1))
     if clip is not None and maxit > 0:
@@ -397,8 +443,11 @@ class WaveletTransform:
     levels assuming the noise is white and gaussian.
 
     See also:
-      :meth:`WaveletTransform.estimate_noise0`,
-      :meth:`WaveletTransform.noise_scale_factors`
+      :meth:`MultiscaleTransform.estimate_noise0`,
+      :meth:`MultiscaleTransform.noise_scale_factors`
+
+    Warning:
+      This method does not apply to the multiscale median transform owing to its non-linear behavior.
 
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
@@ -411,12 +460,14 @@ class WaveletTransform:
       maxit (int, optional): Maximum number of iterations if clip is not None. Default is 8.
       scale_factors (numpy.ndarray): The expected standard deviation of a white gaussian noise
         with variance 1 at each wavelet level. If None (default), this method calls
-        :meth:`WaveletTransform.noise_scale_factors` to compute these factors.
+        :meth:`MultiscaleTransform.noise_scale_factors` to compute these factors.
 
     Returns:
       numpy.ndarray, numpy.ndarray: The noise in each channel (columns) and wavelet level (rows),
       and the total noise in each channel.
     """
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     if scale_factors is None: scale_factors = self.noise_scale_factors(std = std)
     sigma0 = self.estimate_noise0(std = std, clip = clip, eps = eps, maxit = maxit)
     norm = scale_factors[0]
@@ -426,21 +477,23 @@ class WaveletTransform:
   def multiresolution_support(self, thresholds):
     """Compute the multiresolution support.
 
-    The multiresolution support is a map of the significant wavelet coefficients of an undecimated
-    starlet transform. In a given channel, each pixel p(x, y) of the multiresolution support is
+    The multiresolution support is a map of the significant detail coefficients of a starlet or
+    multiscale median transform. In a given channel, each pixel p(x, y) of the multiresolution
+    support is
 
       p(x, y) = sum_l F(c_l(x,y), t_l) 2**l/(2**nlevels-1),
 
-    where the sum runs over the nlevels wavelet levels, c_l(x,y) is the wavelet coefficient of the
-    pixel (x, y) at level l, and F(u) = 1 if u is greater than the threshold t_l, 0 otherwise.
+    where the sum runs over the nlevels levels, c_l(x,y) is the detail coefficient of the pixel (x, y)
+    at level l, and F(u) = 1 if u is greater than the threshold t_l, 0 otherwise.
 
     Args:
-      thresholds (numpy.ndarray): The threshold in each channel (columns) and wavelet level (rows).
+      thresholds (numpy.ndarray): The threshold in each channel (columns) and level (rows).
 
     Returns:
       numpy.ndarray: The multiresolution support, with the same shape as the original image.
     """
-    if self.type != "slt": raise ValueError("Error, multiresolution support is only available for starlet transforms.")
+    if self.type not in ["slt", "mmt"]:
+      raise NotImplementedError("Error, multiresolution support is only available for the starlet and (non-pyramidal) multiscale median transforms.")
     support = np.zeros((self.nc, self.size[0], self.size[1]))
     for level in range(self.levels):
       coeffs = helpers.at_least_3D(self.coeffs[-(level+1)][0])
@@ -461,7 +514,10 @@ class WaveletTransform:
       wavelet shrinkage", Biometrika 81, 425 (1994) (DOI:10.1093/biomet/81.3.425).
 
     See also:
-      :meth:`WaveletTransform.VisuShrink`
+      :meth:`MultiscaleTransform.VisuShrink`
+
+    Warning:
+      This method does not apply to the multiscale median transform owing to its non-linear behavior.
 
     Returns:
       float: The VisuShrink clip factor clip = sqrt(2*log(npixels)).
@@ -475,7 +531,7 @@ class WaveletTransform:
     deviations sigma of the noise in each level as threshold = clip*sigma, with clip =
     sqrt(2*log(npixels)) and npixels the number of pixels in the image.
 
-    VisuShrink produces softer images than BayesShrink (see :meth:`WaveletTransform.BayesShrink`),
+    VisuShrink produces softer images than BayesShrink (see :meth:`MultiscaleTransform.BayesShrink`),
     but may oversmooth and loose many details.
 
     Note:
@@ -483,8 +539,11 @@ class WaveletTransform:
       wavelet shrinkage", Biometrika 81, 425 (1994) (DOI:10.1093/biomet/81.3.425).
 
     See also:
-      :meth:`WaveletTransform.VisuShrink_clip`
-      :meth:`WaveletTransform.BayesShrink`
+      :meth:`MultiscaleTransform.VisuShrink_clip`
+      :meth:`MultiscaleTransform.BayesShrink`
+
+    Warning:
+      This method does not apply to the multiscale median transform owing to its non-linear behavior.
 
     Args:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
@@ -498,11 +557,13 @@ class WaveletTransform:
           for large wavelet coefficients).
 
       inplace (bool, optional): If True, update the object "in place"; if False (default), return a
-        new WaveletTransform object.
+        new MultiscaleTransform object.
 
     Returns:
-      WaveletTransform: The updated WaveletTransform object.
+      MultiscaleTransform: The updated MultiscaleTransform object.
     """
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     clip = self.VisuShrink_clip()
     print(f"VisuShrink: threshold = {clip:.5f}σ.")
     return self.threshold_levels(clip*sigmas, mode = mode, inplace = inplace)
@@ -515,7 +576,7 @@ class WaveletTransform:
     variance of the wavelet coefficients.
 
     This level-dependent strategy preserves more details than the VisuShrink method (see
-    :meth:`WaveletTransform.VisuShrink`).
+    :meth:`MultiscaleTransform.VisuShrink`).
 
     Note:
       Borrowed from scikit-image. See Chang, S. Grace, Bin Yu, and Martin Vetterli. "Adaptive wavelet
@@ -523,7 +584,10 @@ class WaveletTransform:
       1532 (2000) (DOI:10.1109/83.862633).
 
     See also:
-      :meth:`WaveletTransform.VisuShrink`
+      :meth:`MultiscaleTransform.VisuShrink`
+
+    Warning:
+      This method does not apply to the multiscale median transform owing to its non-linear behavior.
 
     Args:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
@@ -539,10 +603,10 @@ class WaveletTransform:
           for large wavelet coefficients).
 
       inplace (bool, optional): If True, update the object "in place"; if False (default), return a
-        new WaveletTransform object.
+        new MultiscaleTransform object.
 
     Returns:
-      WaveletTransform: The updated WaveletTransform object.
+      MultiscaleTransform: The updated MultiscaleTransform object.
     """
 
     def shrink(c, sigma):
@@ -551,6 +615,8 @@ class WaveletTransform:
       threshold = sigma**2/np.sqrt(max(std_centered(c, std = std)**2-sigma**2, eps))
       return pywt.threshold(c, threshold, mode = mode)
 
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     output = self if inplace else self.copy()
     for level in range(self.levels):
       if self.nc == 1:
@@ -564,7 +630,7 @@ class WaveletTransform:
     """Iterative noise reduction.
 
     This method first estimates the noise sigma in each channel and wavelet level (using
-    :meth:`WaveletTransform.estimate_noise`), then clips the wavelet coefficients whose
+    :meth:`MultiscaleTransform.estimate_noise`), then clips the wavelet coefficients whose
     absolute values are smaller than clip*sigma. It then computes the inverse wavelet transform
     I0 and the difference D0 = I-I0 with the original image I.
 
@@ -585,8 +651,11 @@ class WaveletTransform:
       https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach
 
     See also:
-      :meth:`WaveletTransform.estimate_noise`,
-      :meth:`WaveletTransform.noise_scale_factors`
+      :meth:`MultiscaleTransform.estimate_noise`,
+      :meth:`MultiscaleTransform.noise_scale_factors`
+
+    Warning:
+      This method does not apply to the multiscale median transform owing to its non-linear behavior.
 
     Args:
       std (str, optional): The method used to compute standard deviations. Can be "variance"
@@ -598,15 +667,17 @@ class WaveletTransform:
       maxit (int, optional): Maximum number of iterations. Default is 8.
       scale_factors (numpy.ndarray): The expected standard deviation of a white gaussian noise
         with variance 1 at each wavelet level. If None (default), this method calls
-        :meth:`WaveletTransform.noise_scale_factors` to compute these factors.
+        :meth:`MultiscaleTransform.noise_scale_factors` to compute these factors.
 
     Returns:
       Image or numpy.ndarray: The denoised image In and the noise Dn = I-In.
     """
+    if self.type == "mmt" or self.type == "pmmt":
+      raise NotImplementedError("Error, does not apply to multiscale median transforms owing to their non-linear behavior.")
     if scale_factors is None: scale_factors = self.noise_scale_factors(std = std)
-    original = helpers.at_least_3D(self.iwt(asarray = True))
+    original = helpers.at_least_3D(self.inverse(asarray = True))
     sigmas, sigmat = self.estimate_noise(std = std, clip = clip, eps = eps, maxit = maxit, scale_factors = scale_factors)
-    denoised = helpers.at_least_3D(self.threshold_levels(clip*sigmas, mode = "hard").iwt(asarray = True))
+    denoised = helpers.at_least_3D(self.threshold_levels(clip*sigmas, mode = "hard").inverse(asarray = True))
     for ic in range(self.nc):
       print(f"Channel #{ic+1}:")
       print(f"Initial estimate: σ = {sigmat[ic]:.6e}.")
@@ -621,7 +692,7 @@ class WaveletTransform:
         if converged: break
         it += 1
         if it > maxit: break
-        denoised[ic] += Dwt.threshold_levels(clip*sigmaDs, mode = "hard", inplace = True).iwt()
+        denoised[ic] += Dwt.threshold_levels(clip*sigmaDs, mode = "hard", inplace = True).inverse()
         oldsigmaDt = sigmaDt
       if converged:
         print(f"Converged in {it} iterations.")
@@ -633,67 +704,68 @@ class WaveletTransform:
       diff = img.Image(diff, colorspace = self.colorspace, colormodel = self.colormodel)
     return denoised, diff
 
-  def enhance_details(self, alphas, betas = 1., thresholds = 0., alphaA = 1., betaA = 1., inplace = False):
-    """Enhance the detail coefficients of a starlet transformation.
+  def enhance_details(self, alphas, omegas = 1., thresholds = 0., alphaA = 1., omegaA = 1., inplace = False):
+    """Enhance the detail coefficients of a starlet or multiscale median transform.
 
-    This method (only implemented for starlet transformations at present) enhances the details
-    coefficients c → f(abs(c))*c of each wavelet level, with:
+    This method compresses the details coefficients c → f(abs(c))*sign(c) of each level, where:
 
-      - f(x) = 1 if x <= threshold,
-      - f(x) = (cmax/x)*((x-c0)/(cmax-c0))**alpha if x > threshold,
+      - f(x) = x if x <= threshold,
+      - f(x) = omega*((x-x0)/(omega-x0))**alpha if x > threshold,
 
-    where cmax = beta*max(abs(c)) and c0 is computed to ensure continuity at x = threshold.
+    and x0 is computed to ensure continuity at x = threshold (x0 = 0 if threshold = 0).
 
     With alpha < 1 this transformations enhances the detail coefficients whose absolute values are
-    within [threshold, cmax], and softens detail coefficients whose absolute values are above cmax
-    (dynamic range compression).
+    within [threshold, omega], and softens the detail coefficients whose absolute values are greater
+    than omega (dynamic range compression). The detail coefficients with absolute values smaller
+    than threshold are preserved.
+
+    Note:
+      If threshold = 0 and alpha, omega are the same for all levels (and for the approximation),
+      then omega simply scales the whole image by omega**(1-alpha) and can thus be set afterwards.
 
     Args:
-      alphas (float): The alpha exponent for each wavelet level (expected < 1). Can be a scalar
-        (same alpha for all scales) or a list/tuple/array (level #0 is the smallest scale).
-        If alpha = 1, the wavelet level is not enhanced.
-      betas (float, optional): The beta factor for each wavelet level (expected < 1). Can be
-        a scalar (same beta for all scales) or a list/tuple/array (level #0 is the smallest scale).
-      thresholds (float, optional): The threshold for each wavelet level. Can be a scalar (same
+      alphas (float): The exponent alpha for each level (expected > 0). Can be a scalar (same alpha
+        for all scales) or a list/tuple/array (level #0 is the smallest scale). If alpha = 1, the
+        level is not enhanced.
+      omegas (float, optional): The turning point omega for each level (default 1). Can be a scalar
+        (same omega for all scales) or a list/tuple/array (level #0 is the smallest scale).
+      thresholds (float, optional): The threshold for each level (default 0). Can be a scalar (same
         threshold for all scales) or a list/tuple/array (level #0 is the smallest scale).
-      alphaA (float, optional): The alpha exponent for the approximation coefficients (default 1 =
-        not enhanced).
-      betaA (float, optional): The beta factor for the approximation coefficients (default 1).
+      alphaA (float, optional): The exponent alpha for the approximation coefficients (default 1).
+      omegaA (float, optional): The turning point omega for the approximation coefficients (default 1).
       inplace (bool, optional): If True, update the object "in place"; if False (default), return a
-        new WaveletTransform object.
+        new MultiscaleTransform object.
 
     Returns:
-      WaveletTransform: The updated WaveletTransform object.
+      MultiscaleTransform: The updated MultiscaleTransform object.
     """
 
-    def enhance(c, cmin, cmax, alpha):
+    def enhance(c, alpha, threshold, omega):
       """Enhance the input coefficients c."""
-      r = (cmin/cmax)**(1./alpha)
-      c0 = (cmax*r-cmin)/(r-1.)
+      r = (threshold/omega)**(1./alpha)
+      c0 = (omega*r-threshold)/(r-1.)
       cout = np.empty_like(c)
-      cset = c <= cmin
+      cset = (c <= threshold)
       cout[ cset] = c[cset]
-      cout[~cset] = cmax*((c[~cset]-c0)/(cmax-c0))**alpha
+      cout[~cset] = omega*((c[~cset]-c0)/(omega-c0))**alpha
       return cout
 
-    if self.type != "slt": raise NotImplementedError("Error, only implemented for starlet transforms.")
+    if self.type not in ["slt", "mmt"]: raise NotImplementedError("Error, only implemented for starlet and (non-pyramidal) median transforms.")
     if np.isscalar(alphas): alphas = [alphas]*self.levels
-    if np.isscalar(betas): betas = [betas]*self.levels
+    if np.isscalar(omegas): omegas = [omegas]*self.levels
     if np.isscalar(thresholds): thresholds = [thresholds]*self.levels
     output = self if inplace else self.copy()
     for level in range(self.levels):
+      omega = omegas[level]
+      threshold = thresholds[level]
+      if threshold >= omega: raise ValueError(f"Error, threshold >= omega at level #{level}.")
       alpha = alphas[level]
       if alpha == 1.: continue
-      beta = betas[level]
       c = self.coeffs[-(level+1)][0]
-      absc = abs(c)
-      cmin = thresholds[level]
-      cmax = beta*absc.max()
-      if cmax <= cmin: raise ValueError(f"Error, threshold > cmax at level #{level}. Decrease threshold or increase beta.")
-      output.coeffs[-(level+1)][0] = np.sign(c)*enhance(absc, cmin, cmax, alpha)
+      output.coeffs[-(level+1)][0] = np.sign(c)*enhance(abs(c), alpha, threshold, omega)
     if alphaA != 1.:
-      c = self.coeffs[0][0]
-      output.coeffs[0][0] = enhance(c, 0., betaA*c.max(), alphaA)
+      c = self.coeffs[0]
+      output.coeffs[0] = enhance(c, alphaA, 0., omegaA)
     return output
 
 #######################
@@ -701,7 +773,7 @@ class WaveletTransform:
 #######################
 
 def dwt(image, levels, wavelet = "default", mode = "reflect"):
-  """Discrete wavelet transform of an image.
+  """Discrete wavelet transform of the input image.
 
   Args:
     image (Image or numpy.ndarray): The input image.
@@ -717,8 +789,9 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
       - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
   Returns:
-    WaveletTransform: The discrete wavelet transform of the input image.
+    MultiscaleTransform: The discrete wavelet transform of the input image.
   """
+  # Check inputs.
   isImage = issubclass(type(image), img.Image)
   if isImage:
     data = image.image
@@ -745,25 +818,26 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
     raise ValueError(f"Error, unknown boundary mode '{mode}'.")
   # Compute the discrete wavelet transform.
   if wavelet == "default": wavelet = params.defwavelet
-  wt = WaveletTransform()
-  wt.type = "dwt"
-  wt.wavelet = wavelet
-  wt.levels = levels
-  wt.start = 0
-  wt.mode = mode
-  wt._mode = _mode
-  wt.coeffs = pywt.wavedec2(data, wavelet = wavelet, level = levels, mode = _mode, axes = (-2, -1))
-  wt.ndim = data.ndim
-  wt.size = (height, width)
-  wt.nc = 1 if data.ndim == 2 else data.shape[0]
-  wt.isImage = isImage
+  # Set up the MultiscaleTransform object.
+  mst = MultiscaleTransform()
+  mst.type = "dwt"
+  mst.wavelet = wavelet
+  mst.levels = levels
+  mst.start = 0
+  mst.mode = mode
+  mst._mode = _mode
+  mst.coeffs = pywt.wavedec2(data, wavelet = wavelet, level = levels, mode = _mode, axes = (-2, -1))
+  mst.ndim = data.ndim
+  mst.size = (height, width)
+  mst.nc = 1 if data.ndim == 2 else data.shape[0]
+  mst.isImage = isImage
   if isImage:
-    wt.colorspace = image.colorspace
-    wt.colormodel = image.colormodel
-  return wt
+    mst.colorspace = image.colorspace
+    mst.colormodel = image.colormodel
+  return mst
 
 def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
-  """Stationary wavelet transform (also known as undecimated or "à trous" transform) of an image.
+  """Stationary wavelet transform (also known as undecimated or "à trous" transform) of the input image.
 
   Args:
     image (Image or numpy.ndarray): The input image.
@@ -779,8 +853,9 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
       - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
   Returns:
-    WaveletTransform: The stationary wavelet transform of the input image.
+    MultiscaleTransform: The stationary wavelet transform of the input image.
   """
+  # Check inputs.
   isImage = issubclass(type(image), img.Image)
   if isImage:
     data = image.image
@@ -811,23 +886,24 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
   padded = np.pad(data, padding, mode = _mode)
   # Compute the stationary wavelet transform.
   if wavelet == "default": wavelet = params.defwavelet
-  wt = WaveletTransform()
-  wt.type = "swt"
-  wt.wavelet = wavelet
-  wt.levels = levels
-  wt.start = start
-  wt.mode = mode
-  wt.norm = True
-  wt.coeffs = pywt.swt2(padded, wavelet = wavelet, level = levels, start_level = start, trim_approx = True, norm = wt.norm, axes = (-2, -1))
-  wt.ndim = data.ndim
-  wt.size = (height, width)
-  wt.nc = 1 if data.ndim == 2 else data.shape[0]
-  wt.padding = (ptop, pleft)
-  wt.isImage = isImage
+  # Set up the MultiscaleTransform object.
+  mst = MultiscaleTransform()
+  mst.type = "swt"
+  mst.wavelet = wavelet
+  mst.levels = levels
+  mst.start = start
+  mst.mode = mode
+  mst.norm = True
+  mst.coeffs = pywt.swt2(padded, wavelet = wavelet, level = levels, start_level = start, trim_approx = True, norm = mst.norm, axes = (-2, -1))
+  mst.ndim = data.ndim
+  mst.size = (height, width)
+  mst.nc = 1 if data.ndim == 2 else data.shape[0]
+  mst.padding = (ptop, pleft)
+  mst.isImage = isImage
   if isImage:
-    wt.colorspace = image.colorspace
-    wt.colormodel = image.colormodel
-  return wt
+    mst.colorspace = image.colorspace
+    mst.colormodel = image.colormodel
+  return mst
 
 def slt(image, levels, starlet = "cubic", mode = "reflect"):
   """Starlet (isotropic undecimated wavelet) transform of the input image.
@@ -848,21 +924,21 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
       - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
   Returns:
-    WaveletTransform: The starlet transform of the input image.
+    MultiscaleTransform: The starlet transform of the input image.
   """
 
   def convolve_starlet(data, step):
     """Convolve the input data with the starlet at scale step/2-1."""
     # Set-up convolution kernel.
     if starlet == "linear":
-      kernel_size = 2*step+1
-      kernel = np.zeros(kernel_size, dtype = data.dtype)
+      ksize = 2*step+1
+      kernel = np.zeros(ksize, dtype = data.dtype)
       kernel[   0] = 1/4.
       kernel[step] = 1/2.
       kernel[  -1] = 1/4.
     elif starlet == "cubic":
-      kernel_size = 4*step+1
-      kernel = np.zeros(kernel_size, dtype = data.dtype)
+      ksize = 4*step+1
+      kernel = np.zeros(ksize, dtype = data.dtype)
       kernel[     0] = 1/16.
       kernel[  step] = 1/4.
       kernel[2*step] = 3/8.
@@ -874,6 +950,7 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
       output = ndimg.convolve1d(output, kernel, axis = axis, mode = mode, cval = 0.)
     return output
 
+  # Check inputs.
   isImage = issubclass(type(image), img.Image)
   if isImage:
     data = image.image
@@ -883,12 +960,12 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
     raise ValueError("Error, the input image is not valid.")
   height, width = data.shape[-2], data.shape[-1]
   if starlet == "linear":
-    kernel_size = 3
+    ksize = 3
   elif starlet == "cubic":
-    kernel_size = 5
+    ksize = 5
   else:
     raise ValueError("Error, starlet must be 'linear' or 'cubic'.")
-  maxlevels = pywt.dwt_max_level(min(height, width), kernel_size)
+  maxlevels = pywt.dwt_max_level(min(height, width), ksize)
   if levels < 1: raise ValueError("Error, levels must be >= 1.")
   if levels > maxlevels: raise ValueError(f"Error, levels must be <= {maxlevels} for an image with size ({height}, {width}).")
   # Check boundary mode.
@@ -898,26 +975,136 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
   step = 1
   coeffs = []
   for level in range(levels):
-    convolved = convolve_starlet(data, step)
-    coeffs.append([data-convolved])
-    data = convolved
+    smoothed = convolve_starlet(data, step)
+    coeffs.append([data-smoothed])
+    data = smoothed
     step *= 2
-  coeffs.append(convolved)
-  wt = WaveletTransform()
-  wt.type = "slt"
-  wt.wavelet = starlet
-  wt.levels = levels
-  wt.start = 0
-  wt.mode = mode
-  wt.coeffs = list(reversed(coeffs))
-  wt.ndim = data.ndim
-  wt.size = (height, width)
-  wt.nc = 1 if data.ndim == 2 else data.shape[0]
-  wt.isImage = isImage
+  coeffs.append(smoothed)
+  # Set up the MultiscaleTransform object.
+  mst = MultiscaleTransform()
+  mst.type = "slt"
+  mst.wavelet = starlet
+  mst.levels = levels
+  mst.start = 0
+  mst.mode = mode
+  mst.coeffs = list(reversed(coeffs))
+  mst.ndim = data.ndim
+  mst.size = (height, width)
+  mst.nc = 1 if data.ndim == 2 else data.shape[0]
+  mst.isImage = isImage
   if isImage:
-    wt.colorspace = image.colorspace
-    wt.colormodel = image.colormodel
-  return wt
+    mst.colorspace = image.colorspace
+    mst.colormodel = image.colormodel
+  return mst
+
+################################
+# Multiscale median transform. #
+################################
+
+def mmt(image, levels, mode = "reflect", pyramidal = False):
+  """Multiscale median transform of the input image.
+
+  Note:
+    See: Image processing and data analysis: The multiscale approach, Jean-Luc Starck, Fionn Murtagh,
+    and Albert Bijaoui, Cambridge University Press (1998).
+    https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach
+
+  Args:
+    image (Image or numpy.ndarray): The input image.
+    levels (int): The number of multiscale levels.
+    mode (str, optional): How to extend the image across its boundaries:
+
+      - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+      - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+      - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+      - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
+      - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
+
+    pyramidal (bool, optional): If False (default), the approximation w_{j+1} at scale j+1 is
+      obtained from the approximation w_j at scale j by the application of a median filter with
+      window size s = 2**j+1, and the detail coefficients c_{j+1} computed as c_{j+1} = w_j-w_{j+1}.
+      This can be very slow for large j's. If True, the window size is s = 3 at all scales, but
+      the approximation is decimated after the application of the median filter (keeping one pixel
+      over two along the width and height). This is thus much faster. However, the pyramidal
+      method involves some approximations, and the reconstructed image is not simply the sum of
+      the final approximation and details coefficients of all levels.
+
+  Returns:
+    MultiscaleTransform: The mutiscale median transform of the input image.
+  """
+
+  def median_filter(data, size):
+    """Apply a median filter with given window size to the input data."""
+    if mode != "zero":
+      return ndimg.median_filter(data, size = size, mode = mode_ndimg, axes = (-2, -1))
+    else: # Faster.
+      if data.ndim == 2:
+        return signal.medfilt2d(data, size = size)
+      else:
+        output = np.empty_like(data)
+        for ic in range(nc):
+          output[ic] = signal.medfilt2d(data[ic], size = size)
+
+  # Check inputs.
+  isImage = issubclass(type(image), img.Image)
+  if isImage:
+    data = image.image
+  elif imgutils.is_valid_image(image):
+    data = image
+  else:
+    raise ValueError("Error, the input image is not valid.")
+  height, width = data.shape[-2], data.shape[-1]
+  nc = 1 if data.ndim == 2 else data.shape[0]
+  maxlevels = pywt.dwt_max_level(min(height, width), 3)
+  if levels < 1: raise ValueError("Error, levels must be >= 1.")
+  if levels > maxlevels: raise ValueError(f"Error, levels must be <= {maxlevels} for an image with size ({height}, {width}).")
+  # Translate boundary mode.
+  mode_ndimg = mode # For ndimage.
+  if mode == "reflect":
+    mode_skim = "symmetric" # For skimage.
+  elif mode == "mirror":
+    mode_skim = "reflect"
+  elif mode == "nearest":
+    mode_skim = "edge"
+  elif mode == "zero":
+    mode_ndimg = mode_skim = "constant"
+  elif mode == "wrap":
+    mode_skim = mode
+  else:
+    raise ValueError(f"Error, unknown boundary mode '{mode}'.")
+  # Compute the multiscale median transform.
+  coeffs = []
+  if pyramidal: # Pyramidal algorithm.
+    for level in range(levels): # Build a pyramid of downscaled smoothed images.
+      dsmoothed = median_filter(data, 3)[..., ::2, ::2] # Smooth and decimate.
+      usmoothed = resize(dsmoothed, data.shape, mode = mode_skim) # Upscale again.
+      coeffs.append([data-usmoothed])
+      data = dsmoothed
+    coeffs.append(dsmoothed)
+  else:
+    halfsize = 1
+    for level in range(levels):
+      smoothed = median_filter(data, 2*halfsize+1)
+      coeffs.append([data-smoothed])
+      data = smoothed
+      halfsize *= 2
+    coeffs.append(smoothed)
+  # Set up the MultiscaleTransform object.
+  mst = MultiscaleTransform()
+  mst.type = "pmmt" if pyramidal else "mmt"
+  mst.levels = levels
+  mst.start = 0
+  mst.mode = mode
+  mst._mode = mode_skim
+  mst.coeffs = list(reversed(coeffs))
+  mst.ndim = data.ndim
+  mst.size = (height, width)
+  mst.nc = nc
+  mst.isImage = isImage
+  if isImage:
+    mst.colorspace = image.colorspace
+    mst.colormodel = image.colormodel
+  return mst
 
 #####################################
 # For inclusion in the Image class. #
@@ -942,7 +1129,7 @@ class MixinImage:
         - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
     Returns:
-      WaveletTransform: The discrete wavelet transform of the image.
+      MultiscaleTransform: The discrete wavelet transform of the image.
     """
     return dwt(self, levels, wavelet = wavelet, mode = mode)
 
@@ -962,7 +1149,7 @@ class MixinImage:
         - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
     Returns:
-      WaveletTransform: The stationary wavelet transform of the image.
+      MultiscaleTransform: The stationary wavelet transform of the image.
     """
     return swt(self, levels, wavelet = wavelet, mode = mode, start = start)
 
@@ -984,9 +1171,41 @@ class MixinImage:
         - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
 
     Returns:
-      WaveletTransform: The starlet transform of the image.
+      MultiscaleTransform: The starlet transform of the image.
     """
     return slt(self, levels, starlet = starlet, mode = mode)
+
+  def mmt(self, levels, mode = "reflect", pyramidal = False):
+    """Multiscale median transform of the image.
+
+    Note:
+      See: Image processing and data analysis: The multiscale approach, Jean-Luc Starck, Fionn Murtagh,
+      and Albert Bijaoui, Cambridge University Press (1998).
+      https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach
+
+    Args:
+      levels (int): The number of multiscale levels.
+      mode (str, optional): How to extend the image across its boundaries:
+
+        - "reflect" (default): the image is reflected about the edge of the last pixel (abcd → dcba|abcd|dcba).
+        - "mirror": the image is reflected about the center of the last pixel (abcd → dcb|abcd|cba).
+        - "nearest": the image is padded with the value of the last pixel (abcd → aaaa|abcd|dddd).
+        - "zero": the image is padded with zeros (abcd → 0000|abcd|0000).
+        - "wrap": the image is periodized (abcd → abcd|abcd|abcd).
+
+      pyramidal (bool, optional): If False (default), the approximation w_{j+1} at scale j+1 is
+        obtained from the approximation w_j at scale j by the application of a median filter with
+        window size s = 2**j+1, and the detail coefficients c_{j+1} computed as c_{j+1} = w_j-w_{j+1}.
+        This can be very slow for large j's. If True, the window size is s = 3 at all scales, but
+        the approximation is decimated after the application of the median filter (keeping one pixel
+        over two along the width and height). This is thus much faster. However, the pyramidal
+        method involves some approximations, and the reconstructed image is not simply the sum of
+        the final approximation and details coefficients of all levels.
+
+    Returns:
+      MultiscaleTransform: The mutiscale median transform of the image.
+    """
+    return mmt(self, levels, mode = mode, pyramidal = pyramidal)
 
   def anscombe(self, gain = 1., average = 0., sigma = 0.):
     """Return the generalized Anscombe transform (gAt) of the image.

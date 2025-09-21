@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 2.0.0 / 2025.07.13
+# Version: 2.1.0 / 2025.09.21
 # Doc OK.
 
 """Histogram stretch.
@@ -580,7 +580,7 @@ class MixinImage:
         median (default 5). For a single channel, the algorithm shall actually converge in a single
         iteration.
       accuracy (float, optional): The target accuracy of the median (default 0.001).
-      channels (str, optional): The selected channels (default "" = all channels).
+      channels (str, optional): The selected channels (default "" = auto).
         See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       trans (bool, optional): If True (default), embed the transormation in the output image as
         output.trans (see :meth:`Image.apply_channels() <.apply_channels>`).
@@ -633,12 +633,18 @@ class MixinImage:
 
     channels = channels.strip()
     if channels == "":
-      if self.colormodel == "gray":
-        channels = "L"
-      elif self.colormodel == "RGB":
+      if self.colormodel == "RGB":
         channels = "RGB"
+      elif self.colormodel == "gray":
+        channels = "L"
+      elif self.colormodel == "HSV":
+        channels = "V"
+      elif self.colormodel == "HSL":
+        channels = "L'"
+      elif self.colormodel in ["Lab", "Luv", "Lch", "Lsh"]:
+        channels = "L*"
       else:
-        for ic in range(self.get_nc()): channels += str(ic+1)
+        raise ValueError(f"Error, unknown color model {self.colormodel}.")
     # Iterate harmonic stretches until the average median of the channels matches the target median.
     # This shall actually converge in one iteration for a single channel image.
     niter = 0
@@ -650,7 +656,7 @@ class MixinImage:
       print_medians(medians)
       avgmedian = np.mean(list(medians.values())) # Compute the average median.
       if len(medians) > 1: print(f"Average median = {avgmedian:.5f}.")
-      converged = (abs(avgmedian-median) < .001) # Check convergence.
+      converged = (abs(avgmedian-median) < accuracy) # Check convergence.
       if converged or niter >= maxiter: break
       niter += 1
       # Compute the effective stretch parameter D such that f(avgmedian) = median, with f the harmonic stretch function.
@@ -684,4 +690,122 @@ class MixinImage:
       if trans: # Cumulative transformation.
         ctrans.y = fboost(ctrans.y)
     if ctrans is not None: output.trans = ctrans
+    return output
+
+  def masked_stretch(self, median, niter, gamma = 1., clip = 0., channels = "", maskchannel = ""):
+    r"""Apply a series of masked midtone stretches to selected channels of the image.
+
+    Given a target median, this method applies a series of niter "small" midtone stretches to bring
+    the median of the selected channels of the image close to the target. Each of these midtone
+    stretches is blended with the previous one using the lightness (or any proxy for it, such as the
+    luma) as a mask:
+
+      image_0 = self
+
+      mask_n = [1-lightness(image_n)]**gamma
+
+      image_{n+1} = mask_n*mts(image_n, midtone)+(1-mask_n)*image_n
+
+    The method returns image_{niter}. mts is the midtone stretch function, and the midtone parameter
+    is estimated so that median(image_{niter}) is close to the target [yet median(image_{niter})
+    will not exactly match the target as the solution is only approximate]. The larger the number
+    of iterations, the closer the midtone to 0.5, thus the smoother the stretches. Moreover, the
+    features that are or have become bright get little further stretched thanks to the mask.
+    This prevents, e.g., stars from overblowing as in a conventional, single hard stretch.
+
+    See also:
+      :meth:`Image.midtone_stretch() <.midtone_stretch>`
+
+    Args:
+      median (float): The target median (expected in ]0, 1[).
+      maxiter (int): The number of iterations (midtone stretches). The larger niter, the smoother
+        the unitary stretches.
+      gamma (float, optional): The power law transformation applied to the lightness (see above
+        equations). The larger gamma, the better preserved the bright features, but the lower the
+        contrast in the dark features. Default is 1.
+      clip (float, optional): Clip the luma below that value. Pixels whose lightness is smaller than
+        clip are thus fully stretched (not blended). Default is 0.
+      channels (str, optional): The selected channels (default "" = auto).
+        See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
+      maskchannel (str, optional): The lightness channel (default "" = auto).
+        Can be "V", "L'", "L" or "L*".
+
+    Returns:
+      Image: The stretched image.
+    """
+
+    def estimate_median(median, midtone, niter):
+      """Returns the expected median of the image after niter midtone transformations.
+      On input, 'median' is the median of the original image. This function does not, however,
+      account for the effects of the mask."""
+      for iiter in range(niter):
+        median = mts(median, midtone)
+      return median
+
+    # Check inputs.
+    channels = channels.strip()
+    if channels == "":
+      if self.colormodel == "RGB":
+        channels = "RGB"
+      elif self.colormodel == "gray":
+        channels = "L"
+      elif self.colormodel == "HSV":
+        channels = "V"
+      elif self.colormodel == "HSL":
+        channels = "L'"
+      elif self.colormodel in ["Lab", "Luv", "Lch", "Lsh"]:
+        channels = "L*"
+      else:
+        raise ValueError(f"Error, unknown color model {self.colormodel}.")
+    if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv", "L*sh"]:
+      raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv" or "L*sh".""")
+    if channels == "RGB": self.check_color_model("RGB")
+    channels_ = "L" if channels in ["Ls", "Ln"] else channels
+    maskchannel = maskchannel.strip()
+    if maskchannel == "":
+      if self.colormodel in ["RGB", "gray"]:
+        maskchannel = "L"
+      elif self.colormodel == "HSV":
+        maskchannel = "V"
+      elif self.colormodel == "HSL":
+        maskchannel = "L'"
+      elif self.colormodel in ["Lab", "Luv", "Lch", "Lsh"]:
+        maskchannel = "L*"
+      else:
+        raise ValueError(f"Error, unknown color model {self.colormodel}.")
+    if maskchannel not in ["V", "L'", "L", "L*"]:
+      raise ValueError("""Error, maskchannel must be "V", "L'", "L" or "L*".""")
+    print(f"Masked stretch on channel(s) {channels} with mask channel {maskchannel}...")
+    # Compute the midtone by dichotomy.
+    target = median # Rename the target median.
+    median0 = np.median(self if channels == "RGB" else self.get_channel(channel = channels))
+    midtone1 = .25 ; median1 = estimate_median(median0, midtone1, niter)
+    midtone2 = .75 ; median2 = estimate_median(median0, midtone2, niter)
+    if (median1-target)*(median2-target) > 0.: # No solution within the [.25, .75] range.
+      raise ValueError("Error, the target median is too far from the original median of the image. Increase niter.")
+    midtone = (midtone1+midtone2)/2.
+    median = estimate_median(median0, midtone, niter)
+    while abs(median-target) > .001:
+      if (median1-target)*(median-target) < 0.:
+        midtone2, median2 = midtone, median
+      else:
+        midtone1, median1 = midtone, median
+      midtone = (midtone1+midtone2)/2.
+      median = estimate_median(median0, midtone, niter)
+    print(f"Midtone = {midtone:.5f}.")
+    # Apply niter masked midtone stretches to the image.
+    output = self
+    for iiter in range(niter):
+      lightness = output.get_channel(channel = maskchannel)
+      mask = (1.-stf.shadow_highlight_stretch_function(lightness, clip, 1.))**gamma
+      output = output.blend(output.midtone_stretch(channels = channels_, midtone = midtone), mask)
+    # Protect highlights if appropriate.
+    if channels == "Ls":
+      output = output.protect_highlights_saturation()
+    elif channels == "Ln":
+      maximum = np.max(output.image)
+      if maximum > 1.: output.image /= maximum
+    # compute final median.
+    median = np.median(output if channels == "RGB" else output.get_channel(channel = channels))
+    print(f"Final median = {median:.5f}.")
     return output

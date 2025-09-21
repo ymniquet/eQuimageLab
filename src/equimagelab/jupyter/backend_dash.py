@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 2.0.0 / 2025.07.13
+# Version: 2.1.0 / 2025.09.21
 # Doc OK.
 
 """Dash backend for JupyterLab interface.
@@ -32,7 +32,7 @@ from equimage import Image, load_image, get_RGB_luma
 from equimage import image_colorspaces as cspaces
 from equimage.image_utils import is_valid_image
 from equimage.image_stats import parse_channels
-from equimage.image_multiscale import WaveletTransform
+from equimage.image_multiscale import MultiscaleTransform
 
 from . import params
 from . import utils
@@ -720,22 +720,23 @@ class Dashboard():
               sampling = sampling, toolbar = toolbar, stretch = stretch, click = click,
               select = select, synczoom = synczoom, trans = trans)
 
-  def show_wavelets(self, wt, absc = True, normalize = False, histograms = False, statistics = False,
-                    sampling = -1, toolbar = True, stretch = False, click = True, select = True,
-                    synczoom = True):
-    """Show wavelet coefficients on the dashboard.
+  def show_multiscale(self, mst, absc = True, normalize = False, histograms = False, statistics = False,
+                      sampling = -1, toolbar = True, stretch = False, click = True, select = True,
+                      synczoom = True):
+    """Show wavelet/multiscale median transform coefficients on the dashboard.
 
     For a discrete wavelet transform, displays Mallat’s representation in a single tab.
     For a starlet transform, displays the final approximation and the successive starlet
     levels in different tabs.
+    For a multiscale median transform, displays the final approximation and the successive median
+    transform levels in different tabs.
     Not implemented for stationary wavelet ("à trous") transforms.
 
     Args:
-      wt (WaveletTransform): The wavelet coefficients.
-      absc (bool, optional): If True (default), display the absolute value of the wavelet
-        coefficients.
-      normalize (bool, optional): If True, normalize each set of wavelet coefficients (or their
-        absolute value if absc is True) in the [0, 1] range. Default is False.
+      mst (MultiscaleTransform): The wavelet/multiscale median transform coefficients.
+      absc (bool, optional): If True (default), display the absolute value of the coefficients.
+      normalize (bool, optional): If True, normalize each set of coefficients (or their absolute
+        value if absc is True) in the [0, 1] range. Default is False.
       histograms (optional): If True or a string, show the histograms of the image(s). The string
         lists the channels of the histograms (see :meth:`Image.histograms() <.histograms>`). True
         is substituted with "RGBL" (red, green, blue, luma). Default is False.
@@ -757,7 +758,7 @@ class Dashboard():
     """
 
     def normalize_coeffs(c):
-      """Normalize wavelet coefficients."""
+      """Normalize coefficients."""
       if absc: c = abs(c)
       if normalize:
         cmin = 0. if absc else c.min()
@@ -769,28 +770,28 @@ class Dashboard():
       return c
 
     def display_coeffs(c):
-      """Prepare wavelet coefficients for display."""
+      """Prepare coefficients for display."""
       return np.moveaxis(c, 0, -1)
 
-    if not issubclass(type(wt), WaveletTransform):
-      raise TypeError("This method can only display WaveletTransform objects.")
+    if not issubclass(type(mst), MultiscaleTransform):
+      raise TypeError("This method can only display MultiscaleTransform objects.")
     images = {}
-    if wt.type == "dwt":
-      coeffs = deepcopy(wt.coeffs)
+    if mst.type == "dwt":
+      coeffs = deepcopy(mst.coeffs)
       coeffs[0] = normalize_coeffs(coeffs[0])
-      for level in range(wt.levels):
+      for level in range(mst.levels):
         coeffs[level+1] = [normalize_coeffs(c) for c in coeffs[level+1]]
       mallat, slices = pywt.coeffs_to_array(coeffs, axes = (-2, -1))
       images["Mallat's decomposition"] = display_coeffs(mallat)
-    elif wt.type == "swt":
+    elif mst.type == "swt":
       raise NotImplementedError("Error, not implemented for stationary wavelet (à trous) transforms.")
-    elif wt.type == "slt":
-      images["Approximation"] = display_coeffs(normalize_coeffs(wt.coeffs[0]))
-      for l, c in enumerate(wt.coeffs[1:]):
-        label = f"Level #{wt.levels-l-1}"
+    elif mst.type in ["slt", "mmt", "pmmt"]:
+      images["Approximation"] = display_coeffs(normalize_coeffs(mst.coeffs[0]))
+      for l, c in enumerate(mst.coeffs[1:]):
+        label = f"Level #{mst.levels-l-1}"
         images[label] = display_coeffs(normalize_coeffs(c[0]))
     else:
-      raise ValueError(f"Unknown wavelet transform type '{wt.type}'.")
+      raise ValueError(f"Unknown multiscale transform type '{mst.type}'.")
     self.show(images, histograms = histograms, statistics = statistics, sampling = sampling,
               toolbar = toolbar, stretch = stretch, click = click, select = select,
               synczoom = synczoom)
@@ -878,9 +879,9 @@ class Dashboard():
       width = imwidth
     image1, image2 = format_images_as_b64strings((image1, image2), sampling = sampling)
     baslider = dxt.BeforeAfter(after = dict(src = image1), before = dict(src = image2), width = f"{width}")
-    left   = html.Div(label1, className = "ba-left", style = {"width": f"{lmargin}px"})
+    left   = html.Div(label2, className = "ba-left", style = {"width": f"{lmargin}px"})
     middle = html.Div(baslider, className = "ba-middle", style = {"width": f"{width}px"})
-    right  = html.Div(label2, className = "ba-right", style = {"width": f"{rmargin}px"})
+    right  = html.Div(label1, className = "ba-right", style = {"width": f"{rmargin}px"})
     widget = html.Div([left, middle, right], className = "inline",
                       style = {"margin": f"{params.tmargin}px 0px {params.bmargin}px 0px"})
     tab = dbc.Tab([widget], label = "Compare images", className = "tab")

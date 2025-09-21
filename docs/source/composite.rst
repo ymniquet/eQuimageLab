@@ -1,6 +1,9 @@
 Channels
 --------
 
+.. meta::
+   :description: The color channels (red, blue, green, luma, lightness...) in eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 As explained in :doc:`image`, the default color space of eQuimageLab is sRGB (the color space of most display devices), and the default color model is RGB. The native channels of this color space and model are the red, blue and green components of the image. We may introduce additional "composite" channels that bring specific information about the image (and are functions of the RGB components): the luma, the lightness, the value, the saturation, etc... Most of these composite channels are actually borrowed from the other color spaces and models used by eQuimageLab (CIELab/CIELuv, HSV/HSL...). You can actually work with such composite channels without making explicit conversions to those color spaces and models yourself. This section describes the available channels and their use in eQuimageLab.
 
 Definitions
@@ -177,6 +180,8 @@ There are four options to deal with the out-of-range pixels:
   4. Normalize the image so that all pixels fall back in the [0, 1] range (namely, divide the image by the maximum RGB value). This preserves the HSV hue and saturation, but darkens the whole image.
 
 In eQuimageLab, these four options correspond to different choices for the kwarg ``channels`` of the midtone transformation: 1) ``channels = "L"``, 2) ``channels = "Ls"``, 3) ``channels = "Lb"``, and 4) ``channels = "Ln"``.
+
+Alternatively, you can desaturate any overflowed :py:class:`Image <equimage.image.Image>` object at constant luma with the :py:meth:`protect_highlights_saturation() <equimage.image_colorspaces.MixinImage.protect_highlights_saturation>` method.
 
 Examples
 ^^^^^^^^

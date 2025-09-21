@@ -1,6 +1,9 @@
 Installation
 ------------
 
+.. meta::
+   :description: How to download and install eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 eQuimageLab is developed for Python 3 kernels.
 
 This guide assumes that you are familiar with the Python programming language and that Python 3 is installed on your machine.

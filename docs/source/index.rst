@@ -3,6 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. meta::
+   :description: Homepage of eQuimageLab, a Python package to process astronomical images in JupyterLab notebooks
+
 .. image:: images/banner.png
    :width: 100%
    :align: center
@@ -79,6 +82,11 @@ Latest news:
 
   - July 13, 2025: Version 2.0.0.
 
-    - Using Dash > 3.0.0.
+    - Using Dash >= 3.0.0.
     - Screen stretches drop-down menu (see ``stretch = True`` option in :py:meth:`dbrd.show() <equimagelab.jupyter.backend_dash.Dashboard.show>`)  .
 
+  - September 21, 2025: Version 2.1.0.
+
+    - Masked stretch.
+    - Median multiscale transform.
+    - Experimental HDR wavelet transforms.

@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 2.0.0 / 2025.07.13
+# Version: 2.1.0 / 2025.09.21
 # Doc OK.
 
 """Image filters."""
@@ -188,7 +188,7 @@ class MixinImage:
     """
     channels = channels.strip()
     if channels not in ["", "V", "L'", "L", "L*", "L*ab", "L*uv", "L*sh"]:
-      raise ValueError("Error, channels must be '', 'V', 'L'', 'L', 'L*', 'L*ab', 'L*uv' or 'L*sh'.")
+      raise ValueError("""Error, channels must be "", "V", "L'", "L", "L*", "L*ab", "L*uv" or "L*sh".""")
     if amount <= 0.: raise ValueError("Error amount must be > 0.")
     if threshold < .0001 or threshold >= .9999: raise ValueError("Error, threshold must be >= 0.0001 and <= 0.9999.")
     D = Dharmonic_through(threshold, 1./(1.+amount))
