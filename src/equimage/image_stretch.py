@@ -693,7 +693,7 @@ class MixinImage:
     return output
 
   def masked_stretch(self, median, niter, gamma = 1., clip = 0., channels = "", maskchannel = ""):
-    r"""Apply a series of masked midtone stretches to the image.
+    r"""Apply a series of masked midtone stretches to selected channels of the image.
 
     Given a target median, this method applies a series of niter "small" midtone stretches to bring
     the median of the selected channels of the image close to the target. Each of these midtone

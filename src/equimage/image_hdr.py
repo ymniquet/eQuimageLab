@@ -20,7 +20,7 @@ class MixinImage:
   """To be included in the Image class."""
 
   def HDRwt1(self, starlet = "cubic", lmin = 1, lmax = 5, rstrength = .1, mstrength = 2., target = "bright", niter = 1, channels = "", maskchannel = ""):
-    """HDRWT v1."""
+    """HDRWT v1. Experimental."""
     # Check inputs.
     if target not in ["bright", "dark"]: raise ValueError("Error, target must be 'bright' or 'dark'.")
     channels = channels.strip()
@@ -81,7 +81,7 @@ class MixinImage:
     return image
 
   def HDRwt2(self, starlet = "cubic", lmin = 0, lmax = 5, alpha = .9, gamma = 1., niter = 1, channels = ""):
-    """HDRWT v2."""
+    """HDRWT v2. Experimental."""
     # Check inputs.
     channels = channels.strip()
     if channels == "":
