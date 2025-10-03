@@ -704,7 +704,7 @@ class MultiscaleTransform:
       diff = img.Image(diff, colorspace = self.colorspace, colormodel = self.colormodel)
     return denoised, diff
 
-  def enhance_details(self, alphas, omegas = 1., thresholds = 0., alphaA = 1., omegaA = 1., inplace = False):
+  def enhance_details(self, alphas, thresholds = 0., omegas = 1., alphaA = 1., omegaA = 1., inplace = False):
     """Enhance the detail coefficients of a starlet or multiscale median transform.
 
     This method compresses the details coefficients c → f(abs(c))*sign(c) of each level, where:
