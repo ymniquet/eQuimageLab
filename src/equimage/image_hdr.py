@@ -80,8 +80,58 @@ class MixinImage:
         # image = image.midtone_stretch(midtone = mts(np.median(image), median0), channels = "L", trans = False)
     return image
 
-  def HDRwt2(self, starlet = "cubic", lmin = 0, lmax = 5, alpha = .9, rthreshold = .01, romega = .99, gamma = 1., niter = 1, channels = ""):
-    """HDRWT v2. Experimental. Allow for alpha, rthreshold & romega arrays."""
+  # def HDRwt2(self, starlet = "cubic", lmin = 0, lmax = 3, A = 1., D = 2., gamma = 1., niter = 1, threshold = 0., neutral = 1., decay = 2., channels = ""):
+  #   """HDRWT v2. Experimental. Allow for alpha, rthreshold & romega arrays."""
+  #   # Check inputs.
+  #   channels = channels.strip()
+  #   if channels == "":
+  #     if self.colormodel == "RGB":
+  #       channels = "RGB"
+  #     elif self.colormodel == "gray":
+  #       channels = "L"
+  #     elif self.colormodel == "HSV":
+  #       channels = "V"
+  #     elif self.colormodel == "HSL":
+  #       channels = "L'"
+  #     elif self.colormodel in ["Lab", "Luv", "Lch", "Lsh"]:
+  #       channels = "L*"
+  #     else:
+  #       raise ValueError(f"Error, unknown color model {self.colormodel}.")
+  #   if channels == "RGB": self.check_color_model("RGB")
+  #   if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv", "L*sh"]:
+  #     raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv" or "L*sh".""")
+  #   print(f"HDRWT on channel(s) {channels}...")
+  #   # HDRWT algorithm.
+  #   image = self.image if channels == "RGB" else self.get_channel(channel = channels)
+  #   # median0 = np.median(image)
+  #   for iiter in range(niter): # HDRWT iterations.
+  #     if niter > 1: print(f"Iteration {iiter+1}/{niter}.")
+  #     # Compute wavelet transform.
+  #     wt = multiscale.slt(image, levels = lmax+1, starlet = starlet)
+  #     # Compress the dynamic range of each wavelet level.
+  #     if np.isscalar(A): A = [1.+(A-1.)/decay**level for level in range(lmax+1)]
+  #     cwt = wt.enhance_details(A = A, D = D, threshold = threshold, neutral = neutral)
+  #     # Blend the compressed wavelet levels with the original ones,
+  #     # using the approximation at the next scale as fusion mask.
+  #     approx = wt.coeffs[0].copy()
+  #     wt.coeffs[0] = cwt.coeffs[0]
+  #     for level in range(lmax, lmin-1, -1):
+  #       c = wt.coeffs[-(level+1)][0].copy()
+  #       wt.coeffs[-(level+1)][0] = blend(c, cwt.coeffs[-(level+1)][0], approx**gamma)
+  #       approx += c
+  #     # Compute the inverse wavelet transform and renormalize.
+  #     image = wt.inverse()
+  #     image -= np.min(image)
+  #     image /= np.max(image)
+  #     # image = np.clip(image, 0., 1.)
+  #     # median = np.median(image)
+  #     # midtone = mts(median, median0)
+  #     # print(median0, median, midtone)
+  #     # image = mts(image, midtone)
+  #   return self.newImage(image) if channels == "RGB" else self.set_channel(channel = channels, data = image)
+
+  def HDRwt2(self, starlet = "cubic", lmin = 0, lmax = 5, alpha = .9, beta = 1., rthreshold = .05, gamma = 1., niter = 1, channels = "", betadecay = 1., compressA = True):
+    """HDRWT v2. Experimental."""
 
     # Check inputs.
     channels = channels.strip()
@@ -102,6 +152,8 @@ class MixinImage:
     if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv", "L*sh"]:
       raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv" or "L*sh".""")
     print(f"HDRWT on channel(s) {channels}...")
+    # Compute gains.
+    betas = [1.+(beta-1.)/betadecay**level for level in range(lmax+1)]
     # HDRWT algorithm.
     image = self.image if channels == "RGB" else self.get_channel(channel = channels)
     # median0 = np.median(image)
@@ -109,13 +161,13 @@ class MixinImage:
       if niter > 1: print(f"Iteration {iiter+1}/{niter}.")
       # Compute wavelet transform.
       wt = multiscale.slt(image, levels = lmax+1, starlet = starlet)
-      # Compute medians.
-      omegaA = np.percentile(wt.coeffs[0], 100.*romega)
-      percentiles = np.array([np.percentile(abs(wt.coeffs[level][0]), [100.*rthreshold, 100.*romega]) for level in range(lmax+1)])
-      thresholds = percentiles[:, 0]
-      omegas = percentiles[:, 1]
-      # Compress the dynamic range of each wavelet level.
-      cwt = wt.enhance_details(alphas = alpha, thresholds = thresholds, omegas = omegas, alphaA = alpha, omegaA = omegaA)
+      # Compute thresholds.
+      if rthreshold > 0.:
+        thresholds = [np.percentile(abs(wt.coeffs[level][0]), 100.*rthreshold) for level in range(lmax+1)]
+      else:
+        thresholds = 0.
+      # Scale/compress the dynamic range of each wavelet level.
+      cwt = wt.enhance_details(alphas = alpha, betas = betas, thresholds = thresholds, alphaA = alpha if compressA else 1.)
       # Blend the compressed wavelet levels with the original ones,
       # using the approximation at the next scale as fusion mask.
       approx = wt.coeffs[0].copy()
