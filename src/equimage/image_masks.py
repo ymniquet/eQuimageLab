@@ -73,9 +73,9 @@ def smooth_mask(mask, radius, mode = "zero"):
     numpy.ndarray: The smoothed, float mask.
   """
   # Translate modes.
+  cval = 0.
   if mode == "zero":
     mode = "constant"
-    cval = 0.
   elif mode == "one":
     mode = "constant"
     cval = 1.

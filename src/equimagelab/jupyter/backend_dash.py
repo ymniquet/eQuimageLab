@@ -169,10 +169,11 @@ class Dashboard():
     Returns:
       The content of the "datadiv" div element with the image coordinates and data at click point.
     """
+    if click is None: return dash.no_update
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
-    if not trigger: return []
+    if not trigger: return dash.no_update
     with self.updatelock: # Lock on callback.
-      if self.images is None or updateid != self.nupdates: return [] # The dashboard is out of sync.
+      if self.images is None or updateid != self.nupdates: return dash.no_update # The dashboard is out of sync.
       n = trigger["index"] # Image index.
       x = click["points"][0]["x"]
       y = click["points"][0]["y"]
@@ -312,7 +313,7 @@ class Dashboard():
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return previous, previous, dash.no_update
     with self.updatelock: # Lock on callback.
-      if self.images is None or updateid != self.nupdates: return [], [], dash.no_update # The dashboard is out of sync.
+      if self.images is None or updateid != self.nupdates: return previous, previous, dash.no_update # The dashboard is out of sync.
       # Update filters list.
       current = set(current)
       previous = set(previous)
@@ -442,11 +443,17 @@ class Dashboard():
       relayout = relayouts[n]
       xauto = relayout.get("xaxis.autorange", False)
       if not xauto:
+        xmin, xmax = relayout.get("xaxis.range", [None, None]) # The presence of xaxis.range (?) actually considered as an autoscale resquest.
+        xauto = xmin is not None and xmax is not None          # Event triggering xaxis.range not clearly identified.
+      if not xauto:
         xmin = relayout.get("xaxis.range[0]", None)
         xmax = relayout.get("xaxis.range[1]", None)
         if xmin is None or xmax is None: # Unexpected relayout structure; Discard event.
           return [dash.no_update]*nimages
       yauto = relayout.get("yaxis.autorange", False)
+      if not yauto:
+        ymin, ymax = relayout.get("yaxis.range", [None, None]) # The presence of yaxis.range (?) actually considered as an autoscale resquest.
+        yauto = ymin is not None and ymax is not None          # Event triggering yaxis.range not clearly identified.
       if not yauto:
         ymin = relayout.get("yaxis.range[0]", None)
         ymax = relayout.get("yaxis.range[1]", None)
