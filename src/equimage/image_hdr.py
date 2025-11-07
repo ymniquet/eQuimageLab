@@ -130,8 +130,8 @@ class MixinImage:
   #     # image = mts(image, midtone)
   #   return self.newImage(image) if channels == "RGB" else self.set_channel(channel = channels, data = image)
 
-  def HDRwt2(self, starlet = "cubic", lmin = 0, lmax = 5, alpha = .9, beta = 1., rthreshold = .05, gamma = 1., niter = 1, channels = "", betadecay = 1., compressA = True):
-    """HDRWT v2. Experimental."""
+  def HDRmt2(self, transform = "cubic", lmin = 0, lmax = 5, alpha = .9, beta = 1., rthreshold = .05, gamma = 1., niter = 1, channels = "", betadecay = 1., compressA = True):
+    """HDRMT v2. Experimental."""
 
     # Check inputs.
     channels = channels.strip()
@@ -151,24 +151,27 @@ class MixinImage:
     if channels == "RGB": self.check_color_model("RGB")
     if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv", "L*sh"]:
       raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv" or "L*sh".""")
-    print(f"HDRWT on channel(s) {channels}...")
+    print(f"HDRMT (transform = '{transform}') on channel(s) {channels}...")
     # Compute gains.
     betas = [1.+(beta-1.)/betadecay**level for level in range(lmax+1)]
-    # HDRWT algorithm.
+    # HDRMT algorithm.
     image = self.image if channels == "RGB" else self.get_channel(channel = channels)
     # median0 = np.median(image)
-    for iiter in range(niter): # HDRWT iterations.
+    for iiter in range(niter): # HDRMT iterations.
       if niter > 1: print(f"Iteration {iiter+1}/{niter}.")
-      # Compute wavelet transform.
-      wt = multiscale.slt(image, levels = lmax+1, starlet = starlet)
+      # Compute wavelet/median transform.
+      if transform == "median":
+        wt = multiscale.mmt(image, levels = lmax+1)
+      else:
+        wt = multiscale.slt(image, levels = lmax+1, starlet = transform)
       # Compute thresholds.
       if rthreshold > 0.:
         thresholds = [np.percentile(abs(wt.coeffs[level][0]), 100.*rthreshold) for level in range(lmax+1)]
       else:
         thresholds = 0.
-      # Scale/compress the dynamic range of each wavelet level.
+      # Scale/compress the dynamic range of each level.
       cwt = wt.enhance_details(alphas = alpha, betas = betas, thresholds = thresholds, alphaA = alpha if compressA else 1.)
-      # Blend the compressed wavelet levels with the original ones,
+      # Blend the compressed levels with the original ones,
       # using the approximation at the next scale as fusion mask.
       approx = wt.coeffs[0].copy()
       wt.coeffs[0] = cwt.coeffs[0]
@@ -176,7 +179,7 @@ class MixinImage:
         c = wt.coeffs[-(level+1)][0].copy()
         wt.coeffs[-(level+1)][0] = blend(c, cwt.coeffs[-(level+1)][0], approx**gamma)
         approx += c
-      # Compute the inverse wavelet transform and renormalize.
+      # Compute the inverse wavelet/median transform and renormalize.
       image = wt.inverse()
       image -= np.min(image)
       image /= np.max(image)
