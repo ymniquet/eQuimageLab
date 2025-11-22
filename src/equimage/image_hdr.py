@@ -8,7 +8,7 @@
 
 import numpy as np
 
-from .image_utils import blend
+from .image_utils import blend, clip
 from .image_stretch import mts
 from . import image_multiscale as multiscale
 
@@ -242,7 +242,7 @@ class MixinImage:
       image /= np.max(image)
     return self.newImage(image) if channels == "RGB" else self.set_channel(channel = channels, data = image)
 
-  def HDRwt4(self, starlet = "cubic", lmin = 0, lmax = 5, alpha = .9, beta = 1., gamma = 1., niter = 1, channels = ""):
+  def HDRwt4(self, starlet = "cubic", levels = 5, alpha = 1.5, decay = .5, maskgamma = 1., dimgamma = None, channels = "", maskchannel = ""):
     """HDRWT v4. Experimental."""
     # Check inputs.
     channels = channels.strip()
@@ -259,28 +259,43 @@ class MixinImage:
         channels = "L*"
       else:
         raise ValueError(f"Error, unknown color model {self.colormodel}.")
-    if channels == "RGB": self.check_color_model("RGB")
     if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv", "L*sh"]:
       raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv" or "L*sh".""")
-    print(f"HDRWT on channel(s) {channels}...")
+    if channels == "RGB": self.check_color_model("RGB")
+    maskchannel = maskchannel.strip()
+    if maskchannel == "":
+      if self.colormodel in ["RGB", "gray"]:
+        maskchannel = "L"
+      elif self.colormodel == "HSV":
+        maskchannel = "V"
+      elif self.colormodel == "HSL":
+        maskchannel = "L'"
+      elif self.colormodel in ["Lab", "Luv", "Lch", "Lsh"]:
+        maskchannel = "L*"
+      else:
+        raise ValueError(f"Error, unknown color model {self.colormodel}.")
+    if maskchannel not in ["V", "L'", "L", "L*"]:
+      raise ValueError("""Error, maskchannel must be "V", "L'", "L" or "L*".""")
+    print(f"HDRWT on channel(s) {channels} with mask channel {maskchannel}...")
     # HDRWT algorithm.
+    # Get channel(s).
     image = self.image if channels == "RGB" else self.get_channel(channel = channels)
     median0 = np.median(image)
-    for iiter in range(niter): # HDRWT iterations.
-      if niter > 1: print(f"Iteration {iiter+1}/{niter}.")
-      # Compute wavelet transform.
-      wt = multiscale.slt(image, levels = lmax+1, starlet = starlet)
-      # Compress the dynamic range of each wavelet level.
-      approx = wt.coeffs[0].copy()
-      for level in range(lmax, lmin-1, -1):
-        f = 1.+(alpha-1.)*(beta**level)*(approx**gamma)
-        #f *= 2.
-        approx += wt.coeffs[-(level+1)][0]
-        wt.coeffs[-(level+1)][0] *= f
-      # Compute the inverse wavelet transform and renormalize.
-      image = wt.inverse()
-      # image -= np.min(image)
-      # image /= np.max(image)
-      median = np.median(image) or 1.0
-      image = np.clip(image*median0/median, 0., 1.)
-    return self.newImage(image) if channels == "RGB" else self.set_channel(channel = channels, data = image)
+    # Set mask.
+    mask = self.get_channel(channel = maskchannel)**maskgamma
+    # Compute wavelet transform.
+    wt = multiscale.slt(image, levels = levels, starlet = starlet)
+    # Process wavelet levels.
+    for level in range(levels):
+      f = 1.+(alpha-1.)*mask*(decay**level)
+      # f *= 2.
+      wt.coeffs[-(level+1)][0] *= f
+    # Compute inverse wavelet transform and normalize.
+    image = wt.inverse()
+    median = np.median(image) or 1.0
+    image = clip(image*median0/median, verbose = True)
+    # Set channel(s).
+    output = self.newImage(image) if channels == "RGB" else self.set_channel(channel = channels, data = image)
+    # Dim image.
+    gamma = 1.+.2*levels if dimgamma is None else dimgamma
+    return output.clip(verbose = True)**gamma

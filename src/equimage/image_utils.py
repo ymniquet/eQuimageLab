@@ -43,17 +43,19 @@ def is_valid_image(image):
 # Image transformations. #
 ##########################
 
-def clip(image, vmin = 0., vmax = 1.):
+def clip(image, vmin = 0., vmax = 1., verbose = False):
   """Clip the input image in the range [vmin, vmax].
 
   Args:
     image (numpy.ndarray): The input image.
     vmin (float, optional): The lower clip bound (default 0).
     vmax (float, optional): The upper clip bound (default 1).
+    verbose (bool, optional): If True, print the number of clipped data (default False).
 
   Returns:
     numpy.ndarray: The clipped image.
   """
+  if verbose: print(f"Clipped {np.sum((image < vmin) | (image > vmax))} data.")
   return np.clip(image, vmin, vmax)
 
 def blend(image1, image2, mixing):
@@ -114,7 +116,7 @@ class MixinImage:
   # Clipping & scaling pixels. #
   ##############################
 
-  def clip(self, vmin = 0., vmax = 1.):
+  def clip(self, vmin = 0., vmax = 1., verbose = False):
     """Clip the image in the range [vmin, vmax].
 
     See also:
@@ -123,11 +125,12 @@ class MixinImage:
     Args:
       vmin (float, optional): The lower clip bound (default 0).
       vmax (float, optional): The upper clip bound (default 1).
+      verbose (bool, optional): If True, print the number of clipped data (default False).
 
     Returns:
       Image: The clipped image.
     """
-    return np.clip(self, vmin, vmax)
+    return self.newImage(clip(self.image, vmin, vmax, verbose))
 
   def scale_pixels(self, source, target, cutoff = None):
     """Scale all pixels of the image by the ratio target/source.
@@ -168,4 +171,4 @@ class MixinImage:
       raise ValueError("Error, the images must share the same color space !")
     if self.colormodel != image.colormodel:
       raise ValueError("Error, the images must share the same color model !")
-    return self.newImage(self.image*(1.-mixing)+image.image*mixing)
+    return self.newImage(blend(self.image, image, mixing))
