@@ -350,7 +350,7 @@ class Dashboard():
     """Callback for image stretch.
 
     Args:
-      stretch (string): The selected stretch.
+      stretch (str): The selected stretch.
       filters (list): The currently selected filters.
       updateid (integer): The unique ID of the displayed dashboard update.
 
@@ -505,7 +505,7 @@ class Dashboard():
     This callback just stores the current tab name.
 
     Args:
-      tab (string): The name of the current tab.
+      tab (str): The name of the current tab.
       updateid (integer): The unique ID of the displayed dashboard update.
     """
     with self.updatelock: # Lock on callback.

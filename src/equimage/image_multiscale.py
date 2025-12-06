@@ -228,7 +228,7 @@ class MultiscaleTransform:
         channel (columns)], or a dictionary of the form {level: threshold, ...} or of the form
         {level: (threshold channel #1, threshold channel #2, ...), ...} (e.g., {0: 1.e-2, 1: 1.e-3}).
         Default threshold is 0 for all unspecified levels.
-      mode (string, optional): The thresholding mode:
+      mode (str, optional): The thresholding mode:
 
         - "soft" (default): Detail coefficients with absolute value < threshold are replaced by 0,
           while those with absolute value >= threshold are shrunk toward 0 by the value of threshold.
@@ -547,7 +547,7 @@ class MultiscaleTransform:
 
     Args:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
-      mode (string, optional): The thresholding mode:
+      mode (str, optional): The thresholding mode:
 
         - "soft" (default): Wavelet coefficients with absolute value < threshold are replaced by 0,
           while those with absolute value >= threshold are shrunk toward 0 by the value of threshold.
@@ -593,7 +593,7 @@ class MultiscaleTransform:
       sigmas (numpy.ndarray): The noise in each channel (columns) and wavelet level (rows).
       std (str, optional): The method used to compute standard deviations. Can be "variance"
         or "median" (default). See :func:`std_centered` for details.
-      mode (string, optional): The thresholding mode:
+      mode (str, optional): The thresholding mode:
 
         - "soft" (default): Wavelet coefficients with absolute value < threshold are replaced by 0,
           while those with absolute value >= threshold are shrunk toward 0 by the value of threshold.
@@ -840,7 +840,7 @@ def dwt(image, levels, wavelet = "default", mode = "reflect"):
   Args:
     image (Image or numpy.ndarray): The input image.
     levels (int): The number of wavelet levels.
-    wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
+    wavelet (str or pywt.Wavelet object, optional): The wavelet used for the transformation.
       Default is "default", a shortcut for `equimage.params.defwavelet`.
     mode (str, optional): How to extend the image across its boundaries:
 
@@ -904,7 +904,7 @@ def swt(image, levels, wavelet = "default", mode = "reflect", start = 0):
   Args:
     image (Image or numpy.ndarray): The input image.
     levels (int): The number of wavelet levels.
-    wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
+    wavelet (str or pywt.Wavelet object, optional): The wavelet used for the transformation.
       Default is "default", a shortcut for `equimage.params.defwavelet`.
     mode (str, optional): How to extend the image across its boundaries:
 
@@ -978,7 +978,7 @@ def slt(image, levels, starlet = "cubic", mode = "reflect"):
   Args:
     image (Image or numpy.ndarray): The input image.
     levels (int): The number of starlet levels.
-    starlet (string, optional): The starlet used for the transformation ("linear" for the 3x3
+    starlet (str, optional): The starlet used for the transformation ("linear" for the 3x3
       linear spline or "cubic" for the 5x5 cubic spline). Default is "cubic".
     mode (str, optional): How to extend the image across its boundaries:
 
@@ -1180,7 +1180,7 @@ class MixinImage:
 
     Args:
       levels (int): The number of wavelet levels.
-      wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
+      wavelet (str or pywt.Wavelet object, optional): The wavelet used for the transformation.
         Default is "default", a shortcut for `equimage.params.defwavelet`.
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -1200,7 +1200,7 @@ class MixinImage:
 
     Args:
       levels (int): The number of wavelet levels.
-      wavelet (string or pywt.Wavelet object, optional): The wavelet used for the transformation.
+      wavelet (str or pywt.Wavelet object, optional): The wavelet used for the transformation.
         Default is "default", a shortcut for `equimage.params.defwavelet`.
       mode (str, optional): How to extend the image across its boundaries:
 
@@ -1225,7 +1225,7 @@ class MixinImage:
 
     Args:
       levels (int): The number of starlet levels.
-      starlet (string, optional): The starlet used for the transformation ("linear" for the 3x3
+      starlet (str, optional): The starlet used for the transformation ("linear" for the 3x3
         linear spline or "cubic" for the 5x5 cubic spline). Default is "cubic".
       mode (str, optional): How to extend the image across its boundaries:
 
