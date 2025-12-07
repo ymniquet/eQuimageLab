@@ -168,7 +168,7 @@ class MixinImage:
       threshold (float): The threshold for sharpening (expected in ]0, 1[).
         The image is blurred below the threshold, and sharpened above.
       channels (str, optional): The channel(s) for LDBS.
-        Can be "" (for all channels), "V", "L'", "L", "L*" (default), "L*ab", "L*uv" or "L*sh".
+        Can be "" (for all channels), "V", "L'", "L", "L*" (default), "L*/ab", "L*/uv" or "L*/sh".
         See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       mode (str, optional): How to extend the image across its boundaries (for the gaussian blur):
 
@@ -187,8 +187,8 @@ class MixinImage:
       Image: The processed image(s) (see the full_output argument).
     """
     channels = channels.strip()
-    if channels not in ["", "V", "L'", "L", "L*", "L*ab", "L*uv", "L*sh"]:
-      raise ValueError("""Error, channels must be "", "V", "L'", "L", "L*", "L*ab", "L*uv" or "L*sh".""")
+    if channels not in ["", "V", "L'", "L", "L*", "L*/ab", "L*/uv", "L*/sh"]:
+      raise ValueError("""Error, channels must be "", "V", "L'", "L", "L*", "L*/ab", "L*/uv" or "L*/sh".""")
     if amount <= 0.: raise ValueError("Error amount must be > 0.")
     if threshold < .0001 or threshold >= .9999: raise ValueError("Error, threshold must be >= 0.0001 and <= 0.9999.")
     D = Dharmonic_through(threshold, 1./(1.+amount))
@@ -201,7 +201,7 @@ class MixinImage:
       else:
         return output
     else:
-      lightness = channels in ["L*", "L*ab", "L*uv", "L*sh"]
+      lightness = channels in ["L*", "L*/ab", "L*/uv", "L*/sh"]
       cin = clipped.grayscale("L*" if lightness else channels)
       cblurred = cin.gaussian_filter(sigma, mode = mode)
       cout = cblurred.blend(cin, (1.+amount)*hms(cblurred, D)).clip()

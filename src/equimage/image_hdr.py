@@ -59,7 +59,7 @@ class MixinImage:
         and compressed image (default 1).
       niter (int, optional): The number of iterations (default 1).
       channels (str, optional): The channel(s) the operation is applied to. Can be "RGB", "V",
-        "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv", "L*sh"  or "" (auto, default).
+        "L'", "L", "Ls", "Ln", "L*", "L*/ab", "L*/uv", "L*/sh"  or "" (auto, default).
         See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       verbose (bool, optional): Print extra information if True (default False).
 
@@ -82,8 +82,8 @@ class MixinImage:
       else:
         raise ValueError(f"Error, unknown color model {self.colormodel}.")
     if channels == "RGB": self.check_color_model("RGB")
-    if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv", "L*sh"]:
-      raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv" or "L*sh".""")
+    if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*/ab", "L*/uv", "L*/sh"]:
+      raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*/ab", "L*/uv" or "L*/sh".""")
     print(f"HDRMT (transform = '{transform}') on channel(s) {channels}...")
     if np.isscalar(gains): gains = np.full(levels+1, gains)
     # HDRMT algorithm.

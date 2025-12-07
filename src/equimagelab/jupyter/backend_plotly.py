@@ -58,7 +58,7 @@ def _figure_formatted_image_(image, dx = 1, dy = 1, width = -1, hover = False, t
     lmargin += xmargin//2
     rmargin += xmargin-xmargin//2
     width = imwidth*dx
-  layout = go.Layout(template = template,
+  layout = go.Layout(template = template, xaxis = {"side": "top"},
                      width = width+lmargin+rmargin, height = width*imheight/imwidth+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = lmargin, r = rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
   figure.update_layout(layout)

@@ -601,7 +601,7 @@ class MixinImage:
         medians = {"S'": np.median(image.HSL_saturation())}
       elif channels in ["L", "Ls", "Lb", "Ln"]:
         medians = {"L": np.median(image.luma())}
-      elif channels in ["L*", "L*ab", "L*uv", "L*sh"]:
+      elif channels in ["L*", "L*/ab", "L*/uv", "L*/sh"]:
         medians = {"L*": np.median(image.lightness())}
       else:
         medians = {}
@@ -757,8 +757,8 @@ class MixinImage:
         channels = "L*"
       else:
         raise ValueError(f"Error, unknown color model {self.colormodel}.")
-    if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv", "L*sh"]:
-      raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*ab", "L*uv" or "L*sh".""")
+    if channels not in ["RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*/ab", "L*/uv", "L*/sh"]:
+      raise ValueError("""Error, channels must be "RGB", "V", "L'", "L", "Ls", "Ln", "L*", "L*/ab", "L*/uv" or "L*/sh".""")
     if channels == "RGB": self.check_color_model("RGB")
     channels_ = "L" if channels in ["Ls", "Ln"] else channels
     maskchannel = maskchannel.strip()

@@ -1375,7 +1375,7 @@ class MixinImage:
       return self.luma()
     elif channel == "Y":
       return self.luminance()
-    elif channel in ["L*", "L*ab", "L*uv", "L*sh"]:
+    elif channel in ["L*", "L*/ab", "L*/uv", "L*/sh"]:
       return self.lightness()
     elif channel == "c*":
       return self.CIE_chroma()
@@ -1403,13 +1403,13 @@ class MixinImage:
           (after the operation, the out-of-range pixels are desaturated at constant luma).
         - "Ln": Update the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall back in the [0, 1] range).
-        - "L*": Update the CIE lightness L* (CIELab and CIELuv images; equivalent to "L*ab"
+        - "L*": Update the CIE lightness L* (CIELab and CIELuv images; equivalent to "L*/ab"
           for lRGB and sRGB images).
-        - "L*ab": Update the CIE lightness L* in the CIELab/Lab color space and model
+        - "L*/ab": Update the CIE lightness L* in the CIELab/Lab color space and model
           (CIELab, lRGB and sRGB images).
-        - "L*uv": Update the CIE lightness L* in the CIELuv/Luv color space and model
+        - "L*/uv": Update the CIE lightness L* in the CIELuv/Luv color space and model
           (CIELuv, lRGB and sRGB images).
-        - "L*sh": Update the CIE lightness L* in the CIELuv/Lsh color space and model
+        - "L*/sh": Update the CIE lightness L* in the CIELuv/Lsh color space and model
           (CIELuv, lRGB and sRGB images).
         - "c*": Update the CIE chroma c* (CIELab and CIELuv images).
         - "s*": Update the CIE saturation s* (CIELuv images).
@@ -1502,7 +1502,7 @@ class MixinImage:
       else:
         self.color_model_error()
       return output
-    elif channel in ["L*", "L*ab", "L*uv", "L*sh"]:
+    elif channel in ["L*", "L*/ab", "L*/uv", "L*/sh"]:
       if channel == "L*" and self.colorspace in ["CIELab", "CIELuv"]:
         output.image[0] = data
         return output
@@ -1515,10 +1515,10 @@ class MixinImage:
         else:
           self.color_space_error()
       else:
-        if channel == "L*": channel = "L*ab"
-        if self.colorspace == "CIELab" and channel != "L*ab": self.color_space_error()
-        if self.colorspace == "CIELuv" and channel == "L*ab": self.color_space_error()
-        colormodel = "L"+channel[2:]
+        if channel == "L*": channel = "L*/ab"
+        if self.colorspace == "CIELab" and channel != "L*/ab": self.color_space_error()
+        if self.colorspace == "CIELuv" and channel == "L*/ab": self.color_space_error()
+        colormodel = "L"+channel[3:]
         colorspace = "CIELab" if colormodel == "Lab" else "CIELuv"
         CIE = self.convert(colorspace = colorspace, colormodel = colormodel, copy = True)
         CIE.image[0] = data
@@ -1591,12 +1591,12 @@ class MixinImage:
         - "Ln": Apply the operation to the luma, and protect highlights by normalization.
           (after the operation, the image is normalized so that all pixels fall back in the [0, 1] range).
         - "L*": Apply the operation to the CIE lightness L* (CIELab and CIELuv images; equivalent
-          to "L*ab" for lRGB and sRGB images).
-        - "L*ab": Apply the operation to the CIE lightness L* in the CIELab/Lab color space and model
+          to "L*/ab" for lRGB and sRGB images).
+        - "L*/ab": Apply the operation to the CIE lightness L* in the CIELab/Lab color space and model
           (CIELab, lRGB and sRGB images).
-        - "L*uv": Apply the operation to the CIE lightness L* in the CIELuv/Luv color space and model
+        - "L*/uv": Apply the operation to the CIE lightness L* in the CIELuv/Luv color space and model
           (CIELuv, lRGB and sRGB images).
-        - "L*sh": Apply the operation to the CIE lightness L* in the CIELuv/Lsh color space and model
+        - "L*/sh": Apply the operation to the CIE lightness L* in the CIELuv/Lsh color space and model
           (CIELuv, lRGB and sRGB images).
         - "c*": Apply the operation to the CIE chroma c* (CIELab and CIELuv images).
         - "s*": Apply the operation to the CIE saturation s* (CIELuv images).
@@ -1727,7 +1727,7 @@ class MixinImage:
       else:
         self.color_model_error()
       return output
-    elif channels in ["L*", "L*ab", "L*uv", "L*sh"]:
+    elif channels in ["L*", "L*/ab", "L*/uv", "L*/sh"]:
       if channels == "L*" and self.colorspace in ["CIELab", "CIELuv"]:
         output = self.copy()
         output.image[0] = f(self.image[0])
@@ -1745,10 +1745,10 @@ class MixinImage:
           self.color_space_error()
         if trans: output.trans = transformation(f, lightness, "L*")
       else:
-        if channels == "L*": channels = "L*ab"
-        if self.colorspace == "CIELab" and channels != "L*ab": self.color_space_error()
-        if self.colorspace == "CIELuv" and channels == "L*ab": self.color_space_error()
-        colormodel = "L"+channels[2:]
+        if channels == "L*": channels = "L*/ab"
+        if self.colorspace == "CIELab" and channels != "L*/ab": self.color_space_error()
+        if self.colorspace == "CIELuv" and channels == "L*/ab": self.color_space_error()
+        colormodel = "L"+channels[3:]
         colorspace = "CIELab" if colormodel == "Lab" else "CIELuv"
         CIE = self.convert(colorspace = colorspace, colormodel = colormodel, copy = True)
         if trans: t = transformation(f, CIE.image[0], "L*")
