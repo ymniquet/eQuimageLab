@@ -192,7 +192,7 @@ The inverse wavelet/MMT transform can be computed with the following method of t
 
    inverse
 
-This returns (by default) an object with the same class as the original (:py:class:`Image <equimage.image.Image>` or :py:class:`numpy.ndarray`).
+This returns (by default) an object with the same class as the original image (:py:class:`Image <equimage.image.Image>` or :py:class:`numpy.ndarray`).
 
 The :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class also provides the following methods to manipulate multiscale coefficients and transforms:
 
@@ -204,7 +204,7 @@ The :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransfor
    threshold_levels
    threshold_firm_levels
 
-Furthermore, the noise of the image can be estimated and reduced with the following methods of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
+Furthermore, the multiscale noise of the image can be estimated and reduced with the following methods of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
 
 .. autosummary::
 
@@ -225,13 +225,25 @@ These methods are available only for wavelet transforms and are designed for add
    anscombe
    inverse_anscombe
 
-Both functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class. Finally, the details of the image can be enhanced (sharpened) with the following method of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
+Both functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class.
+
+Finally, the details of the image can be enhanced (sharpened) with the following method of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
 
 .. currentmodule:: equimage.image_multiscale.MultiscaleTransform
 
 .. autosummary::
 
    enhance_details
+
+Moreover, the details can be selectively enhanced in the bright (saturated) areas of the image with the following method of the :py:class:`Image <equimage.image.Image>` class:
+
+.. currentmodule:: equimage.image_hdr.MixinImage
+
+.. autosummary::
+
+   HDRMT
+
+This HDRMT process is still experimental and under development.
 
 See this `document <https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach>`_ for more details about the use of wavelet and multiscale median transforms in image processing.
 

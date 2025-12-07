@@ -42,9 +42,12 @@ class MixinImage:
 
     The darker areas of the original image are, therefore, the better preserved the larger gamma >= 0.
 
-    The whole process can be iterated niter times. As this non-linear operation transfers weight
+    The whole process can be iterated niter times. As this non-linear operation transfers intensities
     across scales, it can be better to iterate a with small alpha than to make a single iteration
     with a large alpha.
+
+    See also:
+      :meth:`Image.slt() <.slt>`, :meth:`Image.mmt() <.mmt>`
 
     Args:
       transform (str, optional): The multiscale transform ["cubic" (default) or "linear" for
@@ -63,7 +66,7 @@ class MixinImage:
         See :meth:`Image.apply_channels() <.apply_channels>` or https://astro.ymniquet.fr/codes/equimagelab/docs/channels.html.
       verbose (bool, optional): Print extra information if True (default False).
 
-    Returns:
+     Returns:
       Image: The processed image.
     """
     # Check inputs.
