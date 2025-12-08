@@ -140,7 +140,7 @@ class MixinImage:
           channel = self.image[2]
         else:
           channel = self.image[0]
-        nbins = int(np.ceil(npixels**(1./3.)/(3.5*np.std(channel))))
+        nbins = int(np.ceil(np.cbrt(npixels)/(3.5*np.std(channel))))
     elif nbins < 0:
       nbins = params.maxhistbins
     nbins = min(max(nbins, 16), params.maxhistbins)

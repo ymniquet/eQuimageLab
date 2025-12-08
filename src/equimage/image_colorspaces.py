@@ -35,7 +35,7 @@ def lRGB_to_sRGB(image):
   Returns:
     numpy.ndarray: The converted sRGB image.
   """
-  output = 12.919990386749564*image
+  output = image/.07739943839475116
   mask = (image > .0031308072830676845)
   output[mask] = 1.055*image[mask]**(1./2.4)-.055
   return output
@@ -87,8 +87,16 @@ def lRGB_to_CIELab(image):
   Returns:
     numpy.ndarray: The converted CIELab image.
   """
-  xyz = np.tensordot(np.asarray(RGB2XYZ, dtype = image.dtype), image, axes = 1)
-  return skcolor.xyz2lab(xyz, channel_axis = 0, illuminant = params.CIEilluminant, observer = params.CIEobserver)/100.
+  refwhite = skcolor.xyz_tristimulus_values(illuminant = params.CIEilluminant, observer = params.CIEobserver)
+  xyz = np.tensordot(np.asarray(RGB2XYZ/refwhite[:, np.newaxis], dtype = image.dtype), image, axes = 1)
+  mask = (xyz > 0.008856451679035631)
+  xyz[ mask] = np.cbrt(xyz[mask])
+  xyz[~mask] = 7.787037037037035*xyz[~mask]+0.13793103448275862
+  output = np.empty_like(image)
+  output[0] = 1.16*xyz[1]-.16
+  output[1] = 5.*(xyz[0]-xyz[1])
+  output[2] = 2.*(xyz[1]-xyz[2])
+  return output
 
 def CIELab_to_lRGB(image):
   """Convert the input CIELab image into a linear RGB image.
@@ -102,8 +110,19 @@ def CIELab_to_lRGB(image):
   Returns:
     numpy.ndarray: The converted lRGB image.
   """
-  xyz = skcolor.lab2xyz(100.*image, channel_axis = 0, illuminant = params.CIEilluminant, observer = params.CIEobserver)
-  return np.tensordot(np.asarray(XYZ2RGB, dtype = image.dtype), xyz, axes = 1)
+  xyz = np.empty_like(image)
+  xyz[1] = (image[0]+.16)/1.16
+  xyz[0] = image[1]/5.+xyz[1]
+  xyz[2] = xyz[1]-image[2]/2.
+  ninvalidz = np.sum(xyz[2] < 0.)
+  if ninvalidz > 0:
+    xyz[2] = np.clip(xyz[2], min = 0.)
+    print(f"Warning: {ninvalidz} negative z values were clipped to 0.")
+  mask = (xyz > 0.20689655172413793)
+  xyz[ mask] =  xyz[ mask]**3
+  xyz[~mask] = (xyz[~mask]-0.13793103448275862)/7.787037037037035
+  refwhite = skcolor.xyz_tristimulus_values(illuminant = params.CIEilluminant, observer = params.CIEobserver)
+  return np.tensordot(np.asarray(XYZ2RGB*refwhite, dtype = image.dtype), xyz, axes = 1)
 
 def lRGB_to_CIELuv(image):
   """Convert the input linear RGB image into a CIELuv image.
@@ -596,7 +615,7 @@ def luminance_to_lightness(Y):
   """
   Lstar = 9.032962955130763*Y
   mask = (Y > .008856)
-  Lstar[mask] = 1.16*Y[mask]**(1./3.)-.16
+  Lstar[mask] = 1.16*np.cbrt(Y[mask])-.16
   return Lstar
 
 def lightness_to_luminance(Lstar):
