@@ -89,9 +89,9 @@ def lRGB_to_CIELab(image):
   """
   refwhite = skcolor.xyz_tristimulus_values(illuminant = params.CIEilluminant, observer = params.CIEobserver)
   xyz = np.tensordot(np.asarray(RGB2XYZ/refwhite[:, np.newaxis], dtype = image.dtype), image, axes = 1)
-  mask = (xyz > 0.008856451679035631)
+  mask = (xyz > .008856451679035631)
   xyz[ mask] = np.cbrt(xyz[mask])
-  xyz[~mask] = 7.787037037037035*xyz[~mask]+0.13793103448275862
+  xyz[~mask] = 7.787037037037035*xyz[~mask]+.13793103448275862
   output = np.empty_like(image)
   output[0] = 1.16*xyz[1]-.16
   output[1] = 5.*(xyz[0]-xyz[1])
@@ -115,12 +115,12 @@ def CIELab_to_lRGB(image):
   xyz[0] = image[1]/5.+xyz[1]
   xyz[2] = xyz[1]-image[2]/2.
   ninvalidz = np.sum(xyz[2] < 0.)
-  if ninvalidz > 0:
+  if ninvalidz > 0.:
     xyz[2] = np.clip(xyz[2], min = 0.)
     print(f"Warning: {ninvalidz} negative z values were clipped to 0.")
-  mask = (xyz > 0.20689655172413793)
+  mask = (xyz > .20689655172413793)
   xyz[ mask] =  xyz[ mask]**3
-  xyz[~mask] = (xyz[~mask]-0.13793103448275862)/7.787037037037035
+  xyz[~mask] = (xyz[~mask]-.13793103448275862)/7.787037037037035
   refwhite = skcolor.xyz_tristimulus_values(illuminant = params.CIEilluminant, observer = params.CIEobserver)
   return np.tensordot(np.asarray(XYZ2RGB*refwhite, dtype = image.dtype), xyz, axes = 1)
 
@@ -140,8 +140,25 @@ def lRGB_to_CIELuv(image):
   Returns:
     numpy.ndarray: The converted CIELuv image.
   """
+  eps = np.finfo(image.dtype).eps
+  refwhite = skcolor.xyz_tristimulus_values(illuminant = params.CIEilluminant, observer = params.CIEobserver, dtype = image.dtype)
   xyz = np.tensordot(np.asarray(RGB2XYZ, dtype = image.dtype), image, axes = 1)
-  return skcolor.xyz2luv(xyz, channel_axis = 0, illuminant = params.CIEilluminant, observer = params.CIEobserver)/100.
+  Lstar = xyz[1]/refwhite[1]
+  if np.isscalar(Lstar):
+    Lstar = 1.16*np.cbrt(Lstar)-.16 if Lstar > .008856451679035631 else 9.03296296296296*Lstar
+  else:
+    mask = (Lstar > .008856451679035631)
+    Lstar[~mask] *= 9.03296296296296
+    Lstar[ mask]  = 1.16*np.cbrt(Lstar[mask])-.16
+  output = np.empty_like(image)
+  output[0] = Lstar
+  D = refwhite[0]+15.*refwhite[1]+3.*refwhite[2]
+  u0 = 4.*refwhite[0]/D
+  v0 = 9.*refwhite[1]/D
+  D = xyz[0]+15.*xyz[1]+3.*xyz[2]+eps # Add eps for blacks.
+  output[1] = 13.*Lstar*(4.*xyz[0]/D-u0)
+  output[2] = 13.*Lstar*(9.*xyz[1]/D-v0)
+  return output
 
 def CIELuv_to_lRGB(image):
   """Convert the input CIELuv image into a linear RGB image.
@@ -155,7 +172,27 @@ def CIELuv_to_lRGB(image):
   Returns:
     numpy.ndarray: The converted lRGB image.
   """
-  xyz = skcolor.luv2xyz(100.*image, channel_axis = 0, illuminant = params.CIEilluminant, observer = params.CIEobserver)
+  eps = np.finfo(image.dtype).eps
+  refwhite = skcolor.xyz_tristimulus_values(illuminant = params.CIEilluminant, observer = params.CIEobserver, dtype = image.dtype)
+  y = np.copy(image[0])
+  if np.isscalar(y):
+    y = ((y+.16)/1.16)**3 if y > .08 else y/9.03296296296296
+  else:
+    mask = (y > .08)
+    y[~mask] /= 9.03296296296296
+    y[ mask]  = ((y[mask]+.16)/1.16)**3
+  y *= refwhite[1]
+  xyz = np.empty_like(image)
+  xyz[1] = y
+  D = refwhite[0]+15.*refwhite[1]+3.*refwhite[2]
+  u0 = 4.*refwhite[0]/D
+  v0 = 9.*refwhite[1]/D
+  D = 13.*image[0]+eps # Add eps for blacks.
+  a = u0+image[1]/D
+  b = v0+image[2]/D
+  c = 3.*xyz[1]*(5.*b-3.)
+  xyz[2] = ((a-4.)*c-15.*a*b*y)/(12.*b)
+  xyz[0] = -(c/b+3.*xyz[2])
   return np.tensordot(np.asarray(XYZ2RGB, dtype = image.dtype), xyz, axes = 1)
 
 ###########################################
@@ -613,8 +650,10 @@ def luminance_to_lightness(Y):
   Returns:
     numpy.ndarray: The CIE lightness L*/100.
   """
-  Lstar = 9.032962955130763*Y
-  mask = (Y > .008856)
+  if np.isscalar(Y):
+    return 1.16*np.cbrt(Y)-.16 if Y > .008856451679035631 else 9.03296296296296*Y
+  Lstar = 9.03296296296296*Y
+  mask = (Y > .008856451679035631)
   Lstar[mask] = 1.16*np.cbrt(Y[mask])-.16
   return Lstar
 
@@ -630,8 +669,10 @@ def lightness_to_luminance(Lstar):
   Returns:
     numpy.ndarray: The luminance Y.
   """
-  Y = 0.11070564608393481*Lstar
-  mask = (Lstar > .07999591993063804)
+  if np.isscalar(Lstar):
+    return ((Lstar+.16)/1.16)**3 if Lstar > .08 else Lstar/9.03296296296296
+  Y = Lstar/9.03296296296296
+  mask = (Lstar > .08)
   Y[mask] = ((Lstar[mask]+.16)/1.16)**3
   return Y
 
@@ -660,7 +701,10 @@ def lRGB_luminance(image):
   Returns:
     numpy.ndarray: The luminance Y.
   """
-  return .212671*image[0]+.715160*image[1]+.072169*image[2] if image.shape[0] > 1 else image[0]
+  if image.shape[0] == 1: return image[0]
+  refwhite = skcolor.xyz_tristimulus_values(illuminant = params.CIEilluminant, observer = params.CIEobserver)
+  YR = RGB2XYZ[1, 0]/refwhite[1] ; YG = RGB2XYZ[1, 1]/refwhite[1] ; YB = RGB2XYZ[1, 2]/refwhite[1]
+  return YR*image[0]+YG*image[1]+YB*image[2]
 
 def lRGB_lightness(image):
   """Return the CIE lightness L* of the input linear RGB image.
