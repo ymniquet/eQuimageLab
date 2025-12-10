@@ -78,6 +78,10 @@ def lRGB_to_CIELab(image):
   and that the CIE chromatic components a*, b* are signed.
   This function actually returns L*/100, a*/100 and b*/100.
 
+  Note:
+    The CIELab components L*, a* and b* depend on the choice of a standard illuminant (default D65)
+    and observer (default 2°). See :meth:`params.set_CIE_params() <equimage.params.set_CIE_params>`.
+
   See also:
     The reciprocal :func:`CIELab_to_lRGB` function.
 
@@ -114,10 +118,10 @@ def CIELab_to_lRGB(image):
   xyz[1] = (image[0]+.16)/1.16
   xyz[0] = image[1]/5.+xyz[1]
   xyz[2] = xyz[1]-image[2]/2.
-  ninvalidz = np.sum(xyz[2] < 0.)
-  if ninvalidz > 0.:
+  ninvalid = np.sum(xyz[2] < 0.)
+  if ninvalid > 0.:
     xyz[2] = np.clip(xyz[2], min = 0.)
-    print(f"Warning: {ninvalidz} negative z values were clipped to 0.")
+    print(f"Warning: {ninvalid} negative z values were clipped to 0.")
   mask = (xyz > .20689655172413793)
   xyz[ mask] =  xyz[ mask]**3
   xyz[~mask] = (xyz[~mask]-.13793103448275862)/7.787037037037035
@@ -131,6 +135,10 @@ def lRGB_to_CIELuv(image):
   and that the CIE chromatic components u*, v* are signed.
   This function actually returns L*/100, u*/100 and v*/100.
 
+  Note:
+    The CIELab components L*, u* and v* depend on the choice of a standard illuminant (default D65)
+    and observer (default 2°). See :meth:`params.set_CIE_params() <equimage.params.set_CIE_params>`.
+
   See also:
     The reciprocal :func:`CIELuv_to_lRGB` function.
 
@@ -140,7 +148,7 @@ def lRGB_to_CIELuv(image):
   Returns:
     numpy.ndarray: The converted CIELuv image.
   """
-  eps = np.finfo(image.dtype).eps
+  eps = helpers.fpepsilon(image.dtype)
   refwhite = skcolor.xyz_tristimulus_values(illuminant = params.CIEilluminant, observer = params.CIEobserver, dtype = image.dtype)
   xyz = np.tensordot(np.asarray(RGB2XYZ, dtype = image.dtype), image, axes = 1)
   Lstar = xyz[1]/refwhite[1]
@@ -172,7 +180,7 @@ def CIELuv_to_lRGB(image):
   Returns:
     numpy.ndarray: The converted lRGB image.
   """
-  eps = np.finfo(image.dtype).eps
+  eps = helpers.fpepsilon(image.dtype)
   refwhite = skcolor.xyz_tristimulus_values(illuminant = params.CIEilluminant, observer = params.CIEobserver, dtype = image.dtype)
   y = np.copy(image[0])
   if np.isscalar(y):
@@ -206,6 +214,10 @@ def sRGB_to_CIELab(image):
   and that the CIE chromatic components a*, b* are signed.
   This function actually returns L*/100, a*/100 and b*/100.
 
+  Note:
+    The CIELab components L*, a* and b* depend on the choice of a standard illuminant (default D65)
+    and observer (default 2°). See :meth:`params.set_CIE_params() <equimage.params.set_CIE_params>`.
+
   See also:
     The reciprocal :func:`CIELab_to_sRGB` function.
 
@@ -237,6 +249,10 @@ def sRGB_to_CIELuv(image):
   Note that the CIE lightness L* is conventionally defined within [0, 100],
   and that the CIE chromatic components u*, v* are signed.
   This function actually returns L*/100, u*/100 and v*/100.
+
+  Note:
+    The CIELab components L*, u* and v* depend on the choice of a standard illuminant (default D65)
+    and observer (default 2°). See :meth:`params.set_CIE_params() <equimage.params.set_CIE_params>`.
 
   See also:
     The reciprocal :func:`CIELuv_to_sRGB` function.
@@ -686,6 +702,10 @@ def lRGB_luminance(image):
   It is equivalently the luma of the lRGB image for RGB weights (0.212671, 0.715160, 0.072169),
   and is the basic ingredient of the perceptual lightness L* in the CIELab and CIELuv color spaces.
 
+  Note:
+    The RGB weights actually depend on the choice of a standard illuminant (default D65) and observer
+    (default 2°). See :meth:`params.set_CIE_params() <equimage.params.set_CIE_params>`.
+
   See also:
     :func:`lRGB_lightness`,
     :func:`sRGB_luminance`,
@@ -740,7 +760,7 @@ def sRGB_luminance(image):
   The image is converted to the lRGB color space to compute the luminance Y.
 
   Note: Although they have the same functional forms, the luma and luminance are different concepts
-  for sRGB images: the luma is computed in the sRGB color space as a *substitute* for the  perceptual
+  for sRGB images: the luma is computed in the sRGB color space as a *substitute* for the perceptual
   lightness, whereas the luminance is computed after conversion in the lRGB color space and is the
   basic ingredient of the *genuine* perceptual lightness (see lRGB_lightness).
 
@@ -896,6 +916,10 @@ class MixinImage:
     Warning:
       Does not apply to the HSV, HSL, Lch and Lsh color models, and to grayscale images.
 
+    Note:
+      The CIELab components L*, a* and b* depend on the choice of a standard illuminant (default D65)
+      and observer (default 2°). See :meth:`params.set_CIE_params() <equimage.params.set_CIE_params>`.
+
     Returns:
       Image: The converted CIELab image (a copy of the original image if already CIELab).
     """
@@ -923,6 +947,10 @@ class MixinImage:
 
     Warning:
       Does not apply to the HSV, HSL, Lch and Lsh color models, and to grayscale images.
+
+    Note:
+      The CIELab components L*, u* and u* depend on the choice of a standard illuminant (default D65)
+      and observer (default 2°). See :meth:`params.set_CIE_params() <equimage.params.set_CIE_params>`.
 
     Returns:
       Image: The converted CIELuv image (a copy of the original image if already CIELuv).

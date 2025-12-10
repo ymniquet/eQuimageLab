@@ -16,15 +16,15 @@ class Container:
   pass # An empty container class.
 
 def fpepsilon(dtype):
-  """Return the distance between 1 and the nearest number for the input float class.
+  """Return the difference between 1 and the nearest number for the input float class.
 
   Args:
     dtype (class): A float class (numpy.float32 or numpy.float64).
 
   Returns:
-    float: The distance between 1 and the nearest number for the input float class.
+    float: The difference between 1 and the nearest number for the input float class.
   """
-  return np.spacing(1, dtype = dtype)
+  return np.finfo(dtype).eps
 
 def failsafe_divide(A, B):
   """Return A/B, ignoring errors (division by zero, ...).
@@ -36,10 +36,8 @@ def failsafe_divide(A, B):
   Returns:
     numpy.ndarray: The element-wise division A/B.
   """
-  status = np.seterr(all = "ignore")
-  C = np.divide(A, B)
-  np.seterr(**status)
-  return C
+  with np.errstate(all = "ignore"):
+    return np.divide(A, B)
 
 def scale_pixels(image, source, target, cutoff = None):
   """Scale all pixels of the input image by the ratio target/source.
