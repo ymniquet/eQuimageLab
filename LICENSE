@@ -1,4 +1,4 @@
-eQuimagelab is a tool to postprocess astronomical images with jupyter-lab notebooks.
+eQuimageLab is a python package to postprocess astronomical images with JupyterLab notebooks.
 Author: Yann-Michel Niquet.
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.

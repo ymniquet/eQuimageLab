@@ -17,7 +17,7 @@ eQuimageLab is developed in Python 3. To install the latest version of eQuimageL
 
   `pip install --user eQuimageLab`
 
-pip will automatically download eQuimageLab and the missing Python modules if necessary (Dash, Plotly, etc...). You can then launch eQuimageLab by typing:
+pip will automatically download eQuimageLab and the missing Python modules if necessary (eQuimage, Dash, Plotly, etc...). You can then launch eQuimageLab by typing:
 
   `eQuimagelab`
 
