@@ -356,6 +356,14 @@ A mask can be smoothed with the function:
 
 Binary masks are converted into float masks for that purpose.
 
+A star mask can be created with the method:
+
+.. currentmodule:: equimage.image_stars.MixinImage
+
+.. autosummary::
+
+   star_mask
+
 Edition with external softwares
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -390,3 +398,9 @@ The stars can be removed from an image with `Starnet++ <https://www.starnetastro
 .. warning::
 
   The softwares Starnet++ and Siril must be in the PATH to be run from eQuimageLab.
+
+A star mask can also be created with the method:
+
+.. autosummary::
+
+   star_mask
