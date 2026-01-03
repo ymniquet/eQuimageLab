@@ -20,7 +20,7 @@ help:
 # Compile API doc.
 apidoc:
 	@echo "Compiling API documentation..."; \
-	$(SPHINXAPIDOC) -M -f -o "$(SOURCEDIR)" "$(PACKAGEDIR)"
+	$(SPHINXAPIDOC) -M -f -l -o "$(SOURCEDIR)" "$(PACKAGEDIR)"
 
 # Enable Google analytics.
 ga:
