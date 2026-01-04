@@ -334,7 +334,7 @@ and method of the :py:class:`Image <equimage.image.Image>` class
 
 enable the construction of binary masks with rectangular, elliptic and polygonal shapes. The rectangle/ellipse/polygon can be selected with the mouse on the dashboard, then its coordinates copied to the notebook. See :doc:`dashboard` for details.
 
-A binary mask can be extended/eroded with the function:
+A binary mask can be extended or eroded with the function:
 
 .. currentmodule:: equimage.image_masks
 
@@ -356,13 +356,13 @@ A mask can be smoothed with the function:
 
 Binary masks are converted into float masks for that purpose.
 
-A star mask can be created with the method:
+A star mask can also be created with the following method of the :py:class:`Image <equimage.image.Image>` class:
 
 .. currentmodule:: equimage.image_stars.MixinImage
 
 .. autosummary::
 
-   star_mask
+   star_masks
 
 Edition with external softwares
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -403,4 +403,4 @@ A star mask can also be created with the method:
 
 .. autosummary::
 
-   star_mask
+   star_masks
