@@ -356,7 +356,7 @@ A mask can be smoothed with the function:
 
 Binary masks are converted into float masks for that purpose.
 
-A star mask can also be created with the following method of the :py:class:`Image <equimage.image.Image>` class:
+A star mask can also be created with the following method of the :py:class:`Image <equimage.image.Image>` class (see star transformations below):
 
 .. currentmodule:: equimage.image_stars.MixinImage
 
