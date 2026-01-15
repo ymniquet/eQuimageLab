@@ -91,7 +91,8 @@ Latest news:
     - Median multiscale transform.
     - Experimental HDR wavelet transforms.
 
-  - December XX, 2025: Version 2.1.1.
+  - December 17, 2025: Version 3.0.0.
 
+    - Split the core post-processing modules as a separate package eQuimage.
     - More experimental HDR multiscale transforms (:py:meth:`HDRMT <equimage.image_hdr.MixinImage.HDRMT>`).
     - Various cosmetic fixes.
