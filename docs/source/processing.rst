@@ -241,7 +241,7 @@ Moreover, the details can be selectively enhanced in the bright (saturated) area
 
 .. autosummary::
 
-   HDRMT
+   HDRMT_engine
 
 This HDRMT process is still experimental and under development.
 
