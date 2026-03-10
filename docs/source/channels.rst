@@ -17,10 +17,10 @@ Many operations in eQuimageLab can be applied to specific channels specified by 
   - "Ls": Apply the operation to the luma, and protect highlights by desaturation (see below).
   - "Lb": Apply the operation to the luma, and protect highlights by blending (see below).
   - "Ln": Apply the operation to the luma, and protect highlights by normalization (see below).
-  - "L*": Apply the operation to the CIE lightness :math:`L^*` (CIELab and CIELuv images; equivalent to "L*ab" for lRGB and sRGB images).
-  - "L*ab": Apply the operation to the CIE lightness :math:`L^*` in the CIELab/Lab color space and model (CIELab, lRGB and sRGB images).
-  - "L*uv": Apply the operation to the CIE lightness :math:`L^*` in the CIELuv/Luv color space and model (CIELuv, lRGB and sRGB images).
-  - "L*sh": Apply the operation to the CIE lightness :math:`L^*` in the CIELuv/Lsh color space and model (CIELuv, lRGB and sRGB images).
+  - "L*": Apply the operation to the CIE lightness :math:`L^*` (CIELab and CIELuv images; equivalent to "L*/ab" for lRGB and sRGB images).
+  - "L*/ab": Apply the operation to the CIE lightness :math:`L^*` in the CIELab/Lab color space and model (CIELab, lRGB and sRGB images).
+  - "L*/uv": Apply the operation to the CIE lightness :math:`L^*` in the CIELuv/Luv color space and model (CIELuv, lRGB and sRGB images).
+  - "L*/sh": Apply the operation to the CIE lightness :math:`L^*` in the CIELuv/Lsh color space and model (CIELuv, lRGB and sRGB images).
   - "c*": Apply the operation to the CIE chroma c* (CIELab and CIELuv images).
   - "s*": Apply the operation to the CIE saturation s* (CIELuv images).
 

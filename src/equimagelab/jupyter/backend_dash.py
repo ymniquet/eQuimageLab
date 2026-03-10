@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 2.1.0 / 2025.09.21
+# Version: 3.0.0 / 2026.03.10
 # Doc OK.
 
 """Dash backend for JupyterLab interface.
@@ -169,10 +169,11 @@ class Dashboard():
     Returns:
       The content of the "datadiv" div element with the image coordinates and data at click point.
     """
+    if click is None: return dash.no_update
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
-    if not trigger: return []
+    if not trigger: return dash.no_update
     with self.updatelock: # Lock on callback.
-      if self.images is None or updateid != self.nupdates: return [] # The dashboard is out of sync.
+      if self.images is None or updateid != self.nupdates: return dash.no_update # The dashboard is out of sync.
       n = trigger["index"] # Image index.
       x = click["points"][0]["x"]
       y = click["points"][0]["y"]
@@ -312,7 +313,7 @@ class Dashboard():
     trigger = dash.ctx.triggered_id # Get the component that triggered the callback.
     if not trigger: return previous, previous, dash.no_update
     with self.updatelock: # Lock on callback.
-      if self.images is None or updateid != self.nupdates: return [], [], dash.no_update # The dashboard is out of sync.
+      if self.images is None or updateid != self.nupdates: return previous, previous, dash.no_update # The dashboard is out of sync.
       # Update filters list.
       current = set(current)
       previous = set(previous)
@@ -349,7 +350,7 @@ class Dashboard():
     """Callback for image stretch.
 
     Args:
-      stretch (string): The selected stretch.
+      stretch (str): The selected stretch.
       filters (list): The currently selected filters.
       updateid (integer): The unique ID of the displayed dashboard update.
 
@@ -442,11 +443,17 @@ class Dashboard():
       relayout = relayouts[n]
       xauto = relayout.get("xaxis.autorange", False)
       if not xauto:
+        xmin, xmax = relayout.get("xaxis.range", [None, None]) # The presence of xaxis.range (?) actually considered as an autoscale resquest.
+        xauto = xmin is not None and xmax is not None          # Event triggering xaxis.range not clearly identified.
+      if not xauto:
         xmin = relayout.get("xaxis.range[0]", None)
         xmax = relayout.get("xaxis.range[1]", None)
         if xmin is None or xmax is None: # Unexpected relayout structure; Discard event.
           return [dash.no_update]*nimages
       yauto = relayout.get("yaxis.autorange", False)
+      if not yauto:
+        ymin, ymax = relayout.get("yaxis.range", [None, None]) # The presence of yaxis.range (?) actually considered as an autoscale resquest.
+        yauto = ymin is not None and ymax is not None          # Event triggering yaxis.range not clearly identified.
       if not yauto:
         ymin = relayout.get("yaxis.range[0]", None)
         ymax = relayout.get("yaxis.range[1]", None)
@@ -498,7 +505,7 @@ class Dashboard():
     This callback just stores the current tab name.
 
     Args:
-      tab (string): The name of the current tab.
+      tab (str): The name of the current tab.
       updateid (integer): The unique ID of the displayed dashboard update.
     """
     with self.updatelock: # Lock on callback.
@@ -720,7 +727,7 @@ class Dashboard():
               sampling = sampling, toolbar = toolbar, stretch = stretch, click = click,
               select = select, synczoom = synczoom, trans = trans)
 
-  def show_multiscale(self, mst, absc = True, normalize = False, histograms = False, statistics = False,
+  def show_multiscale(self, mt, absc = True, normalize = False, histograms = False, statistics = False,
                       sampling = -1, toolbar = True, stretch = False, click = True, select = True,
                       synczoom = True):
     """Show wavelet/multiscale median transform coefficients on the dashboard.
@@ -733,10 +740,11 @@ class Dashboard():
     Not implemented for stationary wavelet ("à trous") transforms.
 
     Args:
-      mst (MultiscaleTransform): The wavelet/multiscale median transform coefficients.
-      absc (bool, optional): If True (default), display the absolute value of the coefficients.
+      mt (MultiscaleTransform): The wavelet/multiscale median transform coefficients.
+      absc (bool, optional): If True (default), display the absolute value of the coefficients
+        (except for the approximation).
       normalize (bool, optional): If True, normalize each set of coefficients (or their absolute
-        value if absc is True) in the [0, 1] range. Default is False.
+        value if absc is True) in the [0, 1] range (except for the approximation). Default is False.
       histograms (optional): If True or a string, show the histograms of the image(s). The string
         lists the channels of the histograms (see :meth:`Image.histograms() <.histograms>`). True
         is substituted with "RGBL" (red, green, blue, luma). Default is False.
@@ -759,39 +767,39 @@ class Dashboard():
 
     def normalize_coeffs(c):
       """Normalize coefficients."""
-      if absc: c = abs(c)
-      if normalize:
-        cmin = 0. if absc else c.min()
-        cmax = c.max()
-        if cmax == cmin:
-          c = 0. if cmax == 0. else 1.
-        else:
-          c = (c-cmin)/(cmax-cmin)
-      return c
+      if absc:
+        nc = abs(c)
+        if normalize:
+          cmax = np.max(nc)
+          if cmax != 0.: nc /= cmax
+      else:
+        cmax = max(abs(np.min(c)), np.max(c)) if normalize else .5
+        if cmax == 0.: cmax = 1.
+        nc = (1.+c/cmax)/2.
+      return nc
 
     def display_coeffs(c):
       """Prepare coefficients for display."""
       return np.moveaxis(c, 0, -1)
 
-    if not issubclass(type(mst), MultiscaleTransform):
+    if not issubclass(type(mt), MultiscaleTransform):
       raise TypeError("This method can only display MultiscaleTransform objects.")
     images = {}
-    if mst.type == "dwt":
-      coeffs = deepcopy(mst.coeffs)
-      coeffs[0] = normalize_coeffs(coeffs[0])
-      for level in range(mst.levels):
+    if mt.type == "dwt":
+      coeffs = deepcopy(mt.coeffs)
+      for level in range(mt.levels):
         coeffs[level+1] = [normalize_coeffs(c) for c in coeffs[level+1]]
       mallat, slices = pywt.coeffs_to_array(coeffs, axes = (-2, -1))
       images["Mallat's decomposition"] = display_coeffs(mallat)
-    elif mst.type == "swt":
+    elif mt.type == "swt":
       raise NotImplementedError("Error, not implemented for stationary wavelet (à trous) transforms.")
-    elif mst.type in ["slt", "mmt", "pmmt"]:
-      images["Approximation"] = display_coeffs(normalize_coeffs(mst.coeffs[0]))
-      for l, c in enumerate(mst.coeffs[1:]):
-        label = f"Level #{mst.levels-l-1}"
+    elif mt.type in ["slt", "mmt", "pmmt"]:
+      images["Approximation"] = display_coeffs(mt.coeffs[0])
+      for l, c in enumerate(mt.coeffs[1:]):
+        label = f"Level #{mt.levels-l-1}"
         images[label] = display_coeffs(normalize_coeffs(c[0]))
     else:
-      raise ValueError(f"Unknown multiscale transform type '{mst.type}'.")
+      raise ValueError(f"Unknown multiscale transform type '{mt.type}'.")
     self.show(images, histograms = histograms, statistics = statistics, sampling = sampling,
               toolbar = toolbar, stretch = stretch, click = click, select = select,
               synczoom = synczoom)

@@ -192,7 +192,7 @@ The inverse wavelet/MMT transform can be computed with the following method of t
 
    inverse
 
-This returns (by default) an object with the same class as the original (:py:class:`Image <equimage.image.Image>` or :py:class:`numpy.ndarray`).
+This returns (by default) an object with the same class as the original image (:py:class:`Image <equimage.image.Image>` or :py:class:`numpy.ndarray`).
 
 The :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class also provides the following methods to manipulate multiscale coefficients and transforms:
 
@@ -204,7 +204,7 @@ The :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransfor
    threshold_levels
    threshold_firm_levels
 
-Furthermore, the noise of the image can be estimated and reduced with the following methods of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
+Furthermore, the multiscale noise of the image can be estimated and reduced with the following methods of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
 
 .. autosummary::
 
@@ -225,13 +225,25 @@ These methods are available only for wavelet transforms and are designed for add
    anscombe
    inverse_anscombe
 
-Both functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class. Finally, the details of the image can be enhanced (sharpened) with the following method of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
+Both functions are also available as methods of the :py:class:`Image <equimage.image.Image>` class.
+
+Finally, the details of the image can be enhanced (sharpened) with the following method of the :py:class:`MultiscaleTransform <equimage.image_multiscale.MultiscaleTransform>` class:
 
 .. currentmodule:: equimage.image_multiscale.MultiscaleTransform
 
 .. autosummary::
 
    enhance_details
+
+Moreover, the details can be selectively enhanced in the bright (saturated) areas of the image with the following method of the :py:class:`Image <equimage.image.Image>` class:
+
+.. currentmodule:: equimage.image_hdr.MixinImage
+
+.. autosummary::
+
+   HDRMT_engine
+
+This HDRMT process is still experimental and under development.
 
 See this `document <https://www.researchgate.net/publication/220688988_Image_Processing_and_Data_Analysis_The_Multiscale_Approach>`_ for more details about the use of wavelet and multiscale median transforms in image processing.
 
@@ -322,7 +334,7 @@ and method of the :py:class:`Image <equimage.image.Image>` class
 
 enable the construction of binary masks with rectangular, elliptic and polygonal shapes. The rectangle/ellipse/polygon can be selected with the mouse on the dashboard, then its coordinates copied to the notebook. See :doc:`dashboard` for details.
 
-A binary mask can be extended/eroded with the function:
+A binary mask can be extended or eroded with the function:
 
 .. currentmodule:: equimage.image_masks
 
@@ -343,6 +355,14 @@ A mask can be smoothed with the function:
    smooth_mask
 
 Binary masks are converted into float masks for that purpose.
+
+A star mask can also be created with the following method of the :py:class:`Image <equimage.image.Image>` class (see star transformations below):
+
+.. currentmodule:: equimage.image_stars.MixinImage
+
+.. autosummary::
+
+   star_masks
 
 Edition with external softwares
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -378,3 +398,9 @@ The stars can be removed from an image with `Starnet++ <https://www.starnetastro
 .. warning::
 
   The softwares Starnet++ and Siril must be in the PATH to be run from eQuimageLab.
+
+A star mask can also be created with the method:
+
+.. autosummary::
+
+   star_masks

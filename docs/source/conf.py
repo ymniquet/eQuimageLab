@@ -5,7 +5,8 @@
 
 import os
 import sys
-from equimagelab import __version__
+from equimage import __version__ as equimage_version
+from equimagelab import __version__ as equimagelab_version
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -13,7 +14,7 @@ from equimagelab import __version__
 project = "eQuimageLab"
 copyright = "2024, Yann-Michel Niquet"
 author = "Yann-Michel Niquet"
-version = __version__
+version = f"eQuimage v{equimage_version}/eQuimageLab v{equimagelab_version}"
 release = version
 
 # -- Path to sources ---------------------------------------------------------

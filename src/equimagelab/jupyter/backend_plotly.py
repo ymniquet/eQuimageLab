@@ -2,7 +2,7 @@
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 # Author: Yann-Michel Niquet (contact@ymniquet.fr).
-# Version: 2.1.0 / 2025.09.21
+# Version: 3.0.0 / 2026.03.10
 # Doc OK.
 
 """Plotly backend for JupyterLab interface.
@@ -58,7 +58,7 @@ def _figure_formatted_image_(image, dx = 1, dy = 1, width = -1, hover = False, t
     lmargin += xmargin//2
     rmargin += xmargin-xmargin//2
     width = imwidth*dx
-  layout = go.Layout(template = template,
+  layout = go.Layout(template = template, xaxis = {"side": "top"},
                      width = width+lmargin+rmargin, height = width*imheight/imwidth+params.bmargin+params.tmargin,
                      margin = go.layout.Margin(l = lmargin, r = rmargin, b = params.bmargin, t = params.tmargin, autoexpand = True))
   figure.update_layout(layout)

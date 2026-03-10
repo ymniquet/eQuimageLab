@@ -24,7 +24,7 @@ perl -pi -e "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/equimagel
 echo "Updating '__version__' in src/equimagelab_launcher/__init__.py..."
 perl -pi -e "s/__version__ = \".*\"/__version__ = \"${VERSION}\"/" src/equimagelab_launcher/__init__.py
 
-for file in `find src -name *.py`;
+for file in `find src/equimagelab src/equimagelab_launcher -name *.py`;
 do
   echo "Updating version tag in ${file}..."
   perl -pi -e "s/# Version: (.*)\n/# Version: ${VERSION} \/ ${DATE}\n/" ${file}
