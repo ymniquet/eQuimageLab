@@ -741,7 +741,7 @@ class Dashboard():
 
     Args:
       mt (MultiscaleTransform): The wavelet/multiscale median transform coefficients.
-      absc (bool, optional): If True (default), display the absolute value of the coefficients 
+      absc (bool, optional): If True (default), display the absolute value of the coefficients
         (except for the approximation).
       normalize (bool, optional): If True, normalize each set of coefficients (or their absolute
         value if absc is True) in the [0, 1] range (except for the approximation). Default is False.
@@ -767,7 +767,7 @@ class Dashboard():
 
     def normalize_coeffs(c):
       """Normalize coefficients."""
-      if absc: 
+      if absc:
         nc = abs(c)
         if normalize:
           cmax = np.max(nc)
